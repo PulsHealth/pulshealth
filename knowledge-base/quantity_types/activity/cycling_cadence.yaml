@@ -76,8 +76,7 @@ description: '## What does cycling cadence measure?
 
   The selected October 2025–September 2026 database window contained no cycling-cadence samples, linked cadence
   series or cadence aggregates. Cycling distance was available, but distance cannot recover pedal rotations because
-  gearing and coasting are unknown. This example supports no cadence range, outlier chart, workout comparison or
-  sleep comparison.
+  gearing and coasting are unknown. This example supports no cadence range, outlier chart or comparison across rides.
 
 
   ## Is there an ideal RPM?

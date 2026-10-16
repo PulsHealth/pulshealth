@@ -78,15 +78,14 @@ description: '## What does an infrequent-cycle record mean?
 
 
   Start-to-start gaps between saved assessments are not menstrual-cycle lengths. The interval timestamps alone
-  do not establish when a notification appeared or when history was confirmed. A saved assessment may overlap
-  several nights and workouts without measuring a cycle change during each one.
+  do not establish when a notification appeared or when history was confirmed. A saved assessment interval does not represent repeated observations throughout that interval.
 
 
   ## What did the example data show?
 
 
-  No records for this category were available in the researched reporting year. A measured distribution, notification
-  cadence and sleep or workout comparison could not be produced. Related bleeding history could not be paired
+  No records for this category were available in the researched reporting year. A measured distribution, assessment
+  timing could not be measured. Related bleeding history could not be paired
   with an absent primary category, so no chart or reconstructed cycle frequency is presented. An empty result
   cannot establish regular cycles or exclude a reproductive condition.
 

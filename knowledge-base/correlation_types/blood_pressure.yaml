@@ -68,9 +68,9 @@ description: |
 
   No component records appeared during the July–September focus quarter. Missing days should remain missing. A weekly average built from a single recorded day does not represent a monitored week.
 
-  ## Can I compare workouts, sleep or pulse pressure?
+  ## How do I calculate pulse pressure from a paired reading?
 
-  None of the component examples overlapped a recorded workout or asleep interval. There is no measured exercise/sleep contrast in this snapshot. Clock time cannot recover posture, resting duration, cuff technique or sleep state.
+  Clock time cannot recover posture, resting duration or cuff technique. Preserve the measurement conditions when comparing paired readings.
 
   Pulse pressure is systolic minus diastolic **from the same verified reading**. Do not subtract the closest components merely because they are nearby in time. Daily median comparisons can describe day-level relationships; they do not recreate HealthKit correlation membership.
 

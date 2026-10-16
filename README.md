@@ -11,7 +11,10 @@ from hourly averages to daily totals.
 · **[Set up your database](#quickstart)**
 · **[Try the dashboard](https://app.pulshealth.com/demo)**
 
-PulsHealth is free and open source. The reference backend runs on your own
+PulsHealth is open source and free to download. The Pro subscription implementation
+adds optional unlimited export history and sync types; see the
+[plans and release setup](docs/appstore/subscriptions.md) for limits and
+remaining release gates. The reference backend runs on your own
 Docker host: PostgreSQL 17 + TimescaleDB, a Go ingest server, a read-only product
 API, Grafana dashboards, a web viewer, and an MCP server. The open
 [Puls Sync Protocol v1](docs/protocol/README.md) also lets you connect a

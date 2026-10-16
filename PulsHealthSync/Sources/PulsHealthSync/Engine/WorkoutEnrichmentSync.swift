@@ -198,6 +198,7 @@ extension HealthSyncEngine {
             return
         }
 
+        guard await allowsSync(types: [typeID]) else { return }
         let config = await store.configuration
         // Self-gate on the relevant config flag; a disabled phase is a no-op.
         switch kind {
@@ -260,7 +261,7 @@ extension HealthSyncEngine {
             fullRecomputeThrough: state.fullRecomputeThrough,
             now: now
         )
-        let from = schedule.from
+        let from = await limitedSyncStart(schedule.from)
         guard from <= now else { return }
 
         let runStart = ContinuousClock.now
@@ -394,6 +395,12 @@ extension HealthSyncEngine {
         var predicates = [
             HKQuery.predicateForSamples(withStart: endedAfter, end: nil, options: .strictEndDate),
         ]
+        if let earliest = await accessPolicy().earliestDate() {
+            // Match the raw sweep: a workout crossing the plan boundary is
+            // excluded in full, including its older route and sensor points.
+            predicates.append(HKQuery.predicateForSamples(
+                withStart: earliest, end: nil, options: .strictStartDate))
+        }
         if let readEnd {
             // An export's engine: follow only the workouts its raw sweep
             // exported, which are the ones that started before the bound.

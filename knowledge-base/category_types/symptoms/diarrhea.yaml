@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierDiarrhea"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Diarrhea"
-short_description: "Tracks episodes of diarrhea and loose stools."
-icon: "circle.fill"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierDiarrhea
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Diarrhea
+short_description: 'Understand diarrhea in Apple Health: severity labels, useful symptom history and recording
+  limitations.'
+icon: circle.fill
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "Symptom not experienced"
-  - value: 1
-    name: "present"
-    description: "Symptom present - mild"
-  - value: 2
-    name: "present"
-    description: "Symptom present - moderate"
-  - value: 3
-    name: "present"
-    description: "Symptom present - severe"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not an absent report.
+- value: 1
+  name: notPresent
+  description: Symptom explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Subjectively mild symptom severity.
+- value: 3
+  name: moderate
+  description: Subjectively moderate symptom severity.
+- value: 4
+  name: severe
+  description: Subjectively severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,92 +42,123 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Diarrhea is defined as loose, watery stools occurring three or more times per day. This HealthKit category type enables users to track diarrhea episodes and their severity, providing important data for identifying triggers, monitoring hydration status, and guiding clinical evaluation.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; logging interfaces depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  Diarrhea is classified by duration:
-  - **Acute diarrhea**: Less than 14 days (usually infectious or dietary)
-  - **Persistent diarrhea**: 14-30 days
-  - **Chronic diarrhea**: Greater than 30 days (requires investigation)
 
-  Common causes of acute diarrhea:
-  - Viral gastroenteritis (norovirus, rotavirus)
-  - Bacterial infections (Salmonella, E. coli, Campylobacter)
-  - Food poisoning
-  - Medication side effects (antibiotics, metformin)
-  - Dietary indiscretion
+  Diarrhea records reported symptom severity in Apple Health. Its category value is not a stool count, fluid-loss
+  estimate or laboratory result.
 
-  Common causes of chronic diarrhea:
-  - Irritable bowel syndrome (IBS-D)
-  - Inflammatory bowel disease (Crohn's, ulcerative colitis)
-  - Celiac disease
-  - Lactose intolerance
-  - Small intestinal bacterial overgrowth (SIBO)
-  - Microscopic colitis
-  - Bile acid malabsorption
-  - Chronic pancreatitis
 
-  ## When to Seek Medical Attention
-  Users should seek immediate medical care when diarrhea:
-  - Is accompanied by signs of severe dehydration (extreme thirst, minimal urination, dizziness)
-  - Contains blood or appears black/tarry
-  - Is accompanied by fever above 102F (39C)
-  - Causes severe abdominal pain
-  - Persists for more than 2 days in adults (or 24 hours in children)
-  - Occurs after recent antibiotic use (concern for C. difficile)
-  - Develops during or after international travel
+  ## What do the severity labels mean?
 
-  Seek routine evaluation when:
-  - Diarrhea is chronic (lasting more than 4 weeks)
-  - Associated with unexplained weight loss
-  - Alternates with constipation
-  - Disrupts work or daily activities frequently
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Food-related triggers (lactose, gluten, FODMAPs)
-  - Medication-associated diarrhea
-  - Travel-related episodes
-  - Stress and anxiety correlations
-  - Menstrual cycle patterns
-  - Post-infectious IBS development
-  - Treatment response (dietary changes, medications)
+  | Code | Label | Interpretation |
 
-  ## Caveats & Limitations
-  - Frequency of bowel movements not captured numerically
-  - Stool consistency (Bristol Scale) not recorded
-  - Volume of output not assessed (important for dehydration risk)
-  - Cannot differentiate between secretory, osmotic, or inflammatory causes
-  - Blood or mucus presence not captured
-  - Specific food triggers require additional logging
-  - Hydration status not monitored
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Explicitly reported absent |
+
+  | 2 | mild | Subjectively mild |
+
+  | 3 | moderate | Subjectively moderate |
+
+  | 4 | severe | Subjectively severe |
+
+
+  Apple uses HKCategoryValueSeverity for this type. Unspecified and notPresent mean different things. The codes
+  identify labels; an average such as 2.5 is not a symptom measurement or a validated clinical score. Missing
+  entries are unknown, not automatically notPresent.
+
+
+  ## Can these entries show how often diarrhea occurred?
+
+
+  Several records may be updates to the same period of illness, while one record may summarize a whole day.
+  Without an explicit diary, record count cannot establish stool frequency. The type also does not encode stool
+  consistency, blood, urgency or infection status. Keep these distinctions visible when summarizing a history.
+
+
+  Nausea, Vomiting and Abdominal Cramps can be recorded separately. Their presence on the same day describes
+  co-reported symptoms, not a confirmed stomach infection. A Dietary Water history can show what was logged
+  as intake but cannot calculate fluid lost through diarrhea or demonstrate adequate hydration.
+
+
+  ## How should repeated entries be read?
+
+
+  This is a logged observation, with no guaranteed recording frequency. Gaps between start times describe the
+  saved logging history, not symptom-free intervals. Source changes, retrospective entry and overlapping records
+  can change the apparent pattern. A sample''s start and end describe the interval the source saved; they do
+  not establish a distinct clinical episode or continuous symptom duration.
+
+
+  When summarizing a history, keep the category labels, reporting dates and source visible. Count explicitly
+  absent observations separately from missing days. Review unexpected labels or repeated overlapping records
+  before treating them as changes in health.
+
+
+  ## When does this need medical attention?
+
+
+  Seek prompt medical advice for bloody stools, severe abdominal pain, dehydration or persistent diarrhea.
+  Children and people at higher risk may need earlier assessment. A mild entry or an empty timeline does not
+  establish that illness is safe to manage without help.
+
+
+  ## What can the available example establish?
+
+
+  No records of this type were found in the database research window, so severity frequencies, source differences
+  and logging patterns could not be measured. This HealthKit type is not listed in the current PulsHealth sync
+  catalog. Database coverage therefore cannot establish whether corresponding records exist in Apple Health,
+  and an empty timeline does not establish symptom absence.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierAbdominalCramps"
-    relationship: "Cramps commonly accompany diarrheal episodes"
-  - identifier: "HKCategoryTypeIdentifierNausea"
-    relationship: "Nausea and diarrhea often co-occur in gastroenteritis"
-  - identifier: "HKCategoryTypeIdentifierVomiting"
-    relationship: "Vomiting with diarrhea suggests infectious gastroenteritis"
-  - identifier: "HKCategoryTypeIdentifierFever"
-    relationship: "Fever with diarrhea indicates infectious etiology"
-  - identifier: "HKCategoryTypeIdentifierConstipation"
-    relationship: "Alternating diarrhea and constipation suggests IBS"
+- identifier: HKCategoryTypeIdentifierVomiting
+  relationship: Separate symptom; co-reporting does not establish infection or fluid loss.
+- identifier: HKCategoryTypeIdentifierNausea
+  relationship: Feeling sick is distinct from vomiting and diarrhea.
+- identifier: HKCategoryTypeIdentifierAbdominalCramps
+  relationship: Separately recorded abdominal symptom context.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierDiarrhea"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierdiarrhea"
-    type: "official"
-  - title: "Diarrhea - NIDDK"
-    url: "https://www.niddk.nih.gov/health-information/digestive-diseases/diarrhea"
-    type: "medical"
-  - title: "Chronic Diarrhea - ACG Clinical Guidelines"
-    url: "https://gi.org/topics/diarrhea-acute-and-chronic/"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Diarrhea — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/diarrhea
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Diarrhea symptoms and causes — NIDDK
+  url: https://www.niddk.nih.gov/health-information/digestive-diseases/diarrhea/symptoms-causes
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Diarrhea in Apple Health: severity and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: diarrhea
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage and primary sources reviewed; empirical analysis skipped because no focal records were
+    present in the bounded database inventory. Type is not listed in the current sync catalog; database absence
+    cannot establish phone or symptom absence. Severity codes are labels, not numeric clinical measurements.
+    Cadence, source comparisons and related-type associations remain unmeasured; saved intervals do not establish
+    clinical episodes.

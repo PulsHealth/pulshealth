@@ -61,8 +61,6 @@ description: '## What is Headphone Audio Exposure Event?
 
   | Cadence between events | Unavailable without event records |
 
-  | Workout or sleep differences | No event-based comparison available |
-
   | Was listening always safe? | Cannot be established from absent alerts |
 
   | Were notifications disabled? | Configuration history is not stored in these rows |
@@ -105,8 +103,7 @@ description: '## What is Headphone Audio Exposure Event?
 
 
   When actual events are available, inspect the associated audio level and duration metadata, source and nearby
-  numeric observations. Workout or sleep overlap provides timing context, not a diagnosis or an explanation of why
-  a notification occurred. An event interval is not interchangeable with seven days of continuously observed listening.'
+  numeric observations. An event interval is not interchangeable with seven days of continuously observed listening.'
 metadata_keys:
 - key: HKMetadataKeyAudioExposureLevel
   description: Associated event sound level; distinct from category value.

@@ -1,19 +1,19 @@
 import { notFound } from "next/navigation";
 import { RepoMarkdown, readRepoFile, stripLeadingH1 } from "@/lib/markdown";
 
-const CONTENT_PATH = "site/content/workout-to-watch/support.md";
-const description = "Help with Watch Workout Pro, Smart Add, Apple Watch scheduling, sharing, and the Pro monthly subscription.";
+const CONTENT_PATH = "site/content/watchworkoutpro/support.md";
+const description = "Help with Watch Workout Pro, Apple Intelligence, Apple Watch scheduling, sharing, and the Pro monthly subscription.";
 
 export const metadata = {
   title: "Watch Workout Pro Support",
   description,
-  alternates: { canonical: "/workout-to-watch/support/" },
-  openGraph: { title: "Watch Workout Pro Support", description, url: "/workout-to-watch/support/" },
+  alternates: { canonical: "/watch-workout-pro/support/" },
+  openGraph: { title: "Watch Workout Pro Support", description, url: "/watch-workout-pro/support/" },
   twitter: { card: "summary", title: "Watch Workout Pro Support", description },
 };
 
-// Separate product pages, intentionally unlisted in navigation, search, and sitemap.
-export default function WorkoutToWatchPage() {
+// Product-specific content; separate from the PulsHealth app policy.
+export default function WatchWorkoutProPage() {
   const raw = readRepoFile(CONTENT_PATH);
   if (!raw) notFound();
   const { body } = stripLeadingH1(raw);
@@ -21,7 +21,7 @@ export default function WorkoutToWatchPage() {
   return (
     <main className="min-h-screen bg-background pb-20">
       <div className="container mx-auto max-w-3xl px-4 py-12">
-        <p className="text-sm font-medium text-muted-foreground mb-2">Watch Workout Pro · Powered by Puls</p>
+        <a href="/watch-workout-pro/" className="mb-5 inline-block text-sm font-medium text-brand hover:underline">Watch Workout Pro</a>
         <h1 className="text-4xl font-bold tracking-tight mb-8">Watch Workout Pro Support</h1>
         <div className="prose prose-zinc dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline">
           <RepoMarkdown source={body} docRepoPath={CONTENT_PATH} />

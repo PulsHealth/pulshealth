@@ -360,6 +360,7 @@ public final class HealthExplorer: Sendable {
     /// summary. The predicate wants era/year/month/day components carrying
     /// the calendar, as in `ActivitySummarySync`.
     private func activitySummaryDays(from: Date, to: Date, calendar: Calendar) async throws -> [Date] {
+        let calendar = ActivitySummaryCalendar.gregorian(calendar)
         let units: Set<Calendar.Component> = [.era, .year, .month, .day]
         var startComps = calendar.dateComponents(units, from: from)
         startComps.calendar = calendar

@@ -12,10 +12,13 @@ const columns: { heading: string; links: FooterLink[] }[] = [
       { title: "Get the App", href: APP_STORE_URL, external: true },
       { title: "PulsHealth Database", href: "https://app.pulshealth.com/signup", external: true },
       { title: "Self-hosting", href: "/server" },
+      { title: "PulsHealth Pro", href: "/pro" },
+      { title: "App pricing", href: "/pricing" },
       { title: "Documentation", href: "/docs" },
       { title: "Sync Protocol", href: "/docs/protocol" },
       { title: "Use It With AI", href: "/docs/ai" },
       { title: "About", href: "/about" },
+      { title: "Watch Workout Pro", href: "/watch-workout-pro/" },
     ],
   },
   {

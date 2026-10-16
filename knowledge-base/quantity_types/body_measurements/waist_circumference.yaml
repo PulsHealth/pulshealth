@@ -95,8 +95,7 @@ description: '## What does waist circumference tell you?
   them away.
 
 
-  A reading taken during a workout or recorded sleep interval supplies timing context. It does not measure a within-workout
-  or sleep-stage response. Comparing waist with weight or BMI on the same reporting day can show co-occurrence,
+  Comparing waist with weight or BMI on the same reporting day can show co-occurrence,
   but does not prove simultaneous measurement or explain the cause of a change.
 
 
@@ -145,7 +144,7 @@ recording_behavior:
   reviewed_on: '2026-10-14'
   shape: A discrete length measurement; anatomical site and tape protocol are producer or user choices.
   cadence: Occasional measurement or import cadence, without a HealthKit-wide schedule.
-  context: A measurement timestamp overlapping exercise or sleep is not a physiological response within that context.
+  context: "Compare measurements made at the same anatomical site with a consistent tape-measure method and posture."
   coverage: No raw records in the verified reporting-year snapshot; measured distributions and paired relationships
     are unavailable.
   aggregation: Use comparable source-specific measurements, not a sum of lengths.

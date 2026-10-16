@@ -290,6 +290,7 @@ extension HealthSyncEngine {
             return
         }
         let typeID = agg.typeIdentifier
+        guard await allowsSync(types: [typeID]) else { return }
         guard let descriptor = HealthTypeCatalog.descriptor(for: typeID),
               descriptor.kind == .quantity else {
             await eventLog.log(.error, type: typeID, "Aggregate \(agg.summaryLabel): not a quantity type")
@@ -579,8 +580,10 @@ extension HealthSyncEngine {
                 failures.append("\(descriptor.identifier): no allowed functions (unknown aggregation style)")
                 continue
             }
-            let quantityType = HKQuantityType(
-                HKQuantityTypeIdentifier(rawValue: descriptor.identifier))
+            guard let quantityType = descriptor.sampleType as? HKQuantityType else {
+                failures.append("\(descriptor.identifier): unavailable on this runtime")
+                continue
+            }
             for function in functions {
                 combos += 1
                 let queryDescriptor = HKStatisticsCollectionQueryDescriptor(

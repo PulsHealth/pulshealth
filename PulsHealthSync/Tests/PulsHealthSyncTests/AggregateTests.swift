@@ -57,8 +57,10 @@ import Testing
         let start = end.addingTimeInterval(-86_400)
         var combos = 0
         for descriptor in HealthTypeCatalog.quantityTypes {
-            let quantityType = HKQuantityType(
-                HKQuantityTypeIdentifier(rawValue: descriptor.identifier))
+            guard let quantityType = descriptor.sampleType as? HKQuantityType else {
+                Issue.record("\(descriptor.identifier) is unavailable on this runtime")
+                continue
+            }
             for function in HealthTypeCatalog.allowedAggregateFunctions(for: descriptor.identifier) {
                 _ = HKStatisticsCollectionQueryDescriptor(
                     predicate: .quantitySample(
@@ -586,5 +588,97 @@ import Testing
         #expect(await store.deviceID == "legacy-device")
         #expect(await store.state(for: "type-a").totalSamplesExported == 42)
         #expect(await store.aggregateStates.isEmpty)
+    }
+}
+
+// Unknown identifiers must exercise the actual HealthKit factories: a mock
+// would miss the Objective-C exception raised by nonoptional initializers.
+@Suite struct UnsupportedHealthTypeTests {
+    private let unknown = "HKQuantityTypeIdentifierPulsHealthUnknownFutureType"
+
+    @Test func unknownQuantityAndCategoryReturnNilEvenWhenOSGatePasses() {
+        for kind in [SampleKind.quantity, .category] {
+            let descriptor = HealthTypeDescriptor(
+                identifier: unknown, displayName: "Future type", kind: kind,
+                unitString: nil, group: .other, estimatedSamplesPerDay: 0,
+                minimumIOS: .baseline)
+            #expect(descriptor.minimumIOS.isAvailableOnThisOS)
+            #expect(descriptor.sampleType == nil)
+            #expect(!descriptor.isAvailableOnThisOS)
+        }
+        #expect(HealthTypeCatalog.allowedAggregateFunctions(for: unknown).isEmpty)
+    }
+
+    @Test func knownTypesStillResolveAndFutureOSGateStillApplies() {
+        let steps = HealthTypeDescriptor(
+            identifier: "HKQuantityTypeIdentifierStepCount", displayName: "Steps", kind: .quantity,
+            unitString: "count", group: .activity, estimatedSamplesPerDay: 1,
+            minimumIOS: .baseline)
+        #expect(steps.sampleType is HKQuantityType)
+        #expect(steps.isAvailableOnThisOS)
+        let future = HealthTypeDescriptor(
+            identifier: steps.identifier, displayName: steps.displayName, kind: steps.kind,
+            unitString: steps.unitString, group: steps.group, estimatedSamplesPerDay: 1,
+            minimumIOS: .init(999))
+        #expect(future.sampleType == nil)
+        #expect(!future.isAvailableOnThisOS)
+    }
+
+    @Test func unavailableAggregateFailsBeforeDeliveringAnyEmptyBuckets() async {
+        let config = AggregateConfig(typeIdentifier: unknown, function: .sum)
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        do {
+            _ = try await AggregateQuery.bucketsRecovering(
+                for: config, unit: .count(), canonicalAnchor: start,
+                calendar: Calendar(identifier: .gregorian),
+                chunk: DateInterval(start: start, duration: 86_400),
+                healthStore: HKHealthStore(),
+                onRecoveryStart: { _ in Issue.record("Unavailable types must not enter query recovery") },
+                onChunk: { _, _ in Issue.record("Unavailable types must not deliver overwrite buckets") })
+            Issue.record("Expected unavailable type to throw")
+        } catch {
+            #expect(error as? HealthExploreError == .unknownType(unknown))
+        }
+    }
+
+    @Test func unavailableAggregateKeepsSavedConfigurationAndWatermark() async throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("puls-unsupported-type-\(UUID())", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        let file = dir.appendingPathComponent("sync-state.json")
+        // A fresh store with no server or token performs no init rewrite.
+        #expect(!FileManager.default.fileExists(atPath: file.path))
+        let config = AggregateConfig(typeIdentifier: unknown, function: .sum)
+        var configuration = await store.configuration
+        configuration.aggregates = [config]
+        await store.setConfiguration(configuration)
+        let watermark = Date(timeIntervalSince1970: 1_700_000_000)
+        await store.recordAggregateUpload(
+            configID: config.id, newComputedThrough: watermark, buckets: 5, bytes: 100)
+        let engine = HealthSyncEngine(
+            store: store, eventLog: SyncEventLog(directory: dir), wakeLog: WakeLog(directory: dir))
+        await engine.syncAggregate(configID: config.id)
+        let state = await store.aggregateState(for: config.id)
+        #expect(state.computedThrough == watermark)
+        #expect(state.totalBucketsUploaded == 5)
+        #expect(state.totalBatchesUploaded == 1)
+        #expect(await store.configuration.aggregates == [config])
+        // Wait for both scheduled writers; persistNow() leaves the store's
+        // pending task alive, and the rejection also schedules an event log.
+        let logFile = dir.appendingPathComponent("event-log.json")
+        let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+        while (!FileManager.default.fileExists(atPath: file.path)
+            || !FileManager.default.fileExists(atPath: logFile.path)), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        try #require(FileManager.default.fileExists(atPath: file.path))
+        try #require(FileManager.default.fileExists(atPath: logFile.path))
+        let reloaded = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        let persisted = await reloaded.aggregateState(for: config.id)
+        #expect(persisted.computedThrough == watermark)
+        #expect(persisted.totalBucketsUploaded == 5)
+        #expect(persisted.totalBatchesUploaded == 1)
+        #expect(await reloaded.configuration.aggregates == [config])
     }
 }

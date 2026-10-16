@@ -80,7 +80,7 @@ description: '## What does Apple Health chloride intake record?
 
 
   Chloride has a role in fluid balance, but dietary entries do not measure sweat concentration, sweat volume or
-  blood electrolyte balance. A chloride timestamp during a workout may describe delayed logging or a daily summary.
+  blood electrolyte balance. A logged chloride amount may describe a serving or a daily summary.
   Water, sodium and potassium logs provide additional recorded context only when their portions and reporting days
   align.
 
@@ -89,8 +89,8 @@ description: '## What does Apple Health chloride intake record?
 
 
   The researched **365-day reporting window** contained no raw chloride samples and no stored chloride aggregates.
-  Recorded value ranges, unusually large entries, source-specific daily totals, logging gaps and workout or sleep
-  comparisons could not be measured. No empirical graph or nutrient-status conclusion is presented. Related measurements
+  Recorded value ranges, unusually large entries, source-specific daily totals and logging gaps
+  could not be measured. No empirical graph or nutrient-status conclusion is presented. Related measurements
   cannot supply an intake relationship without chloride observations.
 
 
@@ -155,7 +155,7 @@ recording_behavior:
   reviewed_on: '2026-10-14'
   shape: Cumulative mineral mass logged as consumed; sample size can represent a portion or summary.
   cadence: Source-specific entry or synchronization timing; not ingestion frequency or absorption.
-  context: Workout and sleep overlaps describe timestamps rather than physiological response.
+  context: "Retain the source’s chloride amount and nutrient definition; chloride is distinct from sodium and from the total mass of salt."
   coverage: Missing or partial logs do not establish zero intake or nutrient deficiency.
   aggregation: Sum compatible contributions within a source and reporting window after reviewing units, portions
     and duplicate imports; report logged-day coverage.

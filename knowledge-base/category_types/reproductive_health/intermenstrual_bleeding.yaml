@@ -95,7 +95,7 @@ description: '## Overview
 
 
   No records for this type were found in the selected database window, so logged-day patterns, interval lengths
-  and workout or sleep overlap were unavailable. This type is not in the current PulsHealth sync catalog; database
+  were unavailable. This type is not in the current PulsHealth sync catalog; database
   absence cannot establish its presence or absence in Apple Health on the phone. The review uses source documentation,
   with no measured recurrence chart.
 

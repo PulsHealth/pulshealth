@@ -97,8 +97,7 @@ description: '## Overview
   ## How does it relate to other health data?
 
   Cervical mucus, ovulation tests and temperature can be aligned to recorded cycle starts when enough observations
-  exist. Use source-aware dates and retain unknown days. Workout or sleep overlap is contextual only: a multiday
-  period interval can overlap both without showing activity-related changes in flow.
+  exist. Use source-aware dates and retain unknown days.
 
 
   ## What did the example data show?

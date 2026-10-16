@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierNightSweats"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Night Sweats"
-short_description: "Tracks episodes of excessive sweating during sleep"
-icon: "moon.fill"
-color: "#5856D6"
+identifier: HKCategoryTypeIdentifierNightSweats
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Night Sweats
+short_description: 'Night Sweats in Apple Health: saved category values, useful reporting context and limits
+  of symptom histories.'
+icon: moon.fill
+color: '#5856D6'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "No night sweats experienced"
-  - value: 1
-    name: "present"
-    description: "Mild night sweats - light sweating, may not require changing clothes"
-  - value: 2
-    name: "moderate"
-    description: "Moderate night sweats - noticeable sweating, may need to change clothes"
-  - value: 3
-    name: "severe"
-    description: "Severe night sweats - drenching sweats requiring bedding/clothing change"
+- value: 0
+  name: unspecified
+  description: Severity was not specified.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent.
+- value: 2
+  name: mild
+  description: Subjectively mild severity.
+- value: 3
+  name: moderate
+  description: Subjectively moderate severity.
+- value: 4
+  name: severe
+  description: Subjectively severe severity.
 ios_introduced:
-  version: "13.6"
+  version: '14.0'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,110 +42,109 @@ writable: true
 requires_authorization: true
 sensitive_data: true
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging with severity"
-  - name: "Apple Watch"
-    capability: "Quick symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Night sweats (sleep hyperhidrosis) are episodes of excessive sweating during
-  sleep that are unrelated to an overheated sleeping environment. Unlike normal
-  perspiration, true night sweats are severe enough to drench sleepwear and
-  bedding. This data type enables tracking of nocturnal sweating episodes for
-  clinical correlation.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; available logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  - **Menopause Indicator**: Common vasomotor symptom during perimenopause and
-    menopause, affecting up to 75% of individuals
-  - **Infection Screening**: Classic symptom of tuberculosis and certain
-    bacterial infections
-  - **Malignancy Warning**: Part of "B symptoms" in lymphoma (with fever,
-    weight loss)
-  - **Medication Effects**: Side effect of many medications
-  - **Hormone Therapy Monitoring**: Track response to treatment
 
-  ## Clinical Context: Causes of Night Sweats
-  **Common Causes:**
-  - Menopause/perimenopause (most common in women 45-55)
-  - Infections (TB, HIV, endocarditis, osteomyelitis)
-  - Medications (antidepressants, hormone therapies, hypoglycemic agents)
-  - Hypoglycemia (especially in diabetics on insulin)
-  - Anxiety and stress disorders
+  Night Sweats stores reported symptom severity. It is not a sweat-volume measurement or an automatically detected
+  Apple Watch event.
 
-  **Serious Causes Requiring Evaluation:**
-  - Lymphoma and other malignancies
-  - Tuberculosis
-  - Endocarditis
-  - Pheochromocytoma
-  - Carcinoid syndrome
-  - HIV/AIDS
 
-  ## When to Seek Medical Attention
-  **Red Flags:**
-  - Night sweats with unexplained weight loss
-  - Night sweats with persistent fever
-  - Night sweats with lymph node enlargement
-  - Severe night sweats in men or premenopausal women
-  - Night sweats with persistent cough or hemoptysis
-  - New night sweats with no clear cause
-  - Night sweats significantly disrupting sleep quality
+  ## What do the saved values mean?
 
-  **Also Consider Evaluation For:**
-  - Night sweats not responding to menopause treatment
-  - Night sweats with new medications
-  - Night sweats with symptoms of infection
 
-  ## Pattern Recognition
-  Tracking night sweats can reveal:
-  - Frequency and severity trends
-  - Correlation with menstrual cycle
-  - Medication timing relationships
-  - Environmental factors (room temperature, bedding)
-  - Relationship to evening activities (exercise, alcohol)
-  - Treatment effectiveness
-  - Correlation with daytime hot flashes
-  - Sleep quality impact
+  | Code | Label | Meaning |
 
-  ## Caveats & Limitations
-  - Subjective severity assessment
-  - May not capture all episodes if user sleeps through them
-  - Cannot distinguish between causes
-  - Environmental factors (hot room) may confound data
-  - Does not capture associated symptoms in same record
-  - No integration with room temperature or humidity data
-  - Recall may be imperfect when logging in morning
-metadata_keys:
-  - key: "HKMetadataKeyExternalUUID"
-    description: "External identifier for cross-referencing symptom entries"
-  - key: "HKMetadataKeyTimeZone"
-    description: "Time zone where symptom was logged"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing across devices"
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Subjectively mild severity |
+
+  | 3 | moderate | Subjectively moderate severity |
+
+  | 4 | severe | Subjectively severe severity |
+
+
+  Unspecified is not notPresent. The mild, moderate and severe labels reflect the report; their integer codes
+  are not a calibrated clinical scale and should not be averaged as measurements.
+
+
+  ## Which night does a report belong to?
+
+
+  An overnight experience can span two calendar dates, and a report may be entered the following morning. Use
+  the recorded interval and the source’s reporting convention when organizing a history; do not assume the
+  save time is the time the sweating began. A [Sleep Analysis](/knowledge-base/types/HKCategoryTypeIdentifierSleepAnalysis/)
+  interval can help identify the relevant night if both were recorded.
+
+
+  The category does not record room temperature, bedding, awakenings or whether clothing became soaked. NHS
+  guidance distinguishes drenching night sweats in a cool sleeping environment from simply being too warm.
+  Recurrent episodes that wake or worry you, or episodes accompanied by unexplained weight loss or other symptoms,
+  merit medical review. [Hot Flashes](/knowledge-base/types/HKCategoryTypeIdentifierHotFlashes/) remains a
+  separate reported symptom.
+
+
+  ## How should a recorded history be read?
+
+
+  Entries follow the source’s logging behavior, with no fixed sensor sampling interval. Missing dates mean
+  no available report, rather than an explicit negative observation. A saved interval need not describe a continuous
+  episode, and overlapping records from different sources should be reviewed before counting reports or days.
+
+
+  ## Is this type available in PulsHealth?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. The selected database review contained
+  no corresponding records; that does not establish whether entries exist in Apple Health. No example distribution
+  or logging cadence could be measured.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierHotFlashes"
-    relationship: "Daytime equivalent; often co-occur in menopause"
-  - identifier: "HKCategoryTypeIdentifierSleepChanges"
-    relationship: "Night sweats frequently disrupt sleep"
-  - identifier: "HKCategoryTypeIdentifierSleepAnalysis"
-    relationship: "Objective sleep data showing disruption patterns"
-  - identifier: "HKCategoryTypeIdentifierFever"
-    relationship: "Important to differentiate; infection indicator"
-  - identifier: "HKCategoryTypeIdentifierMoodChanges"
-    relationship: "Sleep disruption affects mood"
-  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
-    relationship: "Objective temperature data for correlation"
+- identifier: HKCategoryTypeIdentifierSleepAnalysis
+  relationship: Recorded sleep intervals can provide overnight date context, not sweat measurement.
+- identifier: HKCategoryTypeIdentifierHotFlashes
+  relationship: A distinct symptom that may be reported separately.
+- identifier: HKCategoryTypeIdentifierSleepChanges
+  relationship: Separate report of changed sleep; neither label measures awakenings.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierNightSweats"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiernightsweats"
-    type: "official"
-  - title: "Night Sweats - Mayo Clinic"
-    url: "https://www.mayoclinic.org/symptoms/night-sweats/basics/causes/sym-20050768"
-    type: "medical"
-  - title: "Vasomotor Symptoms Management - The Menopause Society"
-    url: "https://www.menopause.org/for-professionals"
-    type: "medical"
-  - title: "B Symptoms in Lymphoma - Leukemia & Lymphoma Society"
-    url: "https://www.lls.org/"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Night Sweats — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/nightsweats
+  type: official
+- title: Symptom severity values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Night sweats — NHS
+  url: https://www.nhs.uk/symptoms/night-sweats/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Night Sweats in Apple Health: reports and overnight timing'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: night-sweats
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified no observations across bounded quantity, category, aggregate and workout-series inventories;
+    this identifier is not listed in the current sync catalog. Apple Health absence cannot be inferred. No
+    empirical frequencies, cadence or sleep associations are available. Overnight timing and retrospective
+    logging require explicit date alignment; category codes do not measure sweat volume or detect awakenings.

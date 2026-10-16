@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierSinusCongestion"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Sinus Congestion"
-short_description: "Tracks episodes and severity of nasal and sinus congestion"
-icon: "nose.fill"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierSinusCongestion
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Sinus Congestion
+short_description: 'Sinus Congestion in Apple Health: understand severity labels, logging intervals and the
+  difference between reported symptoms and measurements.'
+icon: nose.fill
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "No sinus congestion; normal nasal breathing"
-  - value: 1
-    name: "present"
-    description: "Mild congestion - slight stuffiness, can breathe through nose"
-  - value: 2
-    name: "moderate"
-    description: "Moderate congestion - noticeable obstruction, partial mouth breathing"
-  - value: 3
-    name: "severe"
-    description: "Severe congestion - near-complete obstruction, mouth breathing required"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not a negative observation.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Reported mild symptom severity.
+- value: 3
+  name: moderate
+  description: Reported moderate symptom severity.
+- value: 4
+  name: severe
+  description: Reported severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,109 +42,117 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging with severity"
-  - name: "Apple Watch"
-    capability: "Quick symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Sinus congestion is the sensation of nasal stuffiness or blockage caused by
-  swollen nasal tissues and blood vessels, often accompanied by mucus
-  accumulation. This data type enables tracking of congestion episodes for
-  pattern identification and treatment monitoring.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  - **Infection Tracking**: Common symptom of viral URI, sinusitis, and
-    respiratory infections
-  - **Allergy Monitoring**: Key symptom of allergic rhinitis; reveals
-    environmental triggers
-  - **Sleep Quality**: Congestion significantly impacts sleep and can
-    worsen sleep apnea
-  - **Chronic Conditions**: Persistent congestion may indicate chronic
-    sinusitis or structural issues
-  - **Treatment Response**: Monitor effectiveness of decongestants, nasal
-    steroids, or antihistamines
 
-  ## Clinical Context
-  **Common Causes:**
-  - Viral upper respiratory infection (common cold)
-  - Acute or chronic sinusitis
-  - Allergic rhinitis
-  - Non-allergic rhinitis
-  - Nasal polyps
-  - Deviated septum
-  - Environmental irritants
+  Sinus Congestion in Apple Health stores a reported symptom with a severity label. It is not a measurement
+  of airflow, sinus pressure or the extent of an infection.
 
-  **Contributing Factors:**
-  - Dry air
-  - Weather changes
-  - Hormonal changes (pregnancy rhinitis)
-  - Medications (rhinitis medicamentosa from overuse of nasal decongestants)
-  - Smoking or secondhand smoke exposure
 
-  ## When to Seek Medical Attention
-  - Congestion lasting more than 10 days
-  - Severe facial pain or pressure
-  - High fever with sinus symptoms
-  - Symptoms worsening after initial improvement
-  - Recurrent episodes of sinusitis
-  - Congestion not responding to OTC treatments
-  - Unilateral congestion (could indicate structural problem)
-  - Congestion affecting sleep quality significantly
-  - Vision changes or severe headache with congestion
-  - Symptoms suggesting bacterial sinusitis
+  ## What do the saved values mean?
 
-  ## Pattern Recognition
-  Tracking sinus congestion can reveal:
-  - Seasonal patterns (allergic rhinitis)
-  - Environmental triggers (dust, mold, pet dander)
-  - Duration of illness episodes
-  - Nighttime vs. daytime patterns
-  - Response to different treatments
-  - Correlation with weather or air quality
-  - Relationship to sleep quality
-  - Recurrent infection patterns
 
-  ## Caveats & Limitations
-  - Subjective severity assessment
-  - Cannot distinguish between nasal and sinus involvement
-  - Does not capture cause (infectious vs. allergic)
-  - Cannot differentiate unilateral vs. bilateral
-  - Does not record mucus characteristics
-  - Brief episodes may not be logged
-  - Environmental context not captured
-  - May not distinguish from other nasal symptoms
-metadata_keys:
-  - key: "HKMetadataKeyExternalUUID"
-    description: "External identifier for cross-referencing symptom entries"
-  - key: "HKMetadataKeyTimeZone"
-    description: "Time zone where symptom was logged"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing across devices"
+  | Code | Label | Interpretation |
+
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Reported mild severity |
+
+  | 3 | moderate | Reported moderate severity |
+
+  | 4 | severe | Reported severe severity |
+
+
+  Apple uses HKCategoryValueSeverity for this type. Unspecified is not the same as notPresent, and a missing
+  record is neither. The integers identify labels; numerical averages and physiological reference ranges do
+  not apply.
+
+
+  ## Does congestion establish sinusitis?
+
+
+  No. The category records a symptom rather than a diagnosis. Its labels do not identify an infection, document
+  imaging findings or specify which sinus is affected. Notes about the sensation and its effect on daily activities
+  can make the history more informative without changing the category value.
+
+
+  [Runny Nose](/knowledge-base/types/HKCategoryTypeIdentifierRunnyNose/) and [Headache](/knowledge-base/types/HKCategoryTypeIdentifierHeadache/)
+  are separate reports. Preserve them independently instead of using one category as a substitute for the others.
+
+
+  ## How should changing severity be read?
+
+
+  A move from mild to moderate is a change in the reported label, not a calibrated change in pressure or airflow.
+  Compare like sources and show the recorded labels directly. Averaging the codes hides the difference between
+  unspecified severity, explicitly absent symptoms and reported symptoms.
+
+
+  A gap in the history gives no information about congestion. An explicit notPresent observation provides a
+  different kind of evidence from an unlogged day.
+
+
+  ## How should recording intervals be interpreted?
+
+
+  This is a logged symptom, with no fixed sensor sampling schedule. Start-to-start gaps describe when observations
+  were saved. A sample’s start and end times describe the interval supplied by its source; their difference
+  does not establish the full duration of a clinical episode. Repeated or overlapping records need review before
+  counting episodes.
+
+
+  This category is not currently listed in the PulsHealth sync catalog. No observations were present in the
+  reviewed user data, so recorded severity frequencies, source differences and logging intervals could not
+  be measured. That database coverage does not establish whether entries exist in Apple Health.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierRunnyNose"
-    relationship: "Often co-occur; congestion may precede or follow rhinorrhea"
-  - identifier: "HKCategoryTypeIdentifierHeadache"
-    relationship: "Sinus headache common with congestion"
-  - identifier: "HKCategoryTypeIdentifierSoreThroat"
-    relationship: "Post-nasal drip can cause throat irritation"
-  - identifier: "HKCategoryTypeIdentifierCoughing"
-    relationship: "Post-nasal drip triggers cough"
-  - identifier: "HKCategoryTypeIdentifierFever"
-    relationship: "Suggests infectious cause"
-  - identifier: "HKCategoryTypeIdentifierSleepChanges"
-    relationship: "Congestion often disrupts sleep"
-  - identifier: "HKCategoryTypeIdentifierSnoring"
-    relationship: "Congestion commonly causes or worsens snoring"
+- identifier: HKCategoryTypeIdentifierRunnyNose
+  relationship: Distinct symptom; congestion does not imply a runny-nose observation.
+- identifier: HKCategoryTypeIdentifierHeadache
+  relationship: Separate symptom label, not a measurement of sinus pressure.
+- identifier: HKCategoryTypeIdentifierSoreThroat
+  relationship: Separate symptom history without a built-in causal link.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierSinusCongestion"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiersinuscongestion"
-    type: "official"
-  - title: "Sinusitis Guidelines - AAO-HNS"
-    url: "https://www.entnet.org/quality-practice/quality-products/clinical-practice-guidelines/"
-    type: "medical"
-  - title: "Allergic Rhinitis - American Academy of Allergy"
-    url: "https://www.aaaai.org/conditions-treatments/allergies/rhinitis"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Sinus Congestion — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/sinuscongestion
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Category samples — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorysample
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Sinus Congestion in Apple Health: severity and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: sinus-congestion
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: No focal observations in the verified database snapshot; empirical label frequencies, sources,
+    cadence and relationships are unavailable. Type is not in the current sync catalog; database absence does
+    not establish Apple Health absence. Category codes are subjective labels, not physiological measurements.
+    Source intervals are not verified clinical episodes. Workout and sleep facets have no measured comparison;
+    public discussion is included only where specifically useful.

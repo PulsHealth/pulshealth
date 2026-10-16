@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierSoreThroat"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Sore Throat"
-short_description: "Tracks episodes and severity of throat pain or irritation"
-icon: "mouth.fill"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierSoreThroat
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Sore Throat
+short_description: 'Sore Throat in Apple Health: understand severity labels, logging intervals and the difference
+  between reported symptoms and measurements.'
+icon: mouth.fill
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "No sore throat or throat discomfort"
-  - value: 1
-    name: "present"
-    description: "Mild sore throat - slight scratchiness or irritation"
-  - value: 2
-    name: "moderate"
-    description: "Moderate sore throat - noticeable pain, uncomfortable swallowing"
-  - value: 3
-    name: "severe"
-    description: "Severe sore throat - significant pain, difficulty swallowing"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not a negative observation.
+- value: 1
+  name: notPresent
+  description: Symptom was explicitly reported absent for this observation.
+- value: 2
+  name: mild
+  description: Reported mild symptom severity.
+- value: 3
+  name: moderate
+  description: Reported moderate symptom severity.
+- value: 4
+  name: severe
+  description: Reported severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,114 +42,122 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging with severity"
-  - name: "Apple Watch"
-    capability: "Quick symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Sore throat (pharyngitis) is pain, scratchiness, or irritation of the throat
-  that often worsens when swallowing. It is one of the most common symptoms
-  prompting medical visits. This data type enables tracking of throat symptoms
-  for illness monitoring and clinical correlation.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  - **Infection Indicator**: Common symptom of viral and bacterial upper
-    respiratory infections
-  - **Strep Detection**: Pattern and severity help distinguish strep throat
-    from viral causes
-  - **Illness Duration**: Tracking helps monitor recovery timeline
-  - **Environmental Factors**: May indicate allergies, dry air, or irritant
-    exposure
-  - **Voice Health**: Important for those whose work depends on voice
 
-  ## Clinical Context
-  **Common Causes:**
-  - Viral infections (common cold, flu, mononucleosis, COVID-19)
-  - Bacterial infections (strep throat - Group A Streptococcus)
-  - Post-nasal drip
-  - Allergies
-  - Dry air
-  - Mouth breathing during sleep
-  - GERD (acid reflux)
-  - Voice strain
+  Sore Throat in Apple Health records a reported symptom and its severity. It does not identify a pathogen,
+  diagnose an infection or contain a throat-test result.
 
-  **Strep Throat Indicators (Centor Criteria):**
-  - Fever
-  - Tonsillar exudates (white patches)
-  - Swollen/tender anterior cervical lymph nodes
-  - Absence of cough
 
-  ## When to Seek Medical Attention
-  **Urgent Evaluation:**
-  - Difficulty breathing or swallowing
-  - Inability to swallow saliva (drooling)
-  - Severe throat swelling
-  - Muffled or "hot potato" voice
-  - High fever (>101.5°F/38.6°C)
-  - Neck stiffness or swelling
-  - Symptoms of dehydration
+  ## What do the saved values mean?
 
-  **Schedule Appointment For:**
-  - Sore throat lasting more than a week
-  - Sore throat with fever but no cold symptoms (possible strep)
-  - Recurrent sore throats
-  - Ear pain accompanying sore throat
-  - Joint pain with sore throat
-  - Rash with sore throat
-  - Blood in saliva or phlegm
-  - Lump in neck
 
-  ## Pattern Recognition
-  Tracking sore throat can reveal:
-  - Illness duration and recovery trajectory
-  - Seasonal patterns (viral season peaks)
-  - Environmental triggers (allergies, dry air)
-  - Recurrent infections pattern
-  - Relationship to snoring or mouth breathing
-  - GERD-related patterns (morning symptoms)
-  - Voice strain patterns
-  - Response to treatments
+  | Code | Label | Interpretation |
 
-  ## Caveats & Limitations
-  - Cannot distinguish viral from bacterial cause
-  - Subjective severity varies between individuals
-  - Does not capture throat appearance (redness, exudates)
-  - Cannot assess for strep without clinical evaluation
-  - Does not record associated symptoms in same entry
-  - Brief episodes may not be logged
-  - Cannot differentiate pharyngitis from laryngitis
-metadata_keys:
-  - key: "HKMetadataKeyExternalUUID"
-    description: "External identifier for cross-referencing symptom entries"
-  - key: "HKMetadataKeyTimeZone"
-    description: "Time zone where symptom was logged"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing across devices"
+  | --- | --- | --- |
+
+  | 0 | unspecified | Severity was not specified |
+
+  | 1 | notPresent | Symptom was explicitly reported absent |
+
+  | 2 | mild | Reported mild severity |
+
+  | 3 | moderate | Reported moderate severity |
+
+  | 4 | severe | Reported severe severity |
+
+
+  Apple uses HKCategoryValueSeverity for this type. Unspecified is not the same as notPresent, and a missing
+  record is neither. The integers identify labels; numerical averages and physiological reference ranges do
+  not apply.
+
+
+  ## What does the severity label leave out?
+
+
+  The category does not specify whether discomfort occurs while swallowing, speaking or at rest. A note about
+  functional impact can add that context, while the saved value remains a subjective severity label. Neither
+  mild nor severe establishes a particular cause or the need for antibiotics.
+
+
+  [Runny Nose](/knowledge-base/types/HKCategoryTypeIdentifierRunnyNose/), [Coughing](/knowledge-base/types/HKCategoryTypeIdentifierCoughing/)
+  and [Fever](/knowledge-base/types/HKCategoryTypeIdentifierFever/) are separate categories. Keeping their histories
+  distinct helps avoid turning one symptom entry into an assumed cluster of symptoms.
+
+
+  ## When is the history less important than getting help?
+
+
+  Seek urgent medical help for a sore throat with difficulty breathing, inability to swallow, drooling or rapidly
+  worsening severe symptoms, as described in NHS guidance. A mild saved label from an earlier observation does
+  not establish that current symptoms are safe.
+
+
+  For reviewing a history, distinguish first reported symptoms from the first saved record. Retrospective logging
+  can place a record after the experience began, and the category itself does not capture test results or a
+  diagnosis.
+
+
+  ## How should recording intervals be interpreted?
+
+
+  This is a logged symptom, with no fixed sensor sampling schedule. Start-to-start gaps describe when observations
+  were saved. A sample’s start and end times describe the interval supplied by its source; their difference
+  does not establish the full duration of a clinical episode. Repeated or overlapping records need review before
+  counting episodes.
+
+
+  This category is not currently listed in the PulsHealth sync catalog. No observations were present in the
+  reviewed user data, so recorded severity frequencies, source differences and logging intervals could not
+  be measured. That database coverage does not establish whether entries exist in Apple Health.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierFever"
-    relationship: "Common co-symptom in infections"
-  - identifier: "HKCategoryTypeIdentifierCoughing"
-    relationship: "Often co-occurs in upper respiratory infections"
-  - identifier: "HKCategoryTypeIdentifierRunnyNose"
-    relationship: "Post-nasal drip can cause sore throat"
-  - identifier: "HKCategoryTypeIdentifierSinusCongestion"
-    relationship: "URI symptoms often cluster together"
-  - identifier: "HKCategoryTypeIdentifierHeadache"
-    relationship: "Common with infections causing sore throat"
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Systemic symptom of infection"
-  - identifier: "HKQuantityTypeIdentifierBodyTemperature"
-    relationship: "Objective fever data for correlation"
+- identifier: HKCategoryTypeIdentifierRunnyNose
+  relationship: Separately reported nasal symptom; do not infer it from sore throat.
+- identifier: HKCategoryTypeIdentifierCoughing
+  relationship: Separate observation with its own severity and timing.
+- identifier: HKCategoryTypeIdentifierFever
+  relationship: Separate symptom category, not a thermometer measurement.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierSoreThroat"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifiersorethroat"
-    type: "official"
-  - title: "Sore Throat Guidelines - IDSA"
-    url: "https://www.idsociety.org/practice-guideline/sore-throat/"
-    type: "medical"
-  - title: "Strep Throat Information - CDC"
-    url: "https://www.cdc.gov/group-a-strep/"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Sore Throat — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/sorethroat
+  type: official
+- title: Severity category values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Category samples — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorysample
+  type: official
+- title: Sore throat — NHS
+  url: https://www.nhs.uk/symptoms/sore-throat/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Sore Throat in Apple Health: severity and logging'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: sore-throat
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: No focal observations in the verified database snapshot; empirical label frequencies, sources,
+    cadence and relationships are unavailable. Type is not in the current sync catalog; database absence does
+    not establish Apple Health absence. Category codes are subjective labels, not physiological measurements.
+    Source intervals are not verified clinical episodes. Workout and sleep facets have no measured comparison;
+    public discussion is included only where specifically useful.

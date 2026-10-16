@@ -86,6 +86,20 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
 
 ## Invariants — do not break
 
+- **App access is checked by the engine, including background launches.**
+  `PulsHealthApp` supplies the live StoreKit-backed `SyncAccessPolicy`; the
+  standalone package remains unrestricted by default. Free sync supports five
+  distinct types across raw readings and enabled aggregates, from the most
+  recent 30 days. An over-limit selection pauses in full. Raw queries clamp
+  their predicate, and aggregates, rings, enrichment and reconciliation combine
+  this date with HealthKit's readable-history limit. The existing recorded
+  `readableSince` and widening checks reopen history after upgrading; never just
+  lift the predicate while keeping an anchor acquired under a narrower limit.
+  Explore receives HealthKit-only dates. The Export tab and Data Requests check
+  subscription history before generating files; no file-count quota exists.
+  Hosting is separate. Product setup and real-device acceptance are recorded in
+  `docs/appstore/subscriptions.md`.
+
 - **Anchor-after-ack.** A type's `HKQueryAnchor` is persisted *only after* the server
   confirms the upload (`HealthSyncEngine` → `recordUploadedBatch`). Persisting earlier
   loses data on crash. Re-sending the same page is safe: every insert is
@@ -603,6 +617,10 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   the first, second and last. `metric_daily` (`009`, `puls:rerun`) is shaped
   so filters on identifier, type, user and day reach both tiers — keep its
   window partitioned on those columns.
+- Reconciliation shares the raw type's claim across its local snapshot and
+  orphan deletions. Never replace it with a unique operation key: a concurrent
+  upload of a late-arriving sample could otherwise be deleted as an orphan.
+  Pending observer work drains under the same claim before release.
 - Reconciliation (digest/UUID repair) covers only quantity/category/workout
   kinds, and **never deletes from a month HealthKit returned nothing for**
   (`ReconcileDigest.orphanVerdict`): read denial is undetectable —

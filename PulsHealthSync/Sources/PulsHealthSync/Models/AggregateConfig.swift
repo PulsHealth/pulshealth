@@ -213,8 +213,8 @@ public extension HealthTypeCatalog {
     /// Re-run that test on new iOS releases before trusting changes here.
     static func allowedAggregateFunctions(for identifier: String) -> [AggregateFunction] {
         guard let descriptor = descriptor(for: identifier),
-              descriptor.kind == .quantity else { return [] }
-        let quantityType = HKQuantityType(HKQuantityTypeIdentifier(rawValue: identifier))
+              descriptor.kind == .quantity,
+              let quantityType = descriptor.sampleType as? HKQuantityType else { return [] }
         switch quantityType.aggregationStyle {
         case .cumulative:
             return [.sum, .mostRecent, .duration]

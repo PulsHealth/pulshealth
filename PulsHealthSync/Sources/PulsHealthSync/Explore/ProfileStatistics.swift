@@ -103,8 +103,12 @@ struct ReservoirQuantiles: Sendable, Equatable {
     }
 
     private mutating func scheduleNextReplacement() {
-        weight *= exp(log(uniform()) / Double(capacity))
-        nextIndex += Int(log(uniform()) / log(1 - weight)) + 1
+        let skipped = log(uniform()) / log1p(-weight)
+        guard skipped.isFinite, skipped < Double(Int.max - nextIndex - 1) else {
+            nextIndex = Int.max
+            return
+        }
+        nextIndex += Int(skipped) + 1
     }
 
     mutating func add(_ value: Double) {
@@ -114,13 +118,15 @@ struct ReservoirQuantiles: Sendable, Equatable {
             values.append(value)
             if values.count == capacity {
                 weight = exp(log(uniform()) / Double(capacity))
-                nextIndex = capacity
+                // count is zero-based: the first post-fill item is at capacity.
+                nextIndex = capacity - 1
                 scheduleNextReplacement()
             }
             return
         }
         guard count == nextIndex else { return }
         values[Int.random(in: 0..<capacity, using: &generator)] = value
+        weight *= exp(log(uniform()) / Double(capacity))
         scheduleNextReplacement()
     }
 

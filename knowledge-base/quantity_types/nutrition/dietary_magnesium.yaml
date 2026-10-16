@@ -79,7 +79,7 @@ description: '## What does Apple Health magnesium intake record?
   ## Can I connect magnesium timing with sleep or recovery?
 
 
-  Sleep and workout timestamps offer context for reviewing a log, but a recorded overlap does not establish when
+  A recorded sleep timeline can accompany a log, but timestamp overlap does not establish when
   magnesium was taken, absorbed or had an effect. Sleep quality and recovery have many influences. First establish
   compatible coverage and source-specific intake totals; avoid interpreting an app association as proof that magnesium
   changed sleep.
@@ -89,8 +89,8 @@ description: '## What does Apple Health magnesium intake record?
 
 
   The researched **365-day reporting window** contained no raw magnesium samples and no stored magnesium aggregates.
-  Recorded value ranges, unusually large entries, source-specific daily totals, logging gaps and workout or sleep
-  comparisons could not be measured. No empirical graph or nutrient-status conclusion is presented. Related measurements
+  Recorded value ranges, unusually large entries, source-specific daily totals and logging gaps
+  could not be measured. No empirical graph or nutrient-status conclusion is presented. Related measurements
   cannot supply an intake relationship without magnesium observations.
 
 
@@ -155,7 +155,7 @@ recording_behavior:
   reviewed_on: '2026-10-14'
   shape: Cumulative mineral mass logged as consumed; sample size can represent a portion or summary.
   cadence: Source-specific entry or synchronization timing; not ingestion frequency or absorption.
-  context: Workout and sleep overlaps describe timestamps rather than physiological response.
+  context: "Review food or supplement items, portions and declared nutrient amounts; recorded intake is distinct from a blood electrolyte measurement."
   coverage: Missing or partial logs do not establish zero intake or nutrient deficiency.
   aggregation: Sum compatible contributions within a source and reporting window after reviewing units, portions
     and duplicate imports; report logged-day coverage.

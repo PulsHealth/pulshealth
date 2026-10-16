@@ -78,7 +78,7 @@ description: '## What does Apple Health dietary vitamin E measure?
   uncertain.
 
 
-  ## Does recording cadence reveal meals, workouts or sleep?
+  ## Do timestamps identify when a meal was eaten?
 
 
   Gaps between records describe logging or synchronization behavior. They do not establish meal timing, digestion
@@ -86,8 +86,7 @@ description: '## What does Apple Health dietary vitamin E measure?
   summary.
 
 
-  A nutrient record overlapping a workout or sleep interval describes timestamp context. It does not demonstrate
-  consumption during that interval or a physiological response. Comparisons with other nutrient types require
+  Comparisons with other nutrient types require
   compatible sources, portions and reporting-day coverage. Missing records remain unknown intake.
 
 
@@ -95,8 +94,7 @@ description: '## What does Apple Health dietary vitamin E measure?
 
 
   The investigated **365-day reporting window** contained no raw vitamin E samples or stored aggregates for this
-  type. Value ranges, extreme portions, source distributions, interval cadence, time-of-day patterns and workout
-  or sleep comparisons were unavailable. Relationships with other types could not be measured without vitamin
+  type. Value ranges, extreme portions, source distributions, logging intervals and time-of-day patterns were unavailable. Relationships with other types could not be measured without vitamin
   E observations. No measured chart is presented.
 
 
@@ -154,7 +152,7 @@ recording_behavior:
   shape: Cumulative recorded nutrient mass; sample scope may be a serving, supplement or source summary.
   cadence: Source-specific logging or synchronization; no documented fixed sampling frequency or confirmed meal
     schedule.
-  context: Workout and asleep timestamp overlap does not prove ingestion timing or a physiological effect.
+  context: "Retain the vitamin form and label convention when available; generic mass is insufficient to establish alpha-tocopherol or IU equivalence."
   coverage: Missing records do not establish zero intake; sources may record only selected nutrients.
   aggregation: Sum compatible contributions within a source and reporting window after checking units, portions,
     chemical-form basis and duplicate imports. State logged-day coverage.

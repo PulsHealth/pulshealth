@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierAppetiteChanges"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Appetite Changes"
-short_description: "Tracks changes in appetite including increased or decreased hunger."
-icon: "fork.knife"
-color: "#FF9500"
+identifier: HKCategoryTypeIdentifierAppetiteChanges
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Appetite Changes
+short_description: 'Appetite Changes in Apple Health: saved category values, useful reporting context and limits
+  of symptom histories.'
+icon: fork.knife
+color: '#FF9500'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,23 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "No appetite changes experienced"
-  - value: 1
-    name: "decreased"
-    description: "Appetite decreased from normal"
-  - value: 2
-    name: "noChange"
-    description: "Appetite unchanged"
-  - value: 3
-    name: "increased"
-    description: "Appetite increased from normal"
+- value: 0
+  name: unspecified
+  description: Direction was not specified.
+- value: 1
+  name: noChange
+  description: Appetite was reported unchanged.
+- value: 2
+  name: decreased
+  description: Appetite was reported decreased.
+- value: 3
+  name: increased
+  description: Appetite was reported increased.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,83 +39,104 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Appetite changes refer to noticeable increases or decreases in hunger and desire to eat compared to an individual's baseline. This HealthKit category type allows users to log appetite fluctuations, providing valuable data for identifying patterns related to medications, mental health conditions, hormonal changes, or underlying medical conditions.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; available logging workflows depend on the source app.
+primary_source: Logged symptom observations
+description: '## Overview
 
-  ## Health Significance
-  Appetite is regulated by complex interactions between hormones, neurotransmitters, and psychological factors. Changes in appetite can be early indicators of various medical and psychiatric conditions. Tracking these changes provides clinicians with objective data to assess disease progression, medication effects, and treatment response.
 
-  Common conditions associated with decreased appetite:
-  - Depression and anxiety disorders
-  - Infections and acute illness
-  - Cancer and chemotherapy
-  - Chronic diseases (heart failure, COPD, kidney disease)
-  - Medication side effects
-  - Grief and emotional distress
-  - Gastrointestinal disorders
+  Appetite Changes records a reported change in the desire to eat. It describes direction relative to the user’s
+  usual appetite, not food consumed, nutritional adequacy or a diagnosis.
 
-  Common conditions associated with increased appetite:
-  - Hyperthyroidism
-  - Diabetes mellitus
-  - Pregnancy
-  - Premenstrual syndrome
-  - Medication effects (corticosteroids, certain antidepressants)
-  - Recovery from illness
-  - Binge eating disorder
-  - Stress eating patterns
 
-  ## When to Seek Medical Attention
-  Users should consult a healthcare provider when:
-  - Appetite changes persist for more than 2 weeks
-  - Unintentional weight loss exceeds 5% of body weight in 6-12 months
-  - Loss of appetite is accompanied by fatigue, fever, or pain
-  - Increased appetite is accompanied by weight loss (suggesting hyperthyroidism or diabetes)
-  - Appetite changes are associated with mood disturbances
-  - Changes significantly affect quality of life or nutritional status
-  - New medications coincide with appetite changes
+  ## What do the saved values mean?
 
-  ## Pattern Recognition
-  Clinicians can use longitudinal data to identify:
-  - Medication-related appetite changes (onset correlating with new prescriptions)
-  - Menstrual cycle patterns
-  - Depressive episode markers
-  - Seasonal affective patterns
-  - Stress-related eating behaviors
-  - Treatment response in eating disorders
 
-  ## Caveats & Limitations
-  - Baseline appetite varies significantly between individuals
-  - Does not quantify food intake or caloric consumption
-  - Subjective assessment may be influenced by eating disorder cognitions
-  - Cannot differentiate between hunger and cravings
-  - Does not capture specific food preferences or aversions
-  - Limited context without associated mood or symptom data
-metadata_keys:
-  - key: "HKMetadataKeyWasUserEntered"
-    description: "Indicates whether the data was manually entered by the user"
+  | Code | Label | Meaning |
+
+  | --- | --- | --- |
+
+  | 0 | unspecified | Direction was not specified |
+
+  | 1 | noChange | Appetite was reported unchanged |
+
+  | 2 | decreased | Appetite was reported decreased |
+
+  | 3 | increased | Appetite was reported increased |
+
+
+  Unspecified is not noChange. These labels describe direction, not a severity ranking: averaging their integer
+  codes does not produce a meaningful appetite score.
+
+
+  ## Is appetite the same as calorie intake or weight?
+
+
+  No. A decreased-appetite entry does not say how much was eaten, and an increased-appetite entry does not
+  establish a calorie surplus. [Dietary Energy Consumed](/knowledge-base/types/HKQuantityTypeIdentifierDietaryEnergyConsumed/)
+  is a separate food log, while [Body Mass](/knowledge-base/types/HKQuantityTypeIdentifierBodyMass/) is a separately
+  measured weight.
+
+
+  Compare these histories only when each has adequate coverage. An empty food log is not zero intake. Weight
+  is best considered over repeated comparable measurements, rather than matched to an isolated appetite report.
+  [Nausea](/knowledge-base/types/HKCategoryTypeIdentifierNausea/) can be logged alongside appetite, but the
+  category does not identify why appetite changed.
+
+
+  ## How should a recorded history be read?
+
+
+  Entries follow the source’s logging behavior, with no fixed sensor sampling interval. Missing dates mean
+  no available report, rather than an explicit negative observation. A saved interval need not describe a continuous
+  episode, and overlapping records from different sources should be reviewed before counting reports or days.
+
+
+  ## Is this type available in PulsHealth?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. The selected database review contained
+  no corresponding records; that does not establish whether entries exist in Apple Health. No example distribution
+  or logging cadence could be measured.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierNausea"
-    relationship: "Nausea often causes decreased appetite"
-  - identifier: "HKCategoryTypeIdentifierFatigue"
-    relationship: "Fatigue and appetite changes often co-occur in systemic illness"
-  - identifier: "HKCategoryTypeIdentifierMoodChanges"
-    relationship: "Depression and anxiety commonly affect appetite"
-  - identifier: "HKQuantityTypeIdentifierBodyMass"
-    relationship: "Sustained appetite changes may result in weight changes"
-  - identifier: "HKQuantityTypeIdentifierDietaryEnergyConsumed"
-    relationship: "Appetite changes affect caloric intake"
+- identifier: HKQuantityTypeIdentifierDietaryEnergyConsumed
+  relationship: Separate recorded intake, not an appetite measurement.
+- identifier: HKQuantityTypeIdentifierBodyMass
+  relationship: Separate weight measurements can provide longer-term context.
+- identifier: HKCategoryTypeIdentifierNausea
+  relationship: Another reported symptom; co-recording does not establish a cause.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierAppetiteChanges"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierappetitechanges"
-    type: "official"
-  - title: "Unintentional Weight Loss - AAFP"
-    url: "https://www.aafp.org/pubs/afp/issues/2014/0501/p718.html"
-    type: "medical"
-  - title: "Appetite Regulation - Physiology"
-    url: "https://www.ncbi.nlm.nih.gov/books/NBK278931/"
-    type: "research"
-last_updated: "2026-01-27"
+- title: Appetite Changes — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/appetitechanges
+  type: official
+- title: Appetite change values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueappetitechanges
+  type: official
+last_updated: '2026-10-14'
+seo_title: 'Appetite Changes in Apple Health: hunger versus food intake'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: appetite-changes
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Verified no observations across bounded quantity, category, aggregate and workout-series inventories;
+    this identifier is not listed in the current sync catalog. Apple Health absence cannot be inferred. No
+    empirical frequencies, source differences, cadence, outliers or related-type comparisons are available.
+    Category codes are labels, not measurements; recorded intervals do not establish clinical episode duration.
+    Generic workout or sleep comparisons are not applicable to this review.

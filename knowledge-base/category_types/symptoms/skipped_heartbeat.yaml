@@ -1,11 +1,12 @@
-identifier: "HKCategoryTypeIdentifierSkippedHeartbeat"
-source: "HealthKit"
-type: "HKCategoryType"
-category: "Symptoms"
-human_readable_name: "Skipped Heartbeat"
-short_description: "Tracks episodes of perceived missed or extra heartbeats"
-icon: "heart.fill"
-color: "#FF2D55"
+identifier: HKCategoryTypeIdentifierSkippedHeartbeat
+source: HealthKit
+type: HKCategoryType
+category: Symptoms
+human_readable_name: Skipped Heartbeat
+short_description: Understand skipped-heartbeat symptom reports in Apple Health, severity labels, overlapping entries
+  and limits of rhythm interpretation.
+icon: heart.fill
+color: '#FF2D55'
 default_unit: null
 supported_units: null
 unit_description: null
@@ -14,23 +15,26 @@ statistics_options: null
 typical_range: null
 clinical_ranges: null
 category_values:
-  - value: 0
-    name: "notPresent"
-    description: "No skipped or extra heartbeats noticed"
-  - value: 1
-    name: "present"
-    description: "Mild - occasional isolated skipped beats"
-  - value: 2
-    name: "moderate"
-    description: "Moderate - multiple skipped beats, somewhat bothersome"
-  - value: 3
-    name: "severe"
-    description: "Severe - frequent skipped beats, distressing or associated with other symptoms"
+- value: 0
+  name: unspecified
+  description: Severity was not specified; this is not an absence report.
+- value: 1
+  name: notPresent
+  description: The symptom was explicitly reported absent.
+- value: 2
+  name: mild
+  description: Reported mild symptom severity.
+- value: 3
+  name: moderate
+  description: Reported moderate symptom severity.
+- value: 4
+  name: severe
+  description: Reported severe symptom severity.
 ios_introduced:
-  version: "13.6"
+  version: '13.6'
   year: 2020
 watchos_introduced:
-  version: "7.0"
+  version: '7.0'
   year: 2020
 deprecated: false
 deprecated_in: null
@@ -38,137 +42,129 @@ writable: true
 requires_authorization: true
 sensitive_data: false
 devices:
-  - name: "iPhone Health App"
-    capability: "Manual symptom logging with severity"
-  - name: "Apple Watch"
-    capability: "Quick symptom logging"
-primary_source: "Manual entry via Health app"
-description: |
-  ## Overview
-  Skipped heartbeats (ectopic beats) are the sensation that the heart has
-  "missed a beat" or produced an extra beat. This is typically caused by
-  premature atrial contractions (PACs) or premature ventricular contractions
-  (PVCs), which are usually benign but can occasionally indicate underlying
-  cardiac conditions. This data type enables symptom tracking for clinical
-  correlation.
+- name: Manual entry or authorized source app
+  capability: Stores reported symptom observations; the logging workflow depends on the source app.
+primary_source: Reported symptom observations
+description: '## Overview
 
-  ## Health Significance
-  - **Ectopy Awareness**: Most commonly represents benign PACs or PVCs
-  - **Arrhythmia Detection**: May indicate need for rhythm monitoring
-  - **Trigger Identification**: Helps identify caffeine, stress, or other
-    precipitants
-  - **Treatment Monitoring**: Track response to lifestyle changes or medications
-  - **Anxiety Association**: Awareness of ectopy can increase anxiety, creating
-    feedback loop
 
-  ## CRITICAL: Red Flags Requiring Evaluation
+  Skipped Heartbeat records the reported sensation of a missed or interrupted beat. The category describes an experience;
+  it does not count missed beats or confirm an abnormal electrical rhythm.
 
-  **Seek Immediate Care if Skipped Beats Occur With:**
-  - Chest pain or pressure
-  - Shortness of breath
-  - Lightheadedness or near-fainting
-  - Loss of consciousness
-  - Prolonged episodes (multiple consecutive skipped beats)
 
-  **High-Risk Features Requiring Evaluation:**
-  - New onset in someone with known heart disease
-  - Family history of sudden cardiac death
-  - Skipped beats during exercise
-  - Increasing frequency over time
-  - Associated with sustained rapid heartbeat
-  - Occurring with exertion rather than at rest
+  ## What do the severity labels mean?
 
-  ## Clinical Context
-  **Common Benign Causes:**
-  - Caffeine
-  - Alcohol
-  - Stress and anxiety
-  - Lack of sleep
-  - Dehydration
-  - Electrolyte imbalances
-  - Hormonal changes
 
-  **Cardiac Causes Requiring Evaluation:**
-  - Frequent PVCs (>10,000/day may affect heart function)
-  - Underlying cardiomyopathy
-  - Coronary artery disease
-  - Electrolyte abnormalities (low potassium, magnesium)
-  - Structural heart disease
+  | Code | Label | Interpretation |
 
-  **Medical Conditions:**
-  - Hyperthyroidism
-  - Anemia
-  - Fever
-  - Medication effects
+  | --- | --- | --- |
 
-  ## When to Seek Medical Attention
-  - New or increasing frequency of skipped beats
-  - Skipped beats with any red flag symptoms
-  - Skipped beats affecting quality of life
-  - Episodes lasting more than a few seconds
-  - Skipped beats only during exercise
-  - Known heart disease with new symptom
-  - Accompanied by rapid heart rate episodes
+  | 0 | unspecified | Severity was not supplied |
 
-  ## Pattern Recognition
-  Tracking skipped beats can reveal:
-  - Trigger identification (caffeine, alcohol, stress)
-  - Time of day patterns
-  - Relationship to meals or digestion
-  - Sleep quality correlation
-  - Positional triggers
-  - Frequency trends over time
-  - Response to lifestyle modifications
-  - Correlation with Apple Watch rhythm data
+  | 1 | notPresent | Explicitly reported absent |
 
-  ## Integration with Objective Data
-  Combine symptom logging with:
-  - Apple Watch irregular rhythm notifications
-  - ECG recordings during symptoms
-  - Heart rate variability data
-  - Resting heart rate trends
+  | 2 | mild | Reported mild severity |
 
-  ## Caveats & Limitations
-  - Subjective sensation may not reflect actual ectopy
-  - Cannot differentiate PACs from PVCs
-  - Does not capture "burden" (percentage of beats that are ectopic)
-  - Anxiety can heighten awareness without increasing ectopy
-  - Brief episodes difficult to capture on monitoring
-  - Retrospective logging may be inaccurate
-  - Requires ECG correlation for definitive diagnosis
-metadata_keys:
-  - key: "HKMetadataKeyExternalUUID"
-    description: "External identifier for cross-referencing symptom entries"
-  - key: "HKMetadataKeyTimeZone"
-    description: "Time zone where symptom was logged"
-  - key: "HKMetadataKeySyncIdentifier"
-    description: "Identifier for syncing across devices"
+  | 3 | moderate | Reported moderate severity |
+
+  | 4 | severe | Reported severe severity |
+
+
+  Apple uses HKCategoryValueSeverity for this type. These are subjective labels, not a calibrated clinical scale.
+  Unspecified is not the same as notPresent, and an unrecorded day is unknown. Do not average the integer codes
+  or interpret their spacing as equal changes in symptom intensity.
+
+
+  ## Does a report prove that the heart skipped a beat?
+
+
+  No. The severity code does not identify a rhythm mechanism or an ECG finding. Heart Rate, an ECG recording and
+  an irregular-rhythm notification are separate forms of information. Their presence near a symptom entry can add
+  context, but their timestamps do not establish that they captured the same event.
+
+
+  Rapid, Pounding, or Fluttering Heartbeat is another subjective symptom category. A source may record both for
+  one experience. Retain the distinct labels and inspect timing and source behavior before counting them as separate
+  episodes.
+
+
+  ## What details make a report more useful?
+
+
+  Separately recorded onset, recurrence, duration and accompanying symptoms describe more than a severity label
+  alone. Start and end times are the interval saved by the source, not a count of interrupted beats or proof that
+  the sensation lasted continuously throughout it. Longer gaps between entries may reflect less logging rather than
+  fewer symptoms.
+
+
+  ## When should a skipped-beat sensation be checked?
+
+
+  Follow the same symptom-based advice used for other palpitations: seek medical advice for recurring or increasingly
+  frequent episodes. Call local emergency services for ongoing palpitations that do not settle, or palpitations
+  accompanied by chest pain, breathlessness or feeling faint. The severity label and the absence of a watch notification
+  cannot rule out a problem.
+
+
+  ## What does recording frequency tell you?
+
+
+  These are logged observations, not sensor samples on a fixed schedule. Compare explicit reported labels within
+  a consistent logging routine and keep missing days separate from notPresent reports. Saved intervals and overlapping
+  entries describe the source’s records; they do not establish continuous symptom duration or an exact number of
+  episodes.
+
+
+  ## Is this type available in PulsHealth data?
+
+
+  This HealthKit type is not listed in the current PulsHealth sync catalog. No corresponding records were found
+  in the selected database research window, so severity frequencies, logging intervals and relationships with other
+  measurements could not be calculated. That database coverage does not establish whether the symptom was experienced
+  or whether reports exist in Apple Health.
+
+  '
+metadata_keys: []
 related_types:
-  - identifier: "HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat"
-    relationship: "Related cardiac symptom; may co-occur"
-  - identifier: "HKCategoryTypeIdentifierShortnessOfBreath"
-    relationship: "Red flag when combined with skipped beats"
-  - identifier: "HKCategoryTypeIdentifierChestTightnessOrPain"
-    relationship: "Concerning co-symptom requiring evaluation"
-  - identifier: "HKCategoryTypeIdentifierDizziness"
-    relationship: "May indicate hemodynamic significance"
-  - identifier: "HKQuantityTypeIdentifierHeartRate"
-    relationship: "Objective heart rate data during episodes"
-  - identifier: "HKElectrocardiogramType"
-    relationship: "ECG for detecting ectopic beats"
-  - identifier: "HKCategoryTypeIdentifierIrregularHeartRhythmEvent"
-    relationship: "Apple Watch detected irregularity"
+- identifier: HKCategoryTypeIdentifierRapidPoundingOrFlutteringHeartbeat
+  relationship: A related subjective report; both types can describe the same experience and should not automatically
+    be counted as separate episodes.
+- identifier: HKQuantityTypeIdentifierHeartRate
+  relationship: A numeric pulse measurement; it does not identify the rhythm mechanism of a skipped-beat sensation.
+- identifier: HKCategoryTypeIdentifierIrregularHeartRhythmEvent
+  relationship: A separate rhythm notification, not confirmation that a reported skipped beat was detected.
 references:
-  - title: "Apple Developer Documentation - HKCategoryTypeIdentifierSkippedHeartbeat"
-    url: "https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifierskippedheartbeat"
-    type: "official"
-  - title: "Premature Ventricular Contractions - ACC"
-    url: "https://www.acc.org/latest-in-cardiology"
-    type: "medical"
-  - title: "When to Worry About Skipped Beats - Cleveland Clinic"
-    url: "https://my.clevelandclinic.org/health/symptoms/22108-heart-palpitations"
-    type: "medical"
-  - title: "PVC Management Guidelines - Heart Rhythm Society"
-    url: "https://www.hrsonline.org/guidance"
-    type: "medical"
-last_updated: "2026-01-27"
+- title: Skipped Heartbeat — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategorytypeidentifier/skippedheartbeat
+  type: official
+- title: Symptom severity values — Apple HealthKit
+  url: https://developer.apple.com/documentation/healthkit/hkcategoryvalueseverity
+  type: official
+- title: Heart palpitations — NHS
+  url: https://www.nhs.uk/symptoms/heart-palpitations/
+  type: medical
+last_updated: '2026-10-14'
+seo_title: 'Skipped heartbeat in Apple Health: symptom vs rhythm data'
+data_research:
+  status: complete
+  review_basis: coverage_and_sources
+  reviewed_on: '2026-10-14'
+  workflow_version: '1'
+  artifact_key: skipped-heartbeat
+  facets:
+  - provenance
+  - coverage
+  - sources
+  - values
+  - outliers
+  - cadence
+  - workout_context
+  - sleep_context
+  - time_patterns
+  - related_types
+  - type_specific
+  limitations: Coverage and primary sources reviewed; no focal records in the selected database reporting year,
+    so empirical analysis was skipped. This type is not listed in the current sync catalog; coverage cannot establish
+    phone data or symptom absence. Severity codes are subjective labels, not numeric measurements. Source intervals,
+    retrospective logging and overlap do not establish clinical episodes or causes. No measured workout or sleep
+    comparisons are available.

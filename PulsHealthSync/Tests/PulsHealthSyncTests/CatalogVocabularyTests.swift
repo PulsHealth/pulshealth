@@ -97,7 +97,9 @@ enum CatalogVocabulary {
                 that has the type.
                 """)
         }
-        let type = HKQuantityType(HKQuantityTypeIdentifier(rawValue: descriptor.identifier))
+        guard let type = descriptor.sampleType as? HKQuantityType else {
+            throw RenderError(description: "\(descriptor.identifier) is unavailable on this runtime")
+        }
         switch type.aggregationStyle {
         case .cumulative: return "cumulative"
         case .discreteArithmetic: return "discreteArithmetic"

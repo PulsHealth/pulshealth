@@ -32,7 +32,9 @@ public struct TypeProfile: Codable, Sendable, Equatable {
     /// 5: `readableSince`. Before it, a profile scanned under iOS 27's
     /// limited history access looked like one of a person with a month of
     /// data, and said it covered the year.
-    public static let currentVersion = 5
+    /// 6: corrected uniform reservoir sampling; older percentiles and histograms
+    /// must be recomputed rather than kept with the previous sampling bias.
+    public static let currentVersion = 6
 
     public var version: Int
     public var typeIdentifier: String
