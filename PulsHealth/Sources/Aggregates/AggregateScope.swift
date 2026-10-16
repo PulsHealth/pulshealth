@@ -27,7 +27,11 @@ extension AppModel {
         edit(&list)
         switch scope {
         case .sync:
-            if config.aggregates != list.configs { config.aggregates = list.configs }
+            var proposed = config
+            proposed.aggregates = list.configs
+            if acceptSyncTypeSelection(proposed), config.aggregates != list.configs {
+                config.aggregates = list.configs
+            }
         case .export:
             if export.draft.aggregates != list.configs { export.draft.aggregates = list.configs }
         }

@@ -111,7 +111,9 @@ struct ExportView: View {
             if export.draft.customRange {
                 DatePicker(
                     "Start",
-                    selection: $export.draft.customStart,
+                    selection: Binding(
+                        get: { export.draft.customStart },
+                        set: { export.draft.customStart = $0; model.checkExportRangeAccess() }),
                     in: ...export.draft.lastCustomDay(),
                     displayedComponents: .date)
                 DatePicker(
@@ -125,10 +127,6 @@ struct ExportView: View {
         } footer: {
             if !export.draft.customRange {
                 Text(rangeFootnote(export.draft.range))
-            }
-            if !model.subscriptions.hasPro {
-                Text("Free includes the latest 30 days for all types and formats, as often as you like.")
-                Button("Export older history with Pro") { model.showPro(.exportHistory) }
             }
         }
     }
@@ -260,6 +258,7 @@ struct ExportView: View {
                 case .custom:
                     model.export.draft.customRange = true
                 }
+                model.checkExportRangeAccess()
             }
         )
     }

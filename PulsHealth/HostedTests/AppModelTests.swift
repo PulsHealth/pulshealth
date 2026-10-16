@@ -279,11 +279,47 @@ final class AppModelTests: XCTestCase {
 
     // MARK: - The Health page (App Review 5.1.1(iv))
 
-    /// Until iOS has been asked, the pager holds pages 1 and 2 only: there is
-    /// no page past the pre-permission screen to swipe to.
-    func testThePagerHoldsOnlyTheFirstTwoPagesUntilHealthIsSettled() {
-        XCTAssertEqual(OnboardingView.pages(healthSettled: false), [.welcome, .health])
-        XCTAssertEqual(OnboardingView.pages(healthSettled: true), OnboardingView.Page.allCases)
+    func testHealthIsLastAfterExportAndSyncContext() {
+        let expected: [OnboardingView.Page] = [.welcome, .export, .sync, .health]
+        XCTAssertEqual(OnboardingView.pages(healthSettled: false), expected)
+        XCTAssertEqual(OnboardingView.pages(healthSettled: true), expected)
+    }
+
+    func testFreeTypeSelectionCountsOverlapAndRejectsOnlyNewTypes() async throws {
+        let h = try await makeModel(pro: false)
+        await h.model.subscriptions.refreshEntitlements()
+        let types = Set(HealthTypeCatalog.all.prefix(5).map(\.identifier))
+        h.model.config.enabledTypes = types
+        let extra = try XCTUnwrap(HealthTypeCatalog.all.first { !types.contains($0.identifier) }?.identifier)
+        h.model.setSyncRawTypes(types.union([extra]))
+        XCTAssertEqual(h.model.config.enabledTypes, types)
+        XCTAssertTrue(h.model.showsPro)
+        XCTAssertTrue(h.model.syncTypeRequiresPro(extra))
+
+        let shared = try XCTUnwrap(AggregateList.measurementTypes.first { types.contains($0.identifier) }?.identifier)
+        h.model.editAggregates(.sync) { $0.addType(shared) }
+        XCTAssertEqual(h.model.config.observedTypeIdentifiers, types)
+        XCTAssertFalse(h.model.syncTypeRequiresPro(shared))
+        h.model.setSyncRawTypes([shared])
+        XCTAssertEqual(h.model.config.enabledTypes, [shared])
+        XCTAssertFalse(h.model.syncTypeRequiresPro(extra))
+    }
+
+    func testFreeExportRangePromptsWithoutChangingSelection() async throws {
+        let h = try await makeModel(pro: false)
+        await h.model.subscriptions.refreshEntitlements()
+        h.model.export.draft.range = .last30Days
+        h.model.checkExportRangeAccess()
+        XCTAssertFalse(h.model.showsPro)
+        h.model.export.draft.range = .last90Days
+        h.model.checkExportRangeAccess()
+        XCTAssertTrue(h.model.showsPro)
+        XCTAssertEqual(h.model.export.draft.range, .last90Days)
+        h.model.showsPro = false
+        h.model.export.draft.customRange = true
+        h.model.export.draft.customStart = Calendar.current.date(byAdding: .day, value: -31, to: Date())!
+        h.model.checkExportRangeAccess()
+        XCTAssertTrue(h.model.showsPro)
     }
 
     /// Asked before `start()` has run — the flow's `.task` can be first — the

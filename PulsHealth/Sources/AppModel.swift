@@ -558,6 +558,36 @@ final class AppModel {
         showsPro = true
     }
 
+    /// Reject additions beyond Free's distinct-type allowance, while allowing
+    /// removals from an older over-limit selection and raw/aggregate overlap.
+    func acceptSyncTypeSelection(_ proposed: SyncConfiguration) -> Bool {
+        let current = config.observedTypeIdentifiers
+        let next = proposed.observedTypeIdentifiers
+        guard subscriptions.hasPro || SyncAccessPolicy.free.allows(proposed) || next.isSubset(of: current) else {
+            showPro(.syncTypes(next.count))
+            return false
+        }
+        return true
+    }
+
+    func setSyncRawTypes(_ types: Set<String>) {
+        var proposed = config
+        proposed.enabledTypes = types
+        if acceptSyncTypeSelection(proposed) { config.enabledTypes = types }
+    }
+
+    func syncTypeRequiresPro(_ identifier: String) -> Bool {
+        !subscriptions.hasPro && !config.observedTypeIdentifiers.contains(identifier)
+            && config.observedTypeIdentifiers.count >= 5
+    }
+
+    /// Selection stays editable; execution still checks verified entitlements.
+    func checkExportRangeAccess() {
+        if !subscriptions.hasPro, !SyncAccessPolicy.free.allowsExport(start: export.draft.dates().start) {
+            showPro(.exportHistory)
+        }
+    }
+
     func setSyncStartDate(_ date: Date) {
         // Keep the requested date as an unapplied draft. Free's engine policy
         // and the picker display still clamp history until Pro is verified.
