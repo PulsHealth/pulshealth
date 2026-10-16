@@ -682,7 +682,8 @@
         its own.
       </p>
       <nav aria-label="Animation collections">
-        <a href="#sync">Sync & devices</a><a href="#export">Export & organize</a
+        <a href="#watch">From the watch</a><a href="#sync">Sync & devices</a
+        ><a href="#export">Export & organize</a
         ><a href="#live">Workouts & live data</a>
       </nav>
     </div>
@@ -707,8 +708,11 @@
         mint: "#9ecfc1",
       };
       const values = [18, 32, 23, 46, 30, 52, 34, 60, 40, 55, 32, 43];
+      // Keep language in the gallery captions; the artwork uses only values and formats.
       const text = (x, y, t, cls = "svg-label", extra = "") =>
-        `<text x="${x}" y="${y}" class="${cls}" ${extra}>${t}</text>`;
+        /^(\d|\.(csv|json)$|["{}≡])/.test(String(t))
+          ? `<text x="${x}" y="${y}" class="${cls}" ${extra}>${t}</text>`
+          : "";
       const wire = (d, color = C.blue, delay = 0, speed = 3.5) =>
         `<path d="${d}" class="wire" style="stroke:${color}"/><path d="${d}" pathLength="100" class="packet" style="stroke:${color};--delay:${delay}s;--speed:${speed}s"/>`;
       function heart(x, y, s = 1, color = C.pink) {
@@ -727,7 +731,22 @@
         return `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="90" cy="196" rx="117" ry="25" fill="none" stroke="#ffffff05"/><ellipse cx="90" cy="196" rx="93" ry="18" fill="none" stroke="#ffffff08"/><path d="M0 22V158C0 192 180 192 180 158V22" fill="url(#${id}-db)" stroke="#78bdff60"/>${[58, 92, 126, 158].map((v, i) => `<g class="tier" style="--delay:${i * -0.8}s"><path d="M0 ${v}C0 ${v + 32} 180 ${v + 32} 180 ${v}" fill="none" stroke="${C.soft}" stroke-opacity=".65"/><circle cx="157" cy="${v + 8}" r="2.5" fill="${C.soft}"/></g>`).join("")}<ellipse cx="90" cy="22" rx="90" ry="24" fill="#142235" stroke="#85baff80"/><ellipse cx="90" cy="22" rx="67" ry="13" fill="none" stroke="#78bdff30"/></g>`;
       }
       function phone(x, y, s = 1, kind = "health") {
-        return `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-4" y="70" width="3" height="28" rx="1" fill="#444"/><rect x="151" y="83" width="3" height="44" rx="1" fill="#444"/><rect class="frame" x="0" y="0" width="150" height="288" rx="24"/><rect class="screen" x="6" y="6" width="138" height="276" rx="20"/><rect x="49" y="12" width="52" height="12" rx="6" fill="#242424"/>${text(17, 53, kind === "workout" ? "Workout" : kind === "sync" ? "Sync" : "Your health", "svg-label", 'style="font-size:13px;fill:#ddd"')}${kind === "workout" ? `${runner(76, 126, 0.9)}${text(75, 181, "Live workout", "svg-micro", 'text-anchor="middle"')}${text(75, 211, "04:32", "svg-value", 'text-anchor="middle" style="fill:#ededed;font-size:24px"')}${wave(24, 234, C.pink, 0.85)}` : kind === "sync" ? `<circle cx="75" cy="113" r="32" fill="none" stroke="#4ca9ff25"/><circle cx="75" cy="113" r="32" fill="none" stroke="${C.blue}" stroke-dasharray="24 177" class="packet" pathLength="100"/><path d="M63 113L72 122L89 104" fill="none" stroke="${C.blue}" stroke-width="2"/>${text(75, 174, "Keeping up to date", "svg-micro", 'text-anchor="middle"')}${[196, 218, 240].map((yy, i) => `<circle cx="22" cy="${yy}" r="2" fill="${[C.pink, C.lilac, C.blue][i]}"/><rect x="33" y="${yy - 3}" width="${78 - i * 12}" height="4" rx="2" fill="#ffffff16"/>`).join("")}` : `${heart(18, 76, 0.55)}${text(20, 116, "64", "svg-value")}${text(51, 115, "bpm", "svg-micro")}${wave(18, 132, C.pink, 0.98)}<path d="M18 179H132" class="divider"/>${bars(22, 188, C.blue, 0.9)}${text(20, 265, "Activity", "svg-micro")}${text(130, 265, "8,420", "svg-micro", 'text-anchor="end"')}`}<path d="M53 275H97" stroke="#777" stroke-width="3" stroke-linecap="round"/></g>`;
+        const content =
+          kind === "sync"
+            ? `<circle cx="75" cy="132" r="29" fill="none" stroke="#4ca9ff18"/><circle cx="75" cy="132" r="29" fill="none" stroke="${C.blue}" class="packet small" pathLength="100"/><path d="M65 132L73 140L87 124" fill="none" stroke="${C.soft}" stroke-width="1.2"/>${[199, 219, 239].map((yy, i) => `<circle cx="29" cy="${yy}" r="1.5" fill="${[C.pink, C.lilac, C.blue][i]}"/><path d="M42 ${yy}H${116 - i * 9}" stroke="#ffffff16" stroke-width="1.2"/>`).join("")}`
+            : kind === "workout"
+              ? `<path d="M42 128C37 98 71 116 77 86S117 86 105 126S69 154 76 182" fill="none" stroke="#4ca9ff20" stroke-width="1.2"/><path d="M42 128C37 98 71 116 77 86S117 86 105 126S69 154 76 182" pathLength="100" class="route" fill="none" stroke="${C.blue}" stroke-width="1.3"/>${wave(27, 216, C.pink, 0.83)}`
+              : `${wave(26, 91, C.pink, 0.85)}<path d="M27 155H123" stroke="#ffffff0a"/>${bars(27, 178, C.blue, 0.89)}`;
+        return `<g transform="translate(${x} ${y}) scale(${s})"><rect x="0" y="0" width="150" height="288" rx="23" fill="#111" stroke="#707070" stroke-width=".8"/><rect x="3" y="3" width="144" height="282" rx="21" fill="#0a0a0a" stroke="#ffffff09" stroke-width=".7"/><rect x="57" y="12" width="36" height="7" rx="3.5" fill="#171717"/><path d="M-1 64V83M-1 96V125M151 84V118" stroke="#737373" stroke-width="1.4"/>${content}<path d="M61 275H89" stroke="#606060" stroke-width="1.6" stroke-linecap="round"/></g>`;
+      }
+      function watch(x, y, s = 1, kind = "rings") {
+        const face =
+          kind === "pulse"
+            ? `${heart(48, 101, 0.65, C.pink)}${wave(22, 144, C.pink, 0.67)}`
+            : kind === "workout"
+              ? `<path d="M35 157C24 120 51 135 56 110S91 111 82 139S60 151 67 171" fill="none" stroke="#4ca9ff25" stroke-width="1.4"/><path d="M35 157C24 120 51 135 56 110S91 111 82 139S60 151 67 171" fill="none" stroke="${C.blue}" class="route" pathLength="100" stroke-width="1.5"/>`
+              : `${[31, 23, 15].map((r, i) => `<circle cx="60" cy="138" r="${r}" fill="none" stroke="${[C.blue, C.lilac, C.pink][i]}" opacity=".12" stroke-width="3"/><circle cx="60" cy="138" r="${r}" pathLength="100" fill="none" stroke="${[C.blue, C.lilac, C.pink][i]}" stroke-width="3" stroke-dasharray="${78 - i * 16} 100" stroke-linecap="round" transform="rotate(-90 60 138)" class="tier" style="--delay:${i * -0.8}s"/>`).join("")}`;
+        return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M31 73L34 7Q34 0 42 0H78Q86 0 86 7L89 73M31 204L34 269Q34 277 42 277H78Q86 277 86 269L89 204" fill="#101010" stroke="#484848" stroke-width=".8"/><path d="M37 7L35 69M83 7L85 69M35 209L37 269M85 209L83 269" stroke="#ffffff07"/><rect x="-1" y="66" width="122" height="145" rx="32" fill="#171717" stroke="#777" stroke-width=".8"/><rect x="3" y="70" width="114" height="137" rx="29" fill="#070707" stroke="#ffffff12" stroke-width=".7"/><rect x="122" y="108" width="7" height="21" rx="3.5" fill="#303030" stroke="#676767" stroke-width=".6"/><path d="M124 113V124M121 149V167" stroke="#777" stroke-width="1"/>${face}</g>`;
       }
       function file(x, y, s = 1, format = "csv", extra = "") {
         return `<g transform="translate(${x} ${y}) scale(${s})"><g class="${extra}"><path d="M18 14H166L188 36V235Q188 249 174 249H18Q4 249 4 235V28Q4 14 18 14" fill="#111923" stroke="#54728f70"/><path d="M28 26H176L198 48V247Q198 261 184 261H28Q14 261 14 247V40Q14 26 28 26" fill="#0e151e" stroke="#54728f30" transform="translate(0 -20)"/><path d="M14 0H162L188 26V222Q188 236 174 236H14Q0 236 0 222V14Q0 0 14 0" fill="#172230" stroke="#6686a970"/><path d="M162 0V21Q162 26 168 26H188" fill="#30465e"/>${text(23, 43, format === "csv" ? "≡" : "{ }", "svg-value", 'style="fill:#a9c9e2;font-size:18px"')}${text(165, 46, "." + format, "svg-value", 'text-anchor="end" style="font-size:21px;fill:#c9d9eb"')}${format === "csv" ? `${text(22, 88, "time", "svg-micro")}${text(89, 88, "value", "svg-micro")}${text(148, 88, "unit", "svg-micro")}${[103, 124, 145, 166].map((v) => `<path d="M22 ${v}H167" stroke="#ffffff0b"/><path d="M22 ${v + 8}H60M89 ${v + 8}H113M148 ${v + 8}H163" stroke="#78bdff60" stroke-width="2"/>`).join("")}` : `${text(22, 92, "{", "svg-label")}${text(34, 117, '"type": "steps",', "svg-micro", 'style="fill:#a4bdd7"')}${text(34, 142, '"value": 8420', "svg-micro", 'style="fill:#a4bdd7"')}${text(22, 167, "}", "svg-label")}`}<path d="M23 207L28 212L37 203" stroke="${C.mint}" fill="none"/>${text(45, 212, "Yours to keep", "svg-micro", 'style="fill:#a7c2bf"')}</g></g>`;
@@ -736,6 +755,61 @@
         return `<svg viewBox="0 0 720 420" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="${id}-db"><stop stop-color="#172c44"/><stop offset=".55" stop-color="#102035"/><stop offset="1" stop-color="#203a55"/></linearGradient><clipPath id="${id}-wave"><rect x="0" y="0" width="180" height="65"/></clipPath></defs>${body}</svg>`;
       }
       const studies = [
+        {
+          id: "watch-phone-archive",
+          group: "watch",
+          name: "From wrist to archive",
+          description:
+            "Watch signals pass through the phone into a personal database. A simple overview of the path.",
+          draw: (id) =>
+            `${watch(57, 92, 0.83)}${wire("M162 205C205 205 218 205 261 205", C.blue, -0.8, 4)}${phone(262, 83, 0.84, "sync")}${wire("M389 205C440 205 456 205 505 205", C.blue, -2.2, 4)}${database(id, 505, 140, 0.82)}`,
+        },
+        {
+          id: "watch-to-phone",
+          group: "watch",
+          name: "Made on your wrist",
+          description:
+            "A larger watch and a quiet phone silhouette, joined by three streams of health data.",
+          draw: (id) =>
+            `${watch(119, 72, 1)}${[C.pink, C.lilac, C.blue].map((c, i) => wire(`M247 ${156 + i * 42}C342 ${156 + i * 42} 368 ${153 + i * 39} 464 ${153 + i * 39}`, c, -i * 1.2, 4.8)).join("")}${phone(465, 63, 1)}`,
+        },
+        {
+          id: "watch-signals",
+          group: "watch",
+          name: "Three signals, one watch",
+          description:
+            "Heart rate, sleep, and movement emerge as abstract traces. No interface to read.",
+          draw: (id) =>
+            `${watch(108, 73, 1)}${[C.pink, C.lilac, C.blue].map((c, i) => `${wire(`M237 211C320 211 330 ${109 + i * 95} 460 ${109 + i * 95}`, c, -i * 1.3, 5.2)}${i === 2 ? bars(483, 262, c, 1) : wave(483, 90 + i * 95, c)}`).join("")}`,
+        },
+        {
+          id: "watch-workout-flow",
+          group: "watch",
+          name: "A workout travels with you",
+          description:
+            "A route on the watch moves through the phone to the archive. The motion tells the story.",
+          draw: (id) =>
+            `${watch(56, 91, 0.85, "workout")}${wire("M166 208C210 208 222 208 265 208", C.blue, -1, 3.9)}${phone(266, 83, 0.84, "workout")}${wire("M393 208C447 208 461 208 511 208", C.blue, -2.6, 3.9)}${database(id, 512, 145, 0.78)}`,
+        },
+        {
+          id: "watch-pulse",
+          group: "watch",
+          name: "A pulse leaves the wrist",
+          description:
+            "A spare heart-rate study, with a small signal crossing the space between watch and phone.",
+          draw: (id) =>
+            `${watch(115, 72, 1, "pulse")}${wave(304, 183, C.pink, 1.05)}${wire("M244 205H300", C.pink, -0.3, 2.8)}${wire("M430 205H474", C.pink, -1.5, 2.8)}${phone(475, 65, 1)}`,
+        },
+        {
+          id: "watch-to-files",
+          group: "watch",
+          name: "From wrist to portable files",
+          description:
+            "Watch to phone, then out to CSV and JSON. A high-level export composition.",
+          draw: (id) =>
+            `${watch(46, 95, 0.82)}${wire("M153 210H243", C.blue, -0.8, 4.5)}${phone(244, 89, 0.8)}${wire("M365 186C421 186 433 129 499 129", C.blue, -2, 4.4)}${wire("M365 231C429 231 450 292 534 292", C.lilac, -3.2, 4.6)}${file(497, 55, 0.6, "csv", "file-appear")}${file(533, 230, 0.56, "json", "file-appear")}`,
+        },
+
         {
           id: "signal-archive",
           group: "sync",
@@ -855,6 +929,7 @@
         },
       ];
       const collections = [
+        { id: "watch", title: "From the watch" },
         { id: "sync", title: "Sync & devices" },
         { id: "export", title: "Export & organize" },
         { id: "live", title: "Workouts & live data" },
