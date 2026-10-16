@@ -1,8 +1,9 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Activity, ArrowDownToLine, Database, Pause, Play } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 import styles from "./signal-lab.module.css";
+import { SyncJourney, ExportJourney } from "./data-journeys";
 
 const signals = {
   Activity: { color: "#85baff", unit: "steps", values: [24, 42, 30, 70, 48, 88, 62, 96, 74, 100, 60, 80], value: "8,420", description: "See the rhythm of your movement." },
@@ -16,7 +17,7 @@ export function SignalLab({ variant = "field" }: { variant?: "field" | "chart" |
   const id = useId().replace(/:/g, "");
   const [paused, setPaused] = useState(false);
   const [signal, setSignal] = useState<Signal>("Activity");
-  const [format, setFormat] = useState("CSV");
+  const [summaries, setSummaries] = useState(false);
   const current = signals[signal];
   const points = current.values.map((v, i) => `${35 + i * 43},${220 - v * 1.6}`).join(" ");
 
@@ -38,34 +39,25 @@ export function SignalLab({ variant = "field" }: { variant?: "field" | "chart" |
     </div>
   );
 
-  if (variant === "sync") return (
-    <div className={styles.sync}>
-      <div className={styles.syncNodes}><span><Activity size={28} />Apple Health</span><svg viewBox="0 0 220 70" aria-hidden="true"><path d="M0 35 H220" /><path d="M0 35 H220" strokeDasharray="3 28" className={styles.flow} /></svg><span><Database size={28} />Your database</span></div>
-      <div className={styles.records}>{["Heart rate", "Sleep analysis", "Step count", "Workout"].map((name, i) => <div key={name}><span className={styles.recordDot} style={{ opacity: 1 - i * .15 }} /><span>{name}</span><span>Ready to sync</span></div>)}</div>
-      <p className={styles.caption}>A growing archive. A destination you choose.</p>
-    </div>
-  );
-
-  if (variant === "export") return (
-    <div className={styles.export}>
-      <div className={styles.exportHeading}><ArrowDownToLine size={24} /><span>Take your data with you.</span></div>
-      <div className={styles.formatButtons} role="group" aria-label="Preview an export format">{["CSV", "JSON"].map(item => <button key={item} type="button" aria-pressed={format === item} onClick={() => setFormat(item)}>{item}</button>)}</div>
-      <pre className={styles.code} aria-live="polite">{format === "CSV" ? "type,value,unit\nstep_count,8420,count\nheart_rate,64,bpm\nsleep_analysis,7.8,hours" : '{\n  "type": "heart_rate",\n  "value": 64,\n  "unit": "bpm"\n}'}</pre>
-      <p className={styles.caption}>Illustrative format preview</p>
-    </div>
-  );
+  if (variant === "sync") return <SyncJourney />;
+  if (variant === "export") return <ExportJourney />;
 
   return (
     <div className={`${styles.chart} ${variant === "detail" ? styles.detail : ""}`} style={{ "--signal-color": current.color } as React.CSSProperties}>
       <div className={styles.chartTop}><span>{variant === "detail" ? "A closer look" : "Find your rhythm"}</span><span>Illustrative data</span></div>
       <div className={styles.signalButtons} role="group" aria-label="Choose a health signal">{(Object.keys(signals) as Signal[]).map(item => <button key={item} type="button" aria-pressed={signal === item} onClick={() => setSignal(item)}>{item}</button>)}</div>
+      {variant === "detail" && <div className={styles.viewButtons} role="group" aria-label="Choose level of detail"><button type="button" aria-pressed={!summaries} onClick={() => setSummaries(false)}>Individual readings</button><button type="button" aria-pressed={summaries} onClick={() => setSummaries(true)}>Summaries</button></div>}
       <div className={styles.reading} aria-live="polite"><strong>{current.value}</strong><span>{current.unit}<br />{current.description}</span></div>
-      <svg viewBox="0 0 550 260" role="img" aria-label={`Illustrative ${signal.toLowerCase()} chart`} className={styles.chartSvg}>
+      <svg viewBox="0 0 550 260" role="img" aria-label={`Illustrative ${signal.toLowerCase()} ${variant === "detail" ? summaries ? "summary" : "individual readings" : "chart"}`} className={styles.chartSvg}>
         {[60, 110, 160, 210].map(y => <line key={y} x1="30" x2="525" y1={y} y2={y} stroke="currentColor" opacity=".09" />)}
-        {variant === "detail" ? current.values.map((v, i) => <rect key={i} x={35 + i * 43} y={220 - v * 1.6} width="20" height={v * 1.6} rx="5" fill="var(--signal-color)" opacity={.3 + i / 20} />) : <><polygon points={`35,240 ${points} 508,240`} fill="var(--signal-color)" opacity=".06" /><polyline points={points} fill="none" stroke="var(--signal-color)" strokeWidth="2.5" strokeLinejoin="round" />{current.values.map((v, i) => <circle key={i} cx={35 + i * 43} cy={220 - v * 1.6} r="3" fill="var(--signal-color)" />)}</>}
+        {variant === "detail" ? summaries ? Array.from({ length: 4 }, (_, i) => {
+          const value = current.values.slice(i * 3, i * 3 + 3).reduce((sum, v) => sum + v, 0) / 3;
+          return <rect key={i} x={55 + i * 125} y={220 - value * 1.6} width="70" height={value * 1.6} rx="5" fill="var(--signal-color)" opacity={.4 + i / 6} />;
+        }) : current.values.map((v, i) => <g key={i}><line x1={35 + i * 43} x2={35 + i * 43} y1="225" y2={220 - v * 1.6} stroke="var(--signal-color)" opacity=".15" /><circle cx={35 + i * 43} cy={220 - v * 1.6} r="5" fill="var(--signal-color)" /></g>) : <><polygon points={`35,240 ${points} 508,240`} fill="var(--signal-color)" opacity=".06" /><polyline points={points} fill="none" stroke="var(--signal-color)" strokeWidth="2.5" strokeLinejoin="round" />{current.values.map((v, i) => <circle key={i} cx={35 + i * 43} cy={220 - v * 1.6} r="3" fill="var(--signal-color)" />)}</>}
+
         <text x="30" y="258" fill="currentColor" opacity=".6" fontSize="11">Earlier</text><text x="490" y="258" fill="currentColor" opacity=".6" fontSize="11">Later</text>
       </svg>
-      <p className={styles.caption}>Explore your own history in the dashboard.</p>
+      <p className={styles.caption}>{variant === "detail" ? summaries ? "The same signals, grouped into averages. An illustrative summary." : "Every point is a reading. Switch to summaries to see the larger pattern." : "Explore your own history in the dashboard."}</p>
     </div>
   );
 }

@@ -29,9 +29,12 @@ export previews. The visual system uses midnight (#08101d), deep slate
 (#101b2d), glacier (#85baff), periwinkle (#b7a5f5), and chalk (#ecf2ff).
 Geist headlines use generous scale and restrained weight. A single animated
 signal sculpture carries the motion; it has a pause control and respects
-reduced-motion preferences. Sync animates once; chart and format changes respond
-to user input. Shared page heroes use left-aligned type and static signal
-contours. No animation library, health-data requests, or new tracking is added.
+reduced-motion preferences. Sync and export scenes play once when they enter
+the viewport, then respond to signal, range, format, and replay controls. Colored
+traces converge into a layered database; selected signals assemble into file
+previews. The detail chart switches between individual readings and grouped
+averages. All example values are illustrative; export previews create no files.
+Shared page heroes use left-aligned type and static signal contours. No animation library, health-data requests, or new tracking is added.
 Real product screenshots remain available in the dashboard demo and on other
 product pages. This is a design experiment, not a deployed release.
 

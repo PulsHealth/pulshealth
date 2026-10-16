@@ -1,0 +1,69 @@
+.journey { --journey-color: #85baff; min-width: 0; position: relative; padding: 2rem 0 0; }
+.sceneHeading { display: flex; justify-content: space-between; align-items: baseline; gap: 1.5rem; font-size: 1rem; color: #d2dff2; }
+.sceneHeading > :last-child { font-size: .7rem; color: #96aac7; flex-shrink: 0; }
+.measurements { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.5rem; }
+.measurements button, .formatControl button { display: flex; align-items: center; justify-content: center; gap: .5rem; padding: .6rem .8rem; border: 1px solid #ffffff20; border-radius: 100px; color: #a3b5cf; font-size: .8rem; cursor: pointer; }
+.measurements button[aria-pressed="true"] { color: var(--journey-color); border-color: var(--journey-color); background: color-mix(in srgb, var(--journey-color) 7%, transparent); }
+.syncScene { display: block; width: 100%; margin-top: 1rem; overflow: visible; }
+.packet { opacity: 0; stroke-dasharray: 5 95; stroke-dashoffset: 5; }
+.journey[data-running="true"] .packet { animation: transfer 1.8s cubic-bezier(.32,.05,.44,1) both; }
+.journey[data-running="true"] .databaseLayer { animation: receive .7s ease both; }
+.endpoints { display: flex; justify-content: space-between; align-items: center; padding: 0 10% 1.5rem 1%; color: #b9cbe5; font-size: .85rem; }
+.endpoints svg { color: #6f87a7; }
+.receipt { display: flex; align-items: center; flex-wrap: wrap; gap: .8rem; padding: 1.15rem 0; border-block: 1px solid #ffffff18; font-size: .8rem; }
+.receipt strong { font-weight: 500; color: var(--journey-color); }
+.receipt > :last-child { margin-left: auto; color: #95abc8; font-size: .7rem; }
+.statusDot { width: 5px; height: 5px; background: var(--journey-color); border-radius: 100%; }
+.sceneFooter { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
+.sceneFooter p { max-width: 32em; font-size: .7rem; line-height: 1.6; color: #93a8c4; }
+.sceneFooter button { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; padding: .5rem; border-radius: 5px; color: #b8cbe7; cursor: pointer; font-size: .7rem; }
+.sceneFooter button:hover { background: #ffffff0c; }
+.journey button:focus-visible, .journey select:focus-visible { outline: 2px solid #cbdfff; outline-offset: 4px; }
+.exportJourney { border-block: 1px solid #ffffff18; padding-block: 2rem 1rem; }
+.exportControls { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem 1.25rem; margin-top: 1.8rem; }
+.exportControls label { display: flex; flex-direction: column; gap: .5rem; color: #93a8c4; font-size: .7rem; }
+.exportControls select { padding: .5rem 1.5rem .5rem .6rem; border: 1px solid #ffffff25; border-radius: 6px; color: #d2dff2; background: #101b2d; font: inherit; font-size: .8rem; cursor: pointer; }
+.formatControl { display: flex; gap: .35rem; margin-left: auto; }
+.formatControl button { border-radius: 6px; padding: .5rem .65rem; }
+.formatControl button[aria-pressed="true"] { background: #d2e3ff; border-color: #d2e3ff; color: #10213d; }
+.exportScene { position: relative; display: grid; grid-template-columns: 1fr 1.7fr; align-items: center; min-height: 330px; padding-block: 2.5rem 2rem; }
+.sourceSignal { position: relative; z-index: 1; color: var(--journey-color); display: flex; flex-direction: column; align-items: center; width: 110px; gap: 1.5rem; }
+.sourceSignal > :last-child { font-size: .75rem; color: #9caec7; }
+.signalBars { display: flex; align-items: center; gap: 4px; height: 100px; }
+.signalBars span { display: block; width: 3px; background: var(--journey-color); border-radius: 2px; }
+.exportStream { position: absolute; left: 16%; top: 20%; width: 42%; height: 60%; }
+.fileSheet { position: relative; justify-self: center; width: 225px; min-height: 250px; background: #14243d; border: 1px solid #6c89b650; border-radius: 10px 24px 10px 10px; padding: 1.5rem 1.2rem 1rem; transform: rotate(4deg); box-shadow: 12px 14px 0 -2px #0e1b30, 12px 14px 0 -1px #6380ac28, 24px 28px 0 -4px #0c1728, 24px 28px 0 -3px #6380ac18; }
+.fileHeading { display: flex; justify-content: space-between; align-items: center; color: #c6d8f0; font-size: 1rem; }
+.sheetGrid { margin-block: 1.6rem; }
+.sheetGrid > div { display: grid; grid-template-columns: 1.2fr 1fr .8fr; gap: .65rem; padding: .5rem 0; border-bottom: 1px solid #ffffff0c; font-size: .55rem; color: #8299bb; }
+.sheetLine { height: 3px; width: 75%; background: #748fb544; align-self: center; }
+.sheetLine:nth-child(2) { width: 50%; background: var(--journey-color); opacity: .6; }
+.jsonLines { display: flex; flex-direction: column; justify-content: center; min-height: 150px; gap: .6rem; color: #b2c7e7; font-size: .65rem; font-family: var(--font-geist-mono), monospace; }
+.jsonLines i { display: inline-block; width: 1em; }
+.fileSeal { display: flex; align-items: center; gap: .5rem; font-size: .6rem; color: #a6c3d7; }
+.fileDescription { display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; margin: .7rem 0 2rem; }
+.fileDescription strong { color: #d8e5f7; font-size: 1rem; font-weight: 450; }
+.fileDescription > span { font-size: .8rem; color: #a2b5cf; text-align: right; }
+.journey[data-running="true"] .fileSheet { animation: assemble 2.2s cubic-bezier(.2,.7,.3,1) both; }
+.journey[data-running="true"] .signalBars span { animation: collect 1.2s ease both; }
+@keyframes transfer { 0% { opacity: 0; stroke-dashoffset: 5; } 15%, 80% { opacity: 1; } 100% { opacity: 0; stroke-dashoffset: -100; } }
+@keyframes receive { 0% { opacity: .25; transform: translateY(-5px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes assemble { 0%, 15% { opacity: .25; transform: translateX(12px) rotate(9deg); } 70%, 100% { opacity: 1; transform: translateX(0) rotate(4deg); } }
+@keyframes collect { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .journey[data-running="true"] .packet, .journey[data-running="true"] .databaseLayer, .journey[data-running="true"] .fileSheet, .journey[data-running="true"] .signalBars span { animation: none; } }
+@media (max-width: 640px) {
+  .sceneHeading { font-size: .9rem; }
+  .exportControls { gap: 1rem .75rem; }
+  .exportControls select { padding-right: .7rem; }
+  .formatControl { margin-left: 0; }
+  .exportScene { min-height: 300px; grid-template-columns: .8fr 1.7fr; }
+  .fileSheet { width: clamp(165px, 49vw, 190px); padding: 1.1rem 1rem; min-height: 230px; }
+  .sourceSignal { width: 75px; }
+  .signalBars { gap: 3px; }
+  .signalBars span { width: 2px; }
+  .fileDescription > span { max-width: 24em; }
+  .receipt { gap: .6rem; }
+  .receipt > :last-child { margin-left: 0; flex-basis: 100%; padding-left: .9rem; }
+}
+
+.fileSheet::after { content: ""; position: absolute; right: -1px; top: -1px; width: 24px; height: 24px; background: #2d4262; clip-path: polygon(0 0, 100% 100%, 0 100%); border-radius: 0 0 0 4px; }

@@ -4,37 +4,28 @@
 .traces path { stroke-width: .9; stroke-dasharray: 900 130; animation: trace 12s linear infinite; }
 .field[data-paused="true"] * { animation-play-state: paused; }
 .fieldLabel { position: absolute; top: 8%; left: 4%; font-size: .8rem; color: #a3b9d5; display: flex; align-items: center; gap: .6rem; }
-.dot, .recordDot { width: 6px; height: 6px; border-radius: 50%; background: #9bbfff; display: inline-block; flex-shrink: 0; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: #9bbfff; display: inline-block; flex-shrink: 0; }
 .fieldFoot { position: absolute; bottom: 5%; left: 4%; right: 4%; display: flex; align-items: center; justify-content: space-between; font-size: .8rem; color: #a3b9d5; }
 .fieldFoot button { border: 1px solid #ffffff30; border-radius: 50%; width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer; }
-.chart, .sync, .export { padding: clamp(1.4rem,4vw,3rem); border: 1px solid #ffffff19; background: #0b1424; border-radius: 20px; }
+.chart { padding: clamp(1.4rem,4vw,3rem); border: 1px solid #ffffff19; background: #0b1424; border-radius: 20px; }
 .chart { background: linear-gradient(130deg, #101f38, #0a1221 75%); }
 .chartTop { display: flex; justify-content: space-between; gap: 1rem; color: #d5e4fc; font-size: 1rem; }
 .chartTop > :last-child { font-size: .75rem; color: #94a6be; }
-.signalButtons, .formatButtons { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 2rem; }
-.signalButtons button, .formatButtons button { font-size: .85rem; padding: .65rem .9rem; border: 1px solid #ffffff24; border-radius: 100px; color: #a6b5cb; cursor: pointer; }
+.signalButtons { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 2rem; }
+.signalButtons button { font-size: .85rem; padding: .65rem .9rem; border: 1px solid #ffffff24; border-radius: 100px; color: #a6b5cb; cursor: pointer; }
 .signalButtons button[aria-pressed="true"] { background: var(--signal-color); color: #091325; border-color: transparent; }
 .reading { display: flex; align-items: center; gap: 1.5rem; margin-top: 2.5rem; }
 .reading strong { font-size: clamp(3rem, 6vw, 5rem); font-weight: 450; letter-spacing: -.07em; line-height: 1; }
 .reading span { font-size: .85rem; color: #a6b5cb; line-height: 1.7; }
 .chartSvg { display: block; width: 100%; margin-top: 2rem; }
 .caption { margin-top: 1.5rem; font-size: .8rem; color: #97abc7; }
-.syncNodes { display: flex; align-items: center; padding: 2rem 0 3rem; }
-.syncNodes > span { flex-shrink: 0; display: grid; justify-items: center; gap: 1rem; font-size: .8rem; color: #d5e4fc; }
-.syncNodes svg:not(:first-child) { min-width: 20px; }
-.syncNodes > svg { width: 100%; margin: 0 1rem; fill: none; stroke: #405577; }
-.syncNodes > svg path:last-child { stroke: #91bcff; stroke-width: 3; }
-.flow { animation: trace 5s linear 1; }
-.records > div { display: flex; gap: .8rem; align-items: center; padding: 1rem 0; border-top: 1px solid #ffffff12; font-size: .85rem; }
-.records > div > :last-child { margin-left: auto; color: #9cabc2; font-size: .75rem; }
-.export { background: #111b2c; }
-.exportHeading { display: flex; align-items: center; gap: 1rem; color: #c7d9f5; }
-.formatButtons button[aria-pressed="true"] { background: #c3d8ff; color: #111b2c; }
-.code { min-height: 185px; margin-top: 2rem; padding: 1.5rem; border-radius: 10px; background: #080f1d; color: #b6cfef; font-size: clamp(.7rem, 1.3vw, .9rem); line-height: 2; overflow-x: auto; }
-.field button:focus-visible, .chart button:focus-visible, .export button:focus-visible { outline: 2px solid #d1e3ff; outline-offset: 4px; }
+.field button:focus-visible, .chart button:focus-visible { outline: 2px solid #d1e3ff; outline-offset: 4px; }
+.viewButtons { display: flex; gap: 1rem; margin-top: 1.5rem; font-size: .75rem; color: #a6b5cb; }
+.viewButtons button { cursor: pointer; padding-bottom: .5rem; border-bottom: 1px solid transparent; }
+.viewButtons button[aria-pressed="true"] { color: #e0ecff; border-color: var(--signal-color); }
 @keyframes orbit { from { transform: rotate(-7deg) scale(.97); } to { transform: rotate(7deg) scale(1.03); } }
 @keyframes trace { to { stroke-dashoffset: -1030; } }
-@media (prefers-reduced-motion: reduce) { .traces, .traces path, .flow { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .traces, .traces path { animation: none; } }
 @media (max-width: 600px) { .reading { align-items: flex-start; gap: 1rem; } .reading span { font-size: .75rem; } .chartTop { font-size: .9rem; } .chartTop > :last-child { font-size: .65rem; } }
 @media (min-width: 900px) {
   .chart:not(.detail) { display: grid; grid-template-columns: 1fr 1.4fr; column-gap: 3rem; }
