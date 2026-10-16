@@ -177,7 +177,7 @@ struct OnboardingView: View {
             VStack(spacing: 24) {
                 pageIcon("square.and.arrow.up", color: .accentColor)
                 pageTitle("Export your data")
-                bodyText("Export every Health data type from the latest 30 days, as often as you like. CSV, JSON and JSONL are all included with Free.")
+                bodyText("Export your Health data to CSV, JSON or JSONL files.")
                 VStack(alignment: .leading, spacing: 18) {
                     feature(
                         "list.bullet.rectangle", "Raw samples",
@@ -186,7 +186,7 @@ struct OnboardingView: View {
                         "chart.bar.xaxis", "Aggregates",
                         "Hourly or daily summaries, like steps per day.")
                 }
-                bodyText("Need older history? Pro removes the app’s history limit. No account or database is required for file exports.")
+                bodyText("No account or database is required for file exports.")
                     .font(.footnote)
             }
         }
@@ -208,7 +208,7 @@ struct OnboardingView: View {
                         "sparkles", "Use it your way",
                         "Ask your AI assistant about it, or browse it on the web.")
                 }
-                bodyText("Optional. Free sync includes 5 distinct health data types from the latest 30 days. Pro includes unlimited types and all permitted history. Set it up any time from the Sync tab.")
+                bodyText("Optional. Set it up any time from the Sync tab.")
                     .font(.footnote)
                 // Opens in Safari, outside the app.
                 Link(destination: URL(string: "https://pulshealth.com/#ways")!) {
