@@ -7,7 +7,12 @@ package; this app is configuration, visibility, and lifecycle wiring. See
 
 Sync, export, and control Apple Health data: explore on the phone, export CSV,
 JSON or JSONL without an account, and sync to a self-managed database or a
-compatible receiver. PulsHealth also offers hosted accounts.
+compatible receiver. PulsHealth managed hosting is coming soon; new users can join the signup
+waitlist, while invited accounts retain access. Sync setup lists Your Own
+Server first and PulsHealth Managed Server second. Managed setup restores an
+existing on-device account session or offers account sign-in. Waitlist signup
+uses the existing web form; accounts are created after approval, and joining
+does not enable Health sync.
 
 Published as
 [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) on the App
@@ -220,12 +225,12 @@ Sources/
 │                         until Show All; pull-to-refresh and the error alert;
 │                         then rows to Database and Activity. The
 │                         PendingChangesBar sits on this tab.
-├── ServerSettingsView.swift  Sync → Database: first the choice, PulsHealth
-│                         Database or Your Own Database (none checked until
-│                         one is applied). PulsHealth: who holds the data
-│                         (What the Developer Holds), Sign In to PulsHealth
-│                         and Create Account (both in the web authentication
-│                         sheet), then the returned code — its database named
+├── ServerSettingsView.swift  Sync → Database: Your Own Server first, then
+│                         PulsHealth Managed Server (none checked until
+│                         one is chosen). Managed: Coming soon, Join the Waitlist
+│                         (the signup form), native account sign-in, or the
+│                         restored account identity and Connect Existing Account
+│                         for invited users. Pairing returns a code — its database named
 │                         — tested above Save & Apply; once applied, Manage
 │                         Account, Connect an AI Assistant (docs, in
 │                         Safari). Saved Databases offers Switch and Unpair. Account deletion stays

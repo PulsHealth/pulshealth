@@ -34,10 +34,14 @@ struct ServerSettingsView: View {
     @State private var destinationToSwitch: SavedSyncDestination?
     @State private var destinationToUnpair: SavedSyncDestination?
     @State private var loaded = false
+    @State private var account = UserAccount()
+    @State private var signingIn = false
     /// Outcome of the last Test Connection for the values currently entered;
     /// cleared whenever they change.
     @State private var connectionTest = DatabaseConnectionTest()
     @State private var showScanner = false
+
+    private var hasVerifiedAccount: Bool { account.hasSession && account.savedProfile != nil }
 
     var body: some View {
         Form {
@@ -54,6 +58,9 @@ struct ServerSettingsView: View {
             case .own: ownDatabaseSections
             case nil: EmptyView()
             }
+        }
+        .task(id: setup.destination) {
+            if setup.destination == .pulsHealth { await account.restore() }
         }
         .disabled(model.isUpdatingConnection)
         .navigationTitle("Database")
@@ -186,13 +193,13 @@ struct ServerSettingsView: View {
     private var destinationSection: some View {
         Section {
             destinationRow(
-                .pulsHealth, title: "PulsHealth Database",
-                detail: "Hosted for you. Sign in or create an account.",
-                symbol: "person.crop.circle")
-            destinationRow(
-                .own, title: "Your Own Database",
-                detail: "One you run yourself, connected with its pairing code.",
+                .own, title: "Your Own Server",
+                detail: "Connect a server you run and control.",
                 symbol: "externaldrive.connected.to.line.below")
+            destinationRow(
+                .pulsHealth, title: "PulsHealth Managed Server",
+                detail: "Coming soon · Join the waitlist",
+                symbol: "cloud")
         } header: {
             Text(model.savedDestinations.isEmpty ? "Sync To" : "Add or Edit a Database")
         } footer: {
@@ -296,28 +303,76 @@ struct ServerSettingsView: View {
 
         } else {
             Section {
-                Text("Keep a live copy of your Health data, see it on the web at app.pulshealth.com, and connect Claude or another AI assistant to it.")
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("The PulsHealth database is run by the app’s developer, who can access what is stored in it and uses it only to show it back to you.")
-                    .fixedSize(horizontal: false, vertical: true)
-                Link(destination: PulsHealthDatabase.privacyURL) {
-                    Label("What the Developer Holds", systemImage: "hand.raised")
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Coming soon", systemImage: "sparkles")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.tint)
+                    Text("Your data. Your own space.")
+                        .font(.title2.bold())
+                    Text("Let PulsHealth manage your server. Keep your Health data in sync, browse it on the web, and connect your AI assistant — without setting up a server.")
+                        .foregroundStyle(.secondary)
+                    Text("Join the waitlist and we’ll email you when a spot opens.")
+                }
+                .padding(.vertical, 8)
+                if !hasVerifiedAccount {
+                    sheetButton("Join the Waitlist", systemImage: "person.badge.plus",
+                                page: PulsHealthDatabase.signUpURL)
+                        .disabled(account.busy || signingIn)
                 }
             } header: {
-                Text("About the PulsHealth Database")
+                Text("PulsHealth Managed Server")
+            } footer: {
+                Text("Managed hosting is separate from PulsHealth Pro. Joining the waitlist does not start syncing or upload Health data.")
             }
             Section {
-                sheetButton("Sign In to PulsHealth", systemImage: "person.crop.circle.badge.checkmark",
-                            page: PulsHealthDatabase.connectURL)
-                sheetButton("Create Account", systemImage: "person.crop.circle.badge.plus",
-                            page: PulsHealthDatabase.signUpURL)
-                if let signInProblem {
-                    Label(signInProblem, systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.red)
+                if hasVerifiedAccount {
+                    Label("Signed in to PulsHealth", systemImage: "person.crop.circle.badge.checkmark")
+                    if let email = account.savedProfile?.email {
+                        Text(email).foregroundStyle(.secondary)
+                    }
+                    sheetButton("Connect Existing Account", systemImage: "arrow.triangle.2.circlepath",
+                                page: PulsHealthDatabase.connectURL)
+                } else {
+                    Button(action: signInToAccount) {
+                        Label("Sign In to PulsHealth", systemImage: "person.crop.circle")
+                    }
+                    .disabled(signingIn || account.busy)
+                }
+                if signingIn || account.busy { ProgressView("Loading account…") }
+                if let problem = account.problem ?? signInProblem {
+                    Text(problem).font(.caption).foregroundStyle(.red)
+                }
+            } header: {
+                Text("Already Have an Account?")
+            } footer: {
+                Text("Sign in with your PulsHealth account. Already invited? You can connect your existing server. New accounts are created after waitlist approval.")
+            }
+            Section {
+                Link(destination: PulsHealthDatabase.privacyURL) {
+                    Label("How Your Data Is Handled", systemImage: "hand.raised")
                 }
             } footer: {
-                Text("Sign in and tap Connect this iPhone to return here. Then tap Save & Apply to start syncing. New here? Create an account first.")
+                Text("The managed server is run by the app’s developer, who can access the data stored there and uses it only to show it back to you.")
+            }
+
+        }
+    }
+
+    private func signInToAccount() {
+        guard !signingIn, !account.busy else { return }
+        signingIn = true
+        account.problem = nil
+        let attempt = UserAccount.SignIn()
+        Task {
+            defer { signingIn = false }
+            do {
+                let callback = try await webAuthenticationSession.authenticate(
+                    using: attempt.url, callbackURLScheme: PulsHealthDatabase.callbackScheme,
+                    preferredBrowserSession: .shared)
+                await account.finishSignIn(callback, attempt: attempt)
+            } catch {
+                if case .cancelled = PulsHealthDatabase.outcome(ofError: error) { return }
+                account.problem = "Sign-in did not finish. Try again."
             }
         }
     }
