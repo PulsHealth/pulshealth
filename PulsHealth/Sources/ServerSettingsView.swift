@@ -328,7 +328,7 @@ struct ServerSettingsView: View {
             } header: {
                 Text("PulsHealth Managed Server")
             } footer: {
-                Text("Managed hosting is separate from PulsHealth Pro. No Health data is uploaded until you tap Save & Apply.")
+                Text("No Health data is uploaded until you tap Save & Apply.")
             }
             Section {
                 if hasVerifiedAccount {

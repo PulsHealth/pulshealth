@@ -42,11 +42,6 @@ struct SyncIntro: View {
                 Text("Always in Sync")
                     .font(.title.bold())
                     .accessibilityAddTraits(.isHeader)
-                Text("Automatically sync your Health data to the server you choose.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 8)
@@ -131,7 +126,7 @@ struct SyncIntro: View {
             symbol: "cloud.fill", color: .accentColor,
             title: "PulsHealth Managed Server",
             detail: "Your Health data hosted for you, with no server to set up.",
-            footer: "Exploring and exporting never need a server. Managed hosting is separate from PulsHealth Pro."
+            footer: "Exploring and exporting never need a server."
         ) {
             Button {
                 choose(.pulsHealth)
