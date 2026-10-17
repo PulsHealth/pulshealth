@@ -318,21 +318,7 @@ struct ServerSettingsView: View {
 
         } else {
             Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Your data. Your own space.")
-                        .font(.title2.bold())
-                    Text("Let PulsHealth manage your server. Keep your Health data in sync, browse it on the web, and connect your AI assistant — without setting up a server.")
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 8)
-            } header: {
-                Text("PulsHealth Managed Server")
-            } footer: {
-                Text("No Health data is uploaded until you tap Save & Apply.")
-            }
-            Section {
                 if hasVerifiedAccount {
-                    Label("Signed in to PulsHealth", systemImage: "person.crop.circle.badge.checkmark")
                     if let email = account.savedProfile?.email {
                         Text(email).foregroundStyle(.secondary)
                     }
@@ -358,17 +344,6 @@ struct ServerSettingsView: View {
                 if let problem = account.problem ?? signInProblem {
                     Text(problem).font(.caption).foregroundStyle(.red)
                 }
-            } header: {
-                Text("PulsHealth Account")
-            } footer: {
-                Text("Use the account signed in through Settings, or sign in here to connect your server.")
-            }
-            Section {
-                Link(destination: PulsHealthDatabase.privacyURL) {
-                    Label("How Your Data Is Handled", systemImage: "hand.raised")
-                }
-            } footer: {
-                Text("The managed server is run by the app’s developer, who can access the data stored there and uses it only to show it back to you.")
             }
 
         }

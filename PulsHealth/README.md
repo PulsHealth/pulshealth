@@ -10,7 +10,8 @@ JSON or JSONL without an account, and sync to a self-managed database or a
 compatible receiver. Sync setup lists Your Own Server first and PulsHealth Managed Server second.
 Selecting managed hosting restores the account signed in through Settings or
 opens account sign-in. Use PulsHealth Server then requests a pairing using that
-native account session.
+native account session. The account controls appear only after choosing managed hosting;
+signed-in users can connect directly without another sign-in prompt.
 The connection is tested and staged for explicit Save & Apply. Create Account
 explains that hosting is currently full and opens the signup waitlist; users
 are notified by email after approval. Deploy the viewer’s `/api/native/connect`
@@ -55,7 +56,7 @@ third-party SDK is added.
 
 ## User settings and account identity
 
-Settings → User offers optional PulsHealth account sign-in without enabling
+Settings shows the signed-in account’s saved name and email; its User page offers optional PulsHealth account sign-in without enabling
 Health sync or changing the chosen database. Signed out, identity and
 characteristics stay optional local settings and Advanced permits editing the
 UUID. Signed in, the page loads the account's identity and optional profile,
