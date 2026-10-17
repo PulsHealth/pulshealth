@@ -4,6 +4,9 @@ import PulsHealthSync
 
 /// A device-local thank-you, separate from an auto-renewing subscription.
 /// Keep the fixed dates even after expiry; a later launch must never restart it.
+/// Temporary launch transition: retirement is tracked in issue #290 and
+/// docs/appstore/subscriptions.md#retiring-the-gift. Review within 90 days of
+/// the first public 2.2 release; do not remove active grants on that review date.
 @MainActor
 final class EarlyUserProGift {
     nonisolated static let duration: TimeInterval = 30 * 24 * 60 * 60
