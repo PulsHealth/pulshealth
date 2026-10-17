@@ -34,15 +34,11 @@ struct ServerSettingsView: View {
     @State private var destinationToSwitch: SavedSyncDestination?
     @State private var destinationToUnpair: SavedSyncDestination?
     @State private var loaded = false
-    @State private var account = UserAccount()
-    @State private var signingIn = false
     @State private var showSignupNotice = false
     /// Outcome of the last Test Connection for the values currently entered;
     /// cleared whenever they change.
     @State private var connectionTest = DatabaseConnectionTest()
     @State private var showScanner = false
-
-    private var hasVerifiedAccount: Bool { account.hasSession && account.savedProfile != nil }
 
     var body: some View {
         Form {
@@ -63,9 +59,8 @@ struct ServerSettingsView: View {
         .task(id: setup.destination) {
             guard setup.destination == .pulsHealth, setup.signedIn == nil,
                   !model.usesPulsHealthDatabase else { return }
-            await account.restore()
-            guard !Task.isCancelled else { return }
-            if !hasVerifiedAccount { signInToAccount() }
+            guard sheetOpenOn == nil else { return }
+            openSheet(on: PulsHealthDatabase.connectURL)
         }
         .disabled(model.isUpdatingConnection)
         .navigationTitle("Database")
@@ -318,66 +313,22 @@ struct ServerSettingsView: View {
 
         } else {
             Section {
-                if hasVerifiedAccount {
-                    if let email = account.savedProfile?.email {
-                        Label("Signed in as \(email)", systemImage: "person.crop.circle.badge.checkmark")
-                            .foregroundStyle(.secondary)
-                    }
-                    Text("This iPhone isn’t connected yet. Connect your server, then tap Save & Apply to start syncing.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Button("Connect PulsHealth Server") { Task { await prepareManagedServer() } }
-                        .disabled(account.busy || signingIn)
-                    if account.problem != nil {
-                        Button("Sign In Again", action: signInToAccount)
-                            .disabled(account.busy || signingIn)
-                    }
-                } else {
-                    Button(action: signInToAccount) {
-                        Label("Sign In to PulsHealth", systemImage: "person.crop.circle")
-                    }
-                    .disabled(signingIn || account.busy)
+                Button {
+                    openSheet(on: PulsHealthDatabase.connectURL)
+                } label: {
+                    Label("Connect PulsHealth Server", systemImage: "person.crop.circle")
                 }
-                if !hasVerifiedAccount {
-                    Button { showSignupNotice = true } label: {
-                        Label("Create Account", systemImage: "person.crop.circle.badge.plus")
-                    }
-                    .disabled(signingIn || account.busy || sheetOpenOn != nil)
+                .disabled(sheetOpenOn != nil)
+                Button { showSignupNotice = true } label: {
+                    Label("Create Account", systemImage: "person.crop.circle.badge.plus")
                 }
-                if signingIn || account.busy { ProgressView("Connecting your account…") }
-                if let problem = account.problem ?? signInProblem {
-                    Text(problem).font(.caption).foregroundStyle(.red)
+                .disabled(sheetOpenOn != nil)
+                if sheetOpenOn != nil { ProgressView("Connecting your account…") }
+                if let signInProblem {
+                    Text(signInProblem).font(.caption).foregroundStyle(.red)
                 }
-            }
-
-        }
-    }
-
-    private func prepareManagedServer() async {
-        signInProblem = nil
-        guard let payload = await account.connectManagedServer(), setup.destination == .pulsHealth else { return }
-        setup.receiveSignIn(payload)
-        model.noteSignInPairing(payload)
-        runConnectionTest()
-    }
-
-    private func signInToAccount() {
-        guard !signingIn, !account.busy else { return }
-        signingIn = true
-        account.problem = nil
-        let attempt = UserAccount.SignIn()
-        Task {
-            defer { signingIn = false }
-            do {
-                let callback = try await webAuthenticationSession.authenticate(
-                    using: attempt.url, callbackURLScheme: PulsHealthDatabase.callbackScheme,
-                    preferredBrowserSession: .shared)
-                if await account.finishSignIn(callback, attempt: attempt), setup.destination == .pulsHealth {
-                    await prepareManagedServer()
-                }
-            } catch {
-                if case .cancelled = PulsHealthDatabase.outcome(ofError: error) { return }
-                account.problem = "Sign-in did not finish. Try again."
+            } footer: {
+                Text("Sign in and tap Connect this iPhone in the browser. Then tap Save & Apply here to start syncing.")
             }
         }
     }
