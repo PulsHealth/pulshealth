@@ -1,0 +1,1320 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PulsHealth · Motion studies</title>
+    <meta
+      name="description"
+      content="A standalone collection of looping PulsHealth graphics: Apple Health, phones, databases, exports, and workouts."
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a0a0a;
+        --panel: #101010;
+        --fg: #fafafa;
+        --muted: #a1a1a1;
+        --blue: #4ca9ff;
+        --soft: #78bdff;
+        --line: #ffffff1a;
+        --pink: #d7a3b4;
+        --lilac: #b3a6d8;
+        --mint: #9ecfc1;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family:
+          Geist,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      button {
+        font: inherit;
+      }
+      a:focus-visible,
+      button:focus-visible {
+        outline: 2px solid var(--blue);
+        outline-offset: 5px;
+      }
+      header {
+        max-width: 1480px;
+        margin: auto;
+        padding: 38px 40px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+      .brand {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .brand svg {
+        width: 27px;
+        height: 27px;
+        color: var(--blue);
+      }
+      .controls {
+        display: flex;
+        gap: 22px;
+        align-items: center;
+      }
+      .controls a {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .pause {
+        background: transparent;
+        color: #c7c7c7;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        font-size: 12px;
+        padding: 9px 12px;
+        cursor: pointer;
+      }
+      .intro {
+        max-width: 1480px;
+        margin: auto;
+        padding: 88px 40px 50px;
+      }
+      .intro h1 {
+        font-size: clamp(38px, 5vw, 68px);
+        font-weight: 450;
+        letter-spacing: -0.055em;
+        line-height: 1.06;
+        margin: 0 0 20px;
+      }
+      .intro p {
+        max-width: 610px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.7;
+        margin: 0;
+      }
+      .intro nav {
+        display: flex;
+        flex-wrap: wrap;
+        row-gap: 12px;
+        gap: 26px;
+        margin-top: 30px;
+        font-size: 13px;
+        color: #c5c5c5;
+      }
+      .intro nav a:hover,
+      .controls a:hover {
+        color: var(--blue);
+      }
+      main {
+        max-width: 1480px;
+        padding: 0 40px 80px;
+        margin: auto;
+      }
+      .collection {
+        scroll-margin-top: 24px;
+        margin-bottom: 64px;
+      }
+      .section-title {
+        font-size: 20px;
+        font-weight: 450;
+        letter-spacing: -0.025em;
+        margin: 0 0 22px;
+      }
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 38px 28px;
+      }
+      .study {
+        min-width: 0;
+      }
+      .art {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        aspect-ratio: 12/7;
+        position: relative;
+      }
+      .art svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+      .caption {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        margin-top: 17px;
+      }
+      .caption h3 {
+        margin: 0 0 7px;
+        font-size: 15px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+      .caption p {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+        margin: 0;
+        max-width: 38em;
+      }
+      .asset-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .solo-link {
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        font-family: inherit;
+        color: #a3a3a3;
+        font-size: 12px;
+        white-space: nowrap;
+        padding: 2px 0;
+        border-bottom: 1px solid #ffffff25;
+      }
+      .solo-link:hover {
+        color: var(--blue);
+      }
+      footer {
+        max-width: 1480px;
+        margin: 0 auto;
+        padding: 0 40px 35px;
+        color: #797979;
+        font-size: 12px;
+      }
+      svg {
+        font-family:
+          Geist,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+      .svg-label {
+        font-size: 13px;
+        fill: #a1a1a1;
+      }
+      .svg-value {
+        font-size: 19px;
+        fill: #dedede;
+        font-weight: 450;
+      }
+      .svg-micro {
+        font-size: 10px;
+        fill: #858585;
+      }
+      .frame {
+        fill: #121212;
+        stroke: #454545;
+        stroke-width: 1.2;
+      }
+      .screen {
+        fill: #0c0c0c;
+      }
+      .divider {
+        stroke: #ffffff10;
+        fill: none;
+      }
+      .wire {
+        fill: none;
+        stroke-width: 1;
+        stroke: var(--blue);
+        opacity: 0.2;
+      }
+      .packet {
+        fill: none;
+        stroke: var(--blue);
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-dasharray: 3 97;
+        animation: flow var(--speed, 3.5s) linear infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .packet.small {
+        stroke-width: 2;
+        stroke-dasharray: 1 99;
+      }
+      .glow-dot {
+        animation: blink 3.5s ease-in-out infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .tier {
+        animation: tier 4.5s ease-in-out infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .wave-shift {
+        animation: waveShift 4s linear infinite;
+      }
+      .bar {
+        transform-box: fill-box;
+        transform-origin: 50% 100%;
+        animation: bar 3s ease-in-out infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .paper {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: paper 7s ease-in-out infinite;
+      }
+      .file-csv {
+        animation: csv 10s linear infinite;
+      }
+      .file-json {
+        animation: json 10s linear infinite;
+      }
+      .file-appear {
+        animation: fileIn 6s ease-in-out infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .runner-bob {
+        animation: bob 0.65s ease-in-out infinite;
+      }
+      .limb-a {
+        animation: limbA 0.65s ease-in-out infinite;
+        transform-origin: 0 0;
+      }
+      .limb-b {
+        animation: limbB 0.65s ease-in-out infinite;
+        transform-origin: 0 0;
+      }
+      .road {
+        stroke-dasharray: 5 15;
+        animation: road 0.9s linear infinite;
+      }
+      .route {
+        stroke-dasharray: 100;
+        animation: drawRoute 7s ease-in-out infinite;
+      }
+      .route-dot {
+        stroke-dasharray: 0.5 99.5;
+        animation: routeDot 7s ease-in-out infinite;
+        stroke-linecap: round;
+      }
+      .scan {
+        animation: scan 5s linear infinite;
+      }
+      .halo {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: halo 5s ease-out infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .spin {
+        animation: spin 24s linear infinite;
+        transform-origin: 360px 210px;
+      }
+      .counter-spin {
+        animation: spin 24s linear infinite reverse;
+        transform-origin: 0 0;
+      }
+      .numeric {
+        opacity: 0;
+        animation: numeric 8s steps(1, end) infinite;
+        animation-delay: var(--delay, 0s);
+      }
+      .offscreen *,
+      body.paused .art * {
+        animation-play-state: paused !important;
+      }
+      .beating-heart {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: heartbeat 1.65s ease-in-out infinite;
+      }
+      .sleep-star {
+        animation: blink 4s ease-in-out infinite;
+      }
+      .breathe {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: breathe 4s ease-in-out infinite;
+      }
+      .lift {
+        animation: lift 2.4s ease-in-out infinite;
+      }
+      .water-level {
+        animation: waterLevel 4s ease-in-out infinite;
+      }
+      .wheel-spin {
+        animation: wheelSpin 3s linear infinite;
+        transform-origin: 0 0;
+      }
+      .foot-a {
+        animation: blink 1.6s ease-in-out infinite;
+      }
+      .foot-b {
+        animation: blink 1.6s ease-in-out infinite;
+        animation-delay: -0.8s;
+      }
+      .needle {
+        animation: needle 5s ease-in-out infinite;
+        transform-origin: 0 0;
+      }
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scale(0.94);
+          opacity: 0.65;
+        }
+        50% {
+          transform: scale(1.06);
+          opacity: 1;
+        }
+      }
+      @keyframes lift {
+        0%,
+        100% {
+          transform: translateY(5px);
+        }
+        50% {
+          transform: translateY(-5px);
+        }
+      }
+      @keyframes waterLevel {
+        0%,
+        100% {
+          transform: translateY(3px);
+        }
+        50% {
+          transform: translateY(-3px);
+        }
+      }
+      @keyframes wheelSpin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes needle {
+        0%,
+        100% {
+          transform: rotate(-12deg);
+        }
+        50% {
+          transform: rotate(12deg);
+        }
+      }
+      @keyframes heartbeat {
+        0%,
+        28%,
+        100% {
+          transform: scale(1);
+        }
+        10% {
+          transform: scale(1.16);
+        }
+        18% {
+          transform: scale(1.03);
+        }
+        23% {
+          transform: scale(1.1);
+        }
+      }
+      @keyframes flow {
+        0% {
+          stroke-dashoffset: 3;
+          opacity: 0;
+        }
+        8%,
+        85% {
+          opacity: 1;
+        }
+        100% {
+          stroke-dashoffset: -100;
+          opacity: 0;
+        }
+      }
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 0.25;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+      @keyframes tier {
+        0%,
+        100% {
+          opacity: 0.2;
+        }
+        45%,
+        65% {
+          opacity: 1;
+        }
+      }
+      @keyframes waveShift {
+        to {
+          transform: translateX(-180px);
+        }
+      }
+      @keyframes bar {
+        0%,
+        100% {
+          transform: scaleY(0.6);
+          opacity: 0.4;
+        }
+        50% {
+          transform: scaleY(1);
+          opacity: 1;
+        }
+      }
+      @keyframes paper {
+        0%,
+        100% {
+          transform: translateY(3px) rotate(3deg);
+        }
+        50% {
+          transform: translateY(-4px) rotate(1deg);
+        }
+      }
+      @keyframes csv {
+        0%,
+        42%,
+        100% {
+          opacity: 1;
+        }
+        48%,
+        94% {
+          opacity: 0;
+        }
+      }
+      @keyframes json {
+        0%,
+        42%,
+        100% {
+          opacity: 0;
+        }
+        48%,
+        94% {
+          opacity: 1;
+        }
+      }
+      @keyframes fileIn {
+        0%,
+        100% {
+          opacity: 0.35;
+          transform: translateY(6px);
+        }
+        35%,
+        70% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes limbA {
+        0%,
+        100% {
+          transform: rotate(-23deg);
+        }
+        50% {
+          transform: rotate(27deg);
+        }
+      }
+      @keyframes limbB {
+        0%,
+        100% {
+          transform: rotate(27deg);
+        }
+        50% {
+          transform: rotate(-23deg);
+        }
+      }
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-3px);
+        }
+      }
+      @keyframes road {
+        to {
+          stroke-dashoffset: 20;
+        }
+      }
+      @keyframes drawRoute {
+        0%,
+        8% {
+          stroke-dashoffset: 100;
+          opacity: 0.5;
+        }
+        75%,
+        92% {
+          stroke-dashoffset: 0;
+          opacity: 1;
+        }
+        100% {
+          stroke-dashoffset: 0;
+          opacity: 0;
+        }
+      }
+      @keyframes routeDot {
+        0%,
+        8% {
+          stroke-dashoffset: 0;
+          opacity: 0;
+        }
+        12%,
+        90% {
+          opacity: 1;
+        }
+        92%,
+        100% {
+          stroke-dashoffset: -100;
+          opacity: 0;
+        }
+      }
+      @keyframes scan {
+        0% {
+          transform: translateY(0);
+          opacity: 0;
+        }
+        10%,
+        80% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(155px);
+          opacity: 0;
+        }
+      }
+      @keyframes halo {
+        0% {
+          transform: scale(0.75);
+          opacity: 0.4;
+        }
+        100% {
+          transform: scale(1.3);
+          opacity: 0;
+        }
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes numeric {
+        0%,
+        24% {
+          opacity: 1;
+        }
+        25%,
+        100% {
+          opacity: 0;
+        }
+      }
+      .isolated header,
+      .isolated .intro,
+      .isolated .section-title,
+      .isolated .caption,
+      .isolated footer {
+        display: none;
+      }
+      .isolated main {
+        max-width: none;
+        padding: 0;
+      }
+      .isolated .collection {
+        margin: 0;
+      }
+      .isolated .gallery {
+        display: block;
+      }
+      .isolated .art {
+        height: 100dvh;
+        width: 100%;
+        border: 0;
+        border-radius: 0;
+        background: var(--bg);
+        aspect-ratio: auto;
+      }
+      .isolated .art svg {
+        object-fit: contain;
+      }
+      .isolated .study {
+        display: none;
+      }
+      .isolated .study.selected {
+        display: block;
+      }
+      .isolate-controls {
+        display: none;
+      }
+      .isolated .isolate-controls {
+        display: flex;
+        position: fixed;
+        right: 20px;
+        bottom: 18px;
+        gap: 16px;
+        align-items: center;
+        z-index: 2;
+      }
+      .isolate-controls a {
+        font-size: 12px;
+        color: #a1a1a1;
+      }
+      .isolated .collection:not(:has(.selected)) {
+        display: none;
+      }
+      @media (max-width: 800px) {
+        .brand > span {
+          display: none;
+        }
+        header {
+          padding: 24px 22px 0;
+        }
+        .intro {
+          padding: 64px 22px 38px;
+        }
+        main {
+          padding: 0 22px 50px;
+        }
+        .gallery {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
+        .collection {
+          margin-bottom: 42px;
+        }
+        .intro p {
+          font-size: 15px;
+        }
+        .intro nav {
+          gap: 22px;
+        }
+        .controls a {
+          display: none;
+        }
+        footer {
+          padding: 0 22px 25px;
+        }
+        .art {
+          border-radius: 10px;
+        }
+        .caption p {
+          font-size: 12px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+        }
+        .packet,
+        .route-dot,
+        .scan,
+        .file-json {
+          opacity: 0;
+        }
+        .file-csv {
+          opacity: 1;
+        }
+        .numeric {
+          opacity: 0;
+        }
+        .numeric:first-child {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="./"
+        ><svg viewBox="0 0 28 28" aria-hidden="true">
+          <path
+            d="M1 15H7L11 5L14 23L19 10L22 15H27"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          /></svg
+        >PulsHealth<span style="font-weight: 400; color: #777; margin-left: 8px"
+          >Motion studies</span
+        ></a
+      >
+      <div class="controls">
+        <a href="https://pulshealth.com/" target="_blank" rel="noopener"
+          >pulshealth.com</a
+        ><button class="pause" type="button" data-pause aria-pressed="false">
+          Pause motion
+        </button>
+      </div>
+    </header>
+    <div class="intro">
+      <h1>Apple Health, in motion.</h1>
+      <p>
+        A collection of looping graphics to explore. Phones, personal archives,
+        portable files, and the signals that connect them. Everything runs on
+        its own.
+      </p>
+      <nav aria-label="Animation collections">
+        <a href="#explore">New directions</a>
+        <a href="#symbols">Health in motion</a
+        ><a href="#watch">From the watch</a><a href="#sync">Sync & devices</a
+        ><a href="#export">Export & organize</a
+        ><a href="#live">Workouts & live data</a>
+      </nav>
+    </div>
+    <main id="studies"></main>
+    <footer>
+      Illustrative data throughout. No connection to your health data. Motion
+      respects your device’s reduced-motion setting.
+    </footer>
+    <div class="isolate-controls">
+      <a href="./">All studies</a
+      ><button class="pause" type="button" data-pause aria-pressed="false">
+        Pause motion
+      </button>
+    </div>
+    <script>
+      /* Each study is an SVG + shared CSS. No framework, dependencies, requests, or real health data. */
+      const C = {
+        blue: "#4ca9ff",
+        soft: "#78bdff",
+        pink: "#d7a3b4",
+        lilac: "#b3a6d8",
+        mint: "#9ecfc1",
+      };
+      const values = [18, 32, 23, 46, 30, 52, 34, 60, 40, 55, 32, 43];
+      // Keep language in the gallery captions; the artwork uses only values and formats.
+      const text = (x, y, t, cls = "svg-label", extra = "") =>
+        /^(\d|\.(csv|json)$|["{}≡])/.test(String(t))
+          ? `<text x="${x}" y="${y}" class="${cls}" ${extra}>${t}</text>`
+          : "";
+      const wire = (d, color = C.blue, delay = 0, speed = 3.5) =>
+        `<path d="${d}" class="wire" style="stroke:${color}"/><path d="${d}" pathLength="100" class="packet" style="stroke:${color};--delay:${delay}s;--speed:${speed}s"/>`;
+      function heart(x, y, s = 1, color = C.pink) {
+        return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M12 22L3 13C-5 4 6-3 12 5C18-3 29 4 21 13Z" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/></g>`;
+      }
+      function runner(x, y, s = 1) {
+        return `<g transform="translate(${x} ${y}) scale(${s})"><g class="runner-bob" fill="none" stroke="${C.blue}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="-35" r="5" fill="${C.blue}" stroke="none"/><path d="M1-24L-8-2"/><g transform="translate(0 -22)"><g class="limb-a"><path d="M0 0L13 10L24 0"/></g><g class="limb-b" opacity=".45"><path d="M0 0L-15 9L-24 2"/></g></g><g transform="translate(-8 -2)"><g class="limb-b"><path d="M0 0L18 17L30 12"/></g><g class="limb-a" opacity=".55"><path d="M0 0L-7 22L-25 29"/></g></g></g></g>`;
+      }
+      function wave(x, y, color = C.blue, s = 1) {
+        return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 25L10 5L20 14L29 0L39 32L50 12L61 20L70 9L81 27L92 20L103 6L114 15" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/></g>`;
+      }
+      function bars(x, y, color = C.blue, s = 1) {
+        return `<g transform="translate(${x} ${y}) scale(${s})">${values.map((v, i) => `<rect class="bar" x="${i * 9}" y="${65 - v}" width="3.5" height="${v}" rx="1.75" fill="${color}" style="--delay:${i * -0.18}s"/>`).join("")}</g>`;
+      }
+      function database(id, x, y, s = 1) {
+        return `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="90" cy="196" rx="117" ry="25" fill="none" stroke="#ffffff05"/><ellipse cx="90" cy="196" rx="93" ry="18" fill="none" stroke="#ffffff08"/><path d="M0 22V158C0 192 180 192 180 158V22" fill="url(#${id}-db)" stroke="#78bdff60"/>${[58, 92, 126, 158].map((v, i) => `<g class="tier" style="--delay:${i * -0.8}s"><path d="M0 ${v}C0 ${v + 32} 180 ${v + 32} 180 ${v}" fill="none" stroke="${C.soft}" stroke-opacity=".65"/><circle cx="157" cy="${v + 8}" r="2.5" fill="${C.soft}"/></g>`).join("")}<ellipse cx="90" cy="22" rx="90" ry="24" fill="#142235" stroke="#85baff80"/><ellipse cx="90" cy="22" rx="67" ry="13" fill="none" stroke="#78bdff30"/></g>`;
+      }
+      function phone(x, y, s = 1, kind = "health") {
+        const content =
+          kind === "sync"
+            ? `<circle cx="75" cy="132" r="29" fill="none" stroke="#4ca9ff18"/><circle cx="75" cy="132" r="29" fill="none" stroke="${C.blue}" class="packet small" pathLength="100"/><path d="M65 132L73 140L87 124" fill="none" stroke="${C.soft}" stroke-width="1.2"/>${[199, 219, 239].map((yy, i) => `<circle cx="29" cy="${yy}" r="1.5" fill="${[C.pink, C.lilac, C.blue][i]}"/><path d="M42 ${yy}H${116 - i * 9}" stroke="#ffffff16" stroke-width="1.2"/>`).join("")}`
+            : kind === "workout"
+              ? `<path d="M42 128C37 98 71 116 77 86S117 86 105 126S69 154 76 182" fill="none" stroke="#4ca9ff20" stroke-width="1.2"/><path d="M42 128C37 98 71 116 77 86S117 86 105 126S69 154 76 182" pathLength="100" class="route" fill="none" stroke="${C.blue}" stroke-width="1.3"/>${wave(27, 216, C.pink, 0.83)}`
+              : `${wave(26, 91, C.pink, 0.85)}<path d="M27 155H123" stroke="#ffffff0a"/>${bars(27, 178, C.blue, 0.89)}`;
+        return `<g transform="translate(${x} ${y}) scale(${s})"><rect x="0" y="0" width="150" height="288" rx="23" fill="#111" stroke="#707070" stroke-width=".8"/><rect x="3" y="3" width="144" height="282" rx="21" fill="#0a0a0a" stroke="#ffffff09" stroke-width=".7"/><rect x="57" y="12" width="36" height="7" rx="3.5" fill="#171717"/><path d="M-1 64V83M-1 96V125M151 84V118" stroke="#737373" stroke-width="1.4"/>${content}<path d="M61 275H89" stroke="#606060" stroke-width="1.6" stroke-linecap="round"/></g>`;
+      }
+      function watch(x, y, s = 1, kind = "rings") {
+        const face =
+          kind === "pulse"
+            ? `${heart(48, 101, 0.65, C.pink)}${wave(22, 144, C.pink, 0.67)}`
+            : kind === "workout"
+              ? `<path d="M35 157C24 120 51 135 56 110S91 111 82 139S60 151 67 171" fill="none" stroke="#4ca9ff25" stroke-width="1.4"/><path d="M35 157C24 120 51 135 56 110S91 111 82 139S60 151 67 171" fill="none" stroke="${C.blue}" class="route" pathLength="100" stroke-width="1.5"/>`
+              : `${[31, 23, 15].map((r, i) => `<circle cx="60" cy="138" r="${r}" fill="none" stroke="${[C.blue, C.lilac, C.pink][i]}" opacity=".12" stroke-width="3"/><circle cx="60" cy="138" r="${r}" pathLength="100" fill="none" stroke="${[C.blue, C.lilac, C.pink][i]}" stroke-width="3" stroke-dasharray="${78 - i * 16} 100" stroke-linecap="round" transform="rotate(-90 60 138)" class="tier" style="--delay:${i * -0.8}s"/>`).join("")}`;
+        return `<g transform="translate(${x} ${y}) scale(${s})"><path d="M31 73L34 7Q34 0 42 0H78Q86 0 86 7L89 73M31 204L34 269Q34 277 42 277H78Q86 277 86 269L89 204" fill="#101010" stroke="#484848" stroke-width=".8"/><path d="M37 7L35 69M83 7L85 69M35 209L37 269M85 209L83 269" stroke="#ffffff07"/><rect x="-1" y="66" width="122" height="145" rx="32" fill="#171717" stroke="#777" stroke-width=".8"/><rect x="3" y="70" width="114" height="137" rx="29" fill="#070707" stroke="#ffffff12" stroke-width=".7"/><rect x="122" y="108" width="7" height="21" rx="3.5" fill="#303030" stroke="#676767" stroke-width=".6"/><path d="M124 113V124M121 149V167" stroke="#777" stroke-width="1"/>${face}</g>`;
+      }
+      function file(x, y, s = 1, format = "csv", extra = "") {
+        return `<g transform="translate(${x} ${y}) scale(${s})"><g class="${extra}"><path d="M18 14H166L188 36V235Q188 249 174 249H18Q4 249 4 235V28Q4 14 18 14" fill="#111923" stroke="#54728f70"/><path d="M28 26H176L198 48V247Q198 261 184 261H28Q14 261 14 247V40Q14 26 28 26" fill="#0e151e" stroke="#54728f30" transform="translate(0 -20)"/><path d="M14 0H162L188 26V222Q188 236 174 236H14Q0 236 0 222V14Q0 0 14 0" fill="#172230" stroke="#6686a970"/><path d="M162 0V21Q162 26 168 26H188" fill="#30465e"/>${text(23, 43, format === "csv" ? "≡" : "{ }", "svg-value", 'style="fill:#a9c9e2;font-size:18px"')}${text(165, 46, "." + format, "svg-value", 'text-anchor="end" style="font-size:21px;fill:#c9d9eb"')}${format === "csv" ? `${text(22, 88, "time", "svg-micro")}${text(89, 88, "value", "svg-micro")}${text(148, 88, "unit", "svg-micro")}${[103, 124, 145, 166].map((v) => `<path d="M22 ${v}H167" stroke="#ffffff0b"/><path d="M22 ${v + 8}H60M89 ${v + 8}H113M148 ${v + 8}H163" stroke="#78bdff60" stroke-width="2"/>`).join("")}` : `${text(22, 92, "{", "svg-label")}${text(34, 117, '"type": "steps",', "svg-micro", 'style="fill:#a4bdd7"')}${text(34, 142, '"value": 8420', "svg-micro", 'style="fill:#a4bdd7"')}${text(22, 167, "}", "svg-label")}`}<path d="M23 207L28 212L37 203" stroke="${C.mint}" fill="none"/>${text(45, 212, "Yours to keep", "svg-micro", 'style="fill:#a7c2bf"')}</g></g>`;
+      }
+      function svg(id, label, body) {
+        return `<svg viewBox="0 0 720 420" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="${id}-db"><stop stop-color="#172c44"/><stop offset=".55" stop-color="#102035"/><stop offset="1" stop-color="#203a55"/></linearGradient><clipPath id="${id}-wave"><rect x="0" y="0" width="180" height="65"/></clipPath></defs>${body}</svg>`;
+      }
+      function healthSymbol(kind, color) {
+        const stroke = `fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`;
+        const shapes = {
+          hiking: `<g class="runner-bob"><circle cx="0" cy="-24" r="4" ${stroke}/><path d="M-2-16L-7 2L7 17L18 24M-7 2L-19 24M-1-13L16-3L22-14M20-14L26 27M-7-13L-16-10L-19 2L-11 5" ${stroke}/></g><path d="M-32 31L-6 20L34 31" ${stroke} opacity=".25"/>`,
+          rowing: `<circle cx="-7" cy="-18" r="4" ${stroke}/><path d="M-8-10L2 2L19 9M-8-10L-18 4L-4 11H22M-31 12Q0 34 31 12Z" ${stroke}/><g class="water-level"><path d="M-14-1L27 26M21 21L29 18L35 27L29 31Z" ${stroke}/></g><path d="M-35 34Q-18 28 0 34T35 34" ${stroke} opacity=".3"/>`,
+          yoga: `<g class="breathe"><circle cy="-24" r="4" ${stroke}/><path d="M0-16V3L-25 23M0 3L24 23M0-11L-27-6M0-11L27-6" ${stroke}/><path d="M-35 29H35" ${stroke} opacity=".25"/></g>`,
+          balance: `<circle cy="-25" r="4" ${stroke}/><path d="M0-17V4L-4 30M0 4L15 16L1 19M0-11L-23-4M0-11L23-4" ${stroke}/><ellipse cy="34" rx="30" ry="4" ${stroke} opacity=".2"/>`,
+          nutrition: `<g class="breathe"><path d="M0-15C-14-25-28-10-20 9S-9 30 0 24C9 30 21 16 23 3C11 0 13-11 21-14C13-23 6-21 0-15Z" ${stroke}/><path d="M0-16C-2-26 7-31 14-30C13-22 8-18 0-16" ${stroke}/></g>`,
+          water: `<path d="M0-28C-7-17-21-1-21 10A21 21 0 0 0 21 10C21-1 7-17 0-28Z" ${stroke}/><path class="water-level" d="M-13 12Q-7 7 0 12T13 12" ${stroke}/>`,
+          strength: `<g class="lift"><path d="M-17 0H17" ${stroke}/><rect x="-26" y="-16" width="8" height="32" rx="2" ${stroke}/><rect x="18" y="-16" width="8" height="32" rx="2" ${stroke}/><path d="M-31-9V9M31-9V9" ${stroke}/></g>`,
+          cycling: `${[-24, 24].map((x) => `<g transform="translate(${x} 13)"><circle r="16" ${stroke}/><g class="wheel-spin"><path d="M-12 0H12M0-12V12" ${stroke} opacity=".35"/></g></g>`).join("")}<path d="M-24 13L-11-13L5 13H-24L-3-4H16L24 13M12-17H19M-16-17H-7" ${stroke}/>`,
+          steps: `<g class="foot-a" transform="translate(-12 -7) rotate(-12)"><path d="M-6 2C-12-6-9-21-1-23C8-25 11-10 5-1Z" ${stroke}/><path d="M-5 9H4V17Q-1 23-5 17Z" ${stroke}/></g><g class="foot-b" transform="translate(15 9) rotate(12)"><path d="M-6 2C-12-6-9-21-1-23C8-25 11-10 5-1Z" ${stroke}/><path d="M-5 9H4V17Q-1 23-5 17Z" ${stroke}/></g>`,
+          swimming: `<circle cx="15" cy="-10" r="5" ${stroke}/><g class="water-level"><path d="M-27 1L-6-12L6 0L-6 8" ${stroke}/></g><path d="M-33 18Q-25 11-17 18T-1 18T15 18T31 18" ${stroke}/><path d="M-33 27Q-25 20-17 27T-1 27T15 27T31 27" ${stroke} opacity=".4"/>`,
+          breathing: `<g class="breathe"><path d="M-4-10C-14-28-24-8-25 10S-15 28-5 17V-5M4-10C14-28 24-8 25 10S15 28 5 17V-5M0-28V-7L-12 5M0-7L12 5" ${stroke}/></g>`,
+          sleep: `<path d="M8-21A23 23 0 1 0 22 8A24 24 0 0 1 8-21" ${stroke}/><path class="sleep-star" d="M30-24V-14M25-19H35" ${stroke}/>`,
+          daylight: `<circle r="14" ${stroke}/><g class="wheel-spin" style="animation-duration:24s">${Array.from({ length: 8 }, (_, i) => `<path d="M0-23V-30" transform="rotate(${i * 45})" ${stroke}/>`).join("")}</g>`,
+          weight: `<rect x="-26" y="-27" width="52" height="54" rx="9" ${stroke}/><path d="M-15-4A18 18 0 0 1 15-4" ${stroke}/><g transform="translate(0 1)"><g class="needle"><path d="M0 0L-5-16" ${stroke}/></g></g><circle cy="1" r="2" fill="${color}"/>`,
+          temperature: `<path d="M-6 9V-22A6 6 0 0 1 6-22V9A12 12 0 1 1-6 9Z" ${stroke}/><circle cy="19" r="5" fill="${color}"/><path class="tier" d="M0 18V-13" ${stroke}/><path d="M13-15H19M13-3H17" ${stroke} opacity=".5"/>`,
+          heart: `<g transform="translate(-20 -19) scale(1.65)"><g class="beating-heart">${heart(0, 0, 1, color)}</g></g>`,
+          mindfulness: `<ellipse class="breathe" cy="2" rx="37" ry="32" fill="none" stroke="${color}" opacity=".15"/><circle cy="-18" r="5" ${stroke}/><path d="M-12 7Q0-7 12 7L22 14M-12 7L-22 14M-13 9L-26 22Q-4 30 0 18Q4 30 26 22L13 9" ${stroke}/>`,
+        };
+        return shapes[kind];
+      }
+      function symbolArchive(id, kinds) {
+        return (
+          kinds
+            .map(
+              (kind, i) =>
+                `<g transform="translate(136 ${108 + i * 101})">${healthSymbol(kind, [C.blue, C.pink, C.lilac][i])}</g>${wire(`M201 ${108 + i * 101}C318 ${108 + i * 101} 329 ${183 + i * 35} 465 ${183 + i * 35}`, [C.blue, C.pink, C.lilac][i], -0.5 - i * 1.3, 4.5)}`,
+            )
+            .join("") + database(id, 465, 123, 1)
+        );
+      }
+      const placedSymbol = (kind, x, y, scale = 1, color = C.blue) =>
+        `<g transform="translate(${x} ${y}) scale(${scale})">${healthSymbol(kind, color)}</g>`;
+      function radialSources(kinds, cx, cy, rx, ry, targetX, targetY) {
+        return kinds
+          .map((kind, i) => {
+            const angle = (i / kinds.length) * Math.PI * 2 - Math.PI / 2;
+            const x = cx + Math.cos(angle) * rx,
+              y = cy + Math.sin(angle) * ry;
+            const color = [C.blue, C.pink, C.lilac, C.mint][i % 4];
+            return (
+              wire(
+                `M${x} ${y}Q${cx} ${cy} ${targetX} ${targetY}`,
+                color,
+                -i * 0.65,
+                5.5,
+              ) + placedSymbol(kind, x, y, 0.67, color)
+            );
+          })
+          .join("");
+      }
+      const studies = [
+        {
+          id: "daily-health-hub",
+          group: "explore",
+          name: "A whole day, gathered",
+          description:
+            "Six recognizable signals surround one quiet phone. Small packets gather at the center.",
+          draw: (id) =>
+            `${radialSources(["heart", "daylight", "cycling", "water", "sleep", "nutrition"], 360, 210, 248, 140, 360, 210)}${phone(303, 100, 0.76)}`,
+        },
+        {
+          id: "run-wrist-pocket",
+          group: "explore",
+          name: "Run, wrist, pocket",
+          description:
+            "A running person, a watch, and a phone form a simple three-part handoff.",
+          draw: (id) =>
+            `${runner(119, 216, 1.8)}${wire("M187 205H292", C.blue, -0.6, 4)}${watch(292, 87, 0.9, "workout")}${wire("M408 211H516", C.blue, -2.4, 4)}${phone(516, 81, 0.9, "workout")}`,
+        },
+        {
+          id: "hike-to-history",
+          group: "explore",
+          name: "A hike becomes history",
+          description:
+            "A hiker climbs above a sparse mountain contour, with the route moving through a phone to storage.",
+          draw: (id) =>
+            `<path d="M36 292L106 205L164 272L203 242L243 293" fill="none" stroke="#4ca9ff18"/>${placedSymbol("hiking", 119, 173, 1.3)}${wire("M192 211H290", C.blue, -0.7, 4.2)}${phone(291, 88, 0.84, "workout")}${wire("M418 211H523", C.blue, -2.2, 4.2)}${database(id, 524, 147, 0.75)}`,
+        },
+        {
+          id: "strength-to-file",
+          group: "explore",
+          name: "Strength you can take with you",
+          description:
+            "A lifting dumbbell passes a session through the phone and into a portable file.",
+          draw: (id) =>
+            `${placedSymbol("strength", 113, 211, 1.55)}${wire("M179 211H285", C.lilac, -0.5, 4.5)}${phone(286, 85, 0.87)}${wire("M418 211H513", C.blue, -2.3, 4.5)}${file(513, 109, 0.84, "json", "file-appear")}`,
+        },
+        {
+          id: "breathe-watch-pocket",
+          group: "explore",
+          name: "A breath, carried forward",
+          description:
+            "Lungs slowly expand while a watch and phone carry the signal onward.",
+          draw: (id) =>
+            `${placedSymbol("breathing", 115, 210, 1.5, C.mint)}${wire("M177 211H286", C.mint, -0.8, 5.2)}${watch(286, 84, 0.92, "pulse")}${wire("M406 211H514", C.mint, -2.6, 5.2)}${phone(515, 81, 0.9, "sync")}`,
+        },
+        {
+          id: "fuel-and-water-files",
+          group: "explore",
+          name: "Small habits, portable records",
+          description:
+            "Nutrition and hydration converge at the phone, then separate into CSV and JSON files.",
+          draw: (id) =>
+            `${placedSymbol("nutrition", 95, 132, 1.1, C.mint)}${placedSymbol("water", 95, 292, 1.1, C.blue)}${wire("M145 132C210 132 208 172 269 172", C.mint, -0.5, 4.5)}${wire("M145 292C210 292 208 248 269 248", C.blue, -1.8, 4.5)}${phone(270, 90, 0.83)}${wire("M395 172C457 172 462 123 525 123", C.blue, -2.8, 5)}${wire("M395 248C457 248 462 295 548 295", C.lilac, -4, 5)}${file(524, 45, 0.58, "csv", "file-appear")}${file(547, 230, 0.55, "json", "file-appear")}`,
+        },
+        {
+          id: "day-night-archive",
+          group: "explore",
+          name: "From day into night",
+          description:
+            "Daylight and sleep trace two arcs around a phone before joining the same archive.",
+          draw: (id) =>
+            `${placedSymbol("daylight", 100, 113, 1, C.blue)}${placedSymbol("sleep", 100, 302, 1, C.lilac)}${wire("M145 113C233 113 245 150 314 150", C.blue, -0.3, 5.5)}${wire("M145 302C233 302 245 271 314 271", C.lilac, -2.5, 5.5)}${phone(315, 87, 0.86)}${wire("M445 211H541", C.blue, -3.5, 5)}${database(id, 541, 153, 0.68)}`,
+        },
+        {
+          id: "week-of-movement",
+          group: "explore",
+          name: "A week of different movement",
+          description:
+            "A mosaic of workouts and recovery moments lights up in sequence and flows into an archive.",
+          draw: (id) =>
+            `${["cycling", "strength", "sleep", "swimming", "yoga", "steps"]
+              .map((kind, i) => {
+                const x = 92 + (i % 3) * 103,
+                  y = 140 + Math.floor(i / 3) * 127;
+                return `<rect x="${x - 39}" y="${y - 42}" width="78" height="84" rx="10" fill="none" stroke="#ffffff0d"/><g class="tier" style="--delay:${i * -0.75}s">${placedSymbol(kind, x, y, 0.7, [C.blue, C.pink, C.lilac][i % 3])}</g>`;
+              })
+              .join(
+                "",
+              )}${wire("M351 150C415 150 417 193 489 193", C.blue, -1, 4.8)}${wire("M351 272C415 272 417 239 489 239", C.lilac, -2.8, 4.8)}${database(id, 489, 135, 0.88)}`,
+        },
+        {
+          id: "rowing-recovery",
+          group: "explore",
+          name: "An effort and its recovery",
+          description:
+            "A rower and a breathing signal reach a single phone, then continue into personal history.",
+          draw: (id) =>
+            `${placedSymbol("rowing", 108, 132, 1.1, C.blue)}${placedSymbol("breathing", 108, 293, 1, C.lilac)}${wire("M160 132C224 132 224 171 287 171", C.blue, -0.4, 4.8)}${wire("M160 293C224 293 224 250 287 250", C.lilac, -1.9, 4.8)}${phone(288, 88, 0.85)}${wire("M416 212H516", C.blue, -3.2, 4.8)}${database(id, 516, 145, 0.77)}`,
+        },
+        {
+          id: "balance-mobility-rest",
+          group: "explore",
+          name: "Balance, mobility, rest",
+          description:
+            "A standing balance pose, a stretch, and a quiet seated figure gather at the archive.",
+          draw: (id) => symbolArchive(id, ["balance", "yoga", "mindfulness"]),
+        },
+        {
+          id: "archive-many-signals",
+          group: "explore",
+          name: "One archive, many dimensions",
+          description:
+            "Eight different health symbols surround the archive, with short, independent streams.",
+          draw: (id) =>
+            `${radialSources(["sleep", "heart", "water", "strength", "steps", "nutrition", "breathing", "daylight"], 360, 208, 254, 148, 360, 208)}${database(id, 290, 141, 0.78)}`,
+        },
+        {
+          id: "signals-archive-portable",
+          group: "explore",
+          name: "Capture, keep, carry",
+          description:
+            "Health symbols feed a central archive and continue into two file formats. A complete story in one composition.",
+          draw: (id) =>
+            `${["heart", "cycling", "water"].map((kind, i) => `${placedSymbol(kind, 91, 105 + i * 105, 0.8, [C.pink, C.blue, C.lilac][i])}${wire(`M145 ${105 + i * 105}C208 ${105 + i * 105} 225 ${181 + i * 30} 294 ${181 + i * 30}`, [C.pink, C.blue, C.lilac][i], -i * 1.1, 4.8)}`).join("")}${database(id, 295, 133, 0.83)}${wire("M445 181C499 181 501 114 556 114", C.blue, -2.2, 5)}${wire("M445 244C499 244 501 290 556 290", C.mint, -3.8, 5)}${file(556, 39, 0.55, "csv", "file-appear")}${file(556, 228, 0.55, "json", "file-appear")}`,
+        },
+
+        {
+          id: "workout-heart-sleep",
+          group: "symbols",
+          name: "Movement, heartbeat, rest",
+          description:
+            "A running person, a beating heart, and a quiet moon flow into one archive. Recognizable health signals, without time-series charts or labels.",
+          draw: (id) =>
+            `${runner(135, 116, 1.15)}<g transform="translate(112 187) scale(1.9)"><g class="beating-heart">${heart(0, 0, 1, C.pink)}</g></g><g transform="translate(136 307)"><path d="M8-20A22 22 0 1 0 21 8A22 22 0 0 1 8-20" fill="none" stroke="${C.lilac}" stroke-width="1.8"/><path class="sleep-star" d="M34-27V-17M29-22H39" stroke="${C.lilac}" stroke-width="1.3"/><circle class="sleep-star" cx="25" cy="-40" r="1.4" fill="${C.lilac}" style="animation-delay:-2s"/></g>${wire("M201 108C318 108 327 183 465 183", C.blue, -0.5, 4.5)}${wire("M201 211C319 211 329 218 465 218", C.pink, -1.8, 4.5)}${wire("M201 310C317 310 331 253 465 253", C.lilac, -3, 4.5)}${database(id, 465, 123, 1)}`,
+        },
+        {
+          id: "fuel-water-strength",
+          group: "symbols",
+          name: "Fuel, hydration, strength",
+          description:
+            "Nutrition, a gently moving water level, and a lifting dumbbell feed the archive.",
+          draw: (id) => symbolArchive(id, ["nutrition", "water", "strength"]),
+        },
+        {
+          id: "cycling-steps-swimming",
+          group: "symbols",
+          name: "Different ways to move",
+          description:
+            "Turning bicycle wheels, alternating footsteps, and a swimmer make each kind of activity distinct.",
+          draw: (id) => symbolArchive(id, ["cycling", "steps", "swimming"]),
+        },
+        {
+          id: "breath-sleep-daylight",
+          group: "symbols",
+          name: "A rhythm beyond workouts",
+          description:
+            "Expanding lungs, a moon, and a slowly turning sun bring breathing, sleep, and daylight into view.",
+          draw: (id) => symbolArchive(id, ["breathing", "sleep", "daylight"]),
+        },
+        {
+          id: "body-measurements",
+          group: "symbols",
+          name: "The body's other signals",
+          description:
+            "A scale, a thermometer, and a beating heart offer a more physical view of measurements.",
+          draw: (id) => symbolArchive(id, ["weight", "temperature", "heart"]),
+        },
+        {
+          id: "mindful-recovery",
+          group: "symbols",
+          name: "A quieter kind of progress",
+          description:
+            "A seated person, breathing lungs, and sleep create a softer collection of health signals.",
+          draw: (id) =>
+            symbolArchive(id, ["mindfulness", "breathing", "sleep"]),
+        },
+        {
+          id: "watch-phone-archive",
+          group: "watch",
+          name: "From wrist to archive",
+          description:
+            "Watch signals pass through the phone into a personal database. A simple overview of the path.",
+          draw: (id) =>
+            `${watch(57, 92, 0.83)}${wire("M162 205C205 205 218 205 261 205", C.blue, -0.8, 4)}${phone(262, 83, 0.84, "sync")}${wire("M389 205C440 205 456 205 505 205", C.blue, -2.2, 4)}${database(id, 505, 140, 0.82)}`,
+        },
+        {
+          id: "watch-to-phone",
+          group: "watch",
+          name: "Made on your wrist",
+          description:
+            "A larger watch and a quiet phone silhouette, joined by three streams of health data.",
+          draw: (id) =>
+            `${watch(119, 72, 1)}${[C.pink, C.lilac, C.blue].map((c, i) => wire(`M247 ${156 + i * 42}C342 ${156 + i * 42} 368 ${153 + i * 39} 464 ${153 + i * 39}`, c, -i * 1.2, 4.8)).join("")}${phone(465, 63, 1)}`,
+        },
+        {
+          id: "watch-signals",
+          group: "watch",
+          name: "Three signals, one watch",
+          description:
+            "Heart rate, sleep, and movement emerge as abstract traces. No interface to read.",
+          draw: (id) =>
+            `${watch(108, 73, 1)}${[C.pink, C.lilac, C.blue].map((c, i) => `${wire(`M237 211C320 211 330 ${109 + i * 95} 460 ${109 + i * 95}`, c, -i * 1.3, 5.2)}${i === 2 ? bars(483, 262, c, 1) : wave(483, 90 + i * 95, c)}`).join("")}`,
+        },
+        {
+          id: "watch-workout-flow",
+          group: "watch",
+          name: "A workout travels with you",
+          description:
+            "A route on the watch moves through the phone to the archive. The motion tells the story.",
+          draw: (id) =>
+            `${watch(56, 91, 0.85, "workout")}${wire("M166 208C210 208 222 208 265 208", C.blue, -1, 3.9)}${phone(266, 83, 0.84, "workout")}${wire("M393 208C447 208 461 208 511 208", C.blue, -2.6, 3.9)}${database(id, 512, 145, 0.78)}`,
+        },
+        {
+          id: "watch-pulse",
+          group: "watch",
+          name: "A pulse leaves the wrist",
+          description:
+            "A spare heart-rate study, with a small signal crossing the space between watch and phone.",
+          draw: (id) =>
+            `${watch(115, 72, 1, "pulse")}${wave(304, 183, C.pink, 1.05)}${wire("M244 205H300", C.pink, -0.3, 2.8)}${wire("M430 205H474", C.pink, -1.5, 2.8)}${phone(475, 65, 1)}`,
+        },
+        {
+          id: "watch-to-files",
+          group: "watch",
+          name: "From wrist to portable files",
+          description:
+            "Watch to phone, then out to CSV and JSON. A high-level export composition.",
+          draw: (id) =>
+            `${watch(46, 95, 0.82)}${wire("M153 210H243", C.blue, -0.8, 4.5)}${phone(244, 89, 0.8)}${wire("M365 186C421 186 433 129 499 129", C.blue, -2, 4.4)}${wire("M365 231C429 231 450 292 534 292", C.lilac, -3.2, 4.6)}${file(497, 55, 0.6, "csv", "file-appear")}${file(533, 230, 0.56, "json", "file-appear")}`,
+        },
+
+        {
+          id: "signal-archive",
+          group: "sync",
+          name: "Signals into an archive",
+          description:
+            "The original three streams, simplified. Readings keep arriving; the archive keeps growing.",
+          draw: (id) =>
+            `${[C.pink, C.lilac, C.blue].map((c, i) => `${wave(65, 90 + i * 84, c)}<circle cx="208" cy="${108 + i * 84}" r="3" fill="${c}"/>${wire(`M208 ${108 + i * 84}C320 ${108 + i * 84} 330 ${181 + i * 25} 456 ${181 + i * 25}`, c, -i * 1.2, 4.8)}`).join("")}${database(id, 456, 122, 1)}${text(122, 365, "Apple Health", "svg-label", 'text-anchor="middle"')}${text(546, 365, "Your database", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "phone-archive",
+          group: "sync",
+          name: "Your phone, your database",
+          description:
+            "A quiet, direct connection. Three types of readings leave the phone and land in the database.",
+          draw: (id) =>
+            `${phone(83, 62, 1)}${[C.pink, C.lilac, C.blue].map((c, i) => wire(`M233 ${155 + i * 46}C325 ${155 + i * 46} 347 ${181 + i * 24} 463 ${181 + i * 24}`, c, -i * 1.1, 4)).join("")}${database(id, 463, 123, 0.96)}${text(158, 383, "PulsHealth on iPhone", "svg-label", 'text-anchor="middle"')}${text(550, 383, "Your destination", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "many-phones",
+          group: "sync",
+          name: "More devices, one destination",
+          description:
+            "A small constellation of phones with independent streams. The destination stays in focus.",
+          draw: (id) =>
+            `${phone(69, 52, 0.65)}${phone(235, 147, 0.65)}${phone(60, 238, 0.5)}${wire("M167 144C300 144 315 174 485 174", C.pink, -1, 5)}${wire("M333 236C395 236 398 201 485 201", C.blue, -2, 4.3)}${wire("M135 308C310 308 327 231 485 231", C.lilac, 0, 5.3)}${database(id, 485, 128, 0.95)}`,
+        },
+        {
+          id: "quiet-sync",
+          group: "sync",
+          name: "Background, without the noise",
+          description:
+            "A restrained orbit around the phone. A softer option for a small feature section.",
+          draw: (id) =>
+            `<g fill="none" stroke="${C.blue}"><ellipse cx="360" cy="210" rx="250" ry="93" opacity=".1" transform="rotate(-16 360 210)"/><ellipse cx="360" cy="210" rx="250" ry="93" opacity=".1" transform="rotate(16 360 210)"/><ellipse cx="360" cy="210" rx="250" ry="93" pathLength="100" class="packet small" transform="rotate(-16 360 210)"/><ellipse cx="360" cy="210" rx="250" ry="93" pathLength="100" class="packet small" style="--delay:-2s;--speed:5s" transform="rotate(16 360 210)"/></g>${phone(285, 66, 1, "sync")}`,
+        },
+        {
+          id: "signal-files",
+          group: "export",
+          name: "A signal becomes a file",
+          description:
+            "The export study you picked, with no controls. CSV and JSON take turns in one gentle loop.",
+          draw: (id) =>
+            `${bars(87, 161, C.blue, 1.1)}${text(145, 289, "Your readings", "svg-label", 'text-anchor="middle"')}${[0, 1, 2, 3, 4].map((i) => wire(`M237 ${118 + i * 42}C340 ${118 + i * 42} 350 210 451 210`, C.blue, -i * 0.65, 4.5)).join("")}<g class="paper"><g class="file-csv">${file(452, 82, 1.02, "csv")}</g><g class="file-json">${file(452, 82, 1.02, "json")}</g></g>`,
+        },
+        {
+          id: "phone-files",
+          group: "export",
+          name: "From your pocket to your files",
+          description:
+            "A phone sends data into two portable formats. The files are the destination, not a code block.",
+          draw: (id) =>
+            `${phone(63, 65, 0.98)}${wire("M210 183C305 183 315 123 427 123", C.blue, -0.8, 4.7)}${wire("M210 230C315 230 320 283 498 283", C.lilac, -2.1, 4.7)}${file(425, 49, 0.68, "csv", "file-appear")}${file(493, 214, 0.63, "json", "file-appear")}`,
+        },
+        {
+          id: "readings-summary",
+          group: "export",
+          name: "Readings become patterns",
+          description:
+            "Individual points gather into a clean summary. A visual metaphor for choosing the right level of detail.",
+          draw: (id) =>
+            `${Array.from({ length: 24 }, (_, i) => `<circle cx="${65 + (i % 6) * 22}" cy="${107 + Math.floor(i / 6) * 52 + (i % 3) * 8}" r="3" fill="${[C.blue, C.soft, C.lilac][i % 3]}" opacity="${0.25 + (i % 5) * 0.13}" class="glow-dot" style="--delay:${i * -0.15}s"/>`).join("")}${[0, 1, 2, 3].map((i) => wire(`M207 ${123 + i * 49}C325 ${123 + i * 49} 343 ${240 - i * 29} 443 ${240 - i * 29}`, C.blue, -i * 0.8, 4.5)).join("")}${[74, 125, 99, 170, 140, 183].map((h, i) => `<rect class="bar" x="${448 + i * 31}" y="${303 - h}" width="16" height="${h}" rx="4" fill="${C.blue}" opacity="${0.35 + i * 0.1}" style="--delay:${i * -0.3}s"/>`).join("")}<path d="M433 310H645" stroke="#ffffff12"/>${text(123, 367, "Individual readings", "svg-label", 'text-anchor="middle"')}${text(541, 367, "Custom summaries", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "archive-export",
+          group: "export",
+          name: "Keep it, then take it anywhere",
+          description:
+            "A stored history flows into files. An alternative composition for the database and export story.",
+          draw: (id) =>
+            `${database(id, 76, 128, 0.88)}${wire("M235 187C340 187 342 129 470 129", C.blue, -1.3, 4.2)}${wire("M235 235C340 235 343 275 526 275", C.mint, -3.4, 4.8)}${file(468, 49, 0.66, "csv", "file-appear")}${file(521, 217, 0.61, "json", "file-appear")}${text(155, 363, "Your archive", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "workout-live",
+          group: "live",
+          name: "A workout, flowing live",
+          description:
+            "A running figure, a workout on the phone, and new readings reaching the archive.",
+          draw: (id) =>
+            `${runner(106, 192, 1.7)}<path d="M43 259H172" class="road" stroke="#4ca9ff35"/>${wave(45, 286, C.pink, 0.9)}${wire("M176 198H275", C.pink, -1, 2.9)}${phone(276, 62, 0.97, "workout")}${wire("M422 194C479 194 486 198 537 198", C.blue, -2, 3)}${database(id, 539, 146, 0.72)}${text(106, 365, "Workout", "svg-label", 'text-anchor="middle"')}${text(349, 365, "PulsHealth", "svg-label", 'text-anchor="middle"')}${text(604, 365, "Live sync", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "route-sync",
+          group: "live",
+          name: "Every turn, preserved",
+          description:
+            "A route draws itself and travels into the archive. A workout illustration with a little more movement.",
+          draw: (id) =>
+            `<g fill="none" stroke="#ffffff07">${[80, 140, 200, 260, 320].map((y) => `<path d="M50 ${y}H383"/>`).join("")}${[70, 130, 190, 250, 310, 370].map((x) => `<path d="M${x} 60V346"/>`).join("")}</g><path d="M80 286C70 202 134 243 151 185S206 72 258 112S225 207 282 237S368 198 355 155" fill="none" stroke="#4ca9ff1a" stroke-width="2"/><path d="M80 286C70 202 134 243 151 185S206 72 258 112S225 207 282 237S368 198 355 155" class="route" pathLength="100" fill="none" stroke="${C.blue}" stroke-width="2"/><path d="M80 286C70 202 134 243 151 185S206 72 258 112S225 207 282 237S368 198 355 155" class="route-dot" pathLength="100" fill="none" stroke="${C.soft}" stroke-width="7"/><circle cx="80" cy="286" r="4" fill="${C.blue}"/>${wire("M357 157C425 157 434 210 493 210", C.blue, -1, 4)}${database(id, 491, 137, 0.88)}${text(208, 376, "Your route", "svg-label", 'text-anchor="middle"')}${text(569, 376, "Your history", "svg-label", 'text-anchor="middle"')}`,
+        },
+        {
+          id: "heart-live",
+          group: "live",
+          name: "A living stream",
+          description:
+            "A scrolling heart-rate trace and a steady destination. Minimal enough for a compact product graphic.",
+          draw: (id) =>
+            `${heart(79, 98, 0.9)}${text(118, 116, "Heart rate", "svg-label")}<g transform="translate(68 157)"><g clip-path="url(#${id}-wave)"><g class="wave-shift">${[0, 180, 360].map((x) => wave(x, 5, C.pink, 1.58)).join("")}</g></g></g><g>${[64, 66, 65, 64].map((n, i) => `<g class="numeric" style="--delay:${i * 2}s">${text(69, 281, String(n), "svg-value", 'style="font-size:38px"')}</g>`).join("")}</g>${text(125, 280, "bpm", "svg-label")}${wire("M280 198C370 198 384 205 471 205", C.pink, -0.6, 4)}${database(id, 471, 125, 0.95)}<circle cx="320" cy="340" r="2.5" fill="${C.blue}" class="glow-dot"/>${text(334, 344, "New readings, automatically", "svg-micro")}`,
+        },
+        {
+          id: "health-orbit",
+          group: "live",
+          name: "A day in motion",
+          description:
+            "Sleep, movement, and heart rate orbit a single phone. An abstract option with a recognizable center.",
+          draw: (id) =>
+            `<ellipse cx="360" cy="210" rx="170" ry="170" fill="none" stroke="#ffffff0c"/><ellipse cx="360" cy="210" rx="292" ry="107" fill="none" stroke="#ffffff06" transform="rotate(-22 360 210)"/><g class="spin">${[
+              { x: 190, y: 210, c: C.blue },
+              { x: 445, y: 63, c: C.lilac },
+              { x: 445, y: 357, c: C.pink },
+            ]
+              .map(
+                ({ x, y, c }, i) =>
+                  `<g transform="translate(${x} ${y})"><g class="counter-spin"><circle r="25" fill="#101010" stroke="${c}55"/>${i === 0 ? `<path d="M-10 0H-5L-1-9L3 9L7-2H12" stroke="${c}" fill="none" stroke-width="1.5"/>` : i === 1 ? `<path d="M6-12A13 13 0 1 0 12 7A14 14 0 0 1 6-12" fill="none" stroke="${c}" stroke-width="1.5"/>` : heart(-9, -9, 0.75, c)}</g></g>`,
+              )
+              .join("")}</g>${phone(285, 66, 1)}`,
+        },
+      ];
+      const collections = [
+        { id: "explore", title: "Twelve more directions" },
+        { id: "symbols", title: "Health in motion" },
+        { id: "watch", title: "From the watch" },
+        { id: "sync", title: "Sync & devices" },
+        { id: "export", title: "Export & organize" },
+        { id: "live", title: "Workouts & live data" },
+      ];
+      const root = document.getElementById("studies");
+      for (const group of collections) {
+        const section = document.createElement("section");
+        section.className = "collection";
+        section.id = group.id;
+        section.innerHTML = `<h2 class="section-title">${group.title}</h2><div class="gallery">${studies
+          .filter((s) => s.group === group.id)
+          .map(
+            (s) =>
+              `<article class="study" id="${s.id}"><div class="art">${svg(s.id, s.description, s.draw(s.id))}</div><div class="caption"><div><h3>${s.name}</h3><p>${s.description}</p></div><div class="asset-actions"><a class="solo-link" href="?scene=${s.id}">View alone</a><button class="solo-link" type="button" data-save="${s.id}" aria-label="Save animated SVG: ${s.name}">Save SVG</button></div></div></article>`,
+          )
+          .join("")}</div>`;
+        root.append(section);
+      }
+      const scene = new URLSearchParams(location.search).get("scene");
+      if (scene && studies.some((s) => s.id === scene)) {
+        document.body.classList.add("isolated");
+        document.getElementById(scene).classList.add("selected");
+        document.title =
+          studies.find((s) => s.id === scene).name + " · PulsHealth";
+      }
+      for (const button of document.querySelectorAll("[data-pause]"))
+        button.addEventListener("click", () => {
+          const paused = document.body.classList.toggle("paused");
+          for (const control of document.querySelectorAll("[data-pause]")) {
+            control.setAttribute("aria-pressed", String(paused));
+            control.textContent = paused ? "Resume motion" : "Pause motion";
+          }
+        });
+      for (const button of document.querySelectorAll("[data-save]")) {
+        button.addEventListener("click", () => {
+          const source = document
+            .getElementById(button.dataset.save)
+            .querySelector("svg");
+          const exported = source.cloneNode(true);
+          exported.setAttribute("width", "720");
+          exported.setAttribute("height", "420");
+          const style = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "style",
+          );
+          style.textContent = document.querySelector("style").textContent;
+          exported.insertBefore(style, exported.firstChild);
+          const url = URL.createObjectURL(
+            new Blob([new XMLSerializer().serializeToString(exported)], {
+              type: "image/svg+xml",
+            }),
+          );
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "pulshealth-" + button.dataset.save + ".svg";
+          link.click();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        });
+      }
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries)
+              entry.target.classList.toggle("offscreen", !entry.isIntersecting);
+          },
+          { rootMargin: "120px" },
+        );
+        document.querySelectorAll(".art").forEach((el) => observer.observe(el));
+      }
+    </script>
+  </body>
+</html>
