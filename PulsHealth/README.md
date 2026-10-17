@@ -8,14 +8,14 @@ package; this app is configuration, visibility, and lifecycle wiring. See
 Sync, export, and control Apple Health data: explore on the phone, export CSV,
 JSON or JSONL without an account, and sync to a self-managed database or a
 compatible receiver. Sync setup lists Your Own Server first and PulsHealth Managed Server second.
-Selecting managed hosting restores the account signed in through Settings or
-opens account sign-in. Use PulsHealth Server then requests a pairing using that
-native account session. The account controls appear only after choosing managed hosting;
-signed-in users can connect directly without another sign-in prompt.
-The connection is tested and staged for explicit Save & Apply. Create Account
-explains that hosting is currently full and opens the signup waitlist; users
-are notified by email after approval. Deploy the viewer’s `/api/native/connect`
-endpoint before shipping this app change.
+Selecting managed hosting immediately shows its checkmark and opens the browser
+connection page. Sign in there and tap Connect this iPhone to return a pairing
+code directly to the app. An existing browser session is reused. This flow does
+not depend on the newer native account/profile endpoints being deployed.
+The app tests the connection and presents Save & Apply; only that action enables
+sync. Closing the browser without pairing explains that this iPhone is not yet
+connected. Create Account explains that hosting is currently full and opens the
+signup waitlist; users are notified by email after approval.
 
 Published as
 [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) on the App

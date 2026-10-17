@@ -26,6 +26,25 @@ final class UserAccountTests: XCTestCase {
         ] { XCTAssertThrowsError(try attempt.code(from: URL(string: callback)!)) }
     }
 
+    func testFreshSignInCanPrepareManagedConnectionBeforeApplying() async throws {
+        let credentials = InMemoryTokenStore()
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ManagedAccountFixtureProtocol.self]
+        let account = UserAccount(credentials: credentials, session: URLSession(configuration: configuration))
+        let attempt = UserAccount.SignIn()
+        let callback = URL(string: "puls://account?state=\(attempt.state)&code=\(String(repeating: "A", count: 43))")!
+        let signedIn = await account.finishSignIn(callback, attempt: attempt)
+        XCTAssertTrue(signedIn)
+        XCTAssertFalse(account.busy, "pairing must be able to start immediately after sign-in")
+        let connection = await account.connectManagedServer()
+        let payload = try XCTUnwrap(connection)
+        var setup = DatabaseSetup(applied: SyncConfiguration())
+        setup.choose(.pulsHealth)
+        XCTAssertTrue(setup.receiveSignIn(payload))
+        XCTAssertNotNil(setup.signedIn, "Save & Apply must be available after sign-in")
+        XCTAssertEqual(try credentials.token(), "fixture-account-session")
+    }
+
     func testManagedConnectionReusesSavedAccountAndKeepsCredentialsSeparate() async throws {
         let credentials = InMemoryTokenStore(token: "fixture-account-session")
         let configuration = URLSessionConfiguration.ephemeral
@@ -85,7 +104,8 @@ final class UserAccountTests: XCTestCase {
     func testInvalidCallbackCannotReplaceAnExistingCredential() async {
         let credentials = InMemoryTokenStore(token: "existing-account-token")
         let account = UserAccount(credentials: credentials)
-        await account.finishSignIn(URL(string: "puls://account?state=wrong&code=invalid")!, attempt: .init())
+        let signedIn = await account.finishSignIn(URL(string: "puls://account?state=wrong&code=invalid")!, attempt: .init())
+        XCTAssertFalse(signedIn)
         XCTAssertEqual(try credentials.token(), "existing-account-token")
         XCTAssertNil(account.profile)
         XCTAssertNotNil(account.problem)
@@ -135,10 +155,12 @@ private class ManagedAccountFixtureProtocol: URLProtocol, @unchecked Sendable {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func startLoading() {
         let connecting = request.url?.path == "/api/native/connect"
-        let authorized = request.value(forHTTPHeaderField: "Authorization") == "Bearer fixture-account-session"
+        let exchanging = request.httpMethod == "POST" && request.url?.path == "/api/native/profile"
+        let authorized = exchanging || request.value(forHTTPHeaderField: "Authorization") == "Bearer fixture-account-session"
         let status = authorized ? (connecting ? Self.connectStatus : 200) : 401
         let body: String
         if status != 200 { body = "{\"error\":\"Sign in again.\"}" }
+        else if exchanging { body = "{\"token\":\"fixture-account-session\"}" }
         else if connecting {
             body = "{\"link\":\"puls://pair?url=https%3A%2F%2F\(Self.host)&token=fixture-sync-token&user=\(Self.userID)\"}"
         } else {
