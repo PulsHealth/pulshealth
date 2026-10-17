@@ -14,6 +14,7 @@ enum SettingsRoute: Hashable {
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @AppStorage("settings.developerMode") private var developerMode = false
+    @State private var account = UserAccount()
     @State private var confirmDeveloperMode = false
     @State private var confirmResetAll = false
     @State private var confirmBackfill = false
@@ -39,7 +40,9 @@ struct SettingsView: View {
             }
             Section {
                 NavigationLink(value: SettingsRoute.user) {
-                    UserRow(name: model.config.userName, email: model.config.userEmail)
+                    UserRow(
+                        name: account.hasSession ? account.savedProfile?.name : model.config.userName,
+                        email: account.hasSession ? account.savedProfile?.email : model.config.userEmail)
                 }
             }
 
@@ -67,9 +70,13 @@ struct SettingsView: View {
                 NavigationLink { CreateDataRequestView() } label: { Label("Create Request", systemImage: "qrcode") }
                 NavigationLink { OpenDataRequestView() } label: { Label("Open or Scan Request", systemImage: "qrcode.viewfinder") }
             } header: {
-                Text("Data Requests")
-            } footer: {
-                Text("Create health data requests for research participants, teams, or other groups.")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Data Requests")
+                    Text("Create health data requests for research participants, teams, or other groups.")
+                        .font(.footnote)
+                        .fontWeight(.regular)
+                        .textCase(nil)
+                }
             }
 
             // Keyed on the *applied* server, like the Sync tab's first-time screen:
@@ -179,9 +186,10 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
+        .task { await account.restore() }
         .navigationDestination(for: SettingsRoute.self) { route in
             switch route {
-            case .user: UserView()
+            case .user: UserView(account: account)
             case .benchmark:
                 if developerMode { BenchmarkView() }
             }
