@@ -75,6 +75,7 @@ interface Session {
 }
 
 const ROUTES: Record<string, { methods: Method[]; guard: Guard }> = {
+  "/api/native/connect": { methods: ["POST"], guard: { kind: "oauth" } },
   "/api/native/profile": { methods: ["GET", "POST", "PUT", "DELETE"], guard: { kind: "oauth" } },
   "/api/auth/connect-account": { methods: ["POST"], guard: { kind: "session", noSession: "/login?next=%2Faccount" } },
   "/api/health/v1/[...path]": { methods: ["GET"], guard: { kind: "oauth" } },

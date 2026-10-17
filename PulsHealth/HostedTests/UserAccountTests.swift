@@ -26,6 +26,33 @@ final class UserAccountTests: XCTestCase {
         ] { XCTAssertThrowsError(try attempt.code(from: URL(string: callback)!)) }
     }
 
+    func testManagedConnectionReusesSavedAccountAndKeepsCredentialsSeparate() async throws {
+        let credentials = InMemoryTokenStore(token: "fixture-account-session")
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ManagedAccountFixtureProtocol.self]
+        let account = UserAccount(credentials: credentials, session: URLSession(configuration: configuration))
+        await account.restore()
+        let connection = await account.connectManagedServer()
+        XCTAssertEqual(connection?.userID, account.savedProfile?.userID)
+        XCTAssertEqual(connection?.serverURL.host, "sync.pulshealth.com")
+        XCTAssertEqual(connection?.token, "fixture-sync-token")
+        XCTAssertEqual(try credentials.token(), "fixture-account-session")
+        XCTAssertNil(account.problem)
+    }
+
+    func testManagedConnectionRejectsWrongUserForeignHostAndRevokedSession() async {
+        for fixture: AnyClass in [WrongUserManagedFixture.self, ForeignManagedFixture.self, RevokedManagedFixture.self] {
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.protocolClasses = [fixture]
+            let account = UserAccount(credentials: InMemoryTokenStore(token: "fixture-account-session"),
+                                      session: URLSession(configuration: configuration))
+            await account.restore()
+            let connection = await account.connectManagedServer()
+            XCTAssertNil(connection)
+            XCTAssertNotNil(account.problem)
+        }
+    }
+
     func testSaveLoadsAccountAndClearsOptionalFields() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [AccountFixtureProtocol.self]
@@ -97,4 +124,40 @@ final class AccountFixtureProtocol: URLProtocol, @unchecked Sendable {
         client?.urlProtocolDidFinishLoading(self)
     }
     override func stopLoading() {}
+}
+
+/// The account and sync endpoints require distinct credentials. No browser session is involved.
+private class ManagedAccountFixtureProtocol: URLProtocol, @unchecked Sendable {
+    class var host: String { "sync.pulshealth.com" }
+    class var userID: String { "5ea4d000-0000-4000-8000-0000000000aa" }
+    class var connectStatus: Int { 200 }
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let connecting = request.url?.path == "/api/native/connect"
+        let authorized = request.value(forHTTPHeaderField: "Authorization") == "Bearer fixture-account-session"
+        let status = authorized ? (connecting ? Self.connectStatus : 200) : 401
+        let body: String
+        if status != 200 { body = "{\"error\":\"Sign in again.\"}" }
+        else if connecting {
+            body = "{\"link\":\"puls://pair?url=https%3A%2F%2F\(Self.host)&token=fixture-sync-token&user=\(Self.userID)\"}"
+        } else {
+            body = "{\"userID\":\"5ea4d000-0000-4000-8000-0000000000aa\",\"name\":null,\"email\":\"person@example.test\",\"dateOfBirth\":null,\"biologicalSex\":null}"
+        }
+        let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil,
+                                       headerFields: ["Content-Type": "application/json"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data(body.utf8))
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}
+private final class WrongUserManagedFixture: ManagedAccountFixtureProtocol, @unchecked Sendable {
+    override class var userID: String { "5ea4d000-0000-4000-8000-0000000000bb" }
+}
+private final class ForeignManagedFixture: ManagedAccountFixtureProtocol, @unchecked Sendable {
+    override class var host: String { "other.example.test" }
+}
+private final class RevokedManagedFixture: ManagedAccountFixtureProtocol, @unchecked Sendable {
+    override class var connectStatus: Int { 401 }
 }

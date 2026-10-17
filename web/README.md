@@ -738,6 +738,12 @@ resulting account session authorizes GET/PUT/DELETE there using Bearer only.
 Cookies never authorize this machine route. Profile reads are user scoped;
 profile writes use `auth.set_my_profile`, and login-email changes require the
 current password and invalidate pending recovery/invitation links. The account
-UUID is fixed. No device sync token is issued and no Health upload is enabled.
+UUID is fixed. Signing in alone issues no device sync token and enables no Health upload.
+When the person chooses managed hosting in the app, `POST /api/native/connect`
+reuses that bearer session to issue an ordinary device token for the session’s
+own user through `connectPhone`. It ignores cookies and caller-supplied identity,
+refuses expired/disabled/demo accounts, and returns a non-cacheable pairing link.
+The app checks the returned user/domain and stages it for Save & Apply.
+New account signup explains current capacity and the approval waitlist.
 Apply migrations 029 and 100 before deploying this viewer; ship the iOS client
 after the viewer is available. These endpoints require accounts mode and HTTPS.

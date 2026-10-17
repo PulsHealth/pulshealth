@@ -7,12 +7,14 @@ package; this app is configuration, visibility, and lifecycle wiring. See
 
 Sync, export, and control Apple Health data: explore on the phone, export CSV,
 JSON or JSONL without an account, and sync to a self-managed database or a
-compatible receiver. PulsHealth managed hosting is coming soon; new users can join the signup
-waitlist, while invited accounts retain access. Sync setup lists Your Own
-Server first and PulsHealth Managed Server second. Managed setup restores an
-existing on-device account session or offers account sign-in. Waitlist signup
-uses the existing web form; accounts are created after approval, and joining
-does not enable Health sync.
+compatible receiver. Sync setup lists Your Own Server first and PulsHealth Managed Server second.
+Selecting managed hosting restores the account signed in through Settings or
+opens account sign-in. Use PulsHealth Server then requests a pairing using that
+native account session.
+The connection is tested and staged for explicit Save & Apply. Create Account
+explains that hosting is currently full and opens the signup waitlist; users
+are notified by email after approval. Deploy the viewer’s `/api/native/connect`
+endpoint before shipping this app change.
 
 Published as
 [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) on the App
@@ -227,10 +229,10 @@ Sources/
 │                         PendingChangesBar sits on this tab.
 ├── ServerSettingsView.swift  Sync → Database: Your Own Server first, then
 │                         PulsHealth Managed Server (none checked until
-│                         one is chosen). Managed: Coming soon, Join the Waitlist
-│                         (the signup form), native account sign-in, or the
-│                         restored account identity and Connect Existing Account
-│                         for invited users. Pairing returns a code — its database named
+│                         authenticated). Managed: restores the Settings account or
+│                         opens sign-in; Use PulsHealth Server pairs with its native credential.
+│                         Create Account explains full capacity and the waitlist.
+│                         Pairing returns a code — its database named
 │                         — tested above Save & Apply; once applied, Manage
 │                         Account, Connect an AI Assistant (docs, in
 │                         Safari). Saved Databases offers Switch and Unpair. Account deletion stays

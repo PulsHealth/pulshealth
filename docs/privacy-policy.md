@@ -17,7 +17,7 @@ email requires your current password; the app sends it over HTTPS for that
 check and does not persist it. Signing in does not enable Health uploads or
 change your sync destination. The account session credential stays in a
 separate device-only Keychain item; the profile is held in memory while the
-User page is open. If the same account is also your active sync destination,
+User or managed-server setup page is open. If the same account is also your active sync destination,
 saved edits update that destination's local profile. Signing out removes the
 account credential from this iPhone and requests server-session revocation;
 it does not disconnect an independently configured sync destination. The web
@@ -25,6 +25,10 @@ account page can revoke the iPhone account session too. Account handoff uses
 a five-minute, one-use code bound to a verifier held by this iPhone. The server
 stores only the code hash and verifier challenge, and ordinary session expiry,
 password reset and account disabling apply to the account session.
+Choosing PulsHealth managed hosting reuses this account session to request a
+separate sync credential for your account over HTTPS. If you are signed out,
+the app asks you to sign in first. The connection stays a draft until you tap
+Save & Apply; signing in alone uploads no Health data.
 
 ## The short version
 

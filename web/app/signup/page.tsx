@@ -39,7 +39,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
   return (
     <AuthCard
       title="Create your PulsHealth account"
-      subtitle="Sync your iPhone's health data here, and see it all on the web."
+      subtitle="Hosting is currently full. Create an account request to join the waitlist, and we’ll email you when space is available."
       error={errorMessage(param(params.error))}
     >
       <form method="post" action="/api/auth/signup">
@@ -86,7 +86,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
           </span>
         </label>
         <button type="submit" className="btn btn-primary btn-block">
-          Sign up
+          Join the waitlist
         </button>
       </form>
       <p className="form-hint" style={{ margin: "18px 0 0", lineHeight: 1.5 }}>
