@@ -125,8 +125,7 @@ struct SyncIntro: View {
         choiceCard(
             symbol: "cloud.fill", color: .accentColor,
             title: "PulsHealth Managed Server",
-            detail: "Your Health data hosted for you, with no server to set up.",
-            footer: "Exploring and exporting never need a server."
+            detail: "Your Health data hosted for you, with no server to set up."
         ) {
             Button {
                 choose(.pulsHealth)

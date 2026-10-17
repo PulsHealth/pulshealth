@@ -77,8 +77,9 @@ final class UserAccount {
         } catch { problem = error.localizedDescription }
     }
 
-    func finishSignIn(_ callback: URL, attempt: SignIn) async {
-        guard !busy else { return }
+    @discardableResult
+    func finishSignIn(_ callback: URL, attempt: SignIn) async -> Bool {
+        guard !busy else { return false }
         busy = true
         defer { busy = false }
         do {
@@ -93,7 +94,8 @@ final class UserAccount {
             profile = loaded
             savedProfile = loaded
             problem = nil
-        } catch { problem = error.localizedDescription }
+            return true
+        } catch { problem = error.localizedDescription; return false }
     }
 
     /// Reuse the Settings account credential without a second browser login.
