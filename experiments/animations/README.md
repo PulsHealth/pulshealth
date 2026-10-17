@@ -5,12 +5,16 @@ It is one self-contained HTML file: inline SVG, CSS, and a small gallery script.
 There are no dependencies, fonts to download, data requests, or real health data.
 The gallery is a separate experiment; it does not change or deploy the site.
 
-Twenty-four studies explore recognizable health symbols, watch-to-phone flows, devices, database sync,
+Thirty-six studies explore recognizable health symbols, watch-to-phone flows,
+devices, database sync,
 files, summaries, running, routes, and live readings. The devices use restrained
 hardware silhouettes and abstract screens. Narrative text lives in captions;
 the graphics retain only a few data values and file formats. Symbol studies include
 a running person, heartbeat, sleep, nutrition, hydration, strength, cycling, steps,
-swimming, breathing, daylight, weight, temperature, and mindfulness. All loop automatically. A global pause control and
+swimming, breathing, daylight, weight, temperature, and mindfulness. The newest
+collection adds hiking, rowing, yoga, and balance, plus radial hubs, multi-stage
+handoffs, day/night paths, weekly mosaics, and archive-to-file compositions.
+All loop automatically. A global pause control and
 reduced-motion handling are included; offscreen graphics pause to save work.
 
 Colors match the current site's charcoal shell (`#0a0a0a`, `#171717`) and brand
@@ -25,6 +29,9 @@ embedded, ready to use as an image or inline vector. The SVG has a transparent
 background and includes reduced-motion handling. Every tile also has a **View
 alone** link. For example:
 
+- `index.html?scene=daily-health-hub`
+- `index.html?scene=hike-to-history`
+- `index.html?scene=signals-archive-portable`
 - `index.html?scene=workout-heart-sleep`
 - `index.html?scene=watch-phone-archive`
 - `index.html?scene=watch-to-phone`

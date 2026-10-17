@@ -775,6 +775,7 @@
         its own.
       </p>
       <nav aria-label="Animation collections">
+        <a href="#explore">New directions</a>
         <a href="#symbols">Health in motion</a
         ><a href="#watch">From the watch</a><a href="#sync">Sync & devices</a
         ><a href="#export">Export & organize</a
@@ -851,6 +852,10 @@
       function healthSymbol(kind, color) {
         const stroke = `fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`;
         const shapes = {
+          hiking: `<g class="runner-bob"><circle cx="0" cy="-24" r="4" ${stroke}/><path d="M-2-16L-7 2L7 17L18 24M-7 2L-19 24M-1-13L16-3L22-14M20-14L26 27M-7-13L-16-10L-19 2L-11 5" ${stroke}/></g><path d="M-32 31L-6 20L34 31" ${stroke} opacity=".25"/>`,
+          rowing: `<circle cx="-7" cy="-18" r="4" ${stroke}/><path d="M-8-10L2 2L19 9M-8-10L-18 4L-4 11H22M-31 12Q0 34 31 12Z" ${stroke}/><g class="water-level"><path d="M-14-1L27 26M21 21L29 18L35 27L29 31Z" ${stroke}/></g><path d="M-35 34Q-18 28 0 34T35 34" ${stroke} opacity=".3"/>`,
+          yoga: `<g class="breathe"><circle cy="-24" r="4" ${stroke}/><path d="M0-16V3L-25 23M0 3L24 23M0-11L-27-6M0-11L27-6" ${stroke}/><path d="M-35 29H35" ${stroke} opacity=".25"/></g>`,
+          balance: `<circle cy="-25" r="4" ${stroke}/><path d="M0-17V4L-4 30M0 4L15 16L1 19M0-11L-23-4M0-11L23-4" ${stroke}/><ellipse cy="34" rx="30" ry="4" ${stroke} opacity=".2"/>`,
           nutrition: `<g class="breathe"><path d="M0-15C-14-25-28-10-20 9S-9 30 0 24C9 30 21 16 23 3C11 0 13-11 21-14C13-23 6-21 0-15Z" ${stroke}/><path d="M0-16C-2-26 7-31 14-30C13-22 8-18 0-16" ${stroke}/></g>`,
           water: `<path d="M0-28C-7-17-21-1-21 10A21 21 0 0 0 21 10C21-1 7-17 0-28Z" ${stroke}/><path class="water-level" d="M-13 12Q-7 7 0 12T13 12" ${stroke}/>`,
           strength: `<g class="lift"><path d="M-17 0H17" ${stroke}/><rect x="-26" y="-16" width="8" height="32" rx="2" ${stroke}/><rect x="18" y="-16" width="8" height="32" rx="2" ${stroke}/><path d="M-31-9V9M31-9V9" ${stroke}/></g>`,
@@ -877,7 +882,143 @@
             .join("") + database(id, 465, 123, 1)
         );
       }
+      const placedSymbol = (kind, x, y, scale = 1, color = C.blue) =>
+        `<g transform="translate(${x} ${y}) scale(${scale})">${healthSymbol(kind, color)}</g>`;
+      function radialSources(kinds, cx, cy, rx, ry, targetX, targetY) {
+        return kinds
+          .map((kind, i) => {
+            const angle = (i / kinds.length) * Math.PI * 2 - Math.PI / 2;
+            const x = cx + Math.cos(angle) * rx,
+              y = cy + Math.sin(angle) * ry;
+            const color = [C.blue, C.pink, C.lilac, C.mint][i % 4];
+            return (
+              wire(
+                `M${x} ${y}Q${cx} ${cy} ${targetX} ${targetY}`,
+                color,
+                -i * 0.65,
+                5.5,
+              ) + placedSymbol(kind, x, y, 0.67, color)
+            );
+          })
+          .join("");
+      }
       const studies = [
+        {
+          id: "daily-health-hub",
+          group: "explore",
+          name: "A whole day, gathered",
+          description:
+            "Six recognizable signals surround one quiet phone. Small packets gather at the center.",
+          draw: (id) =>
+            `${radialSources(["heart", "daylight", "cycling", "water", "sleep", "nutrition"], 360, 210, 248, 140, 360, 210)}${phone(303, 100, 0.76)}`,
+        },
+        {
+          id: "run-wrist-pocket",
+          group: "explore",
+          name: "Run, wrist, pocket",
+          description:
+            "A running person, a watch, and a phone form a simple three-part handoff.",
+          draw: (id) =>
+            `${runner(119, 216, 1.8)}${wire("M187 205H292", C.blue, -0.6, 4)}${watch(292, 87, 0.9, "workout")}${wire("M408 211H516", C.blue, -2.4, 4)}${phone(516, 81, 0.9, "workout")}`,
+        },
+        {
+          id: "hike-to-history",
+          group: "explore",
+          name: "A hike becomes history",
+          description:
+            "A hiker climbs above a sparse mountain contour, with the route moving through a phone to storage.",
+          draw: (id) =>
+            `<path d="M36 292L106 205L164 272L203 242L243 293" fill="none" stroke="#4ca9ff18"/>${placedSymbol("hiking", 119, 173, 1.3)}${wire("M192 211H290", C.blue, -0.7, 4.2)}${phone(291, 88, 0.84, "workout")}${wire("M418 211H523", C.blue, -2.2, 4.2)}${database(id, 524, 147, 0.75)}`,
+        },
+        {
+          id: "strength-to-file",
+          group: "explore",
+          name: "Strength you can take with you",
+          description:
+            "A lifting dumbbell passes a session through the phone and into a portable file.",
+          draw: (id) =>
+            `${placedSymbol("strength", 113, 211, 1.55)}${wire("M179 211H285", C.lilac, -0.5, 4.5)}${phone(286, 85, 0.87)}${wire("M418 211H513", C.blue, -2.3, 4.5)}${file(513, 109, 0.84, "json", "file-appear")}`,
+        },
+        {
+          id: "breathe-watch-pocket",
+          group: "explore",
+          name: "A breath, carried forward",
+          description:
+            "Lungs slowly expand while a watch and phone carry the signal onward.",
+          draw: (id) =>
+            `${placedSymbol("breathing", 115, 210, 1.5, C.mint)}${wire("M177 211H286", C.mint, -0.8, 5.2)}${watch(286, 84, 0.92, "pulse")}${wire("M406 211H514", C.mint, -2.6, 5.2)}${phone(515, 81, 0.9, "sync")}`,
+        },
+        {
+          id: "fuel-and-water-files",
+          group: "explore",
+          name: "Small habits, portable records",
+          description:
+            "Nutrition and hydration converge at the phone, then separate into CSV and JSON files.",
+          draw: (id) =>
+            `${placedSymbol("nutrition", 95, 132, 1.1, C.mint)}${placedSymbol("water", 95, 292, 1.1, C.blue)}${wire("M145 132C210 132 208 172 269 172", C.mint, -0.5, 4.5)}${wire("M145 292C210 292 208 248 269 248", C.blue, -1.8, 4.5)}${phone(270, 90, 0.83)}${wire("M395 172C457 172 462 123 525 123", C.blue, -2.8, 5)}${wire("M395 248C457 248 462 295 548 295", C.lilac, -4, 5)}${file(524, 45, 0.58, "csv", "file-appear")}${file(547, 230, 0.55, "json", "file-appear")}`,
+        },
+        {
+          id: "day-night-archive",
+          group: "explore",
+          name: "From day into night",
+          description:
+            "Daylight and sleep trace two arcs around a phone before joining the same archive.",
+          draw: (id) =>
+            `${placedSymbol("daylight", 100, 113, 1, C.blue)}${placedSymbol("sleep", 100, 302, 1, C.lilac)}${wire("M145 113C233 113 245 150 314 150", C.blue, -0.3, 5.5)}${wire("M145 302C233 302 245 271 314 271", C.lilac, -2.5, 5.5)}${phone(315, 87, 0.86)}${wire("M445 211H541", C.blue, -3.5, 5)}${database(id, 541, 153, 0.68)}`,
+        },
+        {
+          id: "week-of-movement",
+          group: "explore",
+          name: "A week of different movement",
+          description:
+            "A mosaic of workouts and recovery moments lights up in sequence and flows into an archive.",
+          draw: (id) =>
+            `${["cycling", "strength", "sleep", "swimming", "yoga", "steps"]
+              .map((kind, i) => {
+                const x = 92 + (i % 3) * 103,
+                  y = 140 + Math.floor(i / 3) * 127;
+                return `<rect x="${x - 39}" y="${y - 42}" width="78" height="84" rx="10" fill="none" stroke="#ffffff0d"/><g class="tier" style="--delay:${i * -0.75}s">${placedSymbol(kind, x, y, 0.7, [C.blue, C.pink, C.lilac][i % 3])}</g>`;
+              })
+              .join(
+                "",
+              )}${wire("M351 150C415 150 417 193 489 193", C.blue, -1, 4.8)}${wire("M351 272C415 272 417 239 489 239", C.lilac, -2.8, 4.8)}${database(id, 489, 135, 0.88)}`,
+        },
+        {
+          id: "rowing-recovery",
+          group: "explore",
+          name: "An effort and its recovery",
+          description:
+            "A rower and a breathing signal reach a single phone, then continue into personal history.",
+          draw: (id) =>
+            `${placedSymbol("rowing", 108, 132, 1.1, C.blue)}${placedSymbol("breathing", 108, 293, 1, C.lilac)}${wire("M160 132C224 132 224 171 287 171", C.blue, -0.4, 4.8)}${wire("M160 293C224 293 224 250 287 250", C.lilac, -1.9, 4.8)}${phone(288, 88, 0.85)}${wire("M416 212H516", C.blue, -3.2, 4.8)}${database(id, 516, 145, 0.77)}`,
+        },
+        {
+          id: "balance-mobility-rest",
+          group: "explore",
+          name: "Balance, mobility, rest",
+          description:
+            "A standing balance pose, a stretch, and a quiet seated figure gather at the archive.",
+          draw: (id) => symbolArchive(id, ["balance", "yoga", "mindfulness"]),
+        },
+        {
+          id: "archive-many-signals",
+          group: "explore",
+          name: "One archive, many dimensions",
+          description:
+            "Eight different health symbols surround the archive, with short, independent streams.",
+          draw: (id) =>
+            `${radialSources(["sleep", "heart", "water", "strength", "steps", "nutrition", "breathing", "daylight"], 360, 208, 254, 148, 360, 208)}${database(id, 290, 141, 0.78)}`,
+        },
+        {
+          id: "signals-archive-portable",
+          group: "explore",
+          name: "Capture, keep, carry",
+          description:
+            "Health symbols feed a central archive and continue into two file formats. A complete story in one composition.",
+          draw: (id) =>
+            `${["heart", "cycling", "water"].map((kind, i) => `${placedSymbol(kind, 91, 105 + i * 105, 0.8, [C.pink, C.blue, C.lilac][i])}${wire(`M145 ${105 + i * 105}C208 ${105 + i * 105} 225 ${181 + i * 30} 294 ${181 + i * 30}`, [C.pink, C.blue, C.lilac][i], -i * 1.1, 4.8)}`).join("")}${database(id, 295, 133, 0.83)}${wire("M445 181C499 181 501 114 556 114", C.blue, -2.2, 5)}${wire("M445 244C499 244 501 290 556 290", C.mint, -3.8, 5)}${file(556, 39, 0.55, "csv", "file-appear")}${file(556, 228, 0.55, "json", "file-appear")}`,
+        },
+
         {
           id: "workout-heart-sleep",
           group: "symbols",
@@ -1102,6 +1243,7 @@
         },
       ];
       const collections = [
+        { id: "explore", title: "Twelve more directions" },
         { id: "symbols", title: "Health in motion" },
         { id: "watch", title: "From the watch" },
         { id: "sync", title: "Sync & devices" },
