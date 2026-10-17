@@ -68,6 +68,27 @@ struct RootView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
         }
+        .safeAreaInset(edge: .top) {
+            if model.subscriptions.showsGiftWelcome && !model.showsOnboarding {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("30 days of Pro, on us").font(.headline)
+                    Text("Thanks for being an early PulsHealth user. No subscription required, and no automatic charge.")
+                        .font(.subheadline)
+                    HStack {
+                        Button("View gift") {
+                            model.subscriptions.dismissGiftWelcome()
+                            model.showPro()
+                        }
+                        Spacer()
+                        Button("Dismiss") { model.subscriptions.dismissGiftWelcome() }
+                    }
+                    .font(.subheadline.weight(.semibold))
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.regularMaterial)
+            }
+        }
         .sheet(isPresented: $model.showsPro) {
             NavigationStack { ProView(context: model.proContext) }.environment(model)
         }
@@ -84,7 +105,10 @@ struct RootView: View {
         }
         .task {
             presentDataRequest()
-            if scenePhase == .active { model.reviews.beginSession() }
+            if scenePhase == .active {
+                model.reviews.beginSession()
+                await model.subscriptions.beginForegroundVisit()
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { model.reviews.beginSession() }

@@ -615,3 +615,10 @@ An older saved selection over Free's limit stays visible, with an explicit
 Sync paused status and an explanation beside Sync Now. That section offers
 raw/aggregate editing and Pro so a connected database is not mistaken for an
 actively syncing selection.
+
+Existing users whose verified original App Store build predates Pro (build 23)
+receive 30 complimentary days starting on their first foreground opening of the
+update. No subscription is started or charged. The fixed dates and welcome
+acknowledgement live in a separate device-only Keychain item, and the gift
+expires through the same access checks as a subscription. Paid subscriptions
+take priority. See [subscription setup](../docs/appstore/subscriptions.md).

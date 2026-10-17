@@ -81,6 +81,12 @@ are available; it does not send health data, selections, exported files, or
 server credentials to Apple to check a subscription. No third-party purchase
 SDK, receipt server, or new PulsHealth account is used for this.
 
+For the existing-user thank-you, the app checks Apple's verified original app
+build and keeps fixed gift start/end dates and a welcome acknowledgement in a
+separate device-only Keychain item. These contain no health data, are not sent
+to PulsHealth, and do not create an auto-renewing subscription. The expired
+record remains so reopening the app does not restart the gift.
+
 Free access includes Explore, unlimited manual exports of all health data types
 and formats from the most recent 30 days, and automatic sync of up to five
 health data types from the most recent 30 days. Pro removes these app limits;

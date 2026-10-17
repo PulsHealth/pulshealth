@@ -50,7 +50,7 @@ struct SettingsView: View {
                 Button { model.showPro() } label: {
                     HStack {
                         Label {
-                            Text(model.subscriptions.hasPro ? "PulsHealth Pro" : "PulsHealth Free")
+                            Text(model.subscriptions.complimentaryExpiresAt != nil ? "Complimentary Pro" : (model.subscriptions.hasPro ? "PulsHealth Pro" : "PulsHealth Free"))
                                 .foregroundStyle(.primary)
                         } icon: {
                             Image(systemName: model.subscriptions.hasPro ? "checkmark.seal" : "sparkles")

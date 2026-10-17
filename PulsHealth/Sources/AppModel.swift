@@ -250,7 +250,7 @@ final class AppModel {
     }
 
     var reviewRequestsBlocked: Bool {
-        showsPro || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
+        subscriptions.showsGiftWelcome || showsPro || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
             || pairingAwaitsSyncTab || lastErrorMessage != nil || stateFileUnreadable
             || needsAuthorization || isSyncingAll || backfillActive || export.isRunning
             || statuses.contains(where: { $0.activity == .syncing })
@@ -1302,7 +1302,7 @@ final class AppModel {
         // the empty default and skip the launch sync.
         await start()
         if trigger == "foreground" {
-            await subscriptions.refreshEntitlements()
+            await subscriptions.beginForegroundVisit()
             // Off the sync's critical path: capabilities only gate UI.
             Task { await refreshServerCapabilities() }
         }

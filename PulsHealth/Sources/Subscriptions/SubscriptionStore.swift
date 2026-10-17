@@ -3,14 +3,19 @@ import Observation
 import StoreKit
 import PulsHealthSync
 
-/// Apple is the source of truth. No account, receipt server, third-party SDK,
-/// or persisted "isPro" flag. Current entitlements include billing grace.
+/// Verified Apple subscriptions take priority over the device-local early-user
+/// gift. Current subscription entitlements include billing grace.
 @MainActor @Observable
 final class SubscriptionStore {
     nonisolated static let monthlyID = "com.pulsHealth.PulsHealth.pro.monthly"
     nonisolated static let annualID = "com.pulsHealth.PulsHealth.pro.annual"
     nonisolated static let productIDs: Set<String> = [monthlyID, annualID]
 
+    private(set) var complimentaryExpiresAt: Date?
+    private(set) var showsGiftWelcome = false
+    @ObservationIgnored private let earlyUserGift: EarlyUserProGift?
+    @ObservationIgnored private let now: @MainActor () -> Date
+    @ObservationIgnored private var giftExpiry: Task<Void, Never>?
     private(set) var hasPro = false
     private(set) var plan: ProPlanDetails?
     private(set) var isLoaded = false
@@ -48,9 +53,13 @@ final class SubscriptionStore {
     init(
         entitlementReader: (@Sendable () async -> Bool)? = nil,
         accessReader: (@Sendable () async -> ProAccessSnapshot)? = nil,
+        earlyUserGift: EarlyUserProGift? = nil,
+        now: @escaping @MainActor () -> Date = Date.init,
         purchaseAction: @escaping PurchaseAction = { try await $0.purchase() },
         restoreAction: @escaping RestoreAction = { try await AppStore.sync() }
     ) {
+        self.now = now
+        self.earlyUserGift = earlyUserGift ?? (entitlementReader == nil && accessReader == nil ? EarlyUserProGift() : nil)
         self.purchaseAction = purchaseAction
         self.restoreAction = restoreAction
         if let accessReader {
@@ -182,13 +191,42 @@ final class SubscriptionStore {
         refreshGeneration += 1
         let generation = refreshGeneration
         let access = await accessReader()
+        let gift = earlyUserGift?.activeRecord(now: now())
+        let giftEnd = !access.hasPro ? gift.map { Date(timeIntervalSince1970: $0.expiresAt) } : nil
+        let entitled = access.hasPro || giftEnd != nil
         if generation == refreshGeneration {
-            if access.hasPro && !hasPro { message = nil }
-            hasPro = access.hasPro
+            if entitled && !hasPro { message = nil }
+            hasPro = entitled
+            complimentaryExpiresAt = giftEnd
+            showsGiftWelcome = giftEnd != nil && gift?.acknowledged == false
+            scheduleGiftExpiry(giftEnd)
             plan = access.hasPro ? access.plan : nil
             isLoaded = true
         }
-        return access.hasPro
+        return entitled
+    }
+
+    /// Only a foreground visit starts the clock. Background deliveries can
+    /// use an existing gift, but cannot consume it before the person opens us.
+    func beginForegroundVisit() async {
+        await earlyUserGift?.activate(now: now())
+        await refreshEntitlements()
+    }
+
+    func dismissGiftWelcome() {
+        earlyUserGift?.acknowledge()
+        showsGiftWelcome = false
+    }
+
+    private func scheduleGiftExpiry(_ date: Date?) {
+        giftExpiry?.cancel()
+        giftExpiry = nil
+        guard let date else { return }
+        let delay = max(0, date.timeIntervalSince(now()))
+        giftExpiry = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+            await self?.refreshEntitlements()
+        }
     }
 
     /// Checked by background/observer paths too, even without a foreground
@@ -246,15 +284,20 @@ final class SubscriptionStore {
         do {
             try await restoreAction()
             await refreshEntitlements()
-            message = hasPro ? "PulsHealth Pro has been restored." : "No active Pro subscription was found for this Apple Account."
+            if complimentaryExpiresAt != nil {
+                message = "Your complimentary Pro gift is active. No active Pro subscription was found for this Apple Account."
+            } else {
+                message = hasPro ? "PulsHealth Pro has been restored." : "No active Pro subscription was found for this Apple Account."
+            }
         } catch {
             message = "Purchases could not be restored. Please try again."
         }
     }
 
     func stop() {
+        giftExpiry?.cancel(); giftExpiry = nil
         updates?.cancel(); updates = nil
         statusUpdates?.cancel(); statusUpdates = nil
     }
-    deinit { updates?.cancel(); statusUpdates?.cancel() }
+    deinit { updates?.cancel(); statusUpdates?.cancel(); giftExpiry?.cancel() }
 }
