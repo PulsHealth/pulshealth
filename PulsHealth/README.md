@@ -9,8 +9,10 @@ Sync, export, and control Apple Health data: explore on the phone, export CSV,
 JSON or JSONL without an account, and sync to a self-managed database or a
 compatible receiver. Sync setup lists Your Own Server first and PulsHealth Managed Server second.
 Selecting managed hosting restores the account signed in through Settings or
-opens account sign-in. Use PulsHealth Server then requests a pairing using that
-native account session. The account controls appear only after choosing managed hosting;
+opens account sign-in. The selected option shows a checkmark immediately. Successful
+sign-in then requests a pairing using that native account session; existing signed-in
+users tap Connect PulsHealth Server. The signed-in state explicitly says when this
+iPhone still needs connecting. The account controls appear only after choosing managed hosting;
 signed-in users can connect directly without another sign-in prompt.
 The connection is tested and staged for explicit Save & Apply. Create Account
 explains that hosting is currently full and opens the signup waitlist; users

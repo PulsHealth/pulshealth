@@ -254,7 +254,7 @@ struct ServerSettingsView: View {
     }
 
     private func isSelected(_ choice: DatabaseDestination) -> Bool {
-        setup.destination == choice && (choice == .own || setup.signedIn != nil || model.usesPulsHealthDatabase)
+        setup.destination == choice
     }
 
     // MARK: - PulsHealth database
@@ -320,9 +320,13 @@ struct ServerSettingsView: View {
             Section {
                 if hasVerifiedAccount {
                     if let email = account.savedProfile?.email {
-                        Text(email).foregroundStyle(.secondary)
+                        Label("Signed in as \(email)", systemImage: "person.crop.circle.badge.checkmark")
+                            .foregroundStyle(.secondary)
                     }
-                    Button("Use PulsHealth Server") { Task { await prepareManagedServer() } }
+                    Text("This iPhone isn’t connected yet. Connect your server, then tap Save & Apply to start syncing.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button("Connect PulsHealth Server") { Task { await prepareManagedServer() } }
                         .disabled(account.busy || signingIn)
                     if account.problem != nil {
                         Button("Sign In Again", action: signInToAccount)
@@ -368,7 +372,9 @@ struct ServerSettingsView: View {
                 let callback = try await webAuthenticationSession.authenticate(
                     using: attempt.url, callbackURLScheme: PulsHealthDatabase.callbackScheme,
                     preferredBrowserSession: .shared)
-                await account.finishSignIn(callback, attempt: attempt)
+                if await account.finishSignIn(callback, attempt: attempt), setup.destination == .pulsHealth {
+                    await prepareManagedServer()
+                }
             } catch {
                 if case .cancelled = PulsHealthDatabase.outcome(ofError: error) { return }
                 account.problem = "Sign-in did not finish. Try again."
