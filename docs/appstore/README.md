@@ -236,6 +236,34 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.2 (24) internal TestFlight (2026-10-16)
+
+Build **2.2 (24)** was archived from clean `release-2.2` source
+`da4a1e0f5a647f8d75707bf39e01c20794c537ce`. Apple accepted and processed build
+`fa24eef7-7d24-405b-8c40-2879afc33128`; the existing **PulsHealth** internal
+group (two testers) visibly reports **Testing**. What to Test notes are saved.
+The signed archive, distribution IPA, matching dSYMs, upload diagnostics and
+candidate evidence are retained privately.
+
+This candidate puts Your Own Server first and PulsHealth Managed Server second,
+reuses the Settings account session for an explicit managed-server connection,
+and explains capacity and the signup waitlist only when creating an account.
+The Sync introduction and hosting/Pro comparison copy were shortened.
+
+Signed simulator app checks passed: **89 tests on iOS 27.0**, no skips, and
+**85 on iOS 26.5**, with the four documented StoreKit platform skips.
+The unchanged package tree retains its verified 557-test iOS 27.0 and
+554-pass/three-skip iOS 26.5 evidence. The archive and distribution export have
+valid signatures, matching symbols, the expected privacy manifests and no
+local StoreKit configuration.
+
+**No app or subscription was submitted for App Review, and no backend or site
+was deployed.** The companion viewer's `/api/native/connect` endpoint must be
+deployed before the new managed-server connection can work; this prerequisite
+is included in the beta notes. Physical-device and real sandbox purchase/restore
+acceptance remain unverified for this build.
+
+
 ### 2.2 (23) internal TestFlight (2026-10-15)
 
 Build **2.2 (23)** was archived from clean source
