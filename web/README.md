@@ -12,8 +12,10 @@ The brand and public resource links go to pulshealth.com; Dashboard stays on the
 current viewer. The sidebar contains health-data navigation and viewer controls,
 without a separate return-to-site link. On mobile, one 56 px brand header opens a combined menu: health navigation
 first, then account controls and website resources. It closes on Escape, an
-outside click, or choosing a link. Authentication,
-OAuth, and phone-pairing pages retain their focused layouts.
+outside click, or choosing a link. Sign-in, sign-up, invite and password-recovery
+pages always use a standalone, centered card without the site header, sidebar
+or demo banner, including when opened from an active demo session. OAuth and
+phone-pairing pages also retain their focused layouts.
 
 > **Local demo mode.** Outside production, an unset or unreachable `DATABASE_URL`
 > serves generated demo data. Production never fabricates health data: a page
