@@ -339,6 +339,99 @@
       body.paused .art * {
         animation-play-state: paused !important;
       }
+      .beating-heart {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: heartbeat 1.65s ease-in-out infinite;
+      }
+      .sleep-star {
+        animation: blink 4s ease-in-out infinite;
+      }
+      .breathe {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: breathe 4s ease-in-out infinite;
+      }
+      .lift {
+        animation: lift 2.4s ease-in-out infinite;
+      }
+      .water-level {
+        animation: waterLevel 4s ease-in-out infinite;
+      }
+      .wheel-spin {
+        animation: wheelSpin 3s linear infinite;
+        transform-origin: 0 0;
+      }
+      .foot-a {
+        animation: blink 1.6s ease-in-out infinite;
+      }
+      .foot-b {
+        animation: blink 1.6s ease-in-out infinite;
+        animation-delay: -0.8s;
+      }
+      .needle {
+        animation: needle 5s ease-in-out infinite;
+        transform-origin: 0 0;
+      }
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scale(0.94);
+          opacity: 0.65;
+        }
+        50% {
+          transform: scale(1.06);
+          opacity: 1;
+        }
+      }
+      @keyframes lift {
+        0%,
+        100% {
+          transform: translateY(5px);
+        }
+        50% {
+          transform: translateY(-5px);
+        }
+      }
+      @keyframes waterLevel {
+        0%,
+        100% {
+          transform: translateY(3px);
+        }
+        50% {
+          transform: translateY(-3px);
+        }
+      }
+      @keyframes wheelSpin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes needle {
+        0%,
+        100% {
+          transform: rotate(-12deg);
+        }
+        50% {
+          transform: rotate(12deg);
+        }
+      }
+      @keyframes heartbeat {
+        0%,
+        28%,
+        100% {
+          transform: scale(1);
+        }
+        10% {
+          transform: scale(1.16);
+        }
+        18% {
+          transform: scale(1.03);
+        }
+        23% {
+          transform: scale(1.1);
+        }
+      }
       @keyframes flow {
         0% {
           stroke-dashoffset: 3;
@@ -682,7 +775,8 @@
         its own.
       </p>
       <nav aria-label="Animation collections">
-        <a href="#watch">From the watch</a><a href="#sync">Sync & devices</a
+        <a href="#symbols">Health in motion</a
+        ><a href="#watch">From the watch</a><a href="#sync">Sync & devices</a
         ><a href="#export">Export & organize</a
         ><a href="#live">Workouts & live data</a>
       </nav>
@@ -754,7 +848,86 @@
       function svg(id, label, body) {
         return `<svg viewBox="0 0 720 420" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="${id}-db"><stop stop-color="#172c44"/><stop offset=".55" stop-color="#102035"/><stop offset="1" stop-color="#203a55"/></linearGradient><clipPath id="${id}-wave"><rect x="0" y="0" width="180" height="65"/></clipPath></defs>${body}</svg>`;
       }
+      function healthSymbol(kind, color) {
+        const stroke = `fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`;
+        const shapes = {
+          nutrition: `<g class="breathe"><path d="M0-15C-14-25-28-10-20 9S-9 30 0 24C9 30 21 16 23 3C11 0 13-11 21-14C13-23 6-21 0-15Z" ${stroke}/><path d="M0-16C-2-26 7-31 14-30C13-22 8-18 0-16" ${stroke}/></g>`,
+          water: `<path d="M0-28C-7-17-21-1-21 10A21 21 0 0 0 21 10C21-1 7-17 0-28Z" ${stroke}/><path class="water-level" d="M-13 12Q-7 7 0 12T13 12" ${stroke}/>`,
+          strength: `<g class="lift"><path d="M-17 0H17" ${stroke}/><rect x="-26" y="-16" width="8" height="32" rx="2" ${stroke}/><rect x="18" y="-16" width="8" height="32" rx="2" ${stroke}/><path d="M-31-9V9M31-9V9" ${stroke}/></g>`,
+          cycling: `${[-24, 24].map((x) => `<g transform="translate(${x} 13)"><circle r="16" ${stroke}/><g class="wheel-spin"><path d="M-12 0H12M0-12V12" ${stroke} opacity=".35"/></g></g>`).join("")}<path d="M-24 13L-11-13L5 13H-24L-3-4H16L24 13M12-17H19M-16-17H-7" ${stroke}/>`,
+          steps: `<g class="foot-a" transform="translate(-12 -7) rotate(-12)"><path d="M-6 2C-12-6-9-21-1-23C8-25 11-10 5-1Z" ${stroke}/><path d="M-5 9H4V17Q-1 23-5 17Z" ${stroke}/></g><g class="foot-b" transform="translate(15 9) rotate(12)"><path d="M-6 2C-12-6-9-21-1-23C8-25 11-10 5-1Z" ${stroke}/><path d="M-5 9H4V17Q-1 23-5 17Z" ${stroke}/></g>`,
+          swimming: `<circle cx="15" cy="-10" r="5" ${stroke}/><g class="water-level"><path d="M-27 1L-6-12L6 0L-6 8" ${stroke}/></g><path d="M-33 18Q-25 11-17 18T-1 18T15 18T31 18" ${stroke}/><path d="M-33 27Q-25 20-17 27T-1 27T15 27T31 27" ${stroke} opacity=".4"/>`,
+          breathing: `<g class="breathe"><path d="M-4-10C-14-28-24-8-25 10S-15 28-5 17V-5M4-10C14-28 24-8 25 10S15 28 5 17V-5M0-28V-7L-12 5M0-7L12 5" ${stroke}/></g>`,
+          sleep: `<path d="M8-21A23 23 0 1 0 22 8A24 24 0 0 1 8-21" ${stroke}/><path class="sleep-star" d="M30-24V-14M25-19H35" ${stroke}/>`,
+          daylight: `<circle r="14" ${stroke}/><g class="wheel-spin" style="animation-duration:24s">${Array.from({ length: 8 }, (_, i) => `<path d="M0-23V-30" transform="rotate(${i * 45})" ${stroke}/>`).join("")}</g>`,
+          weight: `<rect x="-26" y="-27" width="52" height="54" rx="9" ${stroke}/><path d="M-15-4A18 18 0 0 1 15-4" ${stroke}/><g transform="translate(0 1)"><g class="needle"><path d="M0 0L-5-16" ${stroke}/></g></g><circle cy="1" r="2" fill="${color}"/>`,
+          temperature: `<path d="M-6 9V-22A6 6 0 0 1 6-22V9A12 12 0 1 1-6 9Z" ${stroke}/><circle cy="19" r="5" fill="${color}"/><path class="tier" d="M0 18V-13" ${stroke}/><path d="M13-15H19M13-3H17" ${stroke} opacity=".5"/>`,
+          heart: `<g transform="translate(-20 -19) scale(1.65)"><g class="beating-heart">${heart(0, 0, 1, color)}</g></g>`,
+          mindfulness: `<ellipse class="breathe" cy="2" rx="37" ry="32" fill="none" stroke="${color}" opacity=".15"/><circle cy="-18" r="5" ${stroke}/><path d="M-12 7Q0-7 12 7L22 14M-12 7L-22 14M-13 9L-26 22Q-4 30 0 18Q4 30 26 22L13 9" ${stroke}/>`,
+        };
+        return shapes[kind];
+      }
+      function symbolArchive(id, kinds) {
+        return (
+          kinds
+            .map(
+              (kind, i) =>
+                `<g transform="translate(136 ${108 + i * 101})">${healthSymbol(kind, [C.blue, C.pink, C.lilac][i])}</g>${wire(`M201 ${108 + i * 101}C318 ${108 + i * 101} 329 ${183 + i * 35} 465 ${183 + i * 35}`, [C.blue, C.pink, C.lilac][i], -0.5 - i * 1.3, 4.5)}`,
+            )
+            .join("") + database(id, 465, 123, 1)
+        );
+      }
       const studies = [
+        {
+          id: "workout-heart-sleep",
+          group: "symbols",
+          name: "Movement, heartbeat, rest",
+          description:
+            "A running person, a beating heart, and a quiet moon flow into one archive. Recognizable health signals, without time-series charts or labels.",
+          draw: (id) =>
+            `${runner(135, 116, 1.15)}<g transform="translate(112 187) scale(1.9)"><g class="beating-heart">${heart(0, 0, 1, C.pink)}</g></g><g transform="translate(136 307)"><path d="M8-20A22 22 0 1 0 21 8A22 22 0 0 1 8-20" fill="none" stroke="${C.lilac}" stroke-width="1.8"/><path class="sleep-star" d="M34-27V-17M29-22H39" stroke="${C.lilac}" stroke-width="1.3"/><circle class="sleep-star" cx="25" cy="-40" r="1.4" fill="${C.lilac}" style="animation-delay:-2s"/></g>${wire("M201 108C318 108 327 183 465 183", C.blue, -0.5, 4.5)}${wire("M201 211C319 211 329 218 465 218", C.pink, -1.8, 4.5)}${wire("M201 310C317 310 331 253 465 253", C.lilac, -3, 4.5)}${database(id, 465, 123, 1)}`,
+        },
+        {
+          id: "fuel-water-strength",
+          group: "symbols",
+          name: "Fuel, hydration, strength",
+          description:
+            "Nutrition, a gently moving water level, and a lifting dumbbell feed the archive.",
+          draw: (id) => symbolArchive(id, ["nutrition", "water", "strength"]),
+        },
+        {
+          id: "cycling-steps-swimming",
+          group: "symbols",
+          name: "Different ways to move",
+          description:
+            "Turning bicycle wheels, alternating footsteps, and a swimmer make each kind of activity distinct.",
+          draw: (id) => symbolArchive(id, ["cycling", "steps", "swimming"]),
+        },
+        {
+          id: "breath-sleep-daylight",
+          group: "symbols",
+          name: "A rhythm beyond workouts",
+          description:
+            "Expanding lungs, a moon, and a slowly turning sun bring breathing, sleep, and daylight into view.",
+          draw: (id) => symbolArchive(id, ["breathing", "sleep", "daylight"]),
+        },
+        {
+          id: "body-measurements",
+          group: "symbols",
+          name: "The body's other signals",
+          description:
+            "A scale, a thermometer, and a beating heart offer a more physical view of measurements.",
+          draw: (id) => symbolArchive(id, ["weight", "temperature", "heart"]),
+        },
+        {
+          id: "mindful-recovery",
+          group: "symbols",
+          name: "A quieter kind of progress",
+          description:
+            "A seated person, breathing lungs, and sleep create a softer collection of health signals.",
+          draw: (id) =>
+            symbolArchive(id, ["mindfulness", "breathing", "sleep"]),
+        },
         {
           id: "watch-phone-archive",
           group: "watch",
@@ -929,6 +1102,7 @@
         },
       ];
       const collections = [
+        { id: "symbols", title: "Health in motion" },
         { id: "watch", title: "From the watch" },
         { id: "sync", title: "Sync & devices" },
         { id: "export", title: "Export & organize" },
