@@ -208,6 +208,11 @@ for judging what is.
   Keychain write fails the app parks the token in that protected state file
   instead of dropping it — losing it would stall syncing until the user
   re-entered it — and removes it once the Keychain accepts it.
+- **Complimentary Pro is device-local.** A separate device-only Keychain item
+  holds only fixed gift start/end dates and a welcome acknowledgement. Verified
+  original app builds below 23 qualify; no purchase is started. Failed
+  verification or storage cannot create a grant, and expired records remain
+  to prevent restarting it. This is not account-wide anti-abuse enforcement.
 - **Analysis summaries are derived numbers, never samples.** Analyzing a
   type on the Explore tab stores one small file per type (counts, dates,
   per-day counts, a value histogram and percentiles, and per-source and

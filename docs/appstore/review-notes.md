@@ -262,3 +262,10 @@ Hosted service billing is not included. Restore Purchases, subscription
 management, renewal terms, privacy and standard EULA links are on the paywall.
 Purchase is optional; Explore and the Free features remain available. Test
 older dates and a sixth sync type to see contextual upgrade explanations.
+
+Existing App Store users whose verified original download build is below 23
+receive 30 complimentary days of Pro from their first foreground opening of
+the update. This gift requires no subscription and has no automatic charge.
+The plan page shows its expiry. New production downloads receive Free; sandbox
+app transactions report original build 1.0 and therefore qualify for testing.
+Paid subscriptions retain priority and their own renewal terms.

@@ -65,8 +65,9 @@ limitation, not purchase acceptance on iOS 26.5.
       versus old custom ranges, all file formats and Data Request delivery.
 - [ ] Verify background/observer/continued sync after expiry, preserving existing
       uploads, and historical backfill resumption after purchasing or restoring.
-- [x] Maintainer approved the transition on 2026-10-15: existing users receive
-      the new Free limits. There is no legacy entitlement or grandfathering.
+- [x] Maintainer updated the transition on 2026-10-17: pre-Pro users receive
+      30 complimentary days, then Free limits apply. This replaces the earlier
+      decision to apply Free limits immediately. There is no lifetime grant.
 - [ ] Update store description, review notes, privacy answers and screenshots.
       Deploy the updated privacy policy before submitting.
 - [ ] Submit the first subscription group with a subscription attached to the
@@ -102,3 +103,34 @@ management, privacy and Apple's standard EULA. Redemption completion alone never
 grants access. Upgrade and restore preserve drafts and require the person to
 return and explicitly export, send or apply settings. Unavailable products leave
 Free usable; unverified and pending transactions do not unlock Pro.
+
+## Existing-user thank-you (issue #283)
+
+A verified app transaction with an original iOS build below 23 (the first
+2.2 Pro build; 2.1 shipped as 22) qualifies for a 30-day gift. This uses the
+original build, not the marketing version or update date. New downloads of
+build 23 or later do not qualify. Apple reports `1.0` in sandbox, so sandbox
+installs qualify for testing; sandbox results do not prove production eligibility.
+
+The clock starts on the first foreground opening that can verify eligibility
+and save the grant. Background-only launches never start it. A separate,
+device-only Keychain item stores the fixed start/end timestamps and whether
+the welcome message was dismissed; expired records remain to prevent restarting
+the gift on later launches. Unavailable verification/storage can retry later;
+corrupt records never grant access or get overwritten. No health data or account
+identity is stored in this record. This is local to each device; it is not a
+server-enforced, account-wide promotion, and a new device has its own grant.
+Keychain persistence normally survives reinstall on the same device, but is
+not a cross-device restore guarantee. Device erasure can remove this record.
+
+The gift requires no purchase, payment method or subscription and cannot charge
+or renew. The welcome message and plan screen show that fact and the plan screen
+shows its end date. Verified paid access takes priority. An existing paid
+subscription continues under its own billing terms; the gift does not cancel,
+refund or extend it. After expiry, foreground/export/request/background checks
+use the existing Free policy, keeping saved selections and uploaded data.
+
+Release acceptance still needs a physical-device check of an actual pre-Pro
+App Store download versus a fresh download, first foreground activation,
+offline relaunch, deadline expiry, and paid-subscription priority. Document the
+gift in App Review notes; no App Store Connect subscription offer is needed.
