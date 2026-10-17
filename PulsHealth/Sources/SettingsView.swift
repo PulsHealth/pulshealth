@@ -49,7 +49,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(model.subscriptions.hasPro ? "PulsHealth Pro" : "PulsHealth Free")
                             Text(model.subscriptions.hasPro
-                                 ? (model.subscriptions.plan?.status ?? "Pro is active")
+                                 ? (model.subscriptions.complimentaryExpiresAt != nil ? "Complimentary Pro" : (model.subscriptions.plan?.status ?? "Pro is active"))
                                  : "Recent exports · 5 automatic-sync types")
                                 .font(.caption).foregroundStyle(.secondary)
                         }
