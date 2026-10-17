@@ -103,7 +103,8 @@ final class AppModelTests: XCTestCase {
         progress: Bool = false,
         unreadable: Bool = false,
         access: FakeHealthAccess = FakeHealthAccess(),
-        pro: Bool = true
+        pro: Bool = true,
+        subscriptions: SubscriptionStore? = nil
     ) async throws -> Harness {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("puls-appmodel-\(UUID())", isDirectory: true)
@@ -137,13 +138,44 @@ final class AppModelTests: XCTestCase {
             defaults: defaults,
             healthAccess: access,
             capabilitiesReader: NoCapabilities(),
-            subscriptions: SubscriptionStore(entitlementReader: { pro }))
+            subscriptions: subscriptions ?? SubscriptionStore(entitlementReader: { pro }))
         cleanups.append {
             await engine.stopObserving()
             defaults.removePersistentDomain(forName: suite)
             try? FileManager.default.removeItem(at: dir)
         }
         return Harness(model: model, engine: engine, defaults: defaults, access: access)
+    }
+
+    func testComplimentaryPlanRendersOnPhoneAndAtLargeText() async throws {
+        let gift = EarlyUserProGift(storage: InMemoryTokenStore(), eligibilityReader: { true })
+        let subscriptions = SubscriptionStore(entitlementReader: { false }, earlyUserGift: gift)
+        await subscriptions.beginForegroundVisit()
+        defer { subscriptions.stop() }
+        let h = try await makeModel(subscriptions: subscriptions)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        for textSize in [DynamicTypeSize.large, .accessibility3] {
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            let controller = UIHostingController(rootView:
+                NavigationStack { ProView() }.environment(h.model).dynamicTypeSize(textSize))
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.frame = window.bounds
+            window.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(200))
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { context in
+                controller.view.layer.render(in: context.cgContext)
+            }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "Complimentary Pro \(textSize)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            XCTAssertTrue(subscriptions.hasPro)
+            XCTAssertNotNil(subscriptions.complimentaryExpiresAt)
+            XCTAssertNil(subscriptions.plan, "A gift must not invent a subscription")
+            window.isHidden = true
+        }
     }
 
     func testFreeHistoricalExportPromptsBeforeHealthAccess() async throws {
@@ -279,11 +311,63 @@ final class AppModelTests: XCTestCase {
 
     // MARK: - The Health page (App Review 5.1.1(iv))
 
-    /// Until iOS has been asked, the pager holds pages 1 and 2 only: there is
-    /// no page past the pre-permission screen to swipe to.
-    func testThePagerHoldsOnlyTheFirstTwoPagesUntilHealthIsSettled() {
-        XCTAssertEqual(OnboardingView.pages(healthSettled: false), [.welcome, .health])
-        XCTAssertEqual(OnboardingView.pages(healthSettled: true), OnboardingView.Page.allCases)
+    func testHealthIsLastAfterExportAndSyncContext() {
+        let expected: [OnboardingView.Page] = [.welcome, .export, .sync, .health]
+        XCTAssertEqual(OnboardingView.pages(healthSettled: false), expected)
+        XCTAssertEqual(OnboardingView.pages(healthSettled: true), expected)
+    }
+
+    func testFreeTypeSelectionCountsOverlapAndRejectsOnlyNewTypes() async throws {
+        let h = try await makeModel(pro: false)
+        await h.model.subscriptions.refreshEntitlements()
+        let types = Set(HealthTypeCatalog.all.prefix(5).map(\.identifier))
+        h.model.config.enabledTypes = types
+        let extra = try XCTUnwrap(HealthTypeCatalog.all.first { !types.contains($0.identifier) }?.identifier)
+        h.model.setSyncRawTypes(types.union([extra]))
+        XCTAssertEqual(h.model.config.enabledTypes, types)
+        XCTAssertTrue(h.model.showsPro)
+        XCTAssertTrue(h.model.syncTypeRequiresPro(extra))
+
+        let shared = try XCTUnwrap(AggregateList.measurementTypes.first { types.contains($0.identifier) }?.identifier)
+        h.model.editAggregates(.sync) { $0.addType(shared) }
+        XCTAssertEqual(h.model.config.observedTypeIdentifiers, types)
+        XCTAssertFalse(h.model.syncTypeRequiresPro(shared))
+        h.model.setSyncRawTypes([shared])
+        XCTAssertEqual(h.model.config.enabledTypes, [shared])
+        XCTAssertFalse(h.model.syncTypeRequiresPro(extra))
+    }
+
+    func testExistingOverLimitFreeSelectionIsPausedAndExplained() async throws {
+        var saved = SyncConfiguration()
+        saved.serverURL = mine
+        saved.enabledTypes = Set(HealthTypeCatalog.all.prefix(80).map(\.identifier))
+        let h = try await makeModel(stored: saved, pro: false)
+        await h.model.start()
+        XCTAssertTrue(h.model.syncPausedByPlan)
+        XCTAssertTrue(h.model.syncPlanNotice?.contains("80 health data types") == true)
+        await h.model.syncNow(trigger: "manual")
+        XCTAssertTrue(h.model.showsPro)
+        XCTAssertFalse(h.model.isSyncingAll)
+        XCTAssertEqual(h.model.appliedConfig.enabledTypes, saved.enabledTypes)
+        let synced = await h.access.syncedTypes
+        XCTAssertTrue(synced.isEmpty)
+    }
+
+    func testFreeExportRangePromptsWithoutChangingSelection() async throws {
+        let h = try await makeModel(pro: false)
+        await h.model.subscriptions.refreshEntitlements()
+        h.model.export.draft.range = .last30Days
+        h.model.checkExportRangeAccess()
+        XCTAssertFalse(h.model.showsPro)
+        h.model.export.draft.range = .last90Days
+        h.model.checkExportRangeAccess()
+        XCTAssertTrue(h.model.showsPro)
+        XCTAssertEqual(h.model.export.draft.range, .last90Days)
+        h.model.showsPro = false
+        h.model.export.draft.customRange = true
+        h.model.export.draft.customStart = Calendar.current.date(byAdding: .day, value: -31, to: Date())!
+        h.model.checkExportRangeAccess()
+        XCTAssertTrue(h.model.showsPro)
     }
 
     /// Asked before `start()` has run — the flow's `.task` can be first — the
@@ -592,6 +676,60 @@ final class AppModelTests: XCTestCase {
         XCTAssertNil(try reopened.token(for: a))
         XCTAssertEqual(try reopened.token(for: b), "fixture-beta")
         XCTAssertNil(try reopened.token())
+    }
+
+    func testAccountProfileSavePreservesDifferentDestinationDraftWithoutHealthRequests() async throws {
+        var stored = SyncConfiguration()
+        stored.serverURL = URL(string: "https://sync.pulshealth.com")!
+        stored.authToken = "fixture-sync-token"
+        stored.userID = user
+        stored.signedInDatabaseURL = stored.serverURL
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: stored)
+        await h.model.start()
+        h.model.config.serverURL = mine
+        h.model.config.userName = "Different draft"
+        let profile = AccountProfile(userID: user, name: "Account name", email: "person@example.test")
+        let saved = await h.model.updateAppliedAccountProfile(profile)
+        XCTAssertTrue(saved)
+        XCTAssertEqual(h.model.config.serverURL, mine)
+        XCTAssertEqual(h.model.config.userName, "Different draft")
+        XCTAssertEqual(h.model.appliedConfig.userName, "Account name")
+        let persisted = await h.engine.store.configuration
+        XCTAssertEqual(persisted.userName, "Account name")
+        let requests = await h.access.requests
+        XCTAssertTrue(requests.isEmpty)
+    }
+
+    func testUserPageRendersOptionalLocalAndAccountProfiles() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        for signedIn in [false, true] {
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.protocolClasses = [AccountFixtureProtocol.self]
+            let account = UserAccount(credentials: InMemoryTokenStore(token: signedIn ? "fixture-account-session" : nil),
+                                      session: URLSession(configuration: configuration))
+            await account.restore()
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 1100)
+            let controller = UIHostingController(rootView: NavigationStack { UserView(account: account) }.environment(h.model))
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.frame = window.bounds
+            window.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(250))
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { context in
+                controller.view.layer.render(in: context.cgContext)
+            }
+            XCTAssertNotNil(image.cgImage)
+            let attachment = XCTAttachment(image: image)
+            attachment.name = signedIn ? "User settings signed in" : "User settings optional local profile"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            XCTAssertEqual(account.hasSession, signedIn)
+            XCTAssertNil(h.model.config.serverURL)
+            window.isHidden = true
+        }
     }
 
     func testSavedDatabaseScreenRendersOnPhoneAndPadAfterSwitchAndUnpair() async throws {

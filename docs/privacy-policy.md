@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-15**
+**Last updated: 2026-10-16**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
@@ -8,6 +8,23 @@ developer's own (the PulsHealth database) — or, if you have
 no database, writes it to files you then save or send yourself. This policy
 describes how the app and hosted service handle your data: it reads Apple Health, it uploads to the one database you set
 up, it exports a file when you ask for one, and it can send a one-time export to a request destination you approve.
+
+Settings → User also offers optional account sign-in independently of database
+sync. It reads your account identity, name, date of birth and biological sex
+from app.pulshealth.com, and sends changes there only when you save them.
+Name, date of birth and biological sex remain optional. Changing your sign-in
+email requires your current password; the app sends it over HTTPS for that
+check and does not persist it. Signing in does not enable Health uploads or
+change your sync destination. The account session credential stays in a
+separate device-only Keychain item; the profile is held in memory while the
+User page is open. If the same account is also your active sync destination,
+saved edits update that destination's local profile. Signing out removes the
+account credential from this iPhone and requests server-session revocation;
+it does not disconnect an independently configured sync destination. The web
+account page can revoke the iPhone account session too. Account handoff uses
+a five-minute, one-use code bound to a verifier held by this iPhone. The server
+stores only the code hash and verifier challenge, and ordinary session expiry,
+password reset and account disabling apply to the account session.
 
 ## The short version
 
@@ -59,6 +76,12 @@ The app reads Apple's verified purchase entitlements to decide which features
 are available; it does not send health data, selections, exported files, or
 server credentials to Apple to check a subscription. No third-party purchase
 SDK, receipt server, or new PulsHealth account is used for this.
+
+For the existing-user thank-you, the app checks Apple's verified original app
+build and keeps fixed gift start/end dates and a welcome acknowledgement in a
+separate device-only Keychain item. These contain no health data, are not sent
+to PulsHealth, and do not create an auto-renewing subscription. The expired
+record remains so reopening the app does not restart the gift.
 
 Free access includes Explore, unlimited manual exports of all health data types
 and formats from the most recent 30 days, and automatic sync of up to five

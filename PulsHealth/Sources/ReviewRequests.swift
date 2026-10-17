@@ -93,6 +93,7 @@ final class ReviewRequests {
     }
 
     func cancelPending() {
+        guard pending != nil else { return }
         pending = nil
     }
 
@@ -159,7 +160,7 @@ final class ReviewRequests {
 }
 
 /// Attached to the task's result screen, so pushing another page, switching
-/// tabs, touching the screen, or presenting an alert cancels the opportunity.
+/// tabs, tapping/scrolling, or presenting an alert cancels the opportunity.
 private struct ReviewRequestModifier: ViewModifier {
     let source: ReviewRequests.Source
     let blocked: Bool
@@ -181,9 +182,11 @@ private struct ReviewRequestModifier: ViewModifier {
             .onChange(of: scenePhase) { _, phase in
                 if phase != .active { model.reviews.cancelPending() }
             }
-            .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { _ in
-                model.reviews.cancelPending()
-            })
+            // Observe touches without making this ancestor a gesture target.
+            // SwiftUI drag/tap gestures here can swallow List NavigationLinks.
+            .background {
+                ReviewInteractionObserver(active: visible) { model.reviews.cancelPending() }
+            }
             .task(id: model.reviews.pending) {
                 guard let opportunity = model.reviews.pending, opportunity.source == source else { return }
                 await model.reviews.requestAfterPause(opportunity, canPresent: {
@@ -208,5 +211,63 @@ private struct ReviewRequestModifier: ViewModifier {
 extension View {
     func reviewRequestOpportunity(_ source: ReviewRequests.Source, blocked: Bool = false) -> some View {
         modifier(ReviewRequestModifier(source: source, blocked: blocked))
+    }
+}
+
+/// Observes touch-down without ever recognizing a gesture or participating in
+/// SwiftUI's hit testing. The content keeps all of its normal taps and drags.
+private struct ReviewInteractionObserver: UIViewRepresentable {
+    let active: Bool
+    let onInteraction: () -> Void
+
+    func makeUIView(context: Context) -> ReviewInteractionView {
+        let view = ReviewInteractionView()
+        view.isUserInteractionEnabled = false
+        return view
+    }
+
+    func updateUIView(_ view: ReviewInteractionView, context: Context) {
+        view.active = active
+        view.onInteraction = onInteraction
+    }
+
+    static func dismantleUIView(_ view: ReviewInteractionView, coordinator: ()) {
+        view.detach()
+    }
+}
+
+private final class ReviewInteractionView: UIView, UIGestureRecognizerDelegate {
+    var active = false
+    var onInteraction: (() -> Void)?
+    private weak var observedWindow: UIWindow?
+    private lazy var observer: UITapGestureRecognizer = {
+        let recognizer = UITapGestureRecognizer()
+        recognizer.delegate = self
+        recognizer.cancelsTouchesInView = false
+        recognizer.delaysTouchesBegan = false
+        recognizer.delaysTouchesEnded = false
+        return recognizer
+    }()
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        guard observedWindow !== window else { return }
+        detach()
+        observedWindow = window
+        window?.addGestureRecognizer(observer)
+    }
+
+    func detach() {
+        observedWindow?.removeGestureRecognizer(observer)
+        observedWindow = nil
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if active, window != nil, bounds.contains(touch.location(in: self)) {
+            onInteraction?()
+        }
+        // Reject every touch: this observer can never win, cancel, delay, or
+        // impose a failure dependency on a row's own gesture recognizers.
+        return false
     }
 }

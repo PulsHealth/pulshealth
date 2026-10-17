@@ -141,14 +141,20 @@ struct ProView: View {
             Label("PulsHealth Pro", systemImage: "checkmark.seal.fill")
                 .font(.title2.bold())
                 .foregroundStyle(Color.accentColor)
-            Text(store.plan?.status ?? "Pro is active")
+            Text(store.complimentaryExpiresAt != nil ? "Complimentary Pro" : (store.plan?.status ?? "Pro is active"))
+            if let end = store.complimentaryExpiresAt {
+                Text("Thanks for being an early PulsHealth user. Enjoy 30 days of Pro on us—no subscription required.")
+                LabeledContent("Access ends", value: end.formatted(date: .abbreviated, time: .omitted))
+                Text("Your gift ends automatically and returns to Free. There is no automatic charge.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
             if let plan = store.plan {
                 LabeledContent("Plan", value: plan.productID == SubscriptionStore.annualID ? "Yearly" : "Monthly")
                 if let date = plan.date {
                     LabeledContent(plan.dateLabel, value: date.formatted(date: .abbreviated, time: .omitted))
                 }
                 Text(plan.explanation).font(.footnote).foregroundStyle(.secondary)
-            } else {
+            } else if store.complimentaryExpiresAt == nil {
                 Text("Pro access is verified. Check your Apple Account for renewal details.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
@@ -168,7 +174,7 @@ struct ProView: View {
 
     private var accountActions: some View {
         Section {
-            if store.hasPro {
+            if store.hasPro && store.complimentaryExpiresAt == nil {
                 Link("Manage Subscription", destination: URL(string: "https://apps.apple.com/account/subscriptions")!)
             }
             Button("Redeem Code") { redeemingCode = true }.disabled(store.isBusy)

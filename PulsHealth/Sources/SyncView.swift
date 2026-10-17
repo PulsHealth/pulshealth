@@ -69,7 +69,6 @@ struct SyncView: View {
                 statusCard
                 limitedHistoryNotice
                 syncNowSection
-                planSection
                 rawSamplesSection
                 aggregatesSection
             }
@@ -109,32 +108,20 @@ struct SyncView: View {
 
     // MARK: - Status
 
-    @ViewBuilder private var planSection: some View {
-        if let notice = model.syncPlanNotice {
-            let count = model.appliedConfig.observedTypeIdentifiers.count
-            Section {
-                LabeledContent(count > 5 ? "Sync paused" : "Free sync types", value: "\(count) of 5")
-                if count > 5 {
-                    NavigationLink("Edit raw types", value: SyncRoute.rawSamples)
-                    NavigationLink("Edit aggregated types", value: SyncRoute.aggregates)
-                }
-                Button("See Pro options") { model.showPro(model.syncProContext) }
-            } footer: {
-                Text(notice)
-            }
-        }
-    }
-
     private var statusCard: some View {
         let lastSync = model.statuses.compactMap(\.state.lastSyncAt).max()
         let connection = connectionSummary
         return CardSection(host, subtitle: lastSync.map { "Last sync \($0.relativeString)" } ?? "Not synced yet") {
-            if model.typesFailed > 0 {
+            if model.syncPausedByPlan {
+                StatusPill(text: "Sync paused", color: .orange)
+            } else if model.typesFailed > 0 {
                 StatusPill(text: "\(model.typesFailed) failing", color: .red)
             }
         } content: {
             VStack(alignment: .leading, spacing: 3) {
-                StatusDot(text: connection.label, color: connection.color)
+                StatusDot(
+                    text: model.syncPausedByPlan ? "Sync paused" : connection.label,
+                    color: model.syncPausedByPlan ? .orange : connection.color)
                 if let detail = connection.detail {
                     Text(detail)
                         .font(.caption)
@@ -265,6 +252,15 @@ struct SyncView: View {
                 }
             }
             .disabled(model.backfillActive || !model.configured)
+            if model.syncPausedByPlan {
+                NavigationLink("Choose up to 5 types", value: SyncRoute.rawSamples)
+                NavigationLink("Edit aggregated types", value: SyncRoute.aggregates)
+                Button("Resume all types with Pro") { model.showPro(model.syncProContext) }
+            }
+        } footer: {
+            if let notice = model.syncPlanNotice {
+                Text(notice).foregroundStyle(.orange)
+            }
         }
     }
 

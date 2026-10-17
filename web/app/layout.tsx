@@ -57,12 +57,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   );
 }
 
-// The sidebar and content column, or — in accounts mode, for someone not
-// signed in — just the page, centred: the sign-in and invite pages are the
-// only ones proxy.ts lets them reach, and a sidebar of links they cannot
-// follow would only bounce them back to sign in. The OAuth consent page is
-// bare too, signed in or not: it stands in for another app's sign-in, and a
-// sidebar above it (on a phone) pushes the question off the screen.
+// Authentication and connection pages always stand alone, even with an active
+// demo session. Signed-out accounts-mode visitors also get the focused frame;
+// dashboard links would only bounce them back to sign in.
 async function shell(children: React.ReactNode, pathname: string | null) {
   if (isBarePage(pathname)) return <main className="auth-shell">{children}</main>;
   if (viewerMode() === "accounts") {

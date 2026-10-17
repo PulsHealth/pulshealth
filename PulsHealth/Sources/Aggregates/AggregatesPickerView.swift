@@ -194,6 +194,7 @@ private struct AggregateTypeRow: View {
                 }
                 .contentShape(Rectangle())
             }
+            .opacity(scope == .sync && model.syncTypeRequiresPro(descriptor.identifier) ? 0.4 : 1)
             .buttonStyle(.plain)
             .accessibilityAddTraits(selected ? .isSelected : [])
             if selected {

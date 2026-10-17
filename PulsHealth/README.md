@@ -46,6 +46,17 @@ as complimentary without automatic charges only when verified renewal is off.
 Contextual upgrade prompts keep the person's draft for explicit review afterward. No purchase analytics or
 third-party SDK is added.
 
+## User settings and account identity
+
+Settings → User offers optional PulsHealth account sign-in without enabling
+Health sync or changing the chosen database. Signed out, identity and
+characteristics stay optional local settings and Advanced permits editing the
+UUID. Signed in, the page loads the account's identity and optional profile,
+saves edits to that account, and displays its fixed UUID. Changing the sign-in
+email requires the current password. Signing out returns to the local settings.
+The account session is a separate device-only Keychain credential. Deploy the
+viewer and migrations 029/100 before shipping this screen.
+
 ## Project generation
 
 `PulsHealth.xcodeproj` is **generated** from `project.yml` by
@@ -313,17 +324,14 @@ Sources/
 │                         database is not here; it is the Sync tab's.
 ├── OnboardingView.swift  First run: four pages swiped in a paging ScrollView,
 │                         no database asked for. "Unlock your Health Data"
-│                         (Explore, Export, Sync); "Which Health data would
-│                         you like to use?" (iOS's sheet for the preselected
-│                         TypePresets.common, behind one Continue button);
-│                         one-time exports; "Always in sync" (the
-│                         PulsHealth database or your own, both set up from
-│                         the Sync tab; Learn more → pulshealth.com/#ways
-│                         in Safari) with Start Exploring, which applies the
-│                         selection. Page 2 cannot be skipped: until iOS has
-│                         been asked, pages 3 and 4 are not in the pager, and
-│                         Continue or a swipe past the end presents the sheet
-│                         (root CLAUDE.md). A puls:// link accepted during the
+│                         (Explore, Export, Sync); one-time exports; "Always
+│                         in sync" (database setup is later in the Sync tab);
+│                         then "Which Health data would you like to use?"
+│                         (iOS's sheet for TypePresets.common). The final
+│                         Health page cannot be skipped: its neutral Continue
+│                         button or a swipe past the end presents the sheet,
+│                         then applies the selection and finishes only after
+│                         an answer (root CLAUDE.md). A puls:// link during the
 │                         flow waits until it ends, then Sync → Database
 │                         opens with the fields filled. Settings →
 │                         Diagnostics → "Show Onboarding Again" replays it
@@ -566,7 +574,8 @@ or satisfaction question. A request is offered only at a completed task:
 `ReviewRequests` shares a 120-day cooldown and one attempt per marketing
 version across all tabs. A two-second pause precedes the API call. Navigation,
 interaction, backgrounding, an inactive scene or a presented sheet/alert
-cancels it. Onboarding, permission/setup issues, pending edits, failed types,
+cancels it. A passive UIKit touch observer rejects every touch after notifying
+the timing policy, so it never competes with list navigation or scrolling. Onboarding, permission/setup issues, pending edits, failed types,
 and running sync/backfill/export work suppress it. Cancelled opportunities
 consume no cooldown. Apple controls whether its prompt appears; an API call
 records an **attempt**, never a submitted rating or review. TestFlight does
@@ -583,3 +592,21 @@ or QR code. Settings → Open or Scan Request and `puls://request` links open a
 review screen. Generate & Share opens the share sheet; Generate & Send creates
 and delivers the ZIP in one action. Partial extractions require an explicit
 Send Available Data choice. See [the request format](../docs/requests.md).
+
+Export range controls remain fully editable. Selecting history beyond Free's
+latest 30 days presents Pro immediately and preserves the draft. Sync pickers
+reject additions beyond five distinct types, counting raw and enabled aggregates
+once per type; unavailable additions appear gray and open Pro when tapped.
+Existing selections can still be removed. Onboarding explains Export and Sync
+before its final, required Health permission step.
+An older saved selection over Free's limit stays visible, with an explicit
+Sync paused status and an explanation beside Sync Now. That section offers
+raw/aggregate editing and Pro so a connected database is not mistaken for an
+actively syncing selection.
+
+Existing users whose verified original App Store build predates Pro (build 23)
+receive 30 complimentary days starting on their first foreground opening of the
+update. No subscription is started or charged. The fixed dates and welcome
+acknowledgement live in a separate device-only Keychain item, and the gift
+expires through the same access checks as a subscription. Paid subscriptions
+take priority. See [subscription setup](../docs/appstore/subscriptions.md).

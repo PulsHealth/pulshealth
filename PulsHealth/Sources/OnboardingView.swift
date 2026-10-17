@@ -1,26 +1,10 @@
 import SwiftUI
 import PulsHealthSync
 
-/// First-run flow: four pages the person swipes through, on iPhone and iPad.
-///
-/// 1. what the app does (explore, export, sync),
-/// 2. Health access for the starter set (`TypePresets.common`, preselected
-///    by `AppModel`), picked in iOS's own sheet,
-/// 3. one-time exports,
-/// 4. syncing to a database — the PulsHealth database or one of your own,
-///    both set up later from the Sync tab — and the button that finishes.
-///
-/// Page 2 cannot be skipped (App Review rejected 1.4 under 5.1.1(iv) for a
-/// Skip). Until iOS has been asked about the starter set, the pager holds only
-/// the first two pages, so there is no page past it; a swipe forward there and
-/// its one button, Continue, both present the sheet, and the flow moves on
-/// once it has been answered. With nothing to ask (a replay after the
-/// question was settled) all four pages are there from the start.
-///
-/// Nothing reaches the engine until Start Exploring: `model.config` is the
-/// same staged draft the Raw Samples picker edits, and `finishOnboarding()` is
-/// the same Save & Apply path. Leaving the app at any point leaves the install
-/// as it was, and the flow reappears on the next launch until it is finished.
+/// First-run flow: welcome, export, sync, then required Health access.
+/// Context comes before iOS asks about the starter set. The final Health
+/// page has one neutral Continue button and cannot be skipped on first run.
+/// Nothing reaches the engine until that permission step has been answered.
 ///
 /// A `puls://` pairing link can still arrive while this flow is up. It is
 /// confirmed here (the prompt cannot come from the covered RootView), and the
@@ -32,28 +16,22 @@ struct OnboardingView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
 
     enum Page: Int, CaseIterable, Hashable {
-        case welcome, health, export, sync
+        case welcome, export, sync, health
     }
 
     /// The page on screen. Optional because that is what
     /// `scrollPosition(id:)` binds; nothing here sets it to nil.
     @State private var page: Page? = .welcome
-    /// True once iOS has nothing left to ask about the draft: answered on
-    /// page 2 in this showing, or found settled when the flow opened. Never
-    /// goes back to false while the flow is up, so a swipe back to page 2
-    /// does not ask again.
+    /// Whether iOS has already asked about the current starter selection.
     @State private var healthSettled = false
     @State private var requestingHealthAccess = false
     @State private var finishing = false
 
-    /// Pages 3 and 4 are not in the pager until page 2 is settled: there is
-    /// no page past it to swipe to, and no other way to reach one.
     private var pages: [Page] { Self.pages(healthSettled: healthSettled) }
 
-    /// The pager's pages for a Health page that is, or is not yet, settled.
-    /// Static so `AppModelTests` can hold it to App Review 5.1.1(iv).
+    /// Health is always last, so there is no later page that can bypass it.
     static func pages(healthSettled: Bool) -> [Page] {
-        healthSettled ? Page.allCases : [.welcome, .health]
+        Page.allCases
     }
 
     /// A readable line length on iPad, where the screen is far wider than
@@ -66,8 +44,7 @@ struct OnboardingView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 pager
-                // Always four dots, though the pager holds two until page 2
-                // is settled: the flow's length should not change under you.
+                // The Health permission step is the fourth and final page.
                 pageDots
             }
             .background(Color(.systemBackground))
@@ -116,8 +93,7 @@ struct OnboardingView: View {
             .scrollIndicators(.hidden)
             // No swiping while iOS's sheet is on its way or the final apply runs.
             .scrollDisabled(requestingHealthAccess || finishing)
-            // Page 2 is the last page until iOS has been asked, so a swipe
-            // forward there only stretches past the end. That pull asks.
+            // Pulling beyond the final Health page also presents the sheet.
             .onPullPastEnd(enabled: !healthSettled && page == .health) { continueFromHealth() }
             // Rotating an iPad, or resizing its window, changes the page
             // width, and the scroll view kept its old offset: on page 3 that
@@ -192,7 +168,7 @@ struct OnboardingView: View {
         } footer: {
             // App Review 5.1.1(iv): the one button on a pre-permission screen
             // is a neutral Continue, and it leads to the sheet.
-            primaryButton("Continue", busy: requestingHealthAccess) { continueFromHealth() }
+            primaryButton("Continue", busy: requestingHealthAccess || finishing) { continueFromHealth() }
         }
     }
 
@@ -248,8 +224,6 @@ struct OnboardingView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-        } footer: {
-            primaryButton("Start Exploring", busy: finishing) { finish() }
         }
     }
 
@@ -359,28 +333,20 @@ struct OnboardingView: View {
 
     // MARK: - Actions
 
-    /// Continue on page 2, or a swipe forward there. Presents iOS's sheet
-    /// for whatever is still undetermined, then moves on — after Allow,
-    /// Don't Allow, or iOS 27's Don't Allow on the history page, which the
-    /// model takes as an answer. Already settled: just the next page.
+    /// Continue from the final page. An answer (including Don't Allow)
+    /// precedes Apply and closing the first-run cover.
     private func continueFromHealth() {
         guard !requestingHealthAccess, !finishing else { return }
         guard !healthSettled else {
-            withAnimation { page = .export }
+            finish()
             return
         }
         requestingHealthAccess = true
         Task {
             await model.requestOnboardingHealthAccess()
             requestingHealthAccess = false
-            // Pages 3 and 4 join the pager first, then it moves to page 3.
             healthSettled = true
-            try? await Task.sleep(for: .milliseconds(50))
-            // Only if still on page 2: someone who swiped back to page 1
-            // while the sheet came up stays there.
-            if page == .health {
-                withAnimation { page = .export }
-            }
+            finish()
         }
     }
 
