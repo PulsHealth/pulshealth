@@ -50,7 +50,7 @@ private func makeDir() -> URL {
         let body = "<html>\n<body>Bearer sekrit-token\n" + String(repeating: "z", count: 400)
         let error = TransportError.serverError(status: 502, body: body)
         let described = error.errorDescription ?? ""
-        #expect(described.hasPrefix("Server returned 502: <html> <body>Bearer [redacted] "))
+        #expect(described == "Server returned 502: HTML error page (no readable title)")
         #expect(!described.contains("sekrit-token"))
         #expect(!described.contains("\n"))
         #expect(described.count <= "Server returned 502: ".count + ErrorScrubber.displayLimit)
