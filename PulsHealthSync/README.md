@@ -308,6 +308,9 @@ basic credentials, URL query strings and the configured token are redacted,
 control characters dropped, and `lastError` is capped at 120 characters. The
 event log never names sample UUIDs. This covers every `TransportError`,
 including a server's rejection body and the `unsupportedProtocol` message.
+HTML server errors use a readable page title from the first 16 KiB instead of
+logging page markup or request diagnostics. A missing or incomplete title has
+an explicit fallback; plain-text and JSON error excerpts are unchanged.
 
 ## Wire protocol version
 

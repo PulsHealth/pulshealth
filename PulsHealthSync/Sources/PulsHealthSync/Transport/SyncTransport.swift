@@ -89,7 +89,8 @@ public enum TransportError: Error, LocalizedError, CustomStringConvertible {
         case .notConfigured:
             return "Server URL or auth token not configured"
         case .serverError(let status, let body):
-            return "Server returned \(status): \(ErrorScrubber.scrub(body, limit: ErrorScrubber.displayLimit))"
+            let summary = ServerErrorSummary.summarize(body)
+            return "Server returned \(status): \(ErrorScrubber.scrub(summary, limit: ErrorScrubber.displayLimit))"
         case .network(let error):
             return "Network error: \(ErrorScrubber.scrub(error.localizedDescription, limit: ErrorScrubber.displayLimit))"
         case .unsupportedProtocol(let versions):
@@ -163,7 +164,7 @@ public enum TransportError: Error, LocalizedError, CustomStringConvertible {
         if status == 400, let versions = Self.unsupportedProtocolVersions(in: body) {
             return .unsupportedProtocol(supportedVersions: versions)
         }
-        return .serverError(status: status, body: String(data: body.prefix(512), encoding: .utf8) ?? "")
+        return .serverError(status: status, body: ServerErrorSummary.responseExcerpt(body))
     }
 
     private static func unsupportedProtocolVersions(in body: Data) -> [Int]? {
