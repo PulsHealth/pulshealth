@@ -252,13 +252,20 @@ manual retry with the same submission ID. No ongoing collection, participant
 account, institutional verification, or study enrollment is implemented.
 See docs/requests.md for the receiver contract. Use synthetic data for review.
 
-## Pro subscription candidate (not yet submitted)
+## Pro purchases (2.2)
+
+Build 2.2 (28) and its Monthly, Yearly and Lifetime products were submitted on
+2026-10-19. See [2.2-copy.md](2.2-copy.md) for the submitted review notes and
+the [release record](README.md#release-record) for current release evidence.
 
 See [subscriptions.md](subscriptions.md) for product identifiers and release
 gates. The PulsHealth Free/Pro row in Settings opens the plan page. Free exports include all types and
 formats for the most recent 30 days; free automatic sync supports five distinct
 types for that period. Pro unlocks unlimited types and all available history.
-Hosted service billing is not included. Restore Purchases, subscription
+Monthly/yearly subscriptions and a one-time Lifetime purchase include all
+current and future app features. PulsHealth server, hosting and other services
+are separate. Lifetime has no renewal; buying it does not cancel an existing
+subscription. Restore Purchases, subscription
 management, renewal terms, privacy and standard EULA links are on the paywall.
 Purchase is optional; Explore and the Free features remain available. Test
 older dates and a sixth sync type to see contextual upgrade explanations.
@@ -268,4 +275,5 @@ receive 30 complimentary days of Pro from their first foreground opening of
 the update. This gift requires no subscription and has no automatic charge.
 The plan page shows its expiry. New production downloads receive Free; sandbox
 app transactions report original build 1.0 and therefore qualify for testing.
-Paid subscriptions retain priority and their own renewal terms.
+Verified paid purchases take priority over the gift; subscriptions retain their
+own renewal terms.
