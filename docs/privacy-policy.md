@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-16**
+**Last updated: 2026-10-19**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
