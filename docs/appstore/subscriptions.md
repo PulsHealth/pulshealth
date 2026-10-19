@@ -29,12 +29,14 @@ The app displays Apple's localized price, not a hard-coded USD amount.
       `6824617733`, with a $20.00 US base price, Apple-calculated localized prices,
       all 175 current territories, English metadata, review notes and the parent
       app tax category. Status: Prepare for Submission; not approved or released.
-- [ ] Add an app screenshot showing Lifetime for App Review.
+- [x] Added an actual plan-page screenshot showing all three options for App
+      Review on 2026-10-19.
 - [ ] Verify native purchase, pending approval, offline relaunch, fresh-install
       restore, refund/revocation and coexistence with a subscription on a physical
       sandbox device. Verify gift-to-lifetime and subscriber-to-lifetime checkout.
-- [ ] Attach the non-consumable to the app version for review and verify approval
-      separately from release.
+- [x] Staged the non-consumable with app version 2.2 in the combined review draft
+      on 2026-10-19, alongside the subscription group and both subscriptions.
+- [ ] Submit the combined draft and verify approval separately from release.
 
 Lifetime uses only a verified, unrevoked non-consumable current entitlement. It
 has no expiration and takes priority over subscriptions and the early-user gift.
@@ -96,8 +98,25 @@ limitation, not purchase acceptance on iOS 26.5.
 - [x] Maintainer updated the transition on 2026-10-17: pre-Pro users receive
       30 complimentary days, then Free limits apply. This replaces the earlier
       decision to apply Free limits immediately. There is no lifetime grant.
-- [ ] Update store description, review notes, privacy answers and screenshots.
-      Deploy the updated privacy policy before submitting.
+- [x] Updated the 2.2 store description and review notes, checked the existing
+      iPhone/iPad screenshots and eleven privacy declarations against the
+      candidate, and deployed/verified the Lifetime pricing and privacy pages
+      on 2026-10-19. This does not record App Review submission or acceptance.
+
+### Managing TestFlight subscriptions
+
+TestFlight purchases made with the tester's regular Apple Account cannot be
+cleared through Sandbox Apple Account settings. The plan page's **Manage Apple
+Subscriptions** action presents Apple's native subscription sheet on iPhone and
+iPad; cancel renewal there. Cancellation preserves access through the current
+test billing period. TestFlight renewals use accelerated periods, so a displayed
+yearly plan does not require waiting a year. See
+[Apple's TestFlight guidance](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testing-subscriptions-and-in-app-purchases-in-testflight/).
+
+For repeatable immediate resets, use a dedicated Sandbox Apple Account and its
+Clear Purchase History control. Follow
+[Apple's account setup instructions](https://developer.apple.com/documentation/storekit/testing-in-app-purchases-with-sandbox).
+Clearing purchase history does not reset the separate device-local Pro gift.
 - [ ] Submit the first subscription group with a subscription attached to the
       app version, then verify approval and public availability separately.
 

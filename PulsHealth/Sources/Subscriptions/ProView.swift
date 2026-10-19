@@ -9,6 +9,7 @@ struct ProView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedID = SubscriptionStore.annualID
     @State private var redeemingCode = false
+    @State private var managingSubscriptions = false
 
     private var store: SubscriptionStore { model.subscriptions }
     private var selectedProduct: Product? {
@@ -47,6 +48,10 @@ struct ProView: View {
         .navigationTitle(store.hasPro ? "Your plan" : "PulsHealth Pro")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        .manageSubscriptionsSheet(isPresented: $managingSubscriptions)
+        .onChange(of: managingSubscriptions) { _, presented in
+            if !presented { Task { await store.refreshEntitlements() } }
+        }
         .offerCodeRedemption(isPresented: $redeemingCode) { _ in
             // Completion is not proof of access: only verified StoreKit data
             // and the transaction listener can grant Pro.
@@ -192,7 +197,11 @@ struct ProView: View {
     private var accountActions: some View {
         Section {
             if store.hasPro && store.complimentaryExpiresAt == nil {
-                Link("Manage Apple Subscriptions", destination: URL(string: "https://apps.apple.com/account/subscriptions")!)
+                if ProcessInfo.processInfo.isiOSAppOnMac {
+                    Link("Manage Apple Subscriptions", destination: URL(string: "https://apps.apple.com/account/subscriptions")!)
+                } else {
+                    Button("Manage Apple Subscriptions") { managingSubscriptions = true }
+                }
             }
             Button("Redeem Code") { redeemingCode = true }.disabled(store.isBusy)
             Button("Restore Purchases") { Task { await store.restore() } }.disabled(store.isBusy)
