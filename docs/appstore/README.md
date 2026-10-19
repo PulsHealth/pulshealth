@@ -237,6 +237,27 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.2 (27) internal TestFlight (2026-10-19)
+
+Build **2.2 (27)** was archived from clean source
+`37e23d527b1fe889cb4815df684d8ec02e87ac84`, now contained in `release-2.2`
+and reconciled into `main`. Apple processed the build and the existing internal
+group reports **Testing**. The archive, IPA, symbols, privacy verification,
+upload log and candidate evidence are retained privately.
+
+This candidate includes Lifetime Pro, direct purchase choices during the
+complimentary gift, and readable scrubbed HTML server-error summaries. Local
+checks passed **567 package and 103 app tests on iOS 27.0**, and **564 package
+and 95 app tests on iOS 26.5** with the documented three/eight platform skips.
+Both iOS CI jobs passed. Pricing/privacy site updates were deployed and checked.
+The combined App Review draft contains build 27, the subscription group,
+monthly/yearly subscriptions and Lifetime; **it has not been submitted**.
+
+Device testing found that the external subscription-management link cannot
+cancel a regular-account TestFlight subscription. Build 28 is being prepared
+with Apple's native management sheet. Purchase/restore and the other physical
+device acceptance gates remain open; build 27 is not a public release.
+
 ### 2.2 (24) internal TestFlight (2026-10-16)
 
 Build **2.2 (24)** was archived from clean `release-2.2` source
