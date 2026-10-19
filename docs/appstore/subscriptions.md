@@ -159,11 +159,10 @@ subscription continues under its own billing terms; the gift does not cancel,
 refund or extend it. After expiry, foreground/export/request/background checks
 use the existing Free policy, keeping saved selections and uploaded data.
 
-Gift users can optionally open Choose a Subscription on the plan page. It
-loads the real billing choices without ending the gift; Back to Your Gift
-returns to its status. A purchased subscription starts its own billing period
-immediately and takes priority. This also keeps purchases testable in sandbox,
-where the original app build qualifies for the gift.
+Gift recipients can purchase Monthly, Yearly or Lifetime directly from the plan
+page without ending their gift. A purchase starts paid access immediately; the
+gift does not delay subscription billing. This also keeps purchases testable in
+sandbox, where the original app build qualifies for the gift.
 
 Release acceptance still needs a physical-device check of an actual pre-Pro
 App Store download versus a fresh download, first foreground activation,
