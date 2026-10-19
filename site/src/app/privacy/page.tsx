@@ -11,7 +11,7 @@ const BLOB = `${GITHUB}/blob/main`;
 const claims = [
   {
     title: "Your exports go where you choose",
-    body: "Exploring and exporting need no account. An export goes where you choose in the share sheet, or to a request destination you review and approve with Generate & Send. Apple handles optional Pro subscription payments and purchase verification, as well as any App Store rating or review you submit. Health data is not sent to Apple for purchase verification; review timing counters stay on your device.",
+    body: "Exploring and exporting need no account. An export goes where you choose in the share sheet, or to a request destination you review and approve with Generate & Send. Apple handles optional Pro purchase payments and verification, as well as any App Store rating or review you submit. Health data is not sent to Apple for purchase verification; review timing counters stay on your device.",
     check: { label: "Export/", href: `${GITHUB}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Export` },
   },
   {
@@ -72,7 +72,7 @@ export default function PrivacyPage() {
               <li>You choose each way health data leaves the phone: sync to your configured database, exports you share yourself, or one-time ZIP delivery to a request destination you review and approve. Opening a request alone sends nothing.</li>
               <li>HealthKit access is read-only. The app never writes to Apple Health.</li>
               <li>The existing-user Pro gift checks Apple’s verified original app build and stores only fixed gift dates and a welcome acknowledgement in a separate device-only Keychain item. These are not sent to PulsHealth. The gift does not start a subscription or charge automatically.</li>
-              <li>No analytics, advertising, tracking or third-party SDKs in the app. Apple processes optional Pro subscriptions through StoreKit; purchasing Pro does not include hosting.</li>
+              <li>No analytics, advertising, tracking or third-party SDKs in the app. Apple processes optional monthly/yearly Pro subscriptions and one-time Lifetime Pro purchases through StoreKit. All include current and future app features; PulsHealth server, hosting and other services are separate. Buying Lifetime does not cancel an existing subscription.</li>
               <li>Each saved database’s bearer token normally lives in its own iOS Keychain item. Only the active database receives sync uploads. Unpairing removes its local connection and progress; data already uploaded remains on the server. The app does not retain synced health samples: an export you ask for is staged in temporary storage until you share it or confirm request delivery, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
               <li>This public website uses cookie-free, self-hosted analytics for pageviews, fixed action counts and browser performance. Form contents and health data are excluded.</li>
             </ul>

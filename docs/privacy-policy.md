@@ -71,14 +71,15 @@ Save & Apply; signing in alone uploads no Health data.
 - **You choose what is read.** Nothing is read until you pick the data types
   and iOS grants permission, and you can change or revoke that at any time.
 
-## PulsHealth Pro subscriptions
+## PulsHealth Pro purchases
 
-The app offers optional auto-renewing PulsHealth Pro subscriptions through
-Apple's StoreKit framework. Apple processes payments under the Apple Account
+The app offers optional monthly or yearly auto-renewing PulsHealth Pro
+subscriptions and a one-time Lifetime Pro purchase through Apple's StoreKit
+framework. Apple processes payments under the Apple Account
 used for the App Store. The developer does not receive payment-card details.
 The app reads Apple's verified purchase entitlements to decide which features
 are available; it does not send health data, selections, exported files, or
-server credentials to Apple to check a subscription. No third-party purchase
+server credentials to Apple to check a purchase. No third-party purchase
 SDK, receipt server, or new PulsHealth account is used for this.
 
 For the existing-user thank-you, the app checks Apple's verified original app
@@ -94,8 +95,12 @@ Apple Health permissions still apply. Data Requests use the manual-export
 history limit. A health type counts once across raw readings and enabled
 aggregates. Subscription expiry keeps saved selections and existing server
 data; a selection over five types pauses syncing until reduced or upgraded.
-Purchasing Pro does not include hosting. Restore Purchases and Manage
-Subscription are available from the PulsHealth Free/Pro row in Settings.
+Every Pro purchase includes current and future PulsHealth app features;
+PulsHealth server, hosting and other services are separate. Lifetime has no
+renewal or expiry, but a refunded or revoked purchase no longer grants access.
+Buying Lifetime does not cancel an existing subscription; manage its renewal
+separately with Apple. Restore Purchases and Manage Apple Subscriptions are
+available from the plan row in Settings.
 
 ## App Store ratings and reviews
 

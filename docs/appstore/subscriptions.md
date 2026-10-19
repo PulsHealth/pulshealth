@@ -1,4 +1,4 @@
-# PulsHealth Pro subscription setup
+# PulsHealth Pro purchase setup
 
 Source implementation for issue #251. Both products were configured in App
 Store Connect on 2026-10-15 for internal TestFlight testing with 2.2 (23).
@@ -12,9 +12,37 @@ They have not been submitted for App Review or publicly released.
 | US base price | $1.99 | $9.99 |
 
 Create both auto-renewable subscriptions in one **PulsHealth Pro** group, at the
-same service level. Neither includes hosting. There is no lifetime purchase,
-introductory trial or consumable export credit. Use Apple's standard EULA.
+same service level. Add the lifetime product below as a **non-consumable**,
+separate from the subscription group. Every purchase option unlocks all current
+and future PulsHealth app features. PulsHealth server, hosting and other services
+are excluded. There is no introductory trial or consumable export credit. Use Apple's standard EULA.
 The app displays Apple's localized price, not a hard-coded USD amount.
+
+## Lifetime option (issue #299)
+
+- Product ID: `com.pulsHealth.PulsHealth.pro.lifetime`
+- Reference/display name: PulsHealth Pro Lifetime
+- Type: non-consumable; US base price: **$20.00**, charged once
+- Description: All app features for life. Server/services excluded.
+- Use Apple-calculated localized prices and the parent app tax category.
+- [x] Created the non-consumable in App Store Connect on 2026-10-19, Apple ID
+      `6824617733`, with a $20.00 US base price, Apple-calculated localized prices,
+      all 175 current territories, English metadata, review notes and the parent
+      app tax category. Status: Prepare for Submission; not approved or released.
+- [ ] Add an app screenshot showing Lifetime for App Review.
+- [ ] Verify native purchase, pending approval, offline relaunch, fresh-install
+      restore, refund/revocation and coexistence with a subscription on a physical
+      sandbox device. Verify gift-to-lifetime and subscriber-to-lifetime checkout.
+- [ ] Attach the non-consumable to the app version for review and verify approval
+      separately from release.
+
+Lifetime uses only a verified, unrevoked non-consumable current entitlement. It
+has no expiration and takes priority over subscriptions and the early-user gift.
+Subscription expiration or billing status cannot remove lifetime access. A
+lifetime refund falls back to any other active paid access or unexpired gift.
+Buying Lifetime does **not** cancel an existing subscription; the app keeps
+Apple subscription management available and explains how to stop its renewal.
+Existing subscribers and gift recipients can buy Lifetime from their plan page.
 
 Free: full Explore; unlimited manual file exports in CSV, JSON and JSONL of all
 types from the most recent 30 days; automatic sync of up to five distinct health
@@ -39,7 +67,7 @@ for these automated tests.
 
 The iOS 26.5 runtime cannot save StoreKitTest configuration
 ([Apple DTS, FB22237318](https://developer.apple.com/forums/thread/826971)).
-This was reproduced both in unsigned CI and a signed local host. Its four
+This was reproduced both in unsigned CI and a signed local host. Its
 StoreKit fixture tests explicitly skip only on that runtime; the pure
 entitlement race test and all other tests remain enabled. The iOS 27 CI job
 must pass the real StoreKit lifecycle tests. These skips are a platform test
@@ -73,7 +101,7 @@ limitation, not purchase acceptance on iOS 26.5.
 - [ ] Submit the first subscription group with a subscription attached to the
       app version, then verify approval and public availability separately.
 
-`PulsHealth/Configuration/Pro.storekit` supplies the two prices for local StoreKit
+`PulsHealth/Configuration/Pro.storekit` supplies all three prices for local StoreKit
 tests. It is bundled only with hosted tests and selected by the Debug Run scheme
 for local purchases. It does not create production products. Disable the local
 StoreKit configuration when checking real App Store Connect products on a
@@ -83,7 +111,8 @@ The Quiet Native plan page opens from the PulsHealth Free/Pro row in Settings
 and from contextual upgrade prompts. Older exports, older sync history, an over-five sync selection and Data
 Requests explain the relevant limit. Billing choices select a product; a separate
 button states its localized price and billing period before starting purchase.
-The yearly option is selected initially; both durations offer the same access.
+The yearly option is selected initially; all three purchase options offer the same app access. Lifetime shows a one-time
+Buy button and no subscription renewal terms.
 Formats, raw readings and aggregates are explicitly included with Free.
 
 Active subscribers see their verified plan and renewal or end date rather than
@@ -130,7 +159,45 @@ subscription continues under its own billing terms; the gift does not cancel,
 refund or extend it. After expiry, foreground/export/request/background checks
 use the existing Free policy, keeping saved selections and uploaded data.
 
+Gift recipients can purchase Monthly, Yearly or Lifetime directly from the plan
+page without ending their gift. A purchase starts paid access immediately; the
+gift does not delay subscription billing. This also keeps purchases testable in
+sandbox, where the original app build qualifies for the gift.
+
 Release acceptance still needs a physical-device check of an actual pre-Pro
 App Store download versus a fresh download, first foreground activation,
 offline relaunch, deadline expiry, and paid-subscription priority. Document the
 gift in App Review notes; no App Store Connect subscription offer is needed.
+
+### Retiring the gift
+
+This is temporary launch-transition code. Track its retirement in
+[issue #290](https://github.com/PulsHealth/pulshealth/issues/290). Review it
+**within 90 days of the first public App Store release of 2.2**. When that
+release is verified, record the actual release date and review date in the
+issue. A source merge or TestFlight upload does not start this clock. The
+review is a maintenance checkpoint, not an automatic access cutoff.
+
+There is currently **no global activation deadline**: a pre-Pro user can open
+the update much later and still start 30 days. Therefore, do not delete the
+feature just because 30 days have passed since launch.
+
+Retire it in stages:
+
+1. Decide and document when new gifts stop being issued. Account for users
+   upgrading from older app builds that can still create gift records.
+2. Continue honoring every already-started gift through its fixed expiry.
+   Keep any compatibility reader/migration needed for late upgrades; do not
+   shorten an active gift or change paid subscription access.
+3. Once that transition is safe, remove gift-only activation and eligibility
+   (`EarlyUserProGift`), `SubscriptionStore` fallback/expiry tasks, welcome and
+   plan UI in `RootView`, `ProView` and `SettingsView`, and gift-specific tests.
+   Preserve saved selections, uploaded data and ordinary StoreKit purchase,
+   renewal, restore and offer-code behavior.
+4. Update this guide, the app README, privacy/security documentation, App
+   Review notes and the maintenance reference in `docs/roadmap.md` together.
+   Retain any required redeemed marker or expiry migration; deleting the
+   Keychain record or reusing its identifier must not restart the promotion.
+
+No eligibility, duration or cutoff behavior changes are authorized by this
+cleanup reminder. Those belong in the later retirement change.

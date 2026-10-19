@@ -48,27 +48,7 @@ struct RootView: View {
     var body: some View {
         @Bindable var model = model
         @Bindable var requests = model.dataRequests
-        TabView(selection: $selection) {
-            NavigationStack(path: $explorePath) {
-                ExploreView().reviewRequestOpportunity(.explore, blocked: !explorePath.isEmpty)
-            }
-                .tabItem { Label("Explore", systemImage: "heart.text.square") }
-                .tag(Tab.explore)
-            NavigationStack { ExportView() }
-                .tabItem { Label("Export", systemImage: "square.and.arrow.up") }
-                .tag(Tab.export)
-            NavigationStack(path: $syncPath) { SyncView(path: $syncPath) }
-                // The Raw Samples and Aggregates pickers are pushed on this
-                // stack, so their Apply/Discard bar belongs to the tab, not
-                // to a screen that could be popped with edits still staged.
-                .safeAreaInset(edge: .bottom) { PendingChangesBar() }
-                .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
-                .tag(Tab.sync)
-            NavigationStack { SettingsView() }
-                .tabItem { Label("Settings", systemImage: "gearshape") }
-                .tag(Tab.settings)
-        }
-        .safeAreaInset(edge: .top) {
+        VStack(spacing: 0) {
             if model.subscriptions.showsGiftWelcome && !model.showsOnboarding {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("30 days of Pro, on us").font(.headline)
@@ -87,6 +67,26 @@ struct RootView: View {
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(.regularMaterial)
+            }
+            TabView(selection: $selection) {
+                NavigationStack(path: $explorePath) {
+                    ExploreView().reviewRequestOpportunity(.explore, blocked: !explorePath.isEmpty)
+                }
+                    .tabItem { Label("Explore", systemImage: "heart.text.square") }
+                    .tag(Tab.explore)
+                NavigationStack { ExportView() }
+                    .tabItem { Label("Export", systemImage: "square.and.arrow.up") }
+                    .tag(Tab.export)
+                NavigationStack(path: $syncPath) { SyncView(path: $syncPath) }
+                    // The Raw Samples and Aggregates pickers are pushed on this
+                    // stack, so their Apply/Discard bar belongs to the tab, not
+                    // to a screen that could be popped with edits still staged.
+                    .safeAreaInset(edge: .bottom) { PendingChangesBar() }
+                    .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
+                    .tag(Tab.sync)
+                NavigationStack { SettingsView() }
+                    .tabItem { Label("Settings", systemImage: "gearshape") }
+                    .tag(Tab.settings)
             }
         }
         .sheet(isPresented: $model.showsPro) {
