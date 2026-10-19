@@ -156,9 +156,16 @@ final class SubscriptionStoreTests: XCTestCase {
         XCTAssertEqual(store.complimentaryExpiresAt, deadline)
         let annual = try XCTUnwrap(store.products.first { $0.id == SubscriptionStore.annualID })
         await store.purchase(annual)
+        for _ in 0..<40 {
+            await store.refreshEntitlements()
+            if store.plan?.productID == SubscriptionStore.annualID { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
         XCTAssertTrue(store.hasPro)
         XCTAssertEqual(store.plan?.productID, SubscriptionStore.annualID)
         XCTAssertNil(store.complimentaryExpiresAt, "Verified paid access takes priority over the gift")
+        let transaction = try XCTUnwrap(session.allTransactions().first)
+        try session.disableAutoRenewForTransaction(identifier: transaction.identifier)
         try session.expireSubscription(productIdentifier: SubscriptionStore.annualID)
         // StoreKit's status stream can lag the fixture's expiry operation.
         for _ in 0..<40 {
