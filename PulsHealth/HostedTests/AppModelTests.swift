@@ -2,6 +2,7 @@ import Foundation
 import XCTest
 import SwiftUI
 import Security
+import StoreKitTest
 import PulsHealthSync
 @testable import PulsHealth
 
@@ -176,6 +177,45 @@ final class AppModelTests: XCTestCase {
             XCTAssertNil(subscriptions.plan, "A gift must not invent a subscription")
             window.isHidden = true
         }
+    }
+
+    func testProPurchaseOptionsIncludeLifetimeScreenshot() async throws {
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        if os.majorVersion == 26 && os.minorVersion == 5 {
+            throw XCTSkip("iOS 26.5 StoreKitTest regression FB22237318; screenshot runs on iOS 27")
+        }
+        let configuration = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "Pro", withExtension: "storekit"))
+        let session = try SKTestSession(contentsOf: configuration)
+        session.resetToDefaultState()
+        session.disableDialogs = true
+        session.clearTransactions()
+        defer { session.clearTransactions() }
+        let gift = EarlyUserProGift(storage: InMemoryTokenStore(), eligibilityReader: { false })
+        let subscriptions = SubscriptionStore(earlyUserGift: gift)
+        await subscriptions.start()
+        defer { subscriptions.stop() }
+        await subscriptions.loadProducts()
+        XCTAssertEqual(Set(subscriptions.products.map(\.id)), SubscriptionStore.productIDs)
+        XCTAssertFalse(subscriptions.hasPro)
+        let h = try await makeModel(subscriptions: subscriptions)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 440, height: 956)
+        let controller = UIHostingController(rootView:
+            NavigationStack { ProView() }.environment(h.model).preferredColorScheme(.light))
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        controller.view.frame = window.bounds
+        window.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(700))
+        let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "pro_monthly_yearly_lifetime"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        window.isHidden = true
     }
 
     func testGiftWelcomeScreenshots() async throws {
