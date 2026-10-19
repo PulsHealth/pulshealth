@@ -35,8 +35,8 @@ final class SubscriptionStoreTests: XCTestCase {
         return session
     }
 
-    private func makeStore(session: SKTestSession) -> SubscriptionStore {
-        SubscriptionStore(purchaseAction: { product in
+    private func makeStore(session: SKTestSession, gift: EarlyUserProGift? = nil) -> SubscriptionStore {
+        SubscriptionStore(earlyUserGift: gift, purchaseAction: { product in
             _ = try await session.buyProduct(identifier: product.id)
             guard let verified = await Transaction.latest(for: product.id) else {
                 throw NSError(domain: "StoreKitFixture", code: 1)
@@ -139,6 +139,35 @@ final class SubscriptionStoreTests: XCTestCase {
         await store.restore()
         await assertAccess(false, store: store)
         XCTAssertNil(store.plan)
+    }
+
+    func testGiftAllowsProductLoadingAndPurchaseWithoutChangingItsDeadline() async throws {
+        let session = try session()
+        defer { session.clearTransactions() }
+        let gift = EarlyUserProGift(storage: InMemoryTokenStore(), eligibilityReader: { true })
+        let store = makeStore(session: session, gift: gift)
+        await store.beginForegroundVisit()
+        defer { store.stop() }
+        let deadline = try XCTUnwrap(store.complimentaryExpiresAt)
+        XCTAssertTrue(store.hasPro)
+        XCTAssertNil(store.plan)
+        await store.loadProducts()
+        XCTAssertEqual(Set(store.products.map(\.id)), SubscriptionStore.productIDs)
+        XCTAssertEqual(store.complimentaryExpiresAt, deadline)
+        let annual = try XCTUnwrap(store.products.first { $0.id == SubscriptionStore.annualID })
+        await store.purchase(annual)
+        XCTAssertTrue(store.hasPro)
+        XCTAssertEqual(store.plan?.productID, SubscriptionStore.annualID)
+        XCTAssertNil(store.complimentaryExpiresAt, "Verified paid access takes priority over the gift")
+        try session.expireSubscription(productIdentifier: SubscriptionStore.annualID)
+        // StoreKit's status stream can lag the fixture's expiry operation.
+        for _ in 0..<40 {
+            await store.refreshEntitlements()
+            if store.complimentaryExpiresAt != nil { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertTrue(store.hasPro, "The original gift remains available after paid access ends")
+        XCTAssertEqual(store.complimentaryExpiresAt, deadline, "A purchase must not restart or extend the gift")
     }
 
     func testPendingWaitsForVerifiedPurchaseAndRefundRemovesAccess() async throws {
