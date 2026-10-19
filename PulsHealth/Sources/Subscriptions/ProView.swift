@@ -48,10 +48,6 @@ struct ProView: View {
         .navigationTitle(store.hasPro ? "Your plan" : "PulsHealth Pro")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-        .manageSubscriptionsSheet(isPresented: $managingSubscriptions)
-        .onChange(of: managingSubscriptions) { _, presented in
-            if !presented { Task { await store.refreshEntitlements() } }
-        }
         .offerCodeRedemption(isPresented: $redeemingCode) { _ in
             // Completion is not proof of access: only verified StoreKit data
             // and the transaction listener can grant Pro.
@@ -201,6 +197,10 @@ struct ProView: View {
                     Link("Manage Apple Subscriptions", destination: URL(string: "https://apps.apple.com/account/subscriptions")!)
                 } else {
                     Button("Manage Apple Subscriptions") { managingSubscriptions = true }
+                        .manageSubscriptionsSheet(isPresented: $managingSubscriptions)
+                        .onChange(of: managingSubscriptions) { _, presented in
+                            if !presented { Task { await store.refreshEntitlements() } }
+                        }
                 }
             }
             Button("Redeem Code") { redeemingCode = true }.disabled(store.isBusy)
