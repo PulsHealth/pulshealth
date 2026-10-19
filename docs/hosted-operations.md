@@ -237,3 +237,50 @@ with image IDs and timing under Git's state directory. No health values or user
 IDs enter that receipt. Detailed test failure logs remain private alongside it.
 A failed check blocks the claim of verified deployment; diagnose it before retrying.
 This check does not replace backup/restore, account-isolation or device acceptance.
+
+## App Store purchase email alerts
+
+Optional in accounts mode. Set `WEB_APP_STORE_ALERT_TO` privately to the
+operator's destination, alongside the existing `WEB_SES_*` and `WEB_MAIL_FROM`
+configuration. Apply migration 030 through the migrate service, including the
+101 grants script, before deploying this viewer. No iOS build change is needed.
+
+In App Store Connect > Apps > PulsHealth > General > App Information >
+App Store Server Notifications, select **Version 2** and register:
+
+- Production: `<viewer HTTPS origin>/api/app-store/notifications/production`
+- Sandbox: `<viewer HTTPS origin>/api/app-store/notifications/sandbox`
+
+Ensure these two paths reach the viewer without Cloudflare Access or browser
+authentication. They authenticate Apple's signed payload, not cookies or an
+Origin header. All other viewer routes keep their existing authentication.
+Notifications remain off when the destination is unset.
+
+Uses Apple's official Node server library with online certificate checks, fixed
+PulsHealth app/bundle identifiers and the public certificates from
+[Apple's certificate authority](https://www.apple.com/certificateauthority/).
+Both the outer notification and nested transaction are verified. Private App
+Store API keys are not required to receive events. API credentials are needed
+to request Apple's delivery test.
+
+Production emails cover subscription starts/renewals, Lifetime purchases,
+refunds, failed renewals, disabled auto-renew and expiration. Free offers are
+labeled; Family Sharing access is not counted as a new purchase. Sandbox and
+TestFlight purchases send no financial alerts; signed TEST notifications send
+a delivery test with a sandbox label where appropriate. Price is in Apple
+milliunits and is shown as customer price, never net proceeds.
+
+An event hash and timestamps serialize delivery across parallel retries. Failed
+sends answer 503 so Apple retries. A crash after SES accepts mail but before
+the delivery commit can produce a duplicate; delivery is not exactly-once.
+Notifications older than 30 days are acknowledged without email, preventing
+old replay after hashes are pruned. Hashes older than 90 days are pruned on
+subsequent delivery. Apple retries are finite: investigate 503s promptly and
+use Apple's notification history API if recovery is needed. Alert emails remain
+in the operator mailbox until deleted. No health data or account linkage.
+
+Request a test notification in both environments through the App Store Server
+API and check its delivery status. Confirm receipt in the target inbox before
+calling email delivery verified; SES acceptance alone does not prove arrival.
+Changing a notification URL replaces the existing consumer, so inspect the
+current URLs and preserve any existing integration before making a change.

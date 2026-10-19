@@ -328,6 +328,7 @@ services:
       WEB_SES_SECRET_ACCESS_KEY: ${WEB_SES_SECRET_ACCESS_KEY:-}
       WEB_MAIL_FROM: ${WEB_MAIL_FROM:-}
       WEB_ADMIN_EMAIL: ${WEB_ADMIN_EMAIL:-}
+      WEB_APP_STORE_ALERT_TO: ${WEB_APP_STORE_ALERT_TO:-}
       # Accounts mode only: the user whose account is the public demo. /demo
       # signs visitors into it, view-only, for two hours; it must hold only
       # sample data (`make web-demo` creates the account). Unset, /demo is a
