@@ -45,6 +45,8 @@ final class SubscriptionStore {
     @ObservationIgnored private var updates: Task<Void, Never>?
     @ObservationIgnored private var statusUpdates: Task<Void, Never>?
     @ObservationIgnored private var refreshGeneration = 0
+    typealias ProductReader = @MainActor () async throws -> [Product]
+    @ObservationIgnored private let productReader: ProductReader
     typealias PurchaseAction = @MainActor (Product) async throws -> Product.PurchaseResult
     typealias RestoreAction = @MainActor () async throws -> Void
     @ObservationIgnored private let purchaseAction: PurchaseAction
@@ -57,11 +59,13 @@ final class SubscriptionStore {
         accessReader: (@Sendable () async -> ProAccessSnapshot)? = nil,
         earlyUserGift: EarlyUserProGift? = nil,
         now: @escaping @MainActor () -> Date = Date.init,
+        productReader: @escaping ProductReader = { try await Product.products(for: SubscriptionStore.productIDs) },
         purchaseAction: @escaping PurchaseAction = { try await $0.purchase() },
         restoreAction: @escaping RestoreAction = { try await AppStore.sync() }
     ) {
         self.now = now
         self.earlyUserGift = earlyUserGift ?? (entitlementReader == nil && accessReader == nil ? EarlyUserProGift() : nil)
+        self.productReader = productReader
         self.purchaseAction = purchaseAction
         self.restoreAction = restoreAction
         if let accessReader {
@@ -256,7 +260,7 @@ final class SubscriptionStore {
         defer { isBusy = false }
         message = nil
         do {
-            products = try await Product.products(for: Self.productIDs)
+            products = try await productReader()
                 .sorted { $0.price < $1.price }
             if products.count != Self.productIDs.count {
                 message = "Some Pro purchase options are currently unavailable. You can keep using PulsHealth Free and try again later."
