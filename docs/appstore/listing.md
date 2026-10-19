@@ -140,7 +140,7 @@ See [current definitions](https://developer.apple.com/help/app-store-connect/ref
 | Unrestricted web access | No | There is no browser and no web view of the app's own. Its one in-app web page is the PulsHealth database's sign-in sheet: Sync → Database → Sign In to PulsHealth (or Create Account) opens `app.pulshealth.com/connect/iphone` (or `/signup`) in iOS's `ASWebAuthenticationSession`, which has no address bar and serves the account flow on that site (sign in or create an account, then Connect this iPhone), and closes when that page hands back the pairing code or the person closes it. The app has a fixed handful of links that open in Safari, outside the app: Settings → About (the GitHub repository, its issue tracker, the privacy policy and the documentation, all on pulshealth.com or github.com), the last first-run page’s "Learn more" (pulshealth.com/#ways), and the PulsHealth database's What the Developer Holds, Manage Account, Connect an AI Assistant and Delete PulsHealth Account (app.pulshealth.com, pulshealth.com/privacy and pulshealth.com/docs/ai/). It *opens* iOS Settings after camera access is declined, from Settings → Health Access, from the Explore tab's "Open Health Settings" and from an export's Health-access notice. It receives `puls://request?data=…` links that show a one-time request for review, and a `puls://pair?…` pairing link, through its registered `puls` scheme — which opens nothing: it raises a confirmation naming the address it points to and, if accepted, fills in the database fields. The sign-in sheet returns the same kind of link straight to the screen that opened it, which fills in the fields the same way; either way only Save & Apply applies them. |
 | User-generated content, chat or messaging | No | No public feed, chat or messaging. Account signup sends details to the developer; request links contain creator-supplied text that recipients review. |
 | Gambling and contests | No | — |
-| In-app purchases | Yes for the Pro candidate | Optional monthly/yearly Pro subscriptions through StoreKit; see `subscriptions.md` for setup and release gates. Native rating/review requests also use StoreKit. |
+| In-app purchases | Yes for 2.2 | Optional monthly/yearly Pro subscriptions and one-time Lifetime Pro through StoreKit; see `subscriptions.md` for product setup and `2.2-copy.md` for the submitted copy. Native rating/review requests also use StoreKit. |
 | Advertising | No | No ad SDK, no ad network. |
 
 ## App Privacy — "Data Linked to You"
@@ -342,17 +342,21 @@ review responses are collected for this feature. It introduces no analytics
 SDK or additional App Privacy data collection. The existing UserDefaults
 required-reason declaration covers the app's own review timing preferences.
 
-## Pro subscription copy for the next submission
+## Pro purchase copy for 2.2
 
-Preparation only. Keep current live metadata until a validated subscription
-candidate is selected; see [subscriptions.md](subscriptions.md).
+Build 2.2 (28) and its purchase products were submitted on 2026-10-19.
+The submitted text is in [2.2-copy.md](2.2-copy.md); see the
+[release record](README.md#release-record) for submission and release status.
 
 PulsHealth Free includes full Explore, unlimited file exports of all types in
 CSV, JSON and JSONL from the most recent 30 days, and automatic sync of up to
 five health data types from the most recent 30 days. Each health type counts
 once across raw readings and aggregates. PulsHealth Pro unlocks unlimited types
 and all available history, subject to Apple Health permissions. Available as
-auto-renewing monthly or yearly subscriptions. Hosting is separate.
+auto-renewing monthly or yearly subscriptions, or a one-time Lifetime purchase.
+Every option includes all current and future app features; PulsHealth server,
+hosting and other services are separate. Lifetime has no renewal. Buying
+Lifetime does not cancel an existing subscription; manage its renewal separately.
 
 Privacy: https://pulshealth.com/privacy/
 Terms: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
