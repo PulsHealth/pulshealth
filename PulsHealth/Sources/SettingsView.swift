@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 import PulsHealthSync
 
 /// Screens pushed from Settings.
@@ -12,10 +13,12 @@ enum SettingsRoute: Hashable {
 /// database is not here — it is the Sync tab's (`ServerSettingsView`).
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
+    @AppStorage("settings.developerMode") private var developerMode = false
+    @State private var account = UserAccount()
+    @State private var confirmDeveloperMode = false
     @State private var confirmResetAll = false
     @State private var confirmBackfill = false
     @State private var confirmDeleteExport = false
-    @State private var confirmDeleteAnalysis = false
     @State private var validatingAggregates = false
     /// Failures in the last Validate Aggregate Functions run; nil before one.
     @State private var aggregateValidationFailures: Int?
@@ -31,36 +34,49 @@ struct SettingsView: View {
 
     var body: some View {
         @Bindable var model = model
-        let analyzed = model.explore.profiles.count
         Form {
             if model.stateFileUnreadable {
                 StateUnreadableNotice()
             }
             Section {
                 NavigationLink(value: SettingsRoute.user) {
-                    UserRow(name: model.config.userName, email: model.config.userEmail)
+                    UserRow(
+                        name: account.hasSession ? account.savedProfile?.name : model.config.userName,
+                        email: account.hasSession ? account.savedProfile?.email : model.config.userEmail)
                 }
             }
 
-            Section("Plan") {
+            Section {
                 Button { model.showPro() } label: {
-                    Label {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(model.subscriptions.hasPro ? "PulsHealth Pro" : "PulsHealth Free")
-                            Text(model.subscriptions.hasPro
-                                 ? (model.subscriptions.plan?.status ?? "Pro is active")
-                                 : "Recent exports · 5 automatic-sync types")
-                                .font(.caption).foregroundStyle(.secondary)
+                    HStack {
+                        Label {
+                            Text(model.subscriptions.complimentaryExpiresAt != nil ? "Complimentary Pro" : (model.subscriptions.hasPro ? "PulsHealth Pro" : "PulsHealth Free"))
+                                .foregroundStyle(.primary)
+                        } icon: {
+                            Image(systemName: model.subscriptions.hasPro ? "checkmark.seal" : "sparkles")
+                                .foregroundStyle(.tint)
                         }
-                    } icon: {
-                        Image(systemName: model.subscriptions.hasPro ? "checkmark.seal" : "person.crop.circle")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                            .accessibilityHidden(true)
                     }
                 }
+                .buttonStyle(.plain)
             }
 
-            Section("Data Requests") {
+            Section {
                 NavigationLink { CreateDataRequestView() } label: { Label("Create Request", systemImage: "qrcode") }
                 NavigationLink { OpenDataRequestView() } label: { Label("Open or Scan Request", systemImage: "qrcode.viewfinder") }
+            } header: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Data Requests")
+                    Text("Create health data requests for research participants, teams, or other groups.")
+                        .font(.footnote)
+                        .fontWeight(.regular)
+                        .textCase(nil)
+                }
             }
 
             // Keyed on the *applied* server, like the Sync tab's first-time screen:
@@ -141,12 +157,6 @@ struct SettingsView: View {
                 if case .finished(let finished) = model.export.state, !finished.filesRemoved {
                     Button("Delete Export", role: .destructive) { confirmDeleteExport = true }
                 }
-                // The per-type summaries the Explore tab keeps
-                // (`TypeProfileStore`): derived numbers, never samples, but
-                // health-derived data at rest, so the privacy policy promises
-                // this one-tap way to remove all of them.
-                Button("Delete Analysis", role: .destructive) { confirmDeleteAnalysis = true }
-                    .disabled(analyzed == 0 || !model.explore.running.isEmpty)
                 // App Review 5.1.1(v): the account the PulsHealth database
                 // needs can be deleted from the app. Sync → Database has it
                 // too; this is where people look for it. Always shown: an
@@ -156,34 +166,18 @@ struct SettingsView: View {
                     .tint(.red)
             }
 
-            Section("Diagnostics") {
-                NavigationLink("Run Throughput Benchmark", value: SettingsRoute.benchmark)
-                Button {
-                    runAggregateValidation()
-                } label: {
-                    HStack {
-                        Text("Validate Aggregate Functions")
-                        Spacer()
-                        if validatingAggregates {
-                            ProgressView()
-                        } else if let failures = aggregateValidationFailures {
-                            // Each failure is logged under Sync → Activity.
-                            if failures == 0 {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                    .accessibilityLabel("All passed")
-                            } else {
-                                Text("\(failures) failed").foregroundStyle(.red)
-                            }
-                        }
-                    }
-                }
-                .disabled(validatingAggregates)
-                Button("Show Onboarding Again") { model.restartOnboarding() }
+            if developerMode {
+                developerSection
             }
 
             Section("About") {
                 LabeledContent("Version", value: Self.versionString)
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 7) {
+                        guard !developerMode else { return }
+                        confirmDeveloperMode = true
+                    }
+                Button("Show Onboarding Again") { model.restartOnboarding() }
                 Link("Write a Review", destination: ReviewRequests.writeReviewURL)
                 Link("Documentation", destination: URL(string: "https://pulshealth.com/docs/")!)
                 Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy")!)
@@ -192,11 +186,19 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
+        .task { await account.restore() }
         .navigationDestination(for: SettingsRoute.self) { route in
             switch route {
-            case .user: UserView()
-            case .benchmark: BenchmarkView()
+            case .user: UserView(account: account)
+            case .benchmark:
+                if developerMode { BenchmarkView() }
             }
+        }
+        .alert("Enable Developer Mode?", isPresented: $confirmDeveloperMode) {
+            Button("Enable") { developerMode = true }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Show throughput benchmarks and aggregate validation tools in Settings.")
         }
         .alert("Reset all anchors?", isPresented: $confirmResetAll) {
             Button("Reset All", role: .destructive) {
@@ -205,12 +207,6 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Re-sends everything from the start date for every synced type. Your database skips what it already has.")
-        }
-        .alert("Delete all analysis?", isPresented: $confirmDeleteAnalysis) {
-            Button("Delete", role: .destructive) { Task { await model.deleteAnalysis() } }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Removes the stored summaries for \(analyzed) type\(analyzed == 1 ? "" : "s"). Nothing in Apple Health changes.")
         }
         .deleteExportAlert(isPresented: $confirmDeleteExport, export: model.export)
         .alert("Start initial backfill?", isPresented: $confirmBackfill) {
@@ -229,6 +225,35 @@ struct SettingsView: View {
         }
     }
 
+    private var developerSection: some View {
+        Section("Developer") {
+            NavigationLink("Run Throughput Benchmark", value: SettingsRoute.benchmark)
+            Button {
+                runAggregateValidation()
+            } label: {
+                HStack {
+                    Text("Validate Aggregate Functions")
+                    Spacer()
+                    if validatingAggregates {
+                        ProgressView()
+                    } else if let failures = aggregateValidationFailures {
+                        // Each failure is logged under Sync → Activity.
+                        if failures == 0 {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .accessibilityLabel("All passed")
+                        } else {
+                            Text("\(failures) failed").foregroundStyle(.red)
+                        }
+                    }
+                }
+            }
+            .disabled(validatingAggregates)
+            Button("Disable Developer Mode") { developerMode = false }
+                .disabled(validatingAggregates)
+        }
+    }
+
     /// "1.6 (17)", from the bundle so it can never disagree with what shipped.
     private static var versionString: String {
         let info = Bundle.main.infoDictionary
@@ -238,6 +263,7 @@ struct SettingsView: View {
     }
 
     private func runAggregateValidation() {
+        guard developerMode, !validatingAggregates else { return }
         validatingAggregates = true
         aggregateValidationFailures = nil
         Task {
@@ -397,100 +423,176 @@ extension View {
 struct UserView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.webAuthenticationSession) private var webAuthenticationSession
+    @State private var account = UserAccount()
+    @State private var signingIn = false
+    @State private var currentPassword = ""
     @State private var userIDText = ""
     @State private var userIDLoaded = false
 
-    private var userIDValid: Bool { AppModel.normalizedUserID(userIDText) != nil }
+    init(account: UserAccount = UserAccount()) {
+        _account = State(initialValue: account)
+    }
+
+    private var signedIn: Bool { account.hasSession }
+    private var userIDValid: Bool { signedIn || AppModel.normalizedUserID(userIDText) != nil }
+    private var name: Binding<String> {
+        Binding(get: { signedIn ? account.profile?.name ?? "" : model.config.userName ?? "" }, set: {
+            if signedIn { account.profile?.name = $0.isEmpty ? nil : $0 }
+            else { model.config.userName = $0.isEmpty ? nil : $0 }
+        })
+    }
+    private var email: Binding<String> {
+        Binding(get: { signedIn ? account.profile?.email ?? "" : model.config.userEmail ?? "" }, set: {
+            if signedIn { account.profile?.email = $0 }
+            else { model.config.userEmail = $0.isEmpty ? nil : $0 }
+        })
+    }
+    private var dateOfBirth: Binding<Date?> {
+        Binding(get: { signedIn ? account.profile?.dateOfBirth : model.config.userDateOfBirth }, set: {
+            if signedIn { account.profile?.dateOfBirth = $0 }
+            else { model.config.userDateOfBirth = $0 }
+        })
+    }
+    private var biologicalSex: Binding<String?> {
+        Binding(get: { signedIn ? account.profile?.biologicalSex : model.config.userBiologicalSex }, set: {
+            if signedIn { account.profile?.biologicalSex = $0 }
+            else { model.config.userBiologicalSex = $0 }
+        })
+    }
 
     var body: some View {
-        @Bindable var model = model
         Form {
-            Section("Identity") {
-                TextField("Name", text: Binding(
-                    get: { model.config.userName ?? "" },
-                    set: { model.config.userName = $0.isEmpty ? nil : $0 }
-                ))
-                .textContentType(.name)
-                TextField("Email", text: Binding(
-                    get: { model.config.userEmail ?? "" },
-                    set: { model.config.userEmail = $0.isEmpty ? nil : $0 }
-                ))
-                .textContentType(.emailAddress)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
+            Section {
+                if signedIn {
+                    Label("Signed in to PulsHealth", systemImage: "person.crop.circle.badge.checkmark")
+                    if let email = account.savedProfile?.email { Text(email).foregroundStyle(.secondary) }
+                    Button("Sign Out", role: .destructive) {
+                        currentPassword = ""
+                        Task { await account.signOut() }
+                    }
+                    if account.profile == nil {
+                        Button("Reload Account") { Task { await account.restore() } }
+                    }
+                } else {
+                    Button("Sign In to PulsHealth") { signIn() }
+                }
+                if account.busy || signingIn { ProgressView() }
+                if let problem = account.problem {
+                    Text(problem).font(.caption).foregroundStyle(.red)
+                }
+            } header: { Text("PulsHealth Account") } footer: {
+                if signedIn {
+                    Text("Changes here are saved to your PulsHealth account. Signing in does not turn on Health data sync.")
+                } else {
+                    Text("Optional").font(.caption)
+                }
             }
+            .disabled(account.busy || signingIn)
 
             Section {
-                if let dob = model.config.userDateOfBirth {
+                TextField("Name", text: name).textContentType(.name)
+                TextField("Email", text: email)
+                    .textContentType(.emailAddress).keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                if signedIn, account.profile?.email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() != account.savedProfile?.email {
+                    SecureField("Current password", text: $currentPassword).textContentType(.password)
+                    Text("Enter your current password to change your sign-in email.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            } header: { Text("Identity") }
+            .disabled(account.busy || (signedIn && account.profile == nil))
+
+            Section {
+                if let dob = dateOfBirth.wrappedValue {
                     DatePicker("Date of birth", selection: Binding(
-                        get: { model.config.userDateOfBirth ?? dob },
-                        set: { model.config.userDateOfBirth = $0 }
+                        get: { dateOfBirth.wrappedValue ?? dob },
+                        set: { dateOfBirth.wrappedValue = $0 }
                     ), in: ...Date(), displayedComponents: .date)
-                    Button("Clear date of birth", role: .destructive) {
-                        model.config.userDateOfBirth = nil
-                    }
+                    .environment(\.timeZone, signedIn ? TimeZone(secondsFromGMT: 0)! : .current)
+                    Button("Clear date of birth", role: .destructive) { dateOfBirth.wrappedValue = nil }
                 } else {
                     LabeledContent("Date of birth") {
                         Button("Set") {
-                            // Seed the picker with a plausible adult age; the
-                            // user adjusts from there.
-                            model.config.userDateOfBirth = Calendar.current.date(
-                                byAdding: .year, value: -30, to: Date()) ?? Date()
+                            var calendar = Calendar(identifier: .gregorian)
+                            calendar.timeZone = signedIn ? TimeZone(secondsFromGMT: 0)! : .current
+                            dateOfBirth.wrappedValue = calendar.startOfDay(for: calendar.date(byAdding: .year, value: -30, to: Date()) ?? Date())
                         }
                     }
                 }
-                Picker("Biological sex", selection: $model.config.userBiologicalSex) {
+                Picker("Biological sex", selection: biologicalSex) {
                     Text("Not set").tag(String?.none)
                     Text("Female").tag(String?.some("female"))
                     Text("Male").tag(String?.some("male"))
                     Text("Other").tag(String?.some("other"))
                 }
-            } header: {
-                Text("Characteristics")
-            } footer: {
-                Text("Optional. Used for heart-rate zones.")
-            }
+            } header: { Text("Characteristics") }
+            .disabled(account.busy || (signedIn && account.profile == nil))
 
-            Section {
-                TextField("User ID (UUID)", text: $userIDText)
-                    .font(.footnote.monospaced())
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .onChange(of: userIDText) { _, text in
-                        // Only a valid UUID reaches the draft; an in-progress
-                        // edit leaves the applied ID untouched.
-                        if let normalized = AppModel.normalizedUserID(text) {
-                            model.config.userID = normalized
-                        }
+            Section("Advanced") {
+                if signedIn {
+                    if let userID = account.profile?.userID {
+                        LabeledContent("User ID") { Text(userID).font(.footnote.monospaced()).textSelection(.enabled) }
                     }
-                if !userIDValid {
-                    Text("Not a valid UUID.")
-                        .font(.caption).foregroundStyle(.red)
+                } else {
+                    TextField("User ID (UUID)", text: $userIDText)
+                        .font(.footnote.monospaced()).textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .onChange(of: userIDText) { _, text in
+                            if let normalized = AppModel.normalizedUserID(text) { model.config.userID = normalized }
+                        }
+                    if !userIDValid { Text("Not a valid UUID.").font(.caption).foregroundStyle(.red) }
+                    Button("Generate New ID") { userIDText = UUID().uuidString.lowercased() }
                 }
-                Button("Generate New ID") {
-                    userIDText = UUID().uuidString.lowercased()
-                }
-            } header: {
-                Text("Advanced")
-            } footer: {
-                Text("Each person sharing a database needs their own ID.")
             }
+            .disabled(account.busy)
 
             Section {
-                Button("Save & Apply") {
-                    Task { await model.applyConfiguration() }
-                    dismiss()
+                Button(signedIn ? "Save to Account" : "Save & Apply") {
+                    Task {
+                        if signedIn {
+                            guard await account.save(currentPassword: currentPassword) else { return }
+                            currentPassword = ""
+                            // Keep this account's active sync profile consistent with the edit.
+                            // A different database or user retains its separate local identity.
+                            if let profile = account.savedProfile, model.appliedConfig.userID == profile.userID,
+                               model.usesPulsHealthDatabase {
+                                guard await model.updateAppliedAccountProfile(profile) else {
+                                    account.problem = "Your account was saved. Wait for the current sync to finish, then save again to update this iPhone’s sync profile."
+                                    return
+                                }
+                            }
+                            dismiss()
+                        } else if await model.applyConfiguration() { dismiss() }
+                    }
                 }
-                .disabled(!userIDValid)
+                .disabled(!userIDValid || account.busy || signingIn || (signedIn && account.profile == nil))
             }
         }
-        .navigationTitle("User")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
+        .navigationTitle("User").navigationBarTitleDisplayMode(.inline)
+        .task {
             guard !userIDLoaded else { return }
             userIDLoaded = true
             userIDText = model.config.userID
+            await account.restore()
+        }
+    }
+
+    private func signIn() {
+        guard !signingIn else { return }
+        signingIn = true
+        account.problem = nil
+        let attempt = UserAccount.SignIn()
+        Task {
+            defer { signingIn = false }
+            do {
+                let callback = try await webAuthenticationSession.authenticate(
+                    using: attempt.url, callbackURLScheme: PulsHealthDatabase.callbackScheme,
+                    preferredBrowserSession: .shared)
+                await account.finishSignIn(callback, attempt: attempt)
+            } catch {
+                if case .cancelled = PulsHealthDatabase.outcome(ofError: error) { return }
+                account.problem = "Sign-in did not finish. Try again."
+            }
         }
     }
 }

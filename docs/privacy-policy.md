@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-15**
+**Last updated: 2026-10-16**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
@@ -8,6 +8,27 @@ developer's own (the PulsHealth database) — or, if you have
 no database, writes it to files you then save or send yourself. This policy
 describes how the app and hosted service handle your data: it reads Apple Health, it uploads to the one database you set
 up, it exports a file when you ask for one, and it can send a one-time export to a request destination you approve.
+
+Settings → User also offers optional account sign-in independently of database
+sync. It reads your account identity, name, date of birth and biological sex
+from app.pulshealth.com, and sends changes there only when you save them.
+Name, date of birth and biological sex remain optional. Changing your sign-in
+email requires your current password; the app sends it over HTTPS for that
+check and does not persist it. Signing in does not enable Health uploads or
+change your sync destination. The account session credential stays in a
+separate device-only Keychain item; the profile is held in memory while the
+User or managed-server setup page is open. If the same account is also your active sync destination,
+saved edits update that destination's local profile. Signing out removes the
+account credential from this iPhone and requests server-session revocation;
+it does not disconnect an independently configured sync destination. The web
+account page can revoke the iPhone account session too. Account handoff uses
+a five-minute, one-use code bound to a verifier held by this iPhone. The server
+stores only the code hash and verifier challenge, and ordinary session expiry,
+password reset and account disabling apply to the account session.
+Choosing PulsHealth managed hosting reuses this account session to request a
+separate sync credential for your account over HTTPS. If you are signed out,
+the app asks you to sign in first. The connection stays a draft until you tap
+Save & Apply; signing in alone uploads no Health data.
 
 ## The short version
 
@@ -50,15 +71,22 @@ up, it exports a file when you ask for one, and it can send a one-time export to
 - **You choose what is read.** Nothing is read until you pick the data types
   and iOS grants permission, and you can change or revoke that at any time.
 
-## PulsHealth Pro subscriptions
+## PulsHealth Pro purchases
 
-The app offers optional auto-renewing PulsHealth Pro subscriptions through
-Apple's StoreKit framework. Apple processes payments under the Apple Account
+The app offers optional monthly or yearly auto-renewing PulsHealth Pro
+subscriptions and a one-time Lifetime Pro purchase through Apple's StoreKit
+framework. Apple processes payments under the Apple Account
 used for the App Store. The developer does not receive payment-card details.
 The app reads Apple's verified purchase entitlements to decide which features
 are available; it does not send health data, selections, exported files, or
-server credentials to Apple to check a subscription. No third-party purchase
+server credentials to Apple to check a purchase. No third-party purchase
 SDK, receipt server, or new PulsHealth account is used for this.
+
+For the existing-user thank-you, the app checks Apple's verified original app
+build and keeps fixed gift start/end dates and a welcome acknowledgement in a
+separate device-only Keychain item. These contain no health data, are not sent
+to PulsHealth, and do not create an auto-renewing subscription. The expired
+record remains so reopening the app does not restart the gift.
 
 Free access includes Explore, unlimited manual exports of all health data types
 and formats from the most recent 30 days, and automatic sync of up to five
@@ -67,8 +95,12 @@ Apple Health permissions still apply. Data Requests use the manual-export
 history limit. A health type counts once across raw readings and enabled
 aggregates. Subscription expiry keeps saved selections and existing server
 data; a selection over five types pauses syncing until reduced or upgraded.
-Purchasing Pro does not include hosting. Restore Purchases and Manage
-Subscription are available in Settings → Plan.
+Every Pro purchase includes current and future PulsHealth app features;
+PulsHealth server, hosting and other services are separate. Lifetime has no
+renewal or expiry, but a refunded or revoked purchase no longer grants access.
+Buying Lifetime does not cancel an existing subscription; manage its renewal
+separately with Apple. Restore Purchases and Manage Apple Subscriptions are
+available from the plan row in Settings.
 
 ## App Store ratings and reviews
 
@@ -191,8 +223,8 @@ uploaded server data or revoke credentials on the server.
   an individual sample, a timestamp paired with a value, a sample identifier
   or any metadata. These files carry the same protection as the sync state
   (unreadable until the first unlock after a restart, excluded from backups),
-  are rewritten when the type's data changes, and Settings → Privacy & Data →
-  Delete Analysis removes all of them at once.
+  are rewritten when the type's data changes, and are removed when you delete
+  the app.
 - **Logs and background-activity telemetry** — an in-app event log and a record
   of each background wake (when it ran, how long, how many samples moved). They
   stay on the device unless *you* share them from the Activity

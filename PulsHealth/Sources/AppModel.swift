@@ -156,7 +156,7 @@ final class AppModel {
     /// configuration has actually been read.
     var showsOnboarding = false
     /// Whether the flow is a replay on an install that already finished it
-    /// (Settings → Diagnostics). Only a replay gets a Close button — a genuine
+    /// (Settings → About). Only a replay gets a Close button — a genuine
     /// first run walks forward through the steps instead.
     private(set) var onboardingIsRerun = false
     /// A Save & Apply that would point the sync at a different server or user
@@ -250,7 +250,7 @@ final class AppModel {
     }
 
     var reviewRequestsBlocked: Bool {
-        showsPro || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
+        subscriptions.showsGiftWelcome || showsPro || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
             || pairingAwaitsSyncTab || lastErrorMessage != nil || stateFileUnreadable
             || needsAuthorization || isSyncingAll || backfillActive || export.isRunning
             || statuses.contains(where: { $0.activity == .syncing })
@@ -461,7 +461,7 @@ final class AppModel {
     }
 
     /// Marks the first run done and leaves the flow. Durable, so the flow is
-    /// shown exactly once per install; Settings → Diagnostics can replay it.
+    /// shown exactly once per install; Settings → About can replay it.
     func completeOnboarding() {
         defaults.set(true, forKey: Self.onboardingCompletedKey)
         showsOnboarding = false
@@ -481,7 +481,7 @@ final class AppModel {
         onboardingIsRerun = false
     }
 
-    /// Settings → Diagnostics: replay the flow on a configured install. Nothing
+    /// Settings → About: replay the flow on a configured install. Nothing
     /// is reset — the existing selection and server stay in the draft.
     func restartOnboarding() {
         onboardingIsRerun = true
@@ -558,6 +558,36 @@ final class AppModel {
         showsPro = true
     }
 
+    /// Reject additions beyond Free's distinct-type allowance, while allowing
+    /// removals from an older over-limit selection and raw/aggregate overlap.
+    func acceptSyncTypeSelection(_ proposed: SyncConfiguration) -> Bool {
+        let current = config.observedTypeIdentifiers
+        let next = proposed.observedTypeIdentifiers
+        guard subscriptions.hasPro || SyncAccessPolicy.free.allows(proposed) || next.isSubset(of: current) else {
+            showPro(.syncTypes(next.count))
+            return false
+        }
+        return true
+    }
+
+    func setSyncRawTypes(_ types: Set<String>) {
+        var proposed = config
+        proposed.enabledTypes = types
+        if acceptSyncTypeSelection(proposed) { config.enabledTypes = types }
+    }
+
+    func syncTypeRequiresPro(_ identifier: String) -> Bool {
+        !subscriptions.hasPro && !config.observedTypeIdentifiers.contains(identifier)
+            && config.observedTypeIdentifiers.count >= 5
+    }
+
+    /// Selection stays editable; execution still checks verified entitlements.
+    func checkExportRangeAccess() {
+        if !subscriptions.hasPro, !SyncAccessPolicy.free.allowsExport(start: export.draft.dates().start) {
+            showPro(.exportHistory)
+        }
+    }
+
     func setSyncStartDate(_ date: Date) {
         // Keep the requested date as an unapplied draft. Free's engine policy
         // and the picker display still clamp history until Pro is verified.
@@ -572,12 +602,14 @@ final class AppModel {
         return count > 5 ? .syncTypes(count) : .syncHistory
     }
 
+    var syncPausedByPlan: Bool {
+        !subscriptions.hasPro && !SyncAccessPolicy.free.allows(appliedConfig)
+    }
+
     var syncPlanNotice: String? {
-        guard !subscriptions.hasPro else { return nil }
+        guard syncPausedByPlan else { return nil }
         let count = appliedConfig.observedTypeIdentifiers.count
-        return count > 5
-            ? "Sync is paused. Your selection has \(count) health data types. Choose up to 5 or upgrade to Pro. Your selection and previously synced data are kept."
-            : "Free sync includes up to 5 health data types and the most recent 30 days. Pro unlocks unlimited types and all available history."
+        return "\(count) health data types selected. Free sync includes 5."
     }
 
     func startExport() {
@@ -765,6 +797,30 @@ final class AppModel {
         guard !authorizationRequested else { return }
         authorizationRequested = true
         defaults.set(true, forKey: "authorizationRequested")
+    }
+
+    /// The server has already saved this account edit. Update only the matching
+    /// active destination's profile, preserving unrelated settings drafts and
+    /// without starting sync or requesting Health permissions.
+    func updateAppliedAccountProfile(_ profile: AccountProfile) async -> Bool {
+        guard usesPulsHealthDatabase, appliedConfig.userID == profile.userID else { return true }
+        guard connectionEditCanStart(), !stateFileUnreadable else { return false }
+        isUpdatingConnection = true
+        defer { isUpdatingConnection = false }
+        var updated = appliedConfig
+        updated.userName = profile.name
+        updated.userEmail = profile.email
+        updated.userDateOfBirth = profile.dateOfBirth
+        updated.userBiologicalSex = profile.biologicalSex
+        guard await engine.configure(updated) else { return false }
+        appliedConfig = await engine.store.configuration
+        if ServerIdentity(configuration: config) == ServerIdentity(configuration: appliedConfig) {
+            config.userName = profile.name
+            config.userEmail = profile.email
+            config.userDateOfBirth = profile.dateOfBirth
+            config.userBiologicalSex = profile.biologicalSex
+        }
+        return true
     }
 
     /// Push the draft to the engine. Returns false when nothing was applied
@@ -1246,7 +1302,7 @@ final class AppModel {
         // the empty default and skip the launch sync.
         await start()
         if trigger == "foreground" {
-            await subscriptions.refreshEntitlements()
+            await subscriptions.beginForegroundVisit()
             // Off the sync's critical path: capabilities only gate UI.
             Task { await refreshServerCapabilities() }
         }
@@ -1590,8 +1646,7 @@ final class AppModel {
         Task { await engine.syncAggregate(configID: id, reason: .manual) }
     }
 
-    /// Settings → Delete Analysis: every stored type profile. Summaries,
-    /// never samples, but still about health data, so there is one switch.
+    /// Remove every stored type profile. These are summaries, never samples.
     func deleteAnalysis() async {
         await explore.deleteAll()
         await engine.eventLog.log(.info, "Stored type analyses deleted")

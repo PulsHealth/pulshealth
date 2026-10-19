@@ -11,6 +11,7 @@ and when, is the [Release record](#release-record) at the bottom.
 | Document | What it is |
 |---|---|
 | [`2.1-copy.md`](2.1-copy.md) | Approved 2.1 copy and the five-card advertising campaign; preparation, not a submission record. |
+| [`2.2-copy.md`](2.2-copy.md) | Prepared Free/Pro description, What's New and reviewer walkthrough for the 2.2 candidate; acceptance and submission remain separate. |
 | [`concepts/review.html`](concepts/review.html) | Offline review gallery: three visual directions, 15 advertising cards, and saved selections. See [`concepts/README.md`](concepts/README.md) for sources and rebuild instructions. |
 | [`subscriptions.md`](subscriptions.md) | Pro product IDs, US prices, feature limits and release acceptance gates; source preparation only. |
 | [`listing.md`](listing.md) | The App Store Connect record: name, subtitle, promotional text, description, keywords, URLs, category, age-rating answers, the App Privacy answer ("Data Linked to You" since 2026-10-02) and its reasoning, and what to do about screenshots. |
@@ -235,6 +236,34 @@ changes, revisit them in the same pull request:
 | What ships to the store | [Release record](#release-record) — these documents describe the shipped binary, not whatever `main` happens to be |
 
 ## Release record
+
+### 2.2 (24) internal TestFlight (2026-10-16)
+
+Build **2.2 (24)** was archived from clean `release-2.2` source
+`da4a1e0f5a647f8d75707bf39e01c20794c537ce`. Apple accepted and processed build
+`fa24eef7-7d24-405b-8c40-2879afc33128`; the existing **PulsHealth** internal
+group (two testers) visibly reports **Testing**. What to Test notes are saved.
+The signed archive, distribution IPA, matching dSYMs, upload diagnostics and
+candidate evidence are retained privately.
+
+This candidate puts Your Own Server first and PulsHealth Managed Server second,
+reuses the Settings account session for an explicit managed-server connection,
+and explains capacity and the signup waitlist only when creating an account.
+The Sync introduction and hosting/Pro comparison copy were shortened.
+
+Signed simulator app checks passed: **89 tests on iOS 27.0**, no skips, and
+**85 on iOS 26.5**, with the four documented StoreKit platform skips.
+The unchanged package tree retains its verified 557-test iOS 27.0 and
+554-pass/three-skip iOS 26.5 evidence. The archive and distribution export have
+valid signatures, matching symbols, the expected privacy manifests and no
+local StoreKit configuration.
+
+**No app or subscription was submitted for App Review, and no backend or site
+was deployed.** The companion viewer's `/api/native/connect` endpoint must be
+deployed before the new managed-server connection can work; this prerequisite
+is included in the beta notes. Physical-device and real sandbox purchase/restore
+acceptance remain unverified for this build.
+
 
 ### 2.2 (23) internal TestFlight (2026-10-15)
 

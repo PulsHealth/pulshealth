@@ -208,6 +208,11 @@ for judging what is.
   Keychain write fails the app parks the token in that protected state file
   instead of dropping it — losing it would stall syncing until the user
   re-entered it — and removes it once the Keychain accepts it.
+- **Complimentary Pro is device-local.** A separate device-only Keychain item
+  holds only fixed gift start/end dates and a welcome acknowledgement. Verified
+  original app builds below 23 qualify; no purchase is started. Failed
+  verification or storage cannot create a grant, and expired records remain
+  to prevent restarting it. This is not account-wide anti-abuse enforcement.
 - **Analysis summaries are derived numbers, never samples.** Analyzing a
   type on the Explore tab stores one small file per type (counts, dates,
   per-day counts, a value histogram and percentiles, and per-source and
@@ -377,3 +382,24 @@ The reference sync ingest endpoint is not a request ZIP receiver. See
 ## Hosted operating procedures
 
 The [hosted operations runbook](docs/hosted-operations.md) defines operator access, deletion escalation, backup expiry, restore-ledger checks and incident handling. The hosted service is not end-to-end encrypted; database administrators remain trusted. Per-account views protect viewer access, not against a compromised application or operator. Late diagnostic writes hold the user lock and require an existing owner, so they cannot recreate account diagnostics after erasure.
+
+## Optional iPhone account access
+
+Settings → User signs in independently of Health sync. A same-origin protected
+browser POST issues a five-minute one-use code with a SHA-256 PKCE challenge;
+the handoff is bound to the live authorizing browser session and cascades away
+on its revocation or password reset. Exchange locks the account before a fresh
+session check, serializing it with resets. The fixed `puls://account` callback carries that code and state, never a session
+credential. The iPhone checks state and exchanges the code with its verifier.
+The resulting normal account session is stored in a separate device-only
+Keychain item, never in sync state. Native profile calls use only a bearer
+session over HTTPS, ignore cookies, and refuse redirects. The explicit managed
+server setup action also uses this bearer at POST /api/native/connect, which
+issues an ordinary scoped device token through the existing connectPhone path.
+It accepts no caller identity and refuses demo sessions. The app validates the
+returned user and PulsHealth domain before staging the pairing for Save & Apply.
+Database-scoped reads
+and `auth.set_my_profile` authorize the session's own user; demo mutations are
+refused. Login email edits require the current password and invalidate pending
+recovery and invitation links. Account UUIDs cannot be edited. Deploy migration
+029 and the 100 grant script, then the viewer, before shipping the client.

@@ -12,13 +12,15 @@ struct ProView: View {
 
     private var store: SubscriptionStore { model.subscriptions }
     private var selectedProduct: Product? {
-        store.products.first { $0.id == selectedID }
-            ?? store.products.first { $0.id == SubscriptionStore.annualID }
-            ?? store.products.first
+        choices.first { $0.id == selectedID }
+            ?? choices.first { $0.id == SubscriptionStore.annualID }
+            ?? choices.first
     }
     private var choices: [Product] {
-        [SubscriptionStore.annualID, SubscriptionStore.monthlyID]
-            .compactMap { id in store.products.first { $0.id == id } }
+        let ids = store.hasPro && store.complimentaryExpiresAt == nil
+            ? [SubscriptionStore.lifetimeID]
+            : [SubscriptionStore.annualID, SubscriptionStore.monthlyID, SubscriptionStore.lifetimeID]
+        return ids.compactMap { id in store.products.first { $0.id == id } }
     }
 
     var body: some View {
@@ -27,6 +29,7 @@ struct ProView: View {
                 Section { ProgressView("Checking your plan") }
             } else if store.hasPro {
                 activePlan
+                if store.plan?.isLifetime != true { purchaseOptions }
             } else {
                 upgrade
             }
@@ -34,12 +37,11 @@ struct ProView: View {
                 Section { Text(message).accessibilityIdentifier("pro.purchaseMessage") }
             }
             accountActions
-            if store.isLoaded && !store.hasPro { freeComparison }
             Section {
                 Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy/")!)
                 Link("Terms of Use", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
             } footer: {
-                Text("Pro unlocks app features. Database hosting is separate, and Apple Health permissions still determine what data you can read.")
+                Text("Pro includes all current and future PulsHealth app features. PulsHealth server, hosting and other services are separate. Apple Health permissions determine what data you can read.")
             }
         }
         .navigationTitle(store.hasPro ? "Your plan" : "PulsHealth Pro")
@@ -53,27 +55,32 @@ struct ProView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await store.refreshEntitlements() } }
         }
+        .task(id: store.isLoaded && store.plan?.isLifetime != true) {
+            if store.isLoaded && store.plan?.isLifetime != true {
+                await store.loadProducts()
+            }
+        }
         .task {
             await store.refreshEntitlements()
-            if !store.hasPro { await store.loadProducts() }
         }
     }
 
     @ViewBuilder private var upgrade: some View {
         Section {
             VStack(alignment: .leading, spacing: 10) {
-                Text(context.title).font(.title2.bold())
+                Text(context.title).font(.largeTitle.bold())
                 Text(context.explanation).foregroundStyle(.secondary)
             }
             .padding(.vertical, 6)
         }
         .listRowBackground(Color.clear)
 
-        Section {
-            benefit("All permitted history", detail: "Export and sync beyond the latest 30 days.", symbol: "clock.arrow.circlepath")
-            benefit("Unlimited automatic-sync types", detail: "Keep every selected health data type in sync.", symbol: "arrow.triangle.2.circlepath")
-        }
+        planComparison
 
+        purchaseOptions
+    }
+
+    @ViewBuilder private var purchaseOptions: some View {
         Section {
             ForEach(choices) { product in
                 Button { selectedID = product.id } label: {
@@ -82,8 +89,8 @@ struct ProView: View {
                             .foregroundStyle(selectedProduct?.id == product.id ? Color.accentColor : .secondary)
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(isAnnual(product) ? "Yearly" : "Monthly").font(.headline)
-                            Text(isAnnual(product) ? "Billed once a year" : "Billed each month")
+                            Text(planName(product)).font(.headline)
+                            Text(isLifetime(product) ? "Pay once, yours for life" : (isAnnual(product) ? "Billed once a year" : "Billed each month"))
                                 .font(.caption).foregroundStyle(.secondary)
                             if dynamicTypeSize.isAccessibilitySize {
                                 Text(product.displayPrice).font(.headline)
@@ -102,18 +109,21 @@ struct ProView: View {
                 .buttonStyle(.plain)
                 .disabled(store.isBusy)
                 .accessibilityAddTraits(selectedProduct?.id == product.id ? [.isSelected] : [])
-                .accessibilityIdentifier(isAnnual(product) ? "pro.annual" : "pro.monthly")
+                .accessibilityIdentifier(isLifetime(product) ? "pro.lifetime" : (isAnnual(product) ? "pro.annual" : "pro.monthly"))
             }
             if store.isBusy { ProgressView("Contacting the App Store") }
             if choices.isEmpty && !store.isBusy {
-                Text("Subscriptions are currently unavailable. You can keep using Free.")
+                Text("Pro purchases are currently unavailable. You can keep using Free.")
                     .foregroundStyle(.secondary)
                 Button("Try again") { Task { await store.loadProducts() } }
             }
         } header: {
             Text("Choose billing")
         } footer: {
-            Text("Both options include the same Pro features.")
+            Text("Every option includes all current and future app features. Server, hosting and other services are separate.")
+            if store.complimentaryExpiresAt != nil {
+                Text("Optional. Your gift continues without a purchase. Buying starts paid access immediately; the gift does not delay subscription billing.")
+            }
         }
 
         if let selected = selectedProduct {
@@ -121,17 +131,24 @@ struct ProView: View {
                 Button {
                     Task { await store.purchase(selected) }
                 } label: {
-                    Text("Subscribe for \(selected.displayPrice) per \(isAnnual(selected) ? "year" : "month")")
+                    Text(isLifetime(selected) ? "Buy Lifetime for \(selected.displayPrice)" : "Subscribe for \(selected.displayPrice) per \(isAnnual(selected) ? "year" : "month")")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(store.isBusy)
-                .accessibilityIdentifier("pro.subscribe")
+                .accessibilityIdentifier(isLifetime(selected) ? "pro.buyLifetime" : "pro.subscribe")
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
             } footer: {
-                Text("Charged to your Apple Account. Renews at \(selected.displayPrice) per \(isAnnual(selected) ? "year" : "month") unless canceled at least 24 hours before the period ends. Manage or cancel in the App Store.")
+                if isLifetime(selected) {
+                    Text("Charged once to your Apple Account. No renewal. Lifetime unlocks all current and future PulsHealth app features; PulsHealth server, hosting and other services are excluded.")
+                    if store.hasPro && store.complimentaryExpiresAt == nil {
+                        Text("Buying Lifetime does not cancel an existing subscription. Manage it in your Apple Account to stop renewal.")
+                    }
+                } else {
+                    Text("Charged to your Apple Account. Renews at \(selected.displayPrice) per \(isAnnual(selected) ? "year" : "month") unless canceled at least 24 hours before the period ends. Manage or cancel in the App Store.")
+                }
             }
         }
     }
@@ -141,14 +158,20 @@ struct ProView: View {
             Label("PulsHealth Pro", systemImage: "checkmark.seal.fill")
                 .font(.title2.bold())
                 .foregroundStyle(Color.accentColor)
-            Text(store.plan?.status ?? "Pro is active")
+            Text(store.complimentaryExpiresAt != nil ? "Complimentary Pro" : (store.plan?.status ?? "Pro is active"))
+            if let end = store.complimentaryExpiresAt {
+                Text("Thanks for being an early PulsHealth user. Enjoy 30 days of Pro on us—no subscription required.")
+                LabeledContent("Access ends", value: end.formatted(date: .abbreviated, time: .omitted))
+                Text("Your gift ends automatically and returns to Free. There is no automatic charge.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
             if let plan = store.plan {
-                LabeledContent("Plan", value: plan.productID == SubscriptionStore.annualID ? "Yearly" : "Monthly")
+                LabeledContent("Plan", value: plan.name)
                 if let date = plan.date {
                     LabeledContent(plan.dateLabel, value: date.formatted(date: .abbreviated, time: .omitted))
                 }
                 Text(plan.explanation).font(.footnote).foregroundStyle(.secondary)
-            } else {
+            } else if store.complimentaryExpiresAt == nil {
                 Text("Pro access is verified. Check your Apple Account for renewal details.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
@@ -168,8 +191,8 @@ struct ProView: View {
 
     private var accountActions: some View {
         Section {
-            if store.hasPro {
-                Link("Manage Subscription", destination: URL(string: "https://apps.apple.com/account/subscriptions")!)
+            if store.hasPro && store.complimentaryExpiresAt == nil {
+                Link("Manage Apple Subscriptions", destination: URL(string: "https://apps.apple.com/account/subscriptions")!)
             }
             Button("Redeem Code") { redeemingCode = true }.disabled(store.isBusy)
             Button("Restore Purchases") { Task { await store.restore() } }.disabled(store.isBusy)
@@ -177,15 +200,60 @@ struct ProView: View {
         }
     }
 
-    private var freeComparison: some View {
-        Section("Included with Free") {
-            benefit("Explore all your data", detail: "All the history Apple Health permits.", symbol: "heart.text.square")
-            benefit("Unlimited recent exports", detail: "Every type from the latest 30 days, as often as you like.", symbol: "square.and.arrow.up")
-            benefit("Raw readings and aggregates", detail: "CSV, JSON and JSONL are all included.", symbol: "chart.bar.xaxis")
-            benefit("Automatic sync", detail: "Up to 5 distinct types from the latest 30 days. Each type counts once across raw readings and aggregates.", symbol: "arrow.triangle.2.circlepath")
+    private var planComparison: some View {
+        Section {
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(spacing: 12) { comparisonCards }
+                } else {
+                    HStack(alignment: .top, spacing: 12) { comparisonCards }
+                }
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+        } footer: {
+            Text("Unlimited means all history Apple Health permits. Both plans include all formats and unlimited file exports.")
         }
     }
 
+    @ViewBuilder private var comparisonCards: some View {
+        comparisonCard("Free", history: "30 days", types: "Up to 5", highlighted: false)
+        comparisonCard("Pro", history: "Unlimited", types: "Unlimited", highlighted: true)
+    }
+
+    private func comparisonCard(_ title: String, history: String, types: String, highlighted: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(title)
+                .font(.headline)
+                .foregroundStyle(highlighted ? Color.accentColor : .secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(history).font(.title2.bold())
+                Text("Export & sync history")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
+            Divider()
+            VStack(alignment: .leading, spacing: 4) {
+                Text(types).font(.headline)
+                Text("Sync data types")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            highlighted ? Color.accentColor.opacity(0.08) : Color(.secondarySystemGroupedBackground),
+            in: RoundedRectangle(cornerRadius: 16))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(title)
+    }
+
+    private func isLifetime(_ product: Product) -> Bool { product.id == SubscriptionStore.lifetimeID }
+    private func planName(_ product: Product) -> String {
+        isLifetime(product) ? "Lifetime" : (isAnnual(product) ? "Yearly" : "Monthly")
+    }
     private func isAnnual(_ product: Product) -> Bool { product.id == SubscriptionStore.annualID }
 
     private func benefit(_ title: String, detail: String, symbol: String) -> some View {

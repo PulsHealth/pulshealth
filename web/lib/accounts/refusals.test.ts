@@ -75,6 +75,8 @@ interface Session {
 }
 
 const ROUTES: Record<string, { methods: Method[]; guard: Guard }> = {
+  "/api/native/profile": { methods: ["GET", "POST", "PUT", "DELETE"], guard: { kind: "oauth" } },
+  "/api/auth/connect-account": { methods: ["POST"], guard: { kind: "session", noSession: "/login?next=%2Faccount" } },
   "/api/health/v1/[...path]": { methods: ["GET"], guard: { kind: "oauth" } },
   "/api/auth/forgot-password": { methods: ["POST"], guard: { kind: "public", why: "Generic response; bounded email recovery requests." } },
   "/api/auth/reset-password": { methods: ["POST"], guard: { kind: "public", why: "Requires expiring one-use recovery token." } },
@@ -270,7 +272,7 @@ describe("proxy.ts in front of every route (accounts mode)", () => {
     }
   });
 
-  it.each(rows.filter((r) => r.method !== "GET" && r.method !== "HEAD"))(
+  it.each(rows.filter((r) => r.method !== "GET" && r.method !== "HEAD" && r.guard.kind !== "oauth"))(
     "$method $path from another origin, or naming none, even with a live session",
     async ({ path, method }) => {
       findSession.mockResolvedValue({ ...SESSION, isAdmin: true });

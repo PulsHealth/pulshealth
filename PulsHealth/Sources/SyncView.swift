@@ -66,10 +66,14 @@ struct SyncView: View {
             if model.appliedConfig.serverURL == nil {
                 SyncIntro { path.append(.server(scan: false, choice: $0)) }
             } else {
+                if model.syncPausedByPlan {
+                    planLimitCard
+                }
                 statusCard
                 limitedHistoryNotice
-                syncNowSection
-                planSection
+                if !model.syncPausedByPlan {
+                    syncNowSection
+                }
                 rawSamplesSection
                 aggregatesSection
             }
@@ -109,39 +113,27 @@ struct SyncView: View {
 
     // MARK: - Status
 
-    @ViewBuilder private var planSection: some View {
-        if let notice = model.syncPlanNotice {
-            let count = model.appliedConfig.observedTypeIdentifiers.count
-            Section {
-                LabeledContent(count > 5 ? "Sync paused" : "Free sync types", value: "\(count) of 5")
-                if count > 5 {
-                    NavigationLink("Edit raw types", value: SyncRoute.rawSamples)
-                    NavigationLink("Edit aggregated types", value: SyncRoute.aggregates)
-                }
-                Button("See Pro options") { model.showPro(model.syncProContext) }
-            } footer: {
-                Text(notice)
-            }
-        }
-    }
-
     private var statusCard: some View {
         let lastSync = model.statuses.compactMap(\.state.lastSyncAt).max()
         let connection = connectionSummary
         return CardSection(host, subtitle: lastSync.map { "Last sync \($0.relativeString)" } ?? "Not synced yet") {
-            if model.typesFailed > 0 {
+            if model.syncPausedByPlan {
+                StatusPill(text: "Sync paused", color: .orange)
+            } else if model.typesFailed > 0 {
                 StatusPill(text: "\(model.typesFailed) failing", color: .red)
             }
         } content: {
             VStack(alignment: .leading, spacing: 3) {
-                StatusDot(text: connection.label, color: connection.color)
+                StatusDot(
+                    text: connection.label,
+                    color: connection.color)
                 if let detail = connection.detail {
                     Text(detail)
                         .font(.caption)
                         .foregroundStyle(connection.color == .red ? Color.red : .secondary)
                         .lineLimit(3)
                 }
-                if let paused = pausedSummary {
+                if !model.syncPausedByPlan, let paused = pausedSummary {
                     Text(paused)
                         .font(.caption)
                         .foregroundStyle(.orange)
@@ -249,6 +241,36 @@ struct SyncView: View {
         }
         return "between " + (summary.earliest..<summary.latest)
             .formatted(.interval.day().month(.abbreviated).year())
+    }
+
+    /// One explanation and two ways forward; connection health stays in the
+    /// database card instead of repeating the plan's pause state there.
+    private var planLimitCard: some View {
+        CardSection("Sync paused", subtitle: model.syncPlanNotice) {
+            Image(systemName: "pause.circle")
+                .font(.title3)
+                .foregroundStyle(.orange)
+                .accessibilityHidden(true)
+        } content: {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) { planLimitActions }
+                VStack(alignment: .leading, spacing: 12) { planLimitActions }
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    @ViewBuilder private var planLimitActions: some View {
+        Menu {
+            Button("Raw Samples", systemImage: "list.bullet.rectangle") { path.append(.rawSamples) }
+            Button("Aggregates", systemImage: "chart.bar.xaxis") { path.append(.aggregates) }
+        } label: {
+            Text("Choose types")
+        }
+        .buttonStyle(.bordered)
+
+        Button("View Pro") { model.showPro(model.syncProContext) }
+            .buttonStyle(.borderedProminent)
     }
 
     private var syncNowSection: some View {

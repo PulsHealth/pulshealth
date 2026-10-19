@@ -35,6 +35,7 @@ Not backlog — things that come due on someone else's schedule.
 
 | Trigger | Do this |
 |---|---|
+| Within 90 days of the first public 2.2 release | Review retirement of the temporary early-user Pro gift in [#290](https://github.com/PulsHealth/pulshealth/issues/290); follow the [staged cleanup plan](appstore/subscriptions.md#retiring-the-gift) and honor active gifts before removing code. |
 | A new iOS runtime | Re-run the app-hosted `AggregateMatrixTests` (378 type×function combos): the legal set is HealthKit's, not ours. |
 | A major Xcode/iOS SDK update | Refresh `010_category_labels.sql` from `HKCategoryValues.h` and check the seed shape (`server/README.md`). |
 | Never yet done on real data | The backup restore drill. CI now runs it on synthetic data (`server/backup/test-restore.sh` in the stack smoke test); the one recorded in `server/README.md` ran against a throwaway stack, and nothing yet verifies that a real install's dump restores. |

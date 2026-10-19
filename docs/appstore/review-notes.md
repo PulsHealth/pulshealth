@@ -255,10 +255,17 @@ See docs/requests.md for the receiver contract. Use synthetic data for review.
 ## Pro subscription candidate (not yet submitted)
 
 See [subscriptions.md](subscriptions.md) for product identifiers and release
-gates. Settings → Plan opens PulsHealth Pro. Free exports include all types and
+gates. The PulsHealth Free/Pro row in Settings opens the plan page. Free exports include all types and
 formats for the most recent 30 days; free automatic sync supports five distinct
 types for that period. Pro unlocks unlimited types and all available history.
 Hosted service billing is not included. Restore Purchases, subscription
 management, renewal terms, privacy and standard EULA links are on the paywall.
 Purchase is optional; Explore and the Free features remain available. Test
 older dates and a sixth sync type to see contextual upgrade explanations.
+
+Existing App Store users whose verified original download build is below 23
+receive 30 complimentary days of Pro from their first foreground opening of
+the update. This gift requires no subscription and has no automatic charge.
+The plan page shows its expiry. New production downloads receive Free; sandbox
+app transactions report original build 1.0 and therefore qualify for testing.
+Paid subscriptions retain priority and their own renewal terms.
