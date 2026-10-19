@@ -36,7 +36,9 @@ The app displays Apple's localized price, not a hard-coded USD amount.
       sandbox device. Verify gift-to-lifetime and subscriber-to-lifetime checkout.
 - [x] Staged the non-consumable with app version 2.2 in the combined review draft
       on 2026-10-19, alongside the subscription group and both subscriptions.
-- [ ] Submit the combined draft and verify approval separately from release.
+- [x] Submitted the combined draft with build 2.2 (28) on 2026-10-19; all five
+      items report Waiting for Review.
+- [ ] Verify approval separately from release.
 
 Lifetime uses only a verified, unrevoked non-consumable current entitlement. It
 has no expiration and takes priority over subscriptions and the early-user gift.
@@ -76,6 +78,16 @@ must pass the real StoreKit lifecycle tests. These skips are a platform test
 limitation, not purchase acceptance on iOS 26.5.
 
 ## Release acceptance
+
+Build **2.2 (28)** received the maintainer's overall physical-device sign-off on
+2026-10-19. Individually confirmed checks were native cancellation, Lifetime
+purchase/relaunch/Restore Purchases, offline Lifetime access, managed browser
+pairing/Save & Apply/upload, and CSV/JSON/JSONL exports opened in Files. The
+private candidate record binds that confirmation to the exported IPA; the
+[release record](README.md#release-record) distinguishes it from simulator/CI
+coverage and from App Review submission. Detailed lifecycle checklist items
+below remain separate evidence rather than being inferred from a happy-path
+purchase or the broad maintainer sign-off.
 
 - [x] Create both products in App Store Connect; configure territories, tax
       category, localizations, subscription review screenshots and descriptions.
@@ -117,8 +129,9 @@ For repeatable immediate resets, use a dedicated Sandbox Apple Account and its
 Clear Purchase History control. Follow
 [Apple's account setup instructions](https://developer.apple.com/documentation/storekit/testing-in-app-purchases-with-sandbox).
 Clearing purchase history does not reset the separate device-local Pro gift.
-- [ ] Submit the first subscription group with a subscription attached to the
-      app version, then verify approval and public availability separately.
+- [x] Submitted the first subscription group, both subscriptions and Lifetime
+      with app version 2.2 (28) on 2026-10-19; all report Waiting for Review.
+- [ ] Verify Apple approval and public release separately.
 
 `PulsHealth/Configuration/Pro.storekit` supplies all three prices for local StoreKit
 tests. It is bundled only with hosted tests and selected by the Debug Run scheme
