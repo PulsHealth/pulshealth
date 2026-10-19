@@ -138,7 +138,7 @@ final class AppModelTests: XCTestCase {
             defaults: defaults,
             healthAccess: access,
             capabilitiesReader: NoCapabilities(),
-            subscriptions: subscriptions ?? SubscriptionStore(entitlementReader: { pro }))
+            subscriptions: subscriptions ?? SubscriptionStore(entitlementReader: { pro }, productReader: { [] }))
         cleanups.append {
             await engine.stopObserving()
             defaults.removePersistentDomain(forName: suite)
@@ -149,7 +149,7 @@ final class AppModelTests: XCTestCase {
 
     func testComplimentaryPlanRendersOnPhoneAndAtLargeText() async throws {
         let gift = EarlyUserProGift(storage: InMemoryTokenStore(), eligibilityReader: { true })
-        let subscriptions = SubscriptionStore(entitlementReader: { false }, earlyUserGift: gift)
+        let subscriptions = SubscriptionStore(entitlementReader: { false }, earlyUserGift: gift, productReader: { [] })
         await subscriptions.beginForegroundVisit()
         defer { subscriptions.stop() }
         let h = try await makeModel(subscriptions: subscriptions)
@@ -180,7 +180,7 @@ final class AppModelTests: XCTestCase {
 
     func testGiftWelcomeScreenshots() async throws {
         let gift = EarlyUserProGift(storage: InMemoryTokenStore(), eligibilityReader: { true })
-        let subscriptions = SubscriptionStore(entitlementReader: { false }, earlyUserGift: gift)
+        let subscriptions = SubscriptionStore(entitlementReader: { false }, earlyUserGift: gift, productReader: { [] })
         await subscriptions.beginForegroundVisit()
         defer { subscriptions.stop() }
         let h = try await makeModel(flags: ["onboardingCompleted": true], subscriptions: subscriptions)

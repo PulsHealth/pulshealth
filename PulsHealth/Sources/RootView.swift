@@ -20,7 +20,20 @@ struct RootView: View {
     @State private var selection: Tab = Tab.initial
     /// Owned here rather than by SyncView so an accepted pairing link can pop
     /// whatever the Sync tab had pushed and land on its Database screen.
-    @State private var syncPath: [SyncRoute] = []
+    @State private var syncPath: [SyncRoute] = {
+        #if DEBUG
+        // Open the real setup screens for repeatable simulator captures.
+        if let destination = UserDefaults.standard.string(forKey: "PulsInitialServer") {
+            let choice: DatabaseDestination? = switch destination {
+            case "own": .own
+            case "managed": .pulsHealth
+            default: nil
+            }
+            return [.server(scan: false, choice: choice)]
+        }
+        #endif
+        return []
+    }()
     /// Debug builds accept `-PulsInitialType <identifier>` alongside
     /// `-PulsInitialTab explore`, so a scripted run can screenshot a Type page.
     @State private var explorePath: [ExploreRoute] = {

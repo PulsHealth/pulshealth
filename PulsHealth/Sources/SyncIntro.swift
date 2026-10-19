@@ -20,21 +20,21 @@ struct SyncIntro: View {
 
     var body: some View {
         hero
-        highlights
         choices
+        highlights
     }
 
     // MARK: - Hero
 
     private var hero: some View {
         Section {
-            VStack(spacing: 14) {
+            VStack(spacing: 10) {
                 ZStack {
                     Circle()
                         .fill(.tint.opacity(0.12))
-                        .frame(width: 96, height: 96)
+                        .frame(width: 64, height: 64)
                     Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 44, weight: .semibold))
+                        .font(.system(size: 32, weight: .semibold))
                         .foregroundStyle(.tint)
                         .symbolEffect(.bounce, value: heroAppeared)
                 }
@@ -42,11 +42,6 @@ struct SyncIntro: View {
                 Text("Always in Sync")
                     .font(.title.bold())
                     .accessibilityAddTraits(.isHeader)
-                Text("PulsHealth keeps a live copy of your Health data in a database. New data syncs by itself in the background, so it is always up to date and yours to use however you like.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 8)
@@ -99,34 +94,19 @@ struct SyncIntro: View {
 
     @ViewBuilder private var choices: some View {
         choiceCard(
-            symbol: "person.crop.circle.fill", color: .accentColor,
-            title: "PulsHealth Database",
-            detail: "Hosted for you. Sign in to start syncing, see your data at app.pulshealth.com, and connect your AI assistant.",
-            header: "Choose Where to Sync"
-        ) {
-            Button {
-                choose(.pulsHealth)
-            } label: {
-                Text("Sign In or Create Account")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-        }
-        choiceCard(
             symbol: "externaldrive.connected.to.line.below.fill", color: .green,
-            title: "Your Own Database",
-            detail: "Run the open-source PulsHealth server on a computer or cloud you control, and connect to it with its pairing code.",
-            footer: "Optional. Exploring and exporting never need a database, and you can switch later."
+            title: "Your Own Server",
+            detail: "Connect the open-source PulsHealth server you run on your own computer or cloud.",
+            header: "Choose Where to Sync"
         ) {
             VStack(spacing: 10) {
                 Button {
                     choose(.own)
                 } label: {
-                    Text("Connect Your Database")
+                    Text("Connect Your Server")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 // Opens in Safari, like the app's other documentation links.
                 Link(destination: Self.selfHostURL) {
@@ -141,6 +121,20 @@ struct SyncIntro: View {
                 // anywhere in it to both.
                 .buttonStyle(.borderless)
             }
+        }
+        choiceCard(
+            symbol: "cloud.fill", color: .accentColor,
+            title: "PulsHealth Managed Server",
+            detail: "Your Health data hosted for you, with no server to set up."
+        ) {
+            Button {
+                choose(.pulsHealth)
+            } label: {
+                Text("Use PulsHealth Server")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
         }
     }
 

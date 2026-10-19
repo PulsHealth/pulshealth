@@ -1,7 +1,23 @@
 {
   "identifier": "0D67671E-E330-4384-A4A5-80D18FB67B71",
   "nonRenewingSubscriptions": [],
-  "products": [],
+  "products": [
+    {
+      "displayPrice": "20.00",
+      "familyShareable": false,
+      "internalID": "10000004",
+      "localizations": [
+        {
+          "description": "All app features for life. Server/services excluded.",
+          "displayName": "PulsHealth Pro Lifetime",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.pulsHealth.PulsHealth.pro.lifetime",
+      "referenceName": "Pro lifetime",
+      "type": "NonConsumable"
+    }
+  ],
   "settings": {
     "_applicationInternalID": "",
     "_developerTeamID": "",

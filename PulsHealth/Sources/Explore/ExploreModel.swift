@@ -185,7 +185,7 @@ final class ExploreModel {
         tasks[id]?.cancel()
     }
 
-    /// Settings → Delete Analysis: every stored profile, and nothing else.
+    /// Remove every stored profile, and nothing else.
     func deleteAll() async {
         for task in tasks.values { task.cancel() }
         await store.removeAll()

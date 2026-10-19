@@ -34,6 +34,7 @@ struct ServerSettingsView: View {
     @State private var destinationToSwitch: SavedSyncDestination?
     @State private var destinationToUnpair: SavedSyncDestination?
     @State private var loaded = false
+    @State private var showSignupNotice = false
     /// Outcome of the last Test Connection for the values currently entered;
     /// cleared whenever they change.
     @State private var connectionTest = DatabaseConnectionTest()
@@ -54,6 +55,12 @@ struct ServerSettingsView: View {
             case .own: ownDatabaseSections
             case nil: EmptyView()
             }
+        }
+        .task(id: setup.destination) {
+            guard setup.destination == .pulsHealth, setup.signedIn == nil,
+                  !model.usesPulsHealthDatabase else { return }
+            guard sheetOpenOn == nil else { return }
+            openSheet(on: PulsHealthDatabase.connectURL)
         }
         .disabled(model.isUpdatingConnection)
         .navigationTitle("Database")
@@ -86,6 +93,12 @@ struct ServerSettingsView: View {
         // it cannot come up over this sheet.
         .onChange(of: model.pairingLinkPrompt) { _, prompt in
             if prompt != nil { showScanner = false }
+        }
+        .alert("Currently Full", isPresented: $showSignupNotice) {
+            Button("Create Account & Join Waitlist") { openSheet(on: PulsHealthDatabase.signUpURL) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("PulsHealth hosting is currently full. Create an account request to join the waitlist. We’ll email you when a spot is available so you can finish setting up your account.")
         }
         .sheet(isPresented: $showScanner) {
             PairingScannerView { applyPairing($0) }
@@ -186,13 +199,13 @@ struct ServerSettingsView: View {
     private var destinationSection: some View {
         Section {
             destinationRow(
-                .pulsHealth, title: "PulsHealth Database",
-                detail: "Hosted for you. Sign in or create an account.",
-                symbol: "person.crop.circle")
-            destinationRow(
-                .own, title: "Your Own Database",
-                detail: "One you run yourself, connected with its pairing code.",
+                .own, title: "Your Own Server",
+                detail: "Connect a server you run and control.",
                 symbol: "externaldrive.connected.to.line.below")
+            destinationRow(
+                .pulsHealth, title: "PulsHealth Managed Server",
+                detail: "Sign in and connect to your PulsHealth server.",
+                symbol: "cloud")
         } header: {
             Text(model.savedDestinations.isEmpty ? "Sync To" : "Add or Edit a Database")
         } footer: {
@@ -223,7 +236,7 @@ struct ServerSettingsView: View {
                     Image(systemName: symbol)
                 }
                 Spacer()
-                if setup.destination == choice {
+                if isSelected(choice) {
                     Image(systemName: "checkmark")
                         .fontWeight(.semibold)
                         .foregroundStyle(.tint)
@@ -232,7 +245,11 @@ struct ServerSettingsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(setup.destination == choice ? .isSelected : [])
+        .accessibilityAddTraits(isSelected(choice) ? .isSelected : [])
+    }
+
+    private func isSelected(_ choice: DatabaseDestination) -> Bool {
+        setup.destination == choice
     }
 
     // MARK: - PulsHealth database
@@ -296,47 +313,24 @@ struct ServerSettingsView: View {
 
         } else {
             Section {
-                Text("Keep a live copy of your Health data, see it on the web at app.pulshealth.com, and connect Claude or another AI assistant to it.")
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("The PulsHealth database is run by the app’s developer, who can access what is stored in it and uses it only to show it back to you.")
-                    .fixedSize(horizontal: false, vertical: true)
-                Link(destination: PulsHealthDatabase.privacyURL) {
-                    Label("What the Developer Holds", systemImage: "hand.raised")
+                Button {
+                    openSheet(on: PulsHealthDatabase.connectURL)
+                } label: {
+                    Label("Connect PulsHealth Server", systemImage: "person.crop.circle")
                 }
-            } header: {
-                Text("About the PulsHealth Database")
-            }
-            Section {
-                sheetButton("Sign In to PulsHealth", systemImage: "person.crop.circle.badge.checkmark",
-                            page: PulsHealthDatabase.connectURL)
-                sheetButton("Create Account", systemImage: "person.crop.circle.badge.plus",
-                            page: PulsHealthDatabase.signUpURL)
+                .disabled(sheetOpenOn != nil)
+                Button { showSignupNotice = true } label: {
+                    Label("Create Account", systemImage: "person.crop.circle.badge.plus")
+                }
+                .disabled(sheetOpenOn != nil)
+                if sheetOpenOn != nil { ProgressView("Connecting your account…") }
                 if let signInProblem {
-                    Label(signInProblem, systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.red)
+                    Text(signInProblem).font(.caption).foregroundStyle(.red)
                 }
             } footer: {
-                Text("Sign in and tap Connect this iPhone to return here. Then tap Save & Apply to start syncing. New here? Create an account first.")
+                Text("Sign in and tap Connect this iPhone in the browser. Then tap Save & Apply here to start syncing.")
             }
         }
-    }
-
-    /// A row that opens one of the viewer's pages in the sign-in sheet, with a
-    /// spinner while that sheet is up.
-    private func sheetButton(_ title: String, systemImage: String, page: URL) -> some View {
-        Button {
-            openSheet(on: page)
-        } label: {
-            HStack {
-                Label(title, systemImage: systemImage)
-                if sheetOpenOn == page {
-                    Spacer()
-                    ProgressView()
-                }
-            }
-        }
-        .disabled(sheetOpenOn != nil)
     }
 
     // MARK: - Your own database
