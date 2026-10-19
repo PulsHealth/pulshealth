@@ -103,7 +103,7 @@ targets:
         # upload whose build number it has already accepted. The store holds
         # 2.0 (21) was accepted; this is the next 2.1 source candidate. See the release record and bump
         # both here before every archive.
-        CURRENT_PROJECT_VERSION: 25
+        CURRENT_PROJECT_VERSION: 26
         MARKETING_VERSION: 2.2
         # The tint every control takes (Assets.xcassets/AccentColor): the blue
         # of the logo's pulse line, a shade lighter in dark mode.
