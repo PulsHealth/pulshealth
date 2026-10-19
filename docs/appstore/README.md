@@ -237,6 +237,30 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.2 (28) validated internal TestFlight (2026-10-19)
+
+Build **2.2 (28)** was archived from clean source
+`644f0eeaf20b87edc6b23996dbd5a5a4821fe6b8`. Apple processed the build, and the
+existing internal group reports **Testing**. The signed archive, distribution
+IPA, matching dSYMs, privacy/signing verification and candidate evidence are
+retained privately. Build 28 replaces build 27 in the combined App Review draft
+with the subscription group, Monthly, Yearly and Lifetime. **The draft has not
+been submitted; this is not a public release.**
+
+Build 28 adds native Apple subscription management on iPhone/iPad so regular
+Apple Account TestFlight subscriptions can be canceled inside the app. The
+maintainer confirmed cancellation, Lifetime purchase followed by relaunch and
+Restore Purchases, offline Lifetime access, managed-server browser return,
+Save & Apply and upload, and CSV/JSON/JSONL exports opened in Files. The
+maintainer also explicitly signed off all physical checks. These are
+maintainer-confirmed device results, distinct from automated evidence.
+
+All **103 signed iOS 27 app tests passed** locally. The unchanged package retains
+the build 27 **567-pass iOS 27** and **564-pass/three-platform-skip iOS 26.5**
+evidence. Release-candidate CI passed on both Xcode 26.5 and 27.0. Pricing and
+privacy pages retain the previously verified deployment; no backend deployment
+was performed for build 28.
+
 ### 2.2 (27) internal TestFlight (2026-10-19)
 
 Build **2.2 (27)** was archived from clean source
