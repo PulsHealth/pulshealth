@@ -77,6 +77,16 @@ limitation, not purchase acceptance on iOS 26.5.
 
 ## Release acceptance
 
+Build **2.2 (28)** received the maintainer's overall physical-device sign-off on
+2026-10-19. Individually confirmed checks were native cancellation, Lifetime
+purchase/relaunch/Restore Purchases, offline Lifetime access, managed browser
+pairing/Save & Apply/upload, and CSV/JSON/JSONL exports opened in Files. The
+private candidate record binds that confirmation to the exported IPA; the
+[release record](README.md#release-record) distinguishes it from simulator/CI
+coverage and from App Review submission. Detailed lifecycle checklist items
+below remain separate evidence rather than being inferred from a happy-path
+purchase or the broad maintainer sign-off.
+
 - [x] Create both products in App Store Connect; configure territories, tax
       category, localizations, subscription review screenshots and descriptions.
       Group ID `22482263`; monthly Apple ID `6823288020`, annual `6823289442`.
