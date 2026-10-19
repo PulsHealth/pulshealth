@@ -28,8 +28,8 @@ Style A campaign while preserving the site's dark shell. Regenerate the tracked
 social sharing card with `cd site && bun scripts/gen-social-card.tsx` when that
 message changes.
 
-Subscription details stay out of the primary navigation: a short homepage note
-links to `/pro/`, and the footer links to Pro and `/pricing/`. These two compact
+Subscription details stay out of the primary navigation; the footer links to
+Pro and `/pricing/`. These two compact
 pages explain full available history, all supported sync types, and the Free
 limits. Prices follow `docs/appstore/subscriptions.md`; the app displays Apple’s
 localized price. Hosting is separate, and the database remains open source and
