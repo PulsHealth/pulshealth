@@ -138,7 +138,7 @@ final class AppModelTests: XCTestCase {
             defaults: defaults,
             healthAccess: access,
             capabilitiesReader: NoCapabilities(),
-            subscriptions: subscriptions ?? SubscriptionStore(entitlementReader: { pro }))
+            subscriptions: subscriptions ?? SubscriptionStore(entitlementReader: { pro }, productReader: { [] }))
         cleanups.append {
             await engine.stopObserving()
             defaults.removePersistentDomain(forName: suite)
@@ -149,7 +149,7 @@ final class AppModelTests: XCTestCase {
 
     func testComplimentaryPlanRendersOnPhoneAndAtLargeText() async throws {
         let gift = EarlyUserProGift(storage: InMemoryTokenStore(), eligibilityReader: { true })
-        let subscriptions = SubscriptionStore(entitlementReader: { false }, earlyUserGift: gift)
+        let subscriptions = SubscriptionStore(entitlementReader: { false }, earlyUserGift: gift, productReader: { [] })
         await subscriptions.beginForegroundVisit()
         defer { subscriptions.stop() }
         let h = try await makeModel(subscriptions: subscriptions)
@@ -176,6 +176,42 @@ final class AppModelTests: XCTestCase {
             XCTAssertNil(subscriptions.plan, "A gift must not invent a subscription")
             window.isHidden = true
         }
+    }
+
+    func testGiftWelcomeScreenshots() async throws {
+        let gift = EarlyUserProGift(storage: InMemoryTokenStore(), eligibilityReader: { true })
+        let subscriptions = SubscriptionStore(entitlementReader: { false }, earlyUserGift: gift, productReader: { [] })
+        await subscriptions.beginForegroundVisit()
+        defer { subscriptions.stop() }
+        let h = try await makeModel(flags: ["onboardingCompleted": true], subscriptions: subscriptions)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        let controller = UIHostingController(rootView: RootView().environment(h.model))
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        controller.view.frame = window.bounds
+        window.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(700))
+        XCTAssertTrue(subscriptions.showsGiftWelcome)
+        XCTAssertFalse(h.model.showsOnboarding)
+        func capture(_ name: String) {
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = name
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+        capture("gift_welcome_first_open")
+        subscriptions.dismissGiftWelcome()
+        h.model.showPro()
+        try await Task.sleep(for: .milliseconds(700))
+        XCTAssertTrue(h.model.showsPro)
+        XCTAssertFalse(subscriptions.showsGiftWelcome)
+        capture("gift_plan_after_view_gift")
+        window.isHidden = true
     }
 
     func testFreeHistoricalExportPromptsBeforeHealthAccess() async throws {

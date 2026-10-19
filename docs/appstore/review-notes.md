@@ -255,7 +255,7 @@ See docs/requests.md for the receiver contract. Use synthetic data for review.
 ## Pro subscription candidate (not yet submitted)
 
 See [subscriptions.md](subscriptions.md) for product identifiers and release
-gates. Settings → Plan opens PulsHealth Pro. Free exports include all types and
+gates. The PulsHealth Free/Pro row in Settings opens the plan page. Free exports include all types and
 formats for the most recent 30 days; free automatic sync supports five distinct
 types for that period. Pro unlocks unlimited types and all available history.
 Hosted service billing is not included. Restore Purchases, subscription
