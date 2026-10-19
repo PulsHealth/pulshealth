@@ -88,7 +88,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
 
 - **App access is checked by the engine, including background launches.**
   `PulsHealthApp` supplies the live `SyncAccessPolicy` from verified StoreKit
-  subscriptions or an active device-local early-user gift. The gift starts
+  subscriptions or a lifetime non-consumable purchase or an active device-local early-user gift. The gift starts
   only on a foreground visit, persists fixed 30-day dates in a separate
   device-only Keychain item, and is checked for expiry on every policy read; the
   standalone package remains unrestricted by default. Free sync supports five

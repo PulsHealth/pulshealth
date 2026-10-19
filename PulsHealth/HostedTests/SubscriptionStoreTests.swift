@@ -81,6 +81,18 @@ final class SubscriptionStoreTests: XCTestCase {
         XCTAssertEqual(policy, expected ? .unrestricted : .free, file: file, line: line)
     }
 
+    private func assertPlan(_ productID: String, store: SubscriptionStore,
+                            file: StaticString = #filePath, line: UInt = #line) async throws {
+        // Pro can remain active while StoreKit replaces its source (for
+        // example, subscription to lifetime). Wait for that plan, not hasPro.
+        for _ in 0..<40 {
+            await store.refreshEntitlements()
+            if store.plan?.productID == productID { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertEqual(store.plan?.productID, productID, file: file, line: line)
+    }
+
     func testOverlappingRefreshNeverGrantsPolicyFromStaleUIState() async throws {
         let source = OverlappingEntitlements()
         let store = SubscriptionStore(entitlementReader: { await source.read() })
@@ -112,7 +124,7 @@ final class SubscriptionStoreTests: XCTestCase {
         defer { store.stop() }
         await assertAccess(false, store: store)
         await store.loadProducts()
-        XCTAssertEqual(store.products.count, 2)
+        XCTAssertEqual(store.products.count, 3)
         let monthly = try XCTUnwrap(store.products.first { $0.id == SubscriptionStore.monthlyID })
         let annual = try XCTUnwrap(store.products.first { $0.id == SubscriptionStore.annualID })
         XCTAssertEqual(monthly.price, Decimal(string: "1.99"))
@@ -175,6 +187,70 @@ final class SubscriptionStoreTests: XCTestCase {
         }
         XCTAssertTrue(store.hasPro, "The original gift remains available after paid access ends")
         XCTAssertEqual(store.complimentaryExpiresAt, deadline, "A purchase must not restart or extend the gift")
+    }
+
+    func testLifetimePurchaseRestoreCoexistsWithSubscriptionExpiryAndRefund() async throws {
+        let session = try session()
+        defer { session.clearTransactions() }
+        let store = makeStore(session: session)
+        await store.start()
+        defer { store.stop() }
+        await store.loadProducts()
+        let lifetime = try XCTUnwrap(store.products.first { $0.id == SubscriptionStore.lifetimeID })
+        XCTAssertEqual(lifetime.type, .nonConsumable)
+        XCTAssertEqual(lifetime.price, Decimal(string: "20.00"))
+        // An expired subscription must not mask a permanent purchase.
+        _ = try await session.buyProduct(identifier: SubscriptionStore.monthlyID)
+        await store.purchase(lifetime)
+        await assertAccess(true, store: store)
+        try await assertPlan(SubscriptionStore.lifetimeID, store: store)
+        XCTAssertEqual(store.plan?.name, "Lifetime")
+        XCTAssertEqual(store.plan?.status, "Lifetime Pro")
+        XCTAssertNil(store.plan?.date)
+        try session.expireSubscription(productIdentifier: SubscriptionStore.monthlyID)
+        await assertAccess(true, store: store)
+        try await assertPlan(SubscriptionStore.lifetimeID, store: store)
+        XCTAssertEqual(store.plan?.isLifetime, true)
+
+        let restored = makeStore(session: session)
+        await restored.restore()
+        await assertAccess(true, store: restored)
+        XCTAssertEqual(restored.plan?.isLifetime, true)
+        let purchase = try XCTUnwrap(session.allTransactions().first {
+            $0.productIdentifier == SubscriptionStore.lifetimeID
+        })
+        try session.refundTransaction(identifier: purchase.identifier)
+        await assertAccess(false, store: store)
+        XCTAssertNil(store.plan)
+    }
+
+    func testLifetimeRefundFallsBackToActiveSubscription() async throws {
+        let session = try session()
+        defer { session.clearTransactions() }
+        let store = makeStore(session: session)
+        _ = try await session.buyProduct(identifier: SubscriptionStore.annualID)
+        let lifetime = try await session.buyProduct(identifier: SubscriptionStore.lifetimeID)
+        await assertAccess(true, store: store)
+        try await assertPlan(SubscriptionStore.lifetimeID, store: store)
+        XCTAssertEqual(store.plan?.isLifetime, true)
+        try session.refundTransaction(identifier: UInt(lifetime.id))
+        await assertAccess(true, store: store)
+        try await assertPlan(SubscriptionStore.annualID, store: store)
+    }
+
+    func testPendingLifetimeDoesNotGrantAccess() async throws {
+        let session = try session()
+        defer { session.clearTransactions() }
+        let store = SubscriptionStore(purchaseAction: { _ in .pending }, restoreAction: {})
+        await store.loadProducts()
+        let lifetime = try XCTUnwrap(store.products.first { $0.id == SubscriptionStore.lifetimeID })
+        await store.purchase(lifetime)
+        await assertAccess(false, store: store)
+        XCTAssertTrue(store.message?.contains("pending") == true)
+        _ = try await session.buyProduct(identifier: SubscriptionStore.lifetimeID)
+        await assertAccess(true, store: store)
+        try await assertPlan(SubscriptionStore.lifetimeID, store: store)
+        XCTAssertEqual(store.plan?.isLifetime, true)
     }
 
     func testPendingWaitsForVerifiedPurchaseAndRefundRemovesAccess() async throws {
