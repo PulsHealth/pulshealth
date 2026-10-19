@@ -134,3 +134,36 @@ Release acceptance still needs a physical-device check of an actual pre-Pro
 App Store download versus a fresh download, first foreground activation,
 offline relaunch, deadline expiry, and paid-subscription priority. Document the
 gift in App Review notes; no App Store Connect subscription offer is needed.
+
+### Retiring the gift
+
+This is temporary launch-transition code. Track its retirement in
+[issue #290](https://github.com/PulsHealth/pulshealth/issues/290). Review it
+**within 90 days of the first public App Store release of 2.2**. When that
+release is verified, record the actual release date and review date in the
+issue. A source merge or TestFlight upload does not start this clock. The
+review is a maintenance checkpoint, not an automatic access cutoff.
+
+There is currently **no global activation deadline**: a pre-Pro user can open
+the update much later and still start 30 days. Therefore, do not delete the
+feature just because 30 days have passed since launch.
+
+Retire it in stages:
+
+1. Decide and document when new gifts stop being issued. Account for users
+   upgrading from older app builds that can still create gift records.
+2. Continue honoring every already-started gift through its fixed expiry.
+   Keep any compatibility reader/migration needed for late upgrades; do not
+   shorten an active gift or change paid subscription access.
+3. Once that transition is safe, remove gift-only activation and eligibility
+   (`EarlyUserProGift`), `SubscriptionStore` fallback/expiry tasks, welcome and
+   plan UI in `RootView`, `ProView` and `SettingsView`, and gift-specific tests.
+   Preserve saved selections, uploaded data and ordinary StoreKit purchase,
+   renewal, restore and offer-code behavior.
+4. Update this guide, the app README, privacy/security documentation, App
+   Review notes and the maintenance reference in `docs/roadmap.md` together.
+   Retain any required redeemed marker or expiry migration; deleting the
+   Keychain record or reusing its identifier must not restart the promotion.
+
+No eligibility, duration or cutoff behavior changes are authorized by this
+cleanup reminder. Those belong in the later retirement change.
