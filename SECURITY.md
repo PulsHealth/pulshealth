@@ -393,7 +393,12 @@ session check, serializing it with resets. The fixed `puls://account` callback c
 credential. The iPhone checks state and exchanges the code with its verifier.
 The resulting normal account session is stored in a separate device-only
 Keychain item, never in sync state. Native profile calls use only a bearer
-session over HTTPS, ignore cookies, and refuse redirects. Database-scoped reads
+session over HTTPS, ignore cookies, and refuse redirects. The explicit managed
+server setup action also uses this bearer at POST /api/native/connect, which
+issues an ordinary scoped device token through the existing connectPhone path.
+It accepts no caller identity and refuses demo sessions. The app validates the
+returned user and PulsHealth domain before staging the pairing for Save & Apply.
+Database-scoped reads
 and `auth.set_my_profile` authorize the session's own user; demo mutations are
 refused. Login email edits require the current password and invalidate pending
 recovery and invitation links. Account UUIDs cannot be edited. Deploy migration

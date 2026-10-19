@@ -16,9 +16,9 @@ enum ProContext: Equatable {
 
     var explanation: String {
         switch self {
-        case .plan: "Go beyond the most recent 30 days, with unlimited health data types for automatic sync."
+        case .plan: "Export your history. Keep every health data type in sync."
         case .exportHistory: "Your export selection is saved. Pro lets you include older Apple Health data."
-        case .syncTypes: "Free automatic sync includes 5 distinct types. Pro keeps your full selection available. Raw readings and aggregates of the same type count once."
+        case .syncTypes: "Keep your full selection with unlimited automatic sync types."
         case .syncHistory: "Pro removes the app’s 30-day history limit for automatic sync."
         case .dataRequestHistory: "Pro includes older Apple Health data in one-time exports and Data Requests."
         }

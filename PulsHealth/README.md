@@ -7,7 +7,15 @@ package; this app is configuration, visibility, and lifecycle wiring. See
 
 Sync, export, and control Apple Health data: explore on the phone, export CSV,
 JSON or JSONL without an account, and sync to a self-managed database or a
-compatible receiver. PulsHealth also offers hosted accounts.
+compatible receiver. Sync setup lists Your Own Server first and PulsHealth Managed Server second.
+Selecting managed hosting immediately shows its checkmark and opens the browser
+connection page. Sign in there and tap Connect this iPhone to return a pairing
+code directly to the app. An existing browser session is reused. This flow does
+not depend on the newer native account/profile endpoints being deployed.
+The app tests the connection and presents Save & Apply; only that action enables
+sync. Closing the browser without pairing explains that this iPhone is not yet
+connected. Create Account explains that hosting is currently full and opens the
+signup waitlist; users are notified by email after approval.
 
 Published as
 [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) on the App
@@ -48,7 +56,7 @@ third-party SDK is added.
 
 ## User settings and account identity
 
-Settings → User offers optional PulsHealth account sign-in without enabling
+Settings shows the signed-in account’s saved name and email; its User page offers optional PulsHealth account sign-in without enabling
 Health sync or changing the chosen database. Signed out, identity and
 characteristics stay optional local settings and Advanced permits editing the
 UUID. Signed in, the page loads the account's identity and optional profile,
@@ -220,12 +228,12 @@ Sources/
 │                         until Show All; pull-to-refresh and the error alert;
 │                         then rows to Database and Activity. The
 │                         PendingChangesBar sits on this tab.
-├── ServerSettingsView.swift  Sync → Database: first the choice, PulsHealth
-│                         Database or Your Own Database (none checked until
-│                         one is applied). PulsHealth: who holds the data
-│                         (What the Developer Holds), Sign In to PulsHealth
-│                         and Create Account (both in the web authentication
-│                         sheet), then the returned code — its database named
+├── ServerSettingsView.swift  Sync → Database: Your Own Server first, then
+│                         PulsHealth Managed Server (none checked until
+│                         authenticated). Managed: restores the Settings account or
+│                         opens sign-in; Use PulsHealth Server pairs with its native credential.
+│                         Create Account explains full capacity and the waitlist.
+│                         Pairing returns a code — its database named
 │                         — tested above Save & Apply; once applied, Manage
 │                         Account, Connect an AI Assistant (docs, in
 │                         Safari). Saved Databases offers Switch and Unpair. Account deletion stays
@@ -306,21 +314,25 @@ Sources/
 │                         (`TypeSyncStatus.cooldownUntil`) reads "Paused until
 │                         <time>" here, in its TypeRow and on the status card,
 │                         next to its error, and Sync Now is the way out.
-├── SettingsView.swift    User row, Sync (start date, backfill trigger, reset
+├── SettingsView.swift    PulsHealth Free/Pro plan row, User row, Data Requests
+│                         (create or open/scan a request, with a group-use
+│                         explanation), Sync (start date, backfill trigger, reset
 │                         all anchors — shown only once a server is applied),
 │                         Performance (concurrency, batch size), Save & Apply
 │                         (only while those or the User page have unapplied
 │                         edits), Privacy & Data (Health Access, which opens
 │                         the app's page in iOS Settings; delete a staged
-│                         export; Delete Analysis — every stored type
-│                         summary), Diagnostics (benchmark, "Validate
-│                         Aggregate Functions", replay onboarding) and About
-│                         (version, and four Links — the documentation, the
+│                         export), Developer (benchmark and "Validate Aggregate
+│                         Functions", visible only in Developer Mode) and About
+│                         (version, replay onboarding, Write a Review and four
+│                         Links — the documentation, the
 │                         privacy policy, the GitHub repository and its issue
 │                         tracker — that open in Safari). Privacy & Data also
-│                         carries Delete PulsHealth Account, always. No
-│                         footers. Also
-│                         UserView and the server-change prompt. The
+│                         carries Delete PulsHealth Account, always. Tap Version
+│                         seven times and confirm to enable Developer Mode;
+│                         its section includes Disable Developer Mode. Stored
+│                         analysis summaries are removed when deleting the app.
+│                         Also UserView and the server-change prompt. The
 │                         database is not here; it is the Sync tab's.
 ├── OnboardingView.swift  First run: four pages swiped in a paging ScrollView,
 │                         no database asked for. "Unlock your Health Data"
@@ -334,7 +346,7 @@ Sources/
 │                         an answer (root CLAUDE.md). A puls:// link during the
 │                         flow waits until it ends, then Sync → Database
 │                         opens with the fields filled. Settings →
-│                         Diagnostics → "Show Onboarding Again" replays it
+│                         About → "Show Onboarding Again" replays it
 │                         (with a Close button) for testing.
 ├── SyncIntro.swift       The Sync tab with no database applied: "Always in
 │                         Sync" (automatic, whole history, use it your way,

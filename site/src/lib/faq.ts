@@ -15,7 +15,7 @@ export interface FaqItem {
 export const faq: FaqItem[] = [
   {
     q: "Is the app really free?",
-    a: "Yes. Explore is free, with unlimited file exports of all supported types from the last 30 days and automatic sync of up to five types from that period. Exploring and exporting need no account. The optional Pro app subscription adds full available history and sync for all supported types. The open-source database stack is free to run yourself; hosting is separate.",
+    a: "Yes. Explore is free, with unlimited file exports of all supported types from the last 30 days and automatic sync of up to five types from that period. Exploring and exporting need no account. Optional monthly, yearly or one-time Lifetime Pro purchases add full available history, all sync types and all current and future app features. The open-source database stack is free to run yourself; hosting is separate.",
     home: true,
   },
   {

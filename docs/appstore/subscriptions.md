@@ -107,8 +107,8 @@ for local purchases. It does not create production products. Disable the local
 StoreKit configuration when checking real App Store Connect products on a
 sandbox device; archives never use this local configuration.
 
-The Quiet Native plan page lives at Settings → Plan and at contextual upgrade
-prompts. Older exports, older sync history, an over-five sync selection and Data
+The Quiet Native plan page opens from the PulsHealth Free/Pro row in Settings
+and from contextual upgrade prompts. Older exports, older sync history, an over-five sync selection and Data
 Requests explain the relevant limit. Billing choices select a product; a separate
 button states its localized price and billing period before starting purchase.
 The yearly option is selected initially; all three purchase options offer the same app access. Lifetime shows a one-time
@@ -158,6 +158,11 @@ shows its end date. Verified paid access takes priority. An existing paid
 subscription continues under its own billing terms; the gift does not cancel,
 refund or extend it. After expiry, foreground/export/request/background checks
 use the existing Free policy, keeping saved selections and uploaded data.
+
+Gift recipients can purchase Monthly, Yearly or Lifetime directly from the plan
+page without ending their gift. A purchase starts paid access immediately; the
+gift does not delay subscription billing. This also keeps purchases testable in
+sandbox, where the original app build qualifies for the gift.
 
 Release acceptance still needs a physical-device check of an actual pre-Pro
 App Store download versus a fresh download, first foreground activation,

@@ -22,7 +22,6 @@ final class UserAccount {
     private let credentials: any TokenStore
     private let session: URLSession
     private var token: String?
-    private static var endpoint: URL { PulsHealthDatabase.viewerURL.appending(path: "api/native/profile") }
 
     init(credentials: any TokenStore = KeychainTokenStore(account: "user-account"), session: URLSession? = nil) {
         self.credentials = credentials
@@ -78,8 +77,9 @@ final class UserAccount {
         } catch { problem = error.localizedDescription }
     }
 
-    func finishSignIn(_ callback: URL, attempt: SignIn) async {
-        guard !busy else { return }
+    @discardableResult
+    func finishSignIn(_ callback: URL, attempt: SignIn) async -> Bool {
+        guard !busy else { return false }
         busy = true
         defer { busy = false }
         do {
@@ -94,7 +94,27 @@ final class UserAccount {
             profile = loaded
             savedProfile = loaded
             problem = nil
-        } catch { problem = error.localizedDescription }
+            return true
+        } catch { problem = error.localizedDescription; return false }
+    }
+
+    /// Reuse the Settings account credential without a second browser login.
+    /// The returned pairing remains a draft until Save & Apply.
+    func connectManagedServer() async -> PairingPayload? {
+        guard !busy, let token, let savedProfile else { return nil }
+        busy = true
+        defer { busy = false }
+        do {
+            struct Connection: Decodable { let link: String }
+            let connection: Connection = try await request("POST", token: token, path: "connect")
+            let payload = try PairingPayload.parse(connection.link).get()
+            guard PulsHealthDatabase.isUnderDomain(payload.serverURL),
+                  payload.userID == savedProfile.userID.lowercased() else {
+                throw AccountError("The server connection did not match your PulsHealth account. Try signing in again.")
+            }
+            problem = nil
+            return payload
+        } catch { problem = error.localizedDescription; return nil }
     }
 
     @discardableResult
@@ -152,13 +172,13 @@ final class UserAccount {
 
     private struct Failure: Decodable { let error: String }
     private struct EmptyBody: Encodable {}
-    private func request<Response: Decodable>(_ method: String, token: String? = nil) async throws -> Response {
-        try await request(method, token: token, body: Optional<EmptyBody>.none)
+    private func request<Response: Decodable>(_ method: String, token: String? = nil, path: String = "profile") async throws -> Response {
+        try await request(method, token: token, body: Optional<EmptyBody>.none, path: path)
     }
     private func request<Response: Decodable, Body: Encodable>(
-        _ method: String, token: String? = nil, body: Body?
+        _ method: String, token: String? = nil, body: Body?, path: String = "profile"
     ) async throws -> Response {
-        var request = URLRequest(url: Self.endpoint)
+        var request = URLRequest(url: PulsHealthDatabase.viewerURL.appending(path: "api/native/" + path))
         request.httpMethod = method
         request.timeoutInterval = 30
         request.cachePolicy = .reloadIgnoringLocalCacheData
