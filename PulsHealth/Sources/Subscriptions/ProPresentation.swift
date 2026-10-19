@@ -42,9 +42,16 @@ struct ProPlanDetails: Sendable, Equatable {
     let renewal: Renewal
     let isFreeOfferCode: Bool
 
+    var isLifetime: Bool { productID == SubscriptionStore.lifetimeID }
+    var name: String {
+        if isLifetime { return "Lifetime" }
+        return productID == SubscriptionStore.annualID ? "Yearly" : "Monthly"
+    }
+
     var isComplimentary: Bool { isFreeOfferCode && renewal == .ends }
 
     var status: String {
+        if isLifetime { return "Lifetime Pro" }
         if isComplimentary { return "Complimentary Pro" }
         switch renewal {
         case .unknown, .renews: return "Pro is active"
@@ -63,6 +70,7 @@ struct ProPlanDetails: Sendable, Equatable {
     }
 
     var explanation: String {
+        if isLifetime { return "One-time purchase. All current and future PulsHealth app features are included. PulsHealth server, hosting and other services are separate. If you previously subscribed, manage that subscription in your Apple Account to stop its renewal." }
         if isComplimentary { return "Your complimentary access ends automatically. There is no automatic charge afterward." }
         switch renewal {
         case .unknown: return "Renewal details are currently unavailable. Check your Apple Account to manage this subscription."

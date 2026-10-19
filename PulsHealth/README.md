@@ -610,3 +610,10 @@ update. No subscription is started or charged. The fixed dates and welcome
 acknowledgement live in a separate device-only Keychain item, and the gift
 expires through the same access checks as a subscription. Paid subscriptions
 take priority. See [subscription setup](../docs/appstore/subscriptions.md).
+
+Pro is available monthly, yearly or as a $20 US lifetime non-consumable purchase.
+Every option unlocks all current and future app features. PulsHealth server,
+hosting and other services are separate. Lifetime has no renewal, restores through
+the Apple Account and takes priority over subscription status. An existing
+subscription must be cancelled separately through Apple subscription management.
+Production setup and device acceptance: [Pro purchases](../docs/appstore/subscriptions.md).
