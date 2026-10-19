@@ -9,6 +9,7 @@ struct ProView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedID = SubscriptionStore.annualID
     @State private var redeemingCode = false
+    @State private var showsBillingOptions = false
 
     private var store: SubscriptionStore { model.subscriptions }
     private var selectedProduct: Product? {
@@ -25,7 +26,7 @@ struct ProView: View {
         List {
             if !store.isLoaded {
                 Section { ProgressView("Checking your plan") }
-            } else if store.hasPro {
+            } else if store.hasPro && !showsBillingOptions {
                 activePlan
             } else {
                 upgrade
@@ -52,13 +53,26 @@ struct ProView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await store.refreshEntitlements() } }
         }
+        .onChange(of: store.complimentaryExpiresAt) { _, end in
+            if end == nil { showsBillingOptions = false }
+        }
+        .task(id: store.isLoaded && (!store.hasPro || showsBillingOptions)) {
+            if store.isLoaded && (!store.hasPro || showsBillingOptions) {
+                await store.loadProducts()
+            }
+        }
         .task {
             await store.refreshEntitlements()
-            if !store.hasPro { await store.loadProducts() }
         }
     }
 
     @ViewBuilder private var upgrade: some View {
+        if store.complimentaryExpiresAt != nil {
+            Section {
+                Text("Your complimentary Pro remains active. A subscription starts when you purchase; the gift does not extend its billing period.")
+                Button("Back to Your Gift") { showsBillingOptions = false }
+            }
+        }
         Section {
             VStack(alignment: .leading, spacing: 10) {
                 Text(context.title).font(.largeTitle.bold())
@@ -156,6 +170,14 @@ struct ProView: View {
         Section("Ready to use") {
             benefit("All permitted history", detail: "Export and sync older data.", symbol: "clock.arrow.circlepath")
             benefit("Unlimited automatic-sync types", detail: "Your full selection is available.", symbol: "arrow.triangle.2.circlepath")
+        }
+        if store.complimentaryExpiresAt != nil {
+            Section {
+                Button("Choose a Subscription") { showsBillingOptions = true }
+                    .accessibilityIdentifier("pro.chooseSubscription")
+            } footer: {
+                Text("Optional. Your gift continues without a subscription or automatic charge.")
+            }
         }
         if let title = context.returnTitle {
             Section {
