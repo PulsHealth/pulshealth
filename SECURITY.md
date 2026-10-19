@@ -208,6 +208,12 @@ for judging what is.
   Keychain write fails the app parks the token in that protected state file
   instead of dropping it — losing it would stall syncing until the user
   re-entered it — and removes it once the Keychain accepts it.
+- **App Store financial alerts are independent of health records.** Optional
+  accounts-mode V2 webhooks verify Apple signatures, bundle/app identifiers and
+  environment using Apple's server library and public trust roots. They do not
+  grant access or join transactions to health accounts. Only event hashes and
+  delivery timestamps persist; email excludes buyer identity and transaction
+  identifiers. Sandbox purchases are suppressed; TEST messages are labeled.
 - **Complimentary Pro is device-local.** A separate device-only Keychain item
   holds only fixed gift start/end dates and a welcome acknowledgement. Verified
   original app builds below 23 qualify; no purchase is started. Failed

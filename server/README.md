@@ -1255,3 +1255,12 @@ Optional native account profile access requires migration `029_account_profile.s
 and the rerunnable `100_account_profile_grants.sh`. They add one-use PKCE
 handoffs and a session-authorized profile writer; deploy schema and viewer
 before the iOS screen. They do not change ingest or the read-only product API.
+
+### App Store operator alerts
+
+Optional email alerts use the viewer's existing SES configuration plus
+`WEB_APP_STORE_ALERT_TO` in accounts mode. Migration 030 adds a private
+financial-event delivery receipt table; 101 restores its scoped grants after
+099 reconciles roles. Apply through `migrate` before deploying the viewer.
+See [hosted operations](../docs/hosted-operations.md#app-store-purchase-email-alerts)
+for the V2 URLs, testing, retry behavior and retention.

@@ -80,7 +80,17 @@ used for the App Store. The developer does not receive payment-card details.
 The app reads Apple's verified purchase entitlements to decide which features
 are available; it does not send health data, selections, exported files, or
 server credentials to Apple to check a purchase. No third-party purchase
-SDK, receipt server, or new PulsHealth account is used for this.
+SDK or new PulsHealth account is used for this; the app does not upload receipts
+to the developer. Separately, Apple can send signed purchase and subscription
+events to the developer's server for operator email alerts. Those events include
+the product, transaction identifiers, price, currency and subscription status,
+without your payment-card details or health data. Alerts sent through Amazon SES
+include the product, event time and associated transaction price, without buyer
+identity, transaction identifiers or health data. The server keeps only an event
+hash and delivery timestamps to prevent duplicate alerts, pruned after 90 days
+when subsequent notifications arrive. Alert emails remain in the operator's
+mailbox until deleted. These events are not linked to hosted health accounts
+and do not control the app's verified purchase access.
 
 For the existing-user thank-you, the app checks Apple's verified original app
 build and keeps fixed gift start/end dates and a welcome acknowledgement in a
