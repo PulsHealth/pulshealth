@@ -409,3 +409,10 @@ and `auth.set_my_profile` authorize the session's own user; demo mutations are
 refused. Login email edits require the current password and invalidate pending
 recovery and invitation links. Account UUIDs cannot be edited. Deploy migration
 029 and the 100 grant script, then the viewer, before shipping the client.
+
+- **App Store customer review alerts are operator-only.** The hourly host job
+  keeps Apple API keys inside the configured credential container, validates
+  pagination origin/path and refuses redirects. It emails only public review
+  content using the existing SES sender, with no health database access.
+  Private state records review IDs rather than bodies; failed sends retry.
+  Keep configuration, state and credentials outside Git with restricted modes.

@@ -284,3 +284,57 @@ API and check its delivery status. Confirm receipt in the target inbox before
 calling email delivery verified; SES acceptance alone does not prove arrival.
 Changing a notification URL replaces the existing consumer, so inspect the
 current URLs and preserve any existing integration before making a change.
+
+
+## App Store customer review email alerts
+
+Optional operator-only hourly polling of Apple's authenticated Customer Reviews
+API. Run on the Docker host with Node 22.18+ and `flock`. No app build, database
+migration, public webhook or service restart is needed. An existing credential
+container must expose `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_PATH` and
+Node; its key must have permission to list customer reviews. The key stays in
+that container. Only public review fields are returned to the host. The mail
+container supplies the existing SES configuration and `WEB_APP_STORE_ALERT_TO`.
+No credentials are copied to disk or logged by the check.
+
+Create a private mode-600 configuration file outside the checkout, for example:
+
+```json
+{
+  "appId": "YOUR_NUMERIC_APP_ID",
+  "appName": "Your App",
+  "appleContainer": "your-reporting-container",
+  "mailContainer": "your-viewer-container",
+  "stateDir": "/private/operator-state/app-reviews"
+}
+```
+
+Use the same absolute state directory for the wrapper's second argument:
+
+```sh
+server/ops/check-app-store-reviews.sh /private/reviews-config.json /private/operator-state/app-reviews
+node --experimental-strip-types server/ops/app-store-reviews.mjs /private/reviews-config.json --test-email
+```
+
+The first successful complete fetch baselines existing reviews without sending
+backlog. Subsequent runs email only previously unseen review IDs: star rating,
+title, plain-text review, country/region and publication date. Nicknames are not
+copied. Star-only ratings and edits to previously seen reviews do not trigger
+alerts. Fetches follow all pages (up to 100) and fail without changing state on
+network, permission, pagination or schema errors. API credentials are never
+forwarded to other origins or redirects.
+
+Schedule the wrapper hourly with the private config/state paths. Check
+`status.json` for `ok` and a fresh `checkedAt`; scheduler errors must be monitored
+in the host's normal operations logs. `reviews.json` stores delivered/baselined
+IDs and last successful scan time, not review bodies. Preserve it across
+upgrades: deleting it starts a new baseline. Failed sends retry on the next run;
+accepted messages are saved individually. A crash after SES accepts a message
+but before the state write can cause a duplicate. The wrapper prevents
+concurrent scheduled runs; do not run the Node entry point concurrently.
+
+Confirm the setup-test email in the recipient inbox. This verifies the sender,
+not a future review-triggered delivery. Apple publication delay plus the hourly
+poll determines alert latency. Alert emails remain in the operator's mailbox
+until deleted. This operator integration does not access HealthKit, accounts or
+health records.

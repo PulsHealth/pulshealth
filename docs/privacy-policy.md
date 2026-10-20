@@ -122,6 +122,13 @@ path sends health data to Apple. StoreKit does not tell the app whether you
 submitted a rating or review; any review you publish is visible on the App
 Store. The timing counters described below remain in the app's own preferences.
 
+The operator may check published App Store reviews through Apple's API and
+receive email alerts containing the rating, review title and text, country or
+region, and publication date. Review nicknames are not copied into these
+alerts. A private delivery log stores review IDs and check timestamps to avoid
+repeat alerts. This process does not access or link reviews to health records.
+Alerts remain in the operator mailbox until deleted.
+
 ## What the app reads
 
 Only the Apple Health data types you enable in the app, and only for the date
