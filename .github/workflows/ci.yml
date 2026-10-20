@@ -285,7 +285,7 @@ jobs:
       - name: Verify hosted operations checks
         run: |
           python3 -m unittest discover -s server/ops -p 'test_*.py'
-          node --test server/ops/notify.test.mjs
+          node --test server/ops/*.test.mjs
 
       - name: Verify deployed chart reads against the scratch stack
         env:

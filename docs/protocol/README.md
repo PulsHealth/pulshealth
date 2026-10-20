@@ -319,6 +319,15 @@ name), `scheduledAt` (epoch ms or null), `scheduledAtContext`,
 `doseQuantity` (number or null) and `doseUnit` (string or null, the dose's own
 unit, not a catalog unit).
 
+`medication` is a display label, **not an identity key**. Senders resolve it by
+matching the dose's opaque HealthKit concept identifier against authorized
+medication concepts (including archived medications). If unavailable, send null;
+an Objective-C object description or memory address is not a medication name.
+Different concepts may share a name, and names may change. This v1 field does not
+provide a stable concept ID, strength conversion or a per-tablet mass. A dose in
+`count` must not be treated as grams or milligrams.
+
+
 ### 4.2 Deletion
 
 Schema: [`schema/deletion.schema.json`](schema/deletion.schema.json).

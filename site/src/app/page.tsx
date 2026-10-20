@@ -98,9 +98,6 @@ export default async function HomePage() {
               <span aria-hidden="true">·</span>{" "}
               <span className="whitespace-nowrap">No Account Required</span>
             </p>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Full history and sync for all supported types with <Link href="/pro" className="text-brand hover:underline">PulsHealth Pro</Link>. Your database stays yours.
-            </p>
           </div>
           <div className={styles.heroVisual}>
             <p className={styles.visualTitle}>Your health. More possibilities.</p>

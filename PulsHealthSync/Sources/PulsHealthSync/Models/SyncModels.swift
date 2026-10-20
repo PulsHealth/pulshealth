@@ -216,7 +216,7 @@ public struct StateOfMindDetail: Codable, Sendable, Equatable {
 
 /// Extra fields carried only by medication dose events (iOS 26+).
 public struct MedicationDoseDetail: Codable, Sendable, Equatable {
-    /// Display name when resolvable, else the concept identifier description.
+    /// HealthKit display name when resolvable, otherwise nil. Not a stable identifier.
     public var medication: String?
     /// "taken" | "skipped" | "snoozed" | "notLogged" | ...
     public var status: String

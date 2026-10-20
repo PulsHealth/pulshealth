@@ -1214,7 +1214,29 @@ public actor HealthSyncEngine {
             // configured. Sent only with enhanced workout data.
             if includeEnhanced, !userProfile.isEmpty { enrichment.profile = userProfile }
             return enrichment
-        case .quantity, .category, .stateOfMind, .medicationDose, .activitySummary:
+        case .medicationDose:
+            if #available(iOS 26.0, *), !samples.isEmpty {
+                // Query all authorized medications, including archived ones. Match
+                // Apple's opaque identifiers by equality, never by description.
+                // Failure leaves this page unacknowledged so it can be retried.
+                let medications = try await HKUserAnnotatedMedicationQueryDescriptor()
+                    .result(for: healthStore)
+                let names = MedicationNameLookup(medications.map {
+                    ($0.medication.identifier, $0.medication.displayText)
+                })
+                let identifiers = Dictionary(
+                    hkSamples.compactMap { sample -> (UUID, HKHealthConceptIdentifier)? in
+                        guard let dose = sample as? HKMedicationDoseEvent else { return nil }
+                        return (dose.uuid, dose.medicationConceptIdentifier)
+                    }, uniquingKeysWith: { first, _ in first }
+                )
+                for index in samples.indices {
+                    guard let identifier = identifiers[samples[index].uuid] else { continue }
+                    samples[index].medicationDose?.medication = names.name(for: identifier)
+                }
+            }
+            return WorkoutEnrichment()
+        case .quantity, .category, .stateOfMind, .activitySummary:
             return WorkoutEnrichment()
         }
     }

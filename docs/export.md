@@ -401,3 +401,23 @@ an isolated engine, fresh random user and device IDs, and no configured identity
 profile. Their manifest additionally includes `dataRequest` and `submissionID`.
 They can be handed to the share sheet or sent directly to an explicitly approved
 HTTPS receiver. See [Data Requests](requests.md). Normal exports are unchanged.
+
+### Medication names and previously exported rows
+
+Medication exports resolve the HealthKit concept's display name from the
+medications the person authorized, including archived medications. If a concept
+cannot be resolved, `medication` is empty in CSV and null/omitted in JSON rather
+than an object description containing a memory address. Names are labels, not
+stable identifiers: two medications can share a name and a name can change.
+The dose unit is HealthKit's unit; `count` supplies no tablet/spoon-to-mass
+conversion. Do not infer milligrams or grams from it.
+
+Older files containing `<HKHealthConceptIdentifier: 0x…>` can be replaced by a
+fresh export after installing the corrected app, within its Health permissions
+and export-history allowance. That address cannot recover medication identity.
+Existing self-hosted raw rows are insert-only: resetting anchors and syncing
+again does **not** update them. Preserve a backup and use a separately reviewed,
+user-scoped repair keyed on the event UUIDs from a corrected export; this fix
+performs no automatic database rewrite or deletion. Stable exported identifiers,
+clinical coding/strength metadata and an automatic recovery tool remain tracked
+in [#291](https://github.com/PulsHealth/pulshealth/issues/291).

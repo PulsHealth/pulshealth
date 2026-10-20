@@ -3,6 +3,15 @@ import { describe, expect, it } from "vitest";
 import { classifyPath, decideAccounts, unauthenticatedAnswer } from "./policy";
 
 describe("classifyPath", () => {
+  it("allows exactly the signed Apple machine endpoints over HTTPS without cookies or Origin", () => {
+    for (const env of ["production", "sandbox"]) {
+      const pathname = `/api/app-store/notifications/${env}`;
+      expect(decideAccounts({ pathname, secure: true, sameOrigin: false, development: false })).toBe("pass");
+      expect(decideAccounts({ pathname, secure: false, sameOrigin: false, development: false })).toBe("insecure");
+    }
+    expect(classifyPath("/api/app-store/notifications/production/extra")).toBe("protected");
+    expect(classifyPath("/api/app-store/notifications/unknown")).toBe("protected");
+  });
   it("sorts every route class", () => {
     expect(classifyPath("/api/healthz")).toBe("health");
     expect(classifyPath("/_next/static/chunks/app.js")).toBe("asset");

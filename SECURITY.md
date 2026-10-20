@@ -208,6 +208,12 @@ for judging what is.
   Keychain write fails the app parks the token in that protected state file
   instead of dropping it — losing it would stall syncing until the user
   re-entered it — and removes it once the Keychain accepts it.
+- **App Store financial alerts are independent of health records.** Optional
+  accounts-mode V2 webhooks verify Apple signatures, bundle/app identifiers and
+  environment using Apple's server library and public trust roots. They do not
+  grant access or join transactions to health accounts. Only event hashes and
+  delivery timestamps persist; email excludes buyer identity and transaction
+  identifiers. Sandbox purchases are suppressed; TEST messages are labeled.
 - **Complimentary Pro is device-local.** A separate device-only Keychain item
   holds only fixed gift start/end dates and a welcome acknowledgement. Verified
   original app builds below 23 qualify; no purchase is started. Failed
@@ -403,3 +409,10 @@ and `auth.set_my_profile` authorize the session's own user; demo mutations are
 refused. Login email edits require the current password and invalidate pending
 recovery and invitation links. Account UUIDs cannot be edited. Deploy migration
 029 and the 100 grant script, then the viewer, before shipping the client.
+
+- **App Store customer review alerts are operator-only.** The hourly host job
+  keeps Apple API keys inside the configured credential container, validates
+  pagination origin/path and refuses redirects. It emails only public review
+  content using the existing SES sender, with no health database access.
+  Private state records review IDs rather than bodies; failed sends retry.
+  Keep configuration, state and credentials outside Git with restricted modes.

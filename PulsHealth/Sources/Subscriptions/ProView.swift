@@ -9,6 +9,7 @@ struct ProView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedID = SubscriptionStore.annualID
     @State private var redeemingCode = false
+    @State private var managingSubscriptions = false
 
     private var store: SubscriptionStore { model.subscriptions }
     private var selectedProduct: Product? {
@@ -192,7 +193,15 @@ struct ProView: View {
     private var accountActions: some View {
         Section {
             if store.hasPro && store.complimentaryExpiresAt == nil {
-                Link("Manage Apple Subscriptions", destination: URL(string: "https://apps.apple.com/account/subscriptions")!)
+                if ProcessInfo.processInfo.isiOSAppOnMac {
+                    Link("Manage Apple Subscriptions", destination: URL(string: "https://apps.apple.com/account/subscriptions")!)
+                } else {
+                    Button("Manage Apple Subscriptions") { managingSubscriptions = true }
+                        .manageSubscriptionsSheet(isPresented: $managingSubscriptions)
+                        .onChange(of: managingSubscriptions) { _, presented in
+                            if !presented { Task { await store.refreshEntitlements() } }
+                        }
+                }
             }
             Button("Redeem Code") { redeemingCode = true }.disabled(store.isBusy)
             Button("Restore Purchases") { Task { await store.restore() } }.disabled(store.isBusy)
