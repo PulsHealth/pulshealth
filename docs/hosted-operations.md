@@ -309,10 +309,10 @@ Create a private mode-600 configuration file outside the checkout, for example:
 }
 ```
 
-Use the same absolute state directory for the wrapper's second argument:
+The wrapper derives its lock directory from the private configuration:
 
 ```sh
-server/ops/check-app-store-reviews.sh /private/reviews-config.json /private/operator-state/app-reviews
+server/ops/check-app-store-reviews.sh /private/reviews-config.json
 node --experimental-strip-types server/ops/app-store-reviews.mjs /private/reviews-config.json --test-email
 ```
 
