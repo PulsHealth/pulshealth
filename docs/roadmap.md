@@ -13,21 +13,30 @@ behind them.
 
 ## 1. The next app release
 
-1.6 (19) remains on the store. **2.0 (21) is submitted and Waiting for Review**
-as of 2026-10-10, with automatic release after approval. Any subsequent upload
-must exceed accepted build 21.
+The latest recorded candidate is **2.2 (28)**, submitted for App Review on
+2026-10-19 with Monthly, Yearly and Lifetime Pro. The recorded submission status
+was Waiting for Review, with automatic release after approval. This is historical
+submission evidence; check App Store Connect before reporting current approval or
+public availability. Any replacement upload needs a build number above every
+build Apple has accepted; 28 is the latest accepted build recorded here.
 
-- The histogram crash fix and preserved Activity diagnostics changes merged in
-  [#185](https://github.com/PulsHealth/pulshealth/pull/185), with all 13 CI checks
-  passing. The replacement archive is uploaded, processed and selected.
-- The maintainer confirmed physical-device testing and signup/recovery email
-  acceptance on 2026-10-10. The enrollment assumption is recorded at the
-  maintainer's direction.
-- After Apple approval, verify store availability, update the shipped-version
-  record, and retire the disposable review account. Evidence and remaining
-  post-approval actions are in
-  [`release-readiness-2026-10-08.md`](release-readiness-2026-10-08.md) and
-  [`appstore/README.md`](appstore/README.md).
+- The maintainer confirmed that the Explore/Export tap bug is working and the
+  purchase lifecycle has been tested on 2026-10-20. Keep these confirmations
+  distinct from automated test evidence.
+- Unsupported HealthKit type construction found in cached 2.1 (22) crash reports
+  was fixed in [#256](https://github.com/PulsHealth/pulshealth/pull/256), already
+  included in the candidate. The unspecific sync crash report
+  [#210](https://github.com/PulsHealth/pulshealth/issues/210) still needs the
+  reporter's build and stack before it can be attributed or closed.
+- Medication export names are being corrected under
+  [#291](https://github.com/PulsHealth/pulshealth/issues/291). A display name is
+  not a stable medication identifier, and existing server rows need an explicit
+  repair plan; resetting anchors alone does not overwrite raw samples.
+- After Apple approval, verify public availability and update the shipped-version
+  record. Keep the review account available while a submission still needs it.
+  Source, archive, test and device evidence are in
+  [`appstore/README.md`](appstore/README.md#release-record); the older
+  [`release-readiness-2026-10-08.md`](release-readiness-2026-10-08.md) is historical.
 
 ## 2. Standing maintenance
 

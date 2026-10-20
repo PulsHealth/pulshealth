@@ -263,6 +263,11 @@ evidence. Release-candidate CI passed on both Xcode 26.5 and 27.0. Pricing and
 privacy pages retain the previously verified deployment; no backend deployment
 was performed for build 28.
 
+On 2026-10-20 the maintainer additionally confirmed that the Explore/Export tap
+bug is working and the purchase lifecycle has been tested. These confirmations
+supplement the named candidate's acceptance record; they do not establish a new
+Apple approval, public release, or device acceptance of subsequent code changes.
+
 ### 2.2 (27) internal TestFlight (2026-10-19)
 
 Build **2.2 (27)** was archived from clean source

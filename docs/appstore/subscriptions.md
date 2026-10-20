@@ -2,7 +2,8 @@
 
 Source implementation for issue #251. Both products were configured in App
 Store Connect on 2026-10-15 for internal TestFlight testing with 2.2 (23).
-They have not been submitted for App Review or publicly released.
+The products were submitted with 2.2 (28) on 2026-10-19. Approval and public
+availability must be checked separately; see the [release record](README.md#release-record).
 
 | Setting | Monthly | Annual |
 |---|---|---|
@@ -28,12 +29,16 @@ The app displays Apple's localized price, not a hard-coded USD amount.
 - [x] Created the non-consumable in App Store Connect on 2026-10-19, Apple ID
       `6824617733`, with a $20.00 US base price, Apple-calculated localized prices,
       all 175 current territories, English metadata, review notes and the parent
-      app tax category. Status: Prepare for Submission; not approved or released.
+      app tax category. This creation status predates the combined submission recorded below.
 - [x] Added an actual plan-page screenshot showing all three options for App
       Review on 2026-10-19.
-- [ ] Verify native purchase, pending approval, offline relaunch, fresh-install
-      restore, refund/revocation and coexistence with a subscription on a physical
-      sandbox device. Verify gift-to-lifetime and subscriber-to-lifetime checkout.
+- [x] Maintainer confirmed that the purchase lifecycle has been tested on
+      2026-10-20. This is an overall sign-off; no new per-scenario results or
+      device/sandbox details were supplied with that confirmation.
+- Detailed scenario inventory (individual results not recorded here): native
+      purchase, pending approval, offline relaunch, fresh-install restore,
+      refund/revocation, coexistence with a subscription, gift-to-Lifetime and
+      subscriber-to-Lifetime checkout.
 - [x] Staged the non-consumable with app version 2.2 in the combined review draft
       on 2026-10-19, alongside the subscription group and both subscriptions.
 - [x] Submitted the combined draft with build 2.2 (28) on 2026-10-19; all five
@@ -85,9 +90,9 @@ purchase/relaunch/Restore Purchases, offline Lifetime access, managed browser
 pairing/Save & Apply/upload, and CSV/JSON/JSONL exports opened in Files. The
 private candidate record binds that confirmation to the exported IPA; the
 [release record](README.md#release-record) distinguishes it from simulator/CI
-coverage and from App Review submission. Detailed lifecycle checklist items
-below remain separate evidence rather than being inferred from a happy-path
-purchase or the broad maintainer sign-off.
+coverage and from App Review submission. On 2026-10-20 the maintainer additionally
+confirmed that the purchase lifecycle has been tested. This overall sign-off is
+accepted; it does not supply new automated runs or individual scenario receipts.
 
 - [x] Create both products in App Store Connect; configure territories, tax
       category, localizations, subscription review screenshots and descriptions.
@@ -100,9 +105,11 @@ purchase or the broad maintainer sign-off.
       billing is one upfront yearly payment, not monthly installments.
 - [ ] Confirm each localized product is returned by StoreKit on a sandbox
       physical device.
-- [ ] Verify purchase, restore on a fresh install, cancellation retaining access
-      through the paid period, expiration, refund/revocation, Ask to Buy, billing
-      grace, offline launch and app relaunch for both durations.
+- [x] Maintainer confirmed purchase-lifecycle testing on 2026-10-20.
+- Detailed lifecycle scenario inventory (individual results not recorded here):
+      purchase, fresh-install restore, cancellation retaining access through the
+      paid period, expiration, refund/revocation, Ask to Buy, billing grace,
+      offline launch and app relaunch for both subscription durations.
 - [ ] Verify five versus six types, raw/aggregate deduplication, recent dates
       versus old custom ranges, all file formats and Data Request delivery.
 - [ ] Verify background/observer/continued sync after expiry, preserving existing
