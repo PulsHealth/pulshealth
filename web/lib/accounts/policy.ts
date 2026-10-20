@@ -2,6 +2,7 @@
 // proxy.ts feeds it the facts and carries out the answer, and the tests walk
 // every route class through it.
 
+import { APP_STORE_NOTIFICATION_PATHS } from "../appStore/paths";
 import { OAUTH_MACHINE_PATHS } from "../oauth/config";
 
 export type RouteClass =
@@ -45,6 +46,7 @@ export function classifyPath(pathname: string, development = false): RouteClass 
   ) {
     return "asset";
   }
+  if ((APP_STORE_NOTIFICATION_PATHS as readonly string[]).includes(pathname)) return "oauth";
   if (pathname === "/api/native/profile" || pathname.startsWith("/api/health/") || (OAUTH_MACHINE_PATHS as readonly string[]).includes(pathname)) return "oauth";
   if ((PUBLIC_PAGES as readonly string[]).includes(pathname)) return "public";
   if ((PUBLIC_API as readonly string[]).includes(pathname)) return "public";

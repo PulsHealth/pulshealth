@@ -63,7 +63,9 @@ enum SampleMapper {
         case .medicationDose:
             guard #available(iOS 26.0, *), let dose = sample as? HKMedicationDoseEvent else { return nil }
             dto.medicationDose = MedicationDoseDetail(
-                medication: String(describing: dose.medicationConceptIdentifier),
+                // Resolved through the authorized medication query during enrichment.
+                // NSObject.description contains a process address, not an identity.
+                medication: nil,
                 status: dose.logStatus.pulsName,
                 scheduledAt: dose.scheduledDate,
                 scheduledAtContext: dose.scheduledDate.map {

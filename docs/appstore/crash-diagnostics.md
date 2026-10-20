@@ -82,6 +82,28 @@ the associated issue/PR. Simulator checks remain separate from testing the
 affected flows on a physical device/TestFlight and monitoring the released
 build for recurrence.
 
+## Cached 2.1 crash triage on 2026-10-20
+
+Five locally cached Apple reports for **2.1 (22)**, dated October 13–14, fail in
+`HKObjectTypeRaiseInvalidIdentifierException` while constructing a quantity type.
+Four reach `HealthTypeDescriptor.sampleType` through Explore's readable-history
+query. One reaches `HealthTypeCatalog.allowedAggregateFunctions` through Sync's
+empty aggregate selection. These are downloaded reports, not a fresh Organizer
+refresh and not a complete count of affected people.
+
+Fix `2accbed` ([#256](https://github.com/PulsHealth/pulshealth/pull/256)), already
+contained in the recorded 2.2 (28) candidate, replaces the throwing type
+initializers with optional factories, checks runtime availability, and reuses
+that safe resolution for aggregate choices. Existing catalog and app-hosted
+aggregate regression tests cover unsupported identifiers. Keep their protection;
+no additional speculative crash fix was made during this triage.
+
+The report [#210](https://github.com/PulsHealth/pulshealth/issues/210) supplies no
+app version/build, crash stack or event time. The cached Sync stack is a plausible
+lead, not attribution to that report. Leave it unresolved until a matching report
+or affected-build reproduction is available; verify recurrence against the fixed
+TestFlight/public build. Preserve raw diagnostics privately.
+
 ## Apple references
 
 - [Acquiring crash reports and diagnostic logs](https://developer.apple.com/documentation/xcode/acquiring-crash-reports-and-diagnostic-logs)

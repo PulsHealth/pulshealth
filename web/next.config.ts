@@ -6,7 +6,10 @@ const nextConfig: NextConfig = {
   // Emit a self-contained server bundle (.next/standalone) for the Docker image.
   output: "standalone",
   // pg is a server-only dependency; keep it external to the bundle.
-  serverExternalPackages: ["pg"],
+  serverExternalPackages: ["pg", "@apple/app-store-server-library"],
+  outputFileTracingIncludes: {
+    "/api/app-store/notifications/*": ["./certificates/apple/*.cer"],
+  },
   // Every response, every mode. The Content-Security-Policy is per request
   // (it carries a nonce), so proxy.ts sets that one.
   async headers() {

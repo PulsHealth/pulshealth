@@ -75,6 +75,7 @@ interface Session {
 }
 
 const ROUTES: Record<string, { methods: Method[]; guard: Guard }> = {
+  "/api/app-store/notifications/[environment]": { methods: ["POST"], guard: { kind: "oauth" } },
   "/api/native/profile": { methods: ["GET", "POST", "PUT", "DELETE"], guard: { kind: "oauth" } },
   "/api/auth/connect-account": { methods: ["POST"], guard: { kind: "session", noSession: "/login?next=%2Faccount" } },
   "/api/health/v1/[...path]": { methods: ["GET"], guard: { kind: "oauth" } },
@@ -188,7 +189,7 @@ function request(path: string, method: Method, headers: Record<string, string>, 
   if (cookie) h.set("cookie", COOKIE);
   const init: { method: string; headers: Headers; body?: FormData } = { method, headers: h };
   if (method !== "GET" && method !== "HEAD") init.body = form();
-  return new NextRequest(new URL(path, "http://web:3000"), init);
+  return new NextRequest(new URL(path.replace("[environment]", "production"), "http://web:3000"), init);
 }
 
 async function proxy(req: NextRequest): Promise<Response> {
