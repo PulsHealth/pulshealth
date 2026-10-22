@@ -104,6 +104,29 @@ lead, not attribution to that report. Leave it unresolved until a matching repor
 or affected-build reproduction is available; verify recurrence against the fixed
 TestFlight/public build. Preserve raw diagnostics privately.
 
+## Aggregate-options crash found on 2026-10-22
+
+A refreshed Organizer shows two App Store **2.1 (22)** reports from October 14
+in one crash group on one device. Both reach `AppModel.config.getter` from
+`AggregateOptionsSheet.startSection` while `update` is editing an aggregate.
+Turning **Same as Sync** off reads the sync start date from `model.config`
+inside a closure already holding an `inout` write to that configuration.
+A hosted regression using the original mutation reproduced Swift runtime
+messages `Simultaneous accesses` and `Fatal access conflict detected`.
+This is a separate cause from the unsupported-HealthKit-identifier reports.
+
+The fixed `AppModel.editSyncAggregate` edits a local aggregate-list value before
+writing it back, so an edit closure may safely read the configuration.
+`AggregateOptionsTests` exercises that production path, including both
+Same as Sync transitions, another option, sibling preservation and a removed
+aggregate. It also checks that edits stay staged until Apply without changing
+the applied configuration or persisted engine configuration.
+
+A source fix and simulator checks do not update 2.1 or the already-uploaded
+2.2 (28) candidate. Include the fix in a new numbered build, verify the toggle
+on a physical device/TestFlight, and monitor the released build for recurrence.
+Do not attribute issue #210 to this group without matching reporter evidence.
+
 ## Apple references
 
 - [Acquiring crash reports and diagnostic logs](https://developer.apple.com/documentation/xcode/acquiring-crash-reports-and-diagnostic-logs)

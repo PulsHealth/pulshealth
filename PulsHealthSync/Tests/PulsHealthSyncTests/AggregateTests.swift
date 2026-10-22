@@ -624,6 +624,37 @@ import Testing
         #expect(!future.isAvailableOnThisOS)
     }
 
+    @Test func readableHistorySkipsUnknownTypesAndKeepsTheHeartbeatAuthorizationPair() {
+        let identifiers = [unknown, HealthTypeCatalog.heartbeatSeriesIdentifier,
+                           HealthTypeCatalog.medicationDoseIdentifier,
+                           HealthTypeCatalog.activitySummaryIdentifier]
+        let types = ReadableHistory.objectTypes(for: identifiers)
+        #expect(Set(types.values) == [HealthTypeCatalog.heartbeatSeriesIdentifier,
+                                    HKQuantityTypeIdentifier.heartRateVariabilitySDNN.rawValue,
+                                    HealthTypeCatalog.activitySummaryIdentifier])
+        #expect(ReadableHistory.objectTypes(for: [unknown]).isEmpty)
+    }
+
+    @Test func rawPageRejectsUnknownTypeBeforeConstructingAHealthKitQuery() async {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("puls-unsupported-raw-\(UUID())", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        let engine = HealthSyncEngine(
+            store: store, eventLog: SyncEventLog(directory: dir), wakeLog: WakeLog(directory: dir))
+        do {
+            _ = try await engine.queryPage(
+                unknown, anchor: nil, start: Date(timeIntervalSince1970: 1_700_000_000),
+                config: SyncConfiguration())
+            Issue.record("Expected unavailable raw type to throw")
+        } catch SyncError.unknownType(let identifier) {
+            #expect(identifier == unknown)
+        } catch {
+            Issue.record("Expected unknownType, received \(error)")
+        }
+        #expect(await store.typeStates.isEmpty)
+    }
+
     @Test func unavailableAggregateFailsBeforeDeliveringAnyEmptyBuckets() async {
         let config = AggregateConfig(typeIdentifier: unknown, function: .sum)
         let start = Date(timeIntervalSince1970: 1_700_000_000)

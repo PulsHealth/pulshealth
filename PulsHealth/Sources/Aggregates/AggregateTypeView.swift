@@ -327,8 +327,7 @@ private struct AggregateOptionsSheet: View {
     }
 
     private func update(_ edit: (inout AggregateConfig) -> Void) {
-        guard let index = model.config.aggregates.firstIndex(where: { $0.id == configID }) else { return }
-        edit(&model.config.aggregates[index])
+        model.editSyncAggregate(id: configID, edit)
     }
 }
 
