@@ -48,6 +48,16 @@ extension AppModel {
 
     // MARK: - Sync only
 
+    /// Edit the staged list's local copy so the closure can also read `config`.
+    /// Passing `&config.aggregates[index]` would hold an exclusive write to the
+    /// whole configuration while “Same as Sync” reads its start date.
+    func editSyncAggregate(id: UUID, _ edit: (inout AggregateConfig) -> Void) {
+        editAggregates(.sync) { list in
+            guard let index = list.configs.firstIndex(where: { $0.id == id }) else { return }
+            edit(&list.configs[index])
+        }
+    }
+
     /// The applied config with this id, if Apply has sent it to the engine.
     func appliedAggregate(id: UUID) -> AggregateConfig? {
         appliedConfig.aggregates.first { $0.id == id }

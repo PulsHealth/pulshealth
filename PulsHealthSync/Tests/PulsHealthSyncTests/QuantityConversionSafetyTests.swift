@@ -9,6 +9,15 @@ import Testing
 @Suite struct QuantityConversionSafetyTests {
     private let date = Date(timeIntervalSince1970: 1_767_225_600)
 
+    @Test func everyCanonicalUnitIsCompatibleWithItsHealthKitType() throws {
+        for descriptor in HealthTypeCatalog.quantityTypes {
+            let type = try #require(descriptor.sampleType as? HKQuantityType)
+            let unit = try #require(descriptor.unit)
+            #expect(type.is(compatibleWith: unit),
+                    "\(descriptor.identifier) rejects its canonical unit \(descriptor.unitString ?? "nil")")
+        }
+    }
+
     private func descriptor(unit: String?) -> HealthTypeDescriptor {
         HealthTypeDescriptor(
             identifier: HKQuantityTypeIdentifier.distanceWalkingRunning.rawValue,
