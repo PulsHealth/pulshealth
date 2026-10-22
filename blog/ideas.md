@@ -20,6 +20,7 @@ Existing posts retain their original dates and permanent URLs.
 | Where did the data stop moving? | [Sync troubleshooting](articles/apple-health-not-syncing.mdx) |
 | What do individual HRV readings mean? | [Revised HRV guide](articles/apple-watch-hrv-complete-guide.mdx) |
 | What is open and what can I run? | [Revised open-source introduction](articles/pulshealth-is-open-source.mdx) |
+| How can AI help me set up the database and build on it? | [AI-assisted setup and projects](articles/set-up-pulshealth-with-ai.mdx) |
 
 ## Follow-up research
 
