@@ -30,7 +30,7 @@ export default function ProPage() {
           <p className="mt-4"><Link href="/pricing" className="text-brand underline-offset-4 hover:underline">Compare Free and Pro</Link></p>
         </div>
         <div className="space-y-4">
-          <AppStoreBadge />
+          <AppStoreBadge placement="pro" />
           <p className="text-sm text-muted-foreground">Find Pro in the plan row in Settings. Available history depends on Apple Health permissions and what is stored on your phone.</p>
         </div>
       </section>

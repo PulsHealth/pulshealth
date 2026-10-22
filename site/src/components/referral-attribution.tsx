@@ -1,5 +1,6 @@
 "use client";
 
+import {analyticsPreferenceEvent, excludedInThisBrowser} from "@/lib/analytics-preferences";
 import { useEffect } from "react";
 import { campaignCookie, isPulsAppStoreLink, referralSlug, referralStoreURL } from "@/lib/referral-attribution";
 
@@ -9,7 +10,7 @@ export function ReferralAttribution() {
     if (location.hostname !== "pulshealth.com") return;
     const originals = new WeakMap<HTMLAnchorElement, string>();
     function update() {
-      const optedOut = navigator.doNotTrack === "1" || (navigator as Navigator & {globalPrivacyControl?: boolean}).globalPrivacyControl;
+      const optedOut = excludedInThisBrowser() || navigator.doNotTrack === "1" || (navigator as Navigator & {globalPrivacyControl?: boolean}).globalPrivacyControl;
       if (optedOut) document.cookie = `${campaignCookie}=; Path=/; Max-Age=0; Secure; SameSite=Lax`;
       const slug = optedOut ? null : referralSlug(document.cookie);
       for (const link of document.querySelectorAll<HTMLAnchorElement>("a[href]")) {
@@ -24,10 +25,14 @@ export function ReferralAttribution() {
     // Refresh at interaction time too: a campaign can expire while a tab stays open.
     for (const event of ["pointerdown", "keydown", "click", "focusin"]) document.addEventListener(event, update, true);
     window.addEventListener("pageshow", update);
+    window.addEventListener(analyticsPreferenceEvent, update);
+    window.addEventListener("storage", update);
     return () => {
       observer.disconnect();
       for (const event of ["pointerdown", "keydown", "click", "focusin"]) document.removeEventListener(event, update, true);
       window.removeEventListener("pageshow", update);
+      window.removeEventListener(analyticsPreferenceEvent, update);
+      window.removeEventListener("storage", update);
     };
   }, []);
   return null;

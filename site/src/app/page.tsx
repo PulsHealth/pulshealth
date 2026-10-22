@@ -87,7 +87,7 @@ export default async function HomePage() {
               Explore your health in the PulsHealth web app. Keep your database in sync, export what matters, and connect the AI tools you choose.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <AppStoreBadge className="[&_img]:h-12" />
+              <AppStoreBadge className="[&_img]:h-12" placement="hero" />
               <Button asChild variant="outline" size="lg" className="h-12">
                 <a href={DEMO_URL}>Try the dashboard <ArrowRight className="ml-1 h-4 w-4" aria-hidden /></a>
               </Button>
@@ -187,7 +187,7 @@ export default async function HomePage() {
         }>
           <p>Choose the measurements and time range you need. Export the last 30 days free, or your full available history with Pro. Use CSV for spreadsheets or JSON for your own tools and projects.</p>
           <p>Save a personal archive, share a file, or take your data into a new workflow. No account or database required.</p>
-          <a href={APP_STORE_URL} className={textLink}>Get the app <ArrowRight className="h-4 w-4" aria-hidden /></a>
+          <a href={APP_STORE_URL} data-analytics-placement="export_section" className={textLink}>Get the app <ArrowRight className="h-4 w-4" aria-hidden /></a>
         </Feature>
 
         <Feature id="iphone" title="Your health. In every detail." intro="Individual readings or custom summaries." visual={
@@ -237,7 +237,7 @@ export default async function HomePage() {
         <div className="container mx-auto max-w-7xl px-5 py-20 text-center md:py-24">
           <h2 className="text-4xl font-semibold tracking-tight md:text-6xl">Your data. Your next possibility.</h2>
           <p className="mx-auto mb-8 mt-5 max-w-xl text-xl leading-relaxed text-muted-foreground">Start with a single export. Build your own health archive. Make more of the data you already have.</p>
-          <AppStoreBadge className="inline-block" />
+          <AppStoreBadge className="inline-block" placement="closing_cta" />
           <p className="mt-5 text-sm text-muted-foreground">Free to explore and export. No account needed.</p>
         </div>
       </section>
