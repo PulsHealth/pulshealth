@@ -891,3 +891,23 @@ scrubbed reason. Cancellation always throws and keeps nothing.
 xcodebuild test -scheme PulsHealthSync \
   -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
+
+### Medication identity
+
+Medication doses (iOS 26+) carry a readable `medication` name when authorized
+and an optional `medicationID` UUID alias. IDs group equal HealthKit medication
+concepts within this app installation, even across launches, exports and saved
+receivers. Identical or changed display names do not determine identity.
+`MedicationIdentityStore` persists secure archives of Apple's opaque identifiers
+with random UUIDs in a protected, backup-excluded registry separate from anchors.
+Exports share only this registry, never sync progress. File loss or reinstall
+creates new IDs; cross-device stability is not promised. A registry failure
+prevents upload acknowledgement/export completion.
+
+The public Apple API exposes concept equality, display text, general form and
+related clinical codes, but no public raw concept string or per-dose conversion
+from `count` into mg/g. An alias is not a clinical code, formulation, strength or
+mass conversion. Never infer those from a name. Previously inserted server rows
+are not overwritten by normal resync; use the explicitly reviewed
+[historical repair tool](../tools/repair-medications/README.md) with a fresh phone
+export to repair exact dose UUIDs.

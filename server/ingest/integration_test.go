@@ -268,7 +268,7 @@ func TestIntegration_SeriesKindsAndRoutes(t *testing.T) {
 {"uuid":"%s","type":"HKDataTypeIdentifierHeartbeatSeries","kind":"heartbeatSeries","start":1718000000000,"end":1718000060000,"sourceName":"Apple Watch","heartbeats":[[0.5,false],[1.2,true],[1.9,false]]}
 {"uuid":"%s","type":"HKDataTypeIdentifierElectrocardiogram","kind":"ecg","start":1718000000000,"end":1718000030000,"sourceName":"Apple Watch","ecg":{"classification":"sinusRhythm","averageHeartRateBpm":61.0,"samplingFrequencyHz":512.0,"symptomsStatus":"none","voltagesUV":[1.5,-2.25,3.0,4.5]}}
 {"uuid":"%s","type":"HKDataTypeIdentifierStateOfMind","kind":"stateOfMind","start":1718000000000,"end":1718000000000,"sourceName":"iPhone","stateOfMind":{"kind":"momentaryEmotion","valence":0.42,"valenceClassification":"pleasant","labels":["happy"],"associations":["fitness"]}}
-{"uuid":"%s","type":"HKMedicationDoseEventTypeIdentifierMedicationDoseEvent","kind":"medicationDose","start":1718000000000,"end":1718000000000,"sourceName":"iPhone","medicationDose":{"medication":"Ibuprofen","status":"taken","scheduledAt":1717999200000,"doseQuantity":200,"doseUnit":"mg"}}
+{"uuid":"%s","type":"HKMedicationDoseEventTypeIdentifierMedicationDoseEvent","kind":"medicationDose","start":1718000000000,"end":1718000000000,"sourceName":"iPhone","medicationDose":{"medication":"Ibuprofen","medicationID":"d1000000-0000-4000-8000-000000000001","status":"taken","scheduledAt":1717999200000,"doseQuantity":200,"doseUnit":"mg"}}
 {"route":{"workoutUUID":"%s","points":[{"t":1718000001000,"lat":37.3349,"lon":-122.009,"alt":12.5,"hAcc":3.2,"vAcc":4.1,"speed":2.8,"course":181.0},{"t":1718000002000,"lat":37.335,"lon":-122.0091}]}}
 {"route":{"workoutUUID":"%s","points":[{"t":1718000003000,"lat":37.3351,"lon":-122.0092}]}}
 {"series":{"workoutUUID":"%s","type":"HKQuantityTypeIdentifierHeartRate","unit":"count/min","points":[{"t":1718000001000,"value":120.0},{"t":1718000002000,"value":135.5}]}}
@@ -375,10 +375,13 @@ func TestIntegration_SeriesKindsAndRoutes(t *testing.T) {
 	if len(labels) != 1 || labels[0] != "happy" {
 		t.Errorf("labels = %v", labels)
 	}
-	var status string
+	var status, medicationID string
 	if err := pool.QueryRow(ctx,
-		`SELECT status FROM medication_dose_events WHERE uuid = $1`, medUUID).Scan(&status); err != nil {
+		`SELECT status, medication_id FROM medication_dose_events WHERE uuid = $1`, medUUID).Scan(&status, &medicationID); err != nil {
 		t.Fatalf("verify medication dose: %v", err)
+	}
+	if medicationID != "d1000000-0000-4000-8000-000000000001" {
+		t.Errorf("medication identity = %q", medicationID)
 	}
 	if status != "taken" {
 		t.Errorf("status = %q", status)

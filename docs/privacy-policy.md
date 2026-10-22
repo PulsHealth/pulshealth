@@ -231,6 +231,16 @@ uploaded server data or revoke credentials on the server.
   the app. The one time health samples rest in the app's storage is an export you
   asked for, briefly, as described under [Exports](#exports); the analysis
   summaries below are derived numbers, not samples.
+- **Medication aliases** — `medication-identities.json` in the app's private
+  container stores Apple's securely archived, opaque medication concept identifiers
+  and randomly generated UUID aliases. This contains concept identity, not dose
+  events, medication names, quantities or timestamps. It uses iOS file protection
+  and is excluded from backups. Sync and requested exports share these aliases
+  across launches and saved databases, separately from sync progress. Only the
+  alias, never the Apple archive, accompanies a dose sent to your chosen destination.
+  Unpairing or resetting sync does not clear this mapping. Deleting the app or
+  losing this file creates new aliases; they do not identify a medication across
+  devices or reinstalls.
 - **Analysis summaries** — when you analyze a data type on the Explore tab,
   the app reads the past year of that type from Apple Health and keeps a
   *summary* of it, one

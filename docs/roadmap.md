@@ -32,10 +32,14 @@ build Apple has accepted; 28 is the latest accepted build recorded here.
   2026-10-22 needs a replacement build and physical-device/TestFlight acceptance
   after its source fix; the already-uploaded 2.2 (28) candidate is unchanged.
   See [crash diagnostics](appstore/crash-diagnostics.md#aggregate-options-crash-found-on-2026-10-22).
-- Medication export names are being corrected under
-  [#291](https://github.com/PulsHealth/pulshealth/issues/291). A display name is
-  not a stable medication identifier, and existing server rows need an explicit
-  repair plan; resetting anchors alone does not overwrite raw samples.
+- Medication export names and installation-local UUID aliases address
+  [#291](https://github.com/PulsHealth/pulshealth/issues/291) in source. Device
+  acceptance and a replacement build remain required. Existing server rows need
+  a fresh phone export and the explicit, reviewed
+  [historical repair plan](../tools/repair-medications/README.md); resetting
+  anchors alone does not overwrite raw samples. No historical repair has run.
+  Cross-device identity and clinical strength/conversion metadata remain outside
+  the alias guarantee.
 - After Apple approval, verify public availability and update the shipped-version
   record. Keep the review account available while a submission still needs it.
   Source, archive, test and device evidence are in

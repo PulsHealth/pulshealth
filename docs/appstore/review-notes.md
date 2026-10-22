@@ -93,6 +93,7 @@ HEALTHKIT (Guideline 5.1.3)
 - Read-only. The app never calls a HealthKit write API.
 - Health data is not used for advertising, marketing or data mining, and is not sold. It leaves the app as sync to the configured database, exports the user shares, or one-time request delivery explicitly approved by the user.
 - Health samples are staged only for requested exports, in temporary storage excluded from backup. Analysis summaries stay on-device and are also backup-excluded.
+- Medication sync/exports use installation-local random UUID aliases. A protected, backup-excluded registry keeps opaque Apple concept identifiers and aliases without dose events or names. Only aliases leave the device; deleting the app creates new aliases.
 
 CAMERA
 

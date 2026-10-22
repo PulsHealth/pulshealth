@@ -1230,9 +1230,16 @@ public actor HealthSyncEngine {
                         return (dose.uuid, dose.medicationConceptIdentifier)
                     }, uniquingKeysWith: { first, _ in first }
                 )
+                // Aliases survive process restarts and receiver changes, but are
+                // scoped to this app installation. Persist them before upload.
+                let concepts = samples.compactMap { identifiers[$0.uuid] }
+                let aliases = try await MedicationIdentityStore.shared.identifiers(for: concepts)
+                var aliasIndex = 0
                 for index in samples.indices {
                     guard let identifier = identifiers[samples[index].uuid] else { continue }
                     samples[index].medicationDose?.medication = names.name(for: identifier)
+                    samples[index].medicationDose?.medicationID = aliases[aliasIndex]
+                    aliasIndex += 1
                 }
             }
             return WorkoutEnrichment()
