@@ -100,32 +100,23 @@ struct ExploreView: View {
     // MARK: - Cards
 
     @ViewBuilder private var accessCards: some View {
-        if model.needsAuthorization || !model.authorizationRequested {
-            if model.authorizationRequested {
-                CardSection(
-                    "Health access incomplete",
-                    subtitle: "Some enabled data types haven't been authorized yet, so their syncs will fail."
-                ) {
-                    // The Sync tab's Apply bar only appears while
-                    // changes are staged, so in this exact situation (types
-                    // added to the catalog after the first grant, or an
-                    // interrupted permission sheet) there was no button to
-                    // tap. Request access directly; the request is idempotent
-                    // and skips determined types.
-                    Button("Grant Health Access") {
-                        Task { await model.requestAccessForEnabledTypesIfNeeded() }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    authorizationHint
+        if model.needsAuthorization && model.authorizationRequested {
+            CardSection(
+                "Health access incomplete",
+                subtitle: "Some enabled data types haven't been authorized yet, so their syncs will fail."
+            ) {
+                // The Sync tab's Apply bar only appears while
+                // changes are staged, so in this exact situation (types
+                // added to the catalog after the first grant, or an
+                // interrupted permission sheet) there was no button to
+                // tap. Request access directly; the request is idempotent
+                // and skips determined types.
+                Button("Grant Health Access") {
+                    Task { await model.requestAccessForEnabledTypesIfNeeded() }
                 }
-            } else {
-                CardSection(
-                    "Health access not requested yet",
-                    subtitle: "Opening a type asks for Health access to it, and nothing is read until you allow it."
-                ) {
-                    authorizationHint
-                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                authorizationHint
             }
         }
 
