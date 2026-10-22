@@ -1,5 +1,6 @@
 import Foundation
 import HealthKit
+import CryptoKit
 
 // The last two phases of `syncAllEnabled`: GPS routes, then intra-workout
 // streams, run *after* all basic data is synced.
@@ -33,7 +34,8 @@ import HealthKit
 // route-/series-only batches, and advances a singleton `computedThrough` watermark
 // to each workout's `endDate` only after *all* of that workout's chunks are acked
 // (anchor-after-ack). A trailing lookback re-covers recent workouts that gained
-// late Watch data, and a ~monthly full pass repairs older edits.
+// late Watch data, and a ~monthly full pass rechecks older data. Insert-only
+// receivers do not overwrite edited points or remove missing ones.
 
 /// A workout-enrichment payload (route or series) whose points can be split so a
 /// single workout's data never exceeds one batch's point budget.
@@ -274,16 +276,17 @@ extension HealthSyncEngine {
             var totalBatches = 0
             for workout in workouts {
                 try Task.checkCancellation()
-                let batches = try await enrichmentBatches(
+                let prepared = try await enrichmentBatches(
                     kind, for: workout, enricher: enricher, budget: budget, reason: reason)
-                if batches.isEmpty {
-                    // No enrichment (no GPS / no streamable curves) — trivially
+                if prepared.batches.isEmpty {
+                    // No enrichment, or unchanged acknowledged streams — trivially
                     // complete; still advance the watermark past it.
                     await store.advanceWorkoutEnrichmentWatermark(kind, to: workout.endDate, workouts: 1)
                 } else {
                     try await uploadWorkoutEnrichment(
-                        kind, batches: batches, workoutEnd: workout.endDate, transport: transport)
-                    totalBatches += batches.count
+                        kind, batches: prepared.batches, workoutEnd: workout.endDate, transport: transport,
+                        streamFingerprints: prepared.fingerprints)
+                    totalBatches += prepared.batches.count
                     notifyChanged()
                 }
                 totalWorkouts += 1
@@ -331,7 +334,7 @@ extension HealthSyncEngine {
     private func enrichmentBatches(
         _ kind: WorkoutEnrichmentKind, for workout: HKWorkout,
         enricher: SeriesEnricher, budget: Int, reason: SyncReason
-    ) async throws -> [SyncBatch] {
+    ) async throws -> (batches: [SyncBatch], fingerprints: [String: String]) {
         let deviceID = store.deviceID
         let typeID = HealthTypeCatalog.workoutIdentifier
         switch kind {
@@ -340,7 +343,7 @@ extension HealthSyncEngine {
             // record GPS (indoor strength/yoga/elliptical/…) — querying them just
             // returns empty. Conservative: anything not known-indoor is still
             // queried, so we never drop a real route for a new/unanticipated type.
-            guard Self.mayHaveWorkoutRoute(workout.workoutActivityType) else { return [] }
+            guard Self.mayHaveWorkoutRoute(workout.workoutActivityType) else { return ([], [:]) }
             let payloads: [RoutePayload]
             do {
                 payloads = try await enricher.routePayloads(for: workout)
@@ -352,17 +355,58 @@ extension HealthSyncEngine {
                     "Workout route unavailable for a \(workout.workoutActivityType.rawValue) workout ending \(workout.endDate.formatted(date: .numeric, time: .omitted)): \(error) — skipping routes for this workout")
                 payloads = []
             }
-            return Self.packByPointBudget(payloads, budget: budget).map {
+            return (Self.packByPointBudget(payloads, budget: budget).map {
                 SyncBatch(deviceID: deviceID, type: typeID, reason: reason,
                           samples: [], deletions: [], routes: $0, series: [])
-            }
+            }, [:])
         case .streams:
             let payloads = try await enricher.seriesPayloads(for: workout)
-            return Self.packByPointBudget(payloads, budget: budget).map {
-                SyncBatch(deviceID: deviceID, type: typeID, reason: reason,
-                          samples: [], deletions: [], routes: [], series: $0)
-            }
+            return try await prepareWorkoutStreams(payloads, budget: budget, reason: reason)
         }
+    }
+
+    /// Fingerprint whole metrics before point-budget splitting. Canonical JSON
+    /// records are sorted so HealthKit ordering and payload boundaries do not
+    /// cause retransmissions. Include units and temporal context, matching wire
+    /// content rather than hashing only numeric values.
+    func prepareWorkoutStreams(
+        _ payloads: [WorkoutSeriesPayload], budget: Int, reason: SyncReason
+    ) async throws -> (batches: [SyncBatch], fingerprints: [String: String]) {
+        let previous = await store.workoutEnrichmentState(.streams).streamFingerprints ?? [:]
+        let encoder = JSONEncoder.puls
+        encoder.outputFormatting = [.sortedKeys]
+        var changed: [WorkoutSeriesPayload] = []
+        var fingerprints: [String: String] = [:]
+        let groups = Dictionary(grouping: payloads.filter { !$0.points.isEmpty }) {
+            "\($0.workoutUUID.uuidString):\($0.type)"
+        }
+        for key in groups.keys.sorted() {
+            guard let group = groups[key] else { continue }
+            // Encode each point with its unit; one metric may span many payloads.
+            // JSON lines provide an unambiguous, versioned canonical byte stream.
+            struct Record: Encodable {
+                let unit: String?
+                let point: SeriesPoint
+            }
+            let records = try group.flatMap { payload in
+                try payload.points.map { try encoder.encode(Record(unit: payload.unit, point: $0)) }
+            }.sorted { $0.lexicographicallyPrecedes($1) }
+            var hasher = SHA256()
+            hasher.update(data: Data("workout-stream-v1\n".utf8))
+            for record in records {
+                hasher.update(data: record)
+                hasher.update(data: Data([10]))
+            }
+            let fingerprint = hasher.finalize().map { String(format: "%02x", $0) }.joined()
+            guard previous[key] != fingerprint else { continue }
+            fingerprints[key] = fingerprint
+            changed.append(contentsOf: group)
+        }
+        let batches = Self.packByPointBudget(changed, budget: budget).map {
+            SyncBatch(deviceID: store.deviceID, type: HealthTypeCatalog.workoutIdentifier,
+                      reason: reason, samples: [], deletions: [], routes: [], series: $0)
+        }
+        return (batches, fingerprints)
     }
 
     /// Upload all of one workout's enrichment batches sequentially (low
@@ -375,7 +419,7 @@ extension HealthSyncEngine {
     /// a live HealthKit store.
     func uploadWorkoutEnrichment(
         _ kind: WorkoutEnrichmentKind, batches: [SyncBatch], workoutEnd: Date,
-        transport: SyncTransport
+        transport: SyncTransport, streamFingerprints: [String: String] = [:]
     ) async throws {
         for batch in batches {
             try Task.checkCancellation()
@@ -384,7 +428,8 @@ extension HealthSyncEngine {
                 + batch.series.reduce(0) { $0 + $1.points.count }
             await store.recordWorkoutEnrichmentBatch(kind, payloads: points, bytes: result.bytesSent)
         }
-        await store.advanceWorkoutEnrichmentWatermark(kind, to: workoutEnd, workouts: 1)
+        await store.advanceWorkoutEnrichmentWatermark(
+            kind, to: workoutEnd, workouts: 1, streamFingerprints: streamFingerprints)
     }
 
     /// All workouts whose `endDate` is at or after `endedAfter`, ascending by end
