@@ -11,6 +11,7 @@ and when, is the [Release record](#release-record) at the bottom.
 | Document | What it is |
 |---|---|
 | [`2.1-copy.md`](2.1-copy.md) | Approved 2.1 copy and the five-card advertising campaign; preparation, not a submission record. |
+| [`2.3-copy.md`](2.3-copy.md) | Prepared 2.3 release notes and updated first-sync review instructions; no upload or submission implied. |
 | [`2.2-copy.md`](2.2-copy.md) | Prepared Free/Pro description, What's New and reviewer walkthrough for the 2.2 candidate; acceptance and submission remain separate. |
 | [`concepts/review.html`](concepts/review.html) | Offline review gallery: three visual directions, 15 advertising cards, and saved selections. See [`concepts/README.md`](concepts/README.md) for sources and rebuild instructions. |
 | [`subscriptions.md`](subscriptions.md) | Pro product IDs, US prices, feature limits and release acceptance gates; source preparation only. |
@@ -237,7 +238,20 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.3 (29) preparation (2026-10-22)
+
+Version/build settings and [release copy](2.3-copy.md) are prepared for the next
+release from current main, including the first-sync onboarding replay guard.
+The maintainer reports completed testing; this general confirmation does not
+identify a new archive or imply that build 29 has been uploaded or submitted.
+Candidate evidence, archive and matching symbols must be bound to the final
+clean source commit before upload. Backend and privacy-page delivery remain
+separate release checks.
+
 ### 2.2 (28) submitted for App Review (2026-10-19)
+
+App Store Connect was checked on 2026-10-22 and reports **Ready for Distribution**
+for 2.2 (28). The Waiting for Review status below is historical.
 
 Build **2.2 (28)** was archived from clean source
 `644f0eeaf20b87edc6b23996dbd5a5a4821fe6b8`. Apple processed the build, and the
