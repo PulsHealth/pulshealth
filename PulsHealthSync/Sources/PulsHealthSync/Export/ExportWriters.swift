@@ -501,7 +501,7 @@ final class CSVExportWriter: ExportWriter {
         [
             sample.uuid.uuidString.lowercased(),
             CSVField.epochMilliseconds(sample.start), CSVField.epochMilliseconds(sample.end),
-            detail.medication ?? "", detail.status,
+            detail.medication ?? "", detail.medicationID ?? "", detail.status,
             CSVField.epochMilliseconds(detail.scheduledAt),
             CSVField.number(detail.doseQuantity), detail.doseUnit ?? "",
             sample.sourceName ?? "",

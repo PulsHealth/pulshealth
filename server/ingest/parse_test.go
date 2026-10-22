@@ -1758,3 +1758,38 @@ func TestBatchHeaderTimeZone(t *testing.T) {
 		})
 	}
 }
+
+func TestParseBatch_MedicationIdentity(t *testing.T) {
+	for _, tc := range []struct {
+		name, field string
+		valid       bool
+	}{
+		{"legacy omitted", "", true},
+		{"explicit null", `"medicationID":null,`, true},
+		{"UUID", `"medicationID":"d1000000-0000-4000-8000-000000000001",`, true},
+		{"display name is not identity", `"medicationID":"Ibuprofen",`, false},
+		{"empty string", `"medicationID":"",`, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			sample := strings.Replace(medSample, `"medication":"Ibuprofen",`, `"medication":"Ibuprofen",`+tc.field, 1)
+			b, err := ParseBatch(strings.NewReader(ndjson(t, 1, 0, sample)))
+			if !tc.valid {
+				if err == nil {
+					t.Fatal("invalid medication identity accepted")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			id := b.Samples[0].MedicationDose.MedicationID
+			if tc.name == "UUID" {
+				if id == nil || *id != "d1000000-0000-4000-8000-000000000001" {
+					t.Fatalf("identity = %v", id)
+				}
+			} else if id != nil {
+				t.Fatalf("legacy identity = %v", *id)
+			}
+		})
+	}
+}

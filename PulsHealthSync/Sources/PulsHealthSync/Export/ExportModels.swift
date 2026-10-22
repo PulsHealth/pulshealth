@@ -243,7 +243,7 @@ public enum ExportDataset: String, Sendable, Codable, CaseIterable, Hashable {
         case .workoutSeries:
             return ["workoutUUID", "type", "unit", "t", "value"]
         case .medicationDoses:
-            return ["uuid", "start", "end", "medication", "status", "scheduledAt",
+            return ["uuid", "start", "end", "medication", "medicationID", "status", "scheduledAt",
                     "doseQuantity", "doseUnit", "source"]
         case .ecg, .heartbeatSeries, .deletions:
             return nil

@@ -175,7 +175,8 @@
       "type": "object",
       "required": ["status"],
       "properties": {
-        "medication": { "description": "Display name when resolvable, else a concept description.", "$ref": "common.schema.json#/$defs/nullableString" },
+        "medication": { "description": "Display name when resolvable, else null. Never an opaque object description.", "$ref": "common.schema.json#/$defs/nullableString" },
+        "medicationID": { "description": "Optional sender-assigned UUID for the concept, scoped to the sender device identity map. Not cross-device or reinstall stable.", "anyOf": [{ "$ref": "common.schema.json#/$defs/uuid" }, { "type": "null" }] },
         "status": { "description": "taken, skipped, snoozed, notLogged, or another HealthKit log status name.", "type": "string", "minLength": 1 },
         "scheduledAt": { "$ref": "common.schema.json#/$defs/nullableEpochMs" },
         "scheduledAtContext": { "$ref": "common.schema.json#/$defs/nullableTemporalContext" },

@@ -280,7 +280,7 @@ private enum Fixture {
             start: Fixture.date(1_750_000_000_000), end: Fixture.date(1_750_000_000_000),
             sourceName: "Health",
             medicationDose: MedicationDoseDetail(
-                medication: "Ibuprofen, 200 mg", status: "taken",
+                medication: "Ibuprofen, 200 mg", medicationID: "d1000000-0000-4000-8000-000000000001", status: "taken",
                 scheduledAt: nil, doseQuantity: 2, doseUnit: "tablet"))
         _ = try writer.write(Fixture.batch(
             samples: [mood, dose],
@@ -306,7 +306,7 @@ private enum Fixture {
         #expect(try Fixture.lines(of: files[2].url)[1]
             == "\(Fixture.heartRate),average,1,hour,watch,1750000000000,1750003600000,,count/min")
         #expect(try Fixture.lines(of: files[3].url)[1]
-            == "bbbbbbbb-0000-4000-8000-000000000002,1750000000000,1750000000000,\"Ibuprofen, 200 mg\",taken,,2,tablet,Health")
+            == "bbbbbbbb-0000-4000-8000-000000000002,1750000000000,1750000000000,\"Ibuprofen, 200 mg\",d1000000-0000-4000-8000-000000000001,taken,,2,tablet,Health")
     }
 
     @Test func datasetsWithNoRowsGetNoFileAndAbortRemovesEverything() throws {
