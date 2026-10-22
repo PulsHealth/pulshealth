@@ -28,6 +28,10 @@ build Apple has accepted; 28 is the latest accepted build recorded here.
   included in the candidate. The unspecific sync crash report
   [#210](https://github.com/PulsHealth/pulshealth/issues/210) still needs the
   reporter's build and stack before it can be attributed or closed.
+- The aggregate-options crash found in refreshed 2.1 (22) reports on
+  2026-10-22 needs a replacement build and physical-device/TestFlight acceptance
+  after its source fix; the already-uploaded 2.2 (28) candidate is unchanged.
+  See [crash diagnostics](appstore/crash-diagnostics.md#aggregate-options-crash-found-on-2026-10-22).
 - Medication export names are being corrected under
   [#291](https://github.com/PulsHealth/pulshealth/issues/291). A display name is
   not a stable medication identifier, and existing server rows need an explicit
