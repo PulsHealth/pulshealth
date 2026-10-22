@@ -185,6 +185,7 @@ struct SettingsView: View {
                         confirmDeveloperMode = true
                     }
                 Button("Show Onboarding Again") { model.restartOnboarding() }
+                    .disabled(model.isSettingUpInitialSync)
                 Link("Write a Review", destination: ReviewRequests.writeReviewURL)
                 Link("Documentation", destination: URL(string: "https://pulshealth.com/docs/")!)
                 Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy")!)
