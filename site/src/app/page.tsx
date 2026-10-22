@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
 import { WebAppPreview } from "@/components/web-app-preview";
 import { AiChatPreview } from "@/components/ai-chat-preview";
+import { AiSetupPrompt } from "@/components/ai-setup-prompt";
 import { FaqList } from "@/components/faq-list";
 import { getAllTypes } from "@/lib/api";
 import { faq } from "@/lib/faq";
@@ -190,12 +191,35 @@ export default async function HomePage() {
           <Link href="/knowledge-base" className={textLink}>Discover {kbCount} health data types <ArrowRight className="h-4 w-4" aria-hidden /></Link>
         </Feature>
 
-        <Feature id="ai" title="Bring your health data to AI." intro="Your database. Your AI tools. Your choice." flip visual={<AiChatPreview />}>
-          <p>Ask how your sleep has changed. Compare your workouts. Explore the patterns in your activity over time.</p>
-          <p>Connect a compatible assistant to your PulsHealth database and let it work from your own data. You choose which tools get access.</p>
-          <p className="text-base">Works with compatible MCP clients, including ChatGPT and Claude.</p>
-          <Link href="/docs/ai" className={textLink}>Connect your AI tools <ArrowRight className="h-4 w-4" aria-hidden /></Link>
-        </Feature>
+        <section id="ai" className="scroll-mt-24">
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20">
+            <div>
+              <h2 className="max-w-xl text-4xl font-semibold leading-[1.08] tracking-tight text-balance md:text-5xl">Let your AI help set it up. Then put it to work.</h2>
+              <p className="mt-5 text-xl font-medium">Your database. Your AI tools. Your choice.</p>
+              <p className="mt-4 max-w-lg text-lg leading-relaxed text-muted-foreground text-pretty">Give your coding assistant the PulsHealth docs. It can help deploy your server and configure access. Connect your iPhone, choose what to sync, and bring your health data into your AI workflow.</p>
+              <Link href="/docs/server" className={`${textLink} mt-6`}>Read the setup guide <ArrowRight className="h-4 w-4" aria-hidden /></Link>
+            </div>
+            <AiSetupPrompt />
+          </div>
+
+          <figure className="my-12 border-y py-8 md:my-16 md:grid md:grid-cols-[1fr_3fr] md:gap-10 md:py-10">
+            <figcaption className="mb-4 text-sm text-muted-foreground md:mb-0 md:pt-1">From an App Store review</figcaption>
+            <blockquote className="max-w-3xl text-xl leading-relaxed tracking-tight md:text-2xl">“A single prompt to my Grokbot took care of everything for me. It installed the Docker container and made it accessible through a reverse proxy.”</blockquote>
+          </figure>
+
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20">
+            <div className="lg:order-2">
+              <h3 className="max-w-lg text-3xl font-semibold leading-tight tracking-tight md:text-4xl">Bring your health data to AI.</h3>
+              <div className="mt-5 max-w-lg space-y-5 text-lg leading-relaxed text-muted-foreground text-pretty">
+                <p>Ask how your sleep has changed. Compare your workouts. Explore the patterns in your activity over time.</p>
+                <p>Connect a compatible assistant to your PulsHealth database and let it work from your own data. You choose which tools get access.</p>
+                <p className="text-base">Works with compatible MCP clients, including ChatGPT and Claude.</p>
+                <Link href="/docs/ai" className={textLink}>Connect your AI tools <ArrowRight className="h-4 w-4" aria-hidden /></Link>
+              </div>
+            </div>
+            <div className="min-w-0 lg:order-1"><AiChatPreview /></div>
+          </div>
+        </section>
       </div>
 
       <section className="border-y bg-muted/25">
