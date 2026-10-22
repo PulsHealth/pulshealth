@@ -13,12 +13,13 @@ behind them.
 
 ## 1. The next app release
 
-The latest recorded candidate is **2.2 (28)**, submitted for App Review on
-2026-10-19 with Monthly, Yearly and Lifetime Pro. The recorded submission status
-was Waiting for Review, with automatic release after approval. This is historical
-submission evidence; check App Store Connect before reporting current approval or
-public availability. Any replacement upload needs a build number above every
-build Apple has accepted; 28 is the latest accepted build recorded here.
+The latest recorded candidate is **2.3 (29)**, submitted for App Review on
+2026-10-22. The verified submission status is Waiting for Review, with automatic
+release after approval to all users immediately. This is submission evidence;
+check App Store Connect before reporting current approval or public availability.
+Any replacement upload needs a build number above every build Apple has accepted;
+29 is the latest accepted build recorded here. Version 2.2 (28) was separately
+verified Ready for Distribution on 2026-10-22.
 
 - The maintainer confirmed that the Explore/Export tap bug is working and the
   purchase lifecycle has been tested on 2026-10-20. Keep these confirmations
@@ -29,12 +30,13 @@ build Apple has accepted; 28 is the latest accepted build recorded here.
   [#210](https://github.com/PulsHealth/pulshealth/issues/210) still needs the
   reporter's build and stack before it can be attributed or closed.
 - The aggregate-options crash found in refreshed 2.1 (22) reports on
-  2026-10-22 needs a replacement build and physical-device/TestFlight acceptance
-  after its source fix; the already-uploaded 2.2 (28) candidate is unchanged.
+  2026-10-22 is fixed in the submitted 2.3 (29) build. Monitor the affected
+  Same as Sync toggle and released-build reports for recurrence.
   See [crash diagnostics](appstore/crash-diagnostics.md#aggregate-options-crash-found-on-2026-10-22).
 - Medication export names and installation-local UUID aliases address
-  [#291](https://github.com/PulsHealth/pulshealth/issues/291) in source. Device
-  acceptance and a replacement build remain required. Existing server rows need
+  [#291](https://github.com/PulsHealth/pulshealth/issues/291) in submitted build
+  2.3 (29). The maintainer reports completed testing; reporter acceptance and
+  post-release verification remain separate. Existing server rows need
   a fresh phone export and the explicit, reviewed
   [historical repair plan](../tools/repair-medications/README.md); resetting
   anchors alone does not overwrite raw samples. No historical repair has run.
