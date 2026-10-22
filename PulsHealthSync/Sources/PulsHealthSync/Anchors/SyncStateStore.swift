@@ -224,6 +224,9 @@ public struct WorkoutEnrichmentState: Codable, Sendable, Equatable {
     /// phase boundary. Optional so state files from before this field decode as
     /// no pending request.
     public var forcedRestartPending: Bool?
+    /// SHA-256 per workout UUID / metric, after every chunk was acknowledged.
+    /// Optional for compatibility with state files written before deduplication.
+    public var streamFingerprints: [String: String]?
     public var totalWorkoutsUploaded: Int
     public var totalPayloadsUploaded: Int
     public var totalBatchesUploaded: Int
@@ -1355,9 +1358,13 @@ public actor SyncStateStore {
     /// Advancing *per workout* (not just at end of phase) means a mid-phase
     /// failure loses at most the in-flight workout, not the whole backfill.
     public func advanceWorkoutEnrichmentWatermark(
-        _ kind: WorkoutEnrichmentKind, to newComputedThrough: Date, workouts: Int = 0
+        _ kind: WorkoutEnrichmentKind, to newComputedThrough: Date, workouts: Int = 0,
+        streamFingerprints: [String: String] = [:]
     ) {
         updateWorkoutEnrichment(kind) { s in
+            if !streamFingerprints.isEmpty {
+                s.streamFingerprints = (s.streamFingerprints ?? [:]).merging(streamFingerprints) { _, new in new }
+            }
             s.computedThrough = max(s.computedThrough ?? .distantPast, newComputedThrough)
             if s.fullRecomputeStartedAt != nil {
                 s.fullRecomputeThrough = max(
@@ -1403,6 +1410,7 @@ public actor SyncStateStore {
         state.forcedRestartPending = nil
         state.fullRecomputeStartedAt = date
         state.fullRecomputeThrough = nil
+        state.streamFingerprints = nil
         setWorkoutEnrichmentState(kind, state)
         persistNow()
         return true
@@ -1424,6 +1432,7 @@ public actor SyncStateStore {
             if s.fullRecomputeStartedAt == nil {
                 s.fullRecomputeStartedAt = date
                 s.fullRecomputeThrough = resumeThrough
+                s.streamFingerprints = nil
             }
         }
         persistNow()
