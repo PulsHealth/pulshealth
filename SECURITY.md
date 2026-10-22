@@ -208,6 +208,14 @@ for judging what is.
   Keychain write fails the app parks the token in that protected state file
   instead of dropping it — losing it would stall syncing until the user
   re-entered it — and removes it once the Keychain accepts it.
+- **Medication aliases are installation-local.** The protected, backup-excluded
+  `medication-identities.json` stores secure archives of opaque HealthKit concept
+  identifiers and random UUID aliases, without names or dose events. Equality of
+  decoded identifiers resolves an alias; archive bytes, object descriptions and
+  display names never define identity. Only UUID aliases leave the device. Sync
+  and throwaway exports share this registry, never sync progress. A corrupt,
+  unreadable or unwritable registry fails the page/export rather than minting
+  replacement IDs. Unpair/reset retains it; uninstall or file loss starts new IDs.
 - **App Store financial alerts are independent of health records.** Optional
   accounts-mode V2 webhooks verify Apple signatures, bundle/app identifiers and
   environment using Apple's server library and public trust roots. They do not

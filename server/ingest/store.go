@@ -2084,6 +2084,7 @@ func insertMedicationDoses(ctx context.Context, tx pgx.Tx, samples []Sample,
 	startContextIDs := make([]*int32, n)
 	endContextIDs := make([]*int32, n)
 	meds := make([]*string, n)
+	medicationIDs := make([]*string, n)
 	statuses := make([]string, n)
 	scheds := make([]*time.Time, n)
 	schedContextIDs := make([]*int32, n)
@@ -2100,6 +2101,7 @@ func insertMedicationDoses(ctx context.Context, tx pgx.Tx, samples []Sample,
 		startContextIDs[i] = temporalContextID(temporalContextIDs, s.StartContext)
 		endContextIDs[i] = temporalContextID(temporalContextIDs, s.EndContext)
 		meds[i] = d.Medication
+		medicationIDs[i] = d.MedicationID
 		statuses[i] = d.Status
 		if d.ScheduledAt != nil {
 			t := msToTime(*d.ScheduledAt)
@@ -2119,21 +2121,21 @@ func insertMedicationDoses(ctx context.Context, tx pgx.Tx, samples []Sample,
 		INSERT INTO medication_dose_events (uuid, start_ts, end_ts, medication, status,
 		                                    start_temporal_context_id, end_temporal_context_id,
 		                                    scheduled_ts, scheduled_temporal_context_id,
-		                                    dose_quantity, dose_unit, source_id, metadata, user_id)
+		                                    dose_quantity, dose_unit, source_id, metadata, medication_id, user_id)
 		SELECT x.uuid, x.start_ts, x.end_ts, x.medication, x.status,
 		       x.start_temporal_context_id, x.end_temporal_context_id,
 		       x.scheduled_ts, x.scheduled_temporal_context_id,
-		       x.dose_quantity, x.dose_unit, x.source_id, x.metadata::jsonb, $14::uuid
+		       x.dose_quantity, x.dose_unit, x.source_id, x.metadata::jsonb, x.medication_id, $15::uuid
 		FROM unnest($1::uuid[], $2::timestamptz[], $3::timestamptz[], $4::text[], $5::text[],
 		            $6::integer[], $7::integer[], $8::timestamptz[], $9::integer[],
-		            $10::float8[], $11::text[], $12::smallint[], $13::text[])
+		            $10::float8[], $11::text[], $12::smallint[], $13::text[], $14::text[])
 		     AS x(uuid, start_ts, end_ts, medication, status,
 		          start_temporal_context_id, end_temporal_context_id,
 		          scheduled_ts, scheduled_temporal_context_id,
-		          dose_quantity, dose_unit, source_id, metadata)
+		          dose_quantity, dose_unit, source_id, metadata, medication_id)
 		ON CONFLICT DO NOTHING`,
 		uuids, starts, ends, meds, statuses, startContextIDs, endContextIDs,
-		scheds, schedContextIDs, qtys, units, srcs, metas, userID)
+		scheds, schedContextIDs, qtys, units, srcs, metas, medicationIDs, userID)
 	if err != nil {
 		return 0, err
 	}

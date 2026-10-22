@@ -460,6 +460,16 @@ jobs:
           PULS_API_WRITE_INTEGRATION_TESTS: "1"
         run: go test -race -count=1 -run Integration ./...
 
+      - name: Medication repair unit and database integration tests
+        env:
+          PULS_MEDICATION_REPAIR_INTEGRATION_TESTS: "1"
+          PGHOST: 127.0.0.1
+          PGPORT: "55432"
+          PGDATABASE: postgres
+          PGUSER: postgres
+          PGPASSWORD: ci-secret
+        run: python3 -m unittest discover -s tools/repair-medications -p 'test_*.py' -v
+
       # The web viewer's accounts mode reads through the web_app role, which
       # may see health data only through the per-user views in schema `web`
       # (015_web_accounts.sql). The test seeds two users as the superuser —

@@ -270,7 +270,7 @@ spreadsheet-formula caveat, because cells are written verbatim here too.
 | `aggregates` | no — device only | `type`, `func`, `intervalValue`, `intervalUnit`, `deviceFilter`, `bucketStart`, `bucketEnd`, `value`, `unit` |
 | `workout_routes` | no — device only | `workoutUUID`, `t`, `lat`, `lon`, `alt`, `hAcc`, `vAcc`, `speed`, `course` |
 | `workout_series` | no — device only | `workoutUUID`, `type`, `unit`, `t`, `value` |
-| `medication_doses` | no — device only | `uuid`, `start`, `end`, `medication`, `status`, `scheduledAt`, `doseQuantity`, `doseUnit`, `source` |
+| `medication_doses` | no — device only | `uuid`, `start`, `end`, `medication`, `medicationID`, `status`, `scheduledAt`, `doseQuantity`, `doseUnit`, `source` |
 
 ### CSV layouts and optional details
 
@@ -417,7 +417,15 @@ fresh export after installing the corrected app, within its Health permissions
 and export-history allowance. That address cannot recover medication identity.
 Existing self-hosted raw rows are insert-only: resetting anchors and syncing
 again does **not** update them. Preserve a backup and use a separately reviewed,
-user-scoped repair keyed on the event UUIDs from a corrected export; this fix
-performs no automatic database rewrite or deletion. Stable exported identifiers,
-clinical coding/strength metadata and an automatic recovery tool remain tracked
-in [#291](https://github.com/PulsHealth/pulshealth/issues/291).
+user-scoped repair keyed on exact event UUIDs and timestamps from a corrected
+export using [the historical repair tool](../tools/repair-medications/README.md).
+It defaults to a private reviewable plan and applies only that plan with explicit
+opt-in and original-value checks; there is no automatic rewrite or deletion.
+
+`medicationID` is a random UUID alias for the opaque concept, persisted within
+this app installation and shared across sync and exports (including Data Requests).
+It groups equal concepts independently of names. It survives ordinary sync resets
+and receiver changes, but is not stable across devices, reinstalls or loss of the
+local registry. Clinical coding/strength metadata and cross-device identity remain
+outside this field's guarantee. Apple's public concept identifier has no exposed
+raw string, and `count` alone cannot establish a mass conversion.
