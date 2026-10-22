@@ -238,6 +238,35 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.3 (30) replacement submitted for App Review (2026-10-22)
+
+Build **2.3 (30)** replaces build 29 in App Review. Apple accepted the
+[replacement submission](https://appstoreconnect.apple.com/apps/6757657354/distribution/reviewsubmissions/details/99d44824-58b1-47f1-8400-f67c5a6a4604)
+on **2026-10-22 at 15:34 PDT** and reports **Waiting for Review**. Automatic
+release after approval to all users immediately remains selected. The earlier
+build 29 submission was cancelled to make this replacement; neither this
+submission nor its internal TestFlight availability establishes approval or
+public release.
+
+The candidate adds collapsed-by-default Explore categories with full category
+rows, groups Export layout and ZIP settings under More options, and removes
+the requested explanatory blurbs from Explore, Export and Sync. Existing saved
+category choices remain respected. All earlier 2.3 changes are retained.
+Release notes and build-specific TestFlight guidance were saved; existing
+screenshots, review credentials, privacy declarations and prices were retained.
+
+The archive source is `f3e4fd6eca6e47a2ceb8bf3047f8eb652d2c6b23`;
+PR [#333](https://github.com/PulsHealth/pulshealth/pull/333) merged as
+`77de846c36c2662242124e04454e740f7c10442c` with identical app/package inputs.
+[Candidate iOS CI](https://github.com/PulsHealth/pulshealth/actions/runs/39864394363)
+passed: iOS 27.0 **584 package and 109 app tests**, no skips; iOS 26.5
+**581 package and 101 app tests**, with the documented three/eight platform
+skips. Archive and IPA signatures, HealthKit entitlements, privacy manifests,
+and matching dSYMs were verified. The exact source, IPA hash, test evidence,
+symbols and Apple receipt are retained privately. New physical-device acceptance
+for build 30 remains unverified. No backend or website deployment was needed
+for these UI-only changes.
+
 ### 2.3 (29) submitted for App Review (2026-10-22)
 
 Build **2.3 (29)** was archived from clean source

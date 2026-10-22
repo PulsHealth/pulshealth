@@ -391,8 +391,6 @@ struct SyncView: View {
             showAllButton(count: types.count, expanded: $showsAllAggregates)
         } header: {
             sectionHeader("Aggregates", route: .aggregates)
-        } footer: {
-            Text("Daily totals and averages feed your database’s daily charts and AI assistants.")
         }
     }
 

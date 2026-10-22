@@ -26,7 +26,8 @@ struct ExploreView: View {
     @State private var searchText = ""
     @FocusState private var searchFocused: Bool
     /// Collapsed categories, by raw name, comma-joined.
-    @AppStorage("explore.collapsedGroups") private var collapsedGroups = ""
+    @AppStorage("explore.collapsedGroups") private var collapsedGroups =
+        HealthTypeDescriptor.Group.allCases.map(\.rawValue).sorted().joined(separator: ",")
     @AppStorage("explore.hidesEmptyTypes") private var hidesEmptyTypes = false
     @AppStorage("explore.sort") private var sort = ExploreSort.dataFirst
 
@@ -99,32 +100,23 @@ struct ExploreView: View {
     // MARK: - Cards
 
     @ViewBuilder private var accessCards: some View {
-        if model.needsAuthorization || !model.authorizationRequested {
-            if model.authorizationRequested {
-                CardSection(
-                    "Health access incomplete",
-                    subtitle: "Some enabled data types haven't been authorized yet, so their syncs will fail."
-                ) {
-                    // The Sync tab's Apply bar only appears while
-                    // changes are staged, so in this exact situation (types
-                    // added to the catalog after the first grant, or an
-                    // interrupted permission sheet) there was no button to
-                    // tap. Request access directly; the request is idempotent
-                    // and skips determined types.
-                    Button("Grant Health Access") {
-                        Task { await model.requestAccessForEnabledTypesIfNeeded() }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    authorizationHint
+        if model.needsAuthorization && model.authorizationRequested {
+            CardSection(
+                "Health access incomplete",
+                subtitle: "Some enabled data types haven't been authorized yet, so their syncs will fail."
+            ) {
+                // The Sync tab's Apply bar only appears while
+                // changes are staged, so in this exact situation (types
+                // added to the catalog after the first grant, or an
+                // interrupted permission sheet) there was no button to
+                // tap. Request access directly; the request is idempotent
+                // and skips determined types.
+                Button("Grant Health Access") {
+                    Task { await model.requestAccessForEnabledTypesIfNeeded() }
                 }
-            } else {
-                CardSection(
-                    "Health access not requested yet",
-                    subtitle: "Opening a type asks for Health access to it, and nothing is read until you allow it."
-                ) {
-                    authorizationHint
-                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                authorizationHint
             }
         }
 
@@ -173,8 +165,10 @@ struct ExploreView: View {
                 Button("Show All Types") { hidesEmptyTypes = false }
             }
         } else {
-            ForEach(Self.groups, id: \.self) { group in
-                categorySection(group, types: visibleTypes(in: group))
+            Section("Health Categories") {
+                ForEach(Self.groups, id: \.self) { group in
+                    categoryRows(group, types: visibleTypes(in: group))
+                }
             }
             let hidden = hiddenCount
             if hidden > 0 {
@@ -187,33 +181,37 @@ struct ExploreView: View {
         }
     }
 
-    @ViewBuilder private func categorySection(
+    @ViewBuilder private func categoryRows(
         _ group: HealthTypeDescriptor.Group, types: [HealthTypeDescriptor]
     ) -> some View {
         if !types.isEmpty {
             let expanded = !collapsed.contains(group.rawValue)
-            Section {
-                if expanded {
-                    ForEach(types) { descriptor in
-                        typeRow(descriptor, showsCategory: false)
-                    }
+            Button { toggle(group) } label: {
+                HStack(spacing: 12) {
+                    TypeIcon(group)
+                    Text(group.rawValue)
+                        .fontWeight(.semibold)
+                    Spacer()
+                    Text("\(types.count)")
+                        .font(.subheadline)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                        .accessibilityHidden(true)
                 }
-            } header: {
-                Button { toggle(group) } label: {
-                    HStack(spacing: 8) {
-                        TypeIcon(group, size: .small)
-                        Text(group.rawValue)
-                        Spacer()
-                        Text("\(types.count)").monospacedDigit()
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .rotationEffect(.degrees(expanded ? 90 : 0))
-                    }
-                    .contentShape(Rectangle())
+                .padding(.vertical, 2)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(expanded ? "Expanded" : "Collapsed")
+            .accessibilityHint(expanded ? "Hides this category's types" : "Shows this category's types")
+            if expanded {
+                ForEach(types) { descriptor in
+                    typeRow(descriptor, showsCategory: false)
                 }
-                .buttonStyle(.plain)
-                .accessibilityValue(expanded ? "Expanded" : "Collapsed")
-                .accessibilityHint(expanded ? "Hides this category's types" : "Shows this category's types")
             }
         }
     }
