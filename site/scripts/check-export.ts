@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import { loadPosts } from "../src/lib/blog";
 import { DOCS } from "../src/lib/docs";
 import { STATIC_PAGES } from "../src/lib/pages";
+import { campaigns, campaignStoreURL } from "../src/lib/campaigns";
 import type { BlogPost } from "../src/lib/types";
 
 export function filesIn(directory: string): string[] {
@@ -157,6 +158,14 @@ export function checkExport(siteDir = process.cwd()): void {
     ...posts.filter(post => !post.draft).map(post => `https://pulshealth.com/blog/${post.slug}/`),
     ...identifiers.map(identifier => `https://pulshealth.com/knowledge-base/types/${identifier}/`),
   ]);
+  const campaignDir = path.join(outDir, "go");
+  sameSet(filesIn(campaignDir).filter(file => file.endsWith(`${path.sep}index.html`)).map(file => path.basename(path.dirname(file))), campaigns.map(item => item.id), "Campaign pages");
+  for (const item of campaigns) {
+    const html = requireFile(path.join(campaignDir, item.id, "index.html"));
+    if (!html.includes('content="noindex, follow"')) throw new Error(`Campaign must be noindex: ${item.id}`);
+    if (!decode(html).includes(campaignStoreURL(item.id))) throw new Error(`Campaign App Store attribution missing: ${item.id}`);
+    checkLocalLinks(html, item.path, outDir);
+  }
   console.log(`export: ${identifiers.length} knowledge-base pages and ${DOCS.length} documentation pages checked`);
 }
 
