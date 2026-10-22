@@ -34,7 +34,7 @@ const claims = [
 export const metadata = {
   title: "Privacy Policy - PulsHealth",
   description:
-    "Where your health data goes and where it does not. Sync goes to your configured database. One-time exports go through the share sheet or to a request destination you approve. The public website uses cookie-free, self-hosted analytics.",
+    "Where your health data goes and where it does not. Sync goes to your configured database. One-time exports go through the share sheet or to a request destination you approve. The public website uses self-hosted analytics and short-lived referral campaign labels.",
   alternates: {
     canonical: "/privacy/",
   },
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
               <li>No analytics, advertising, tracking or third-party SDKs in the app. Apple processes optional monthly/yearly Pro subscriptions and one-time Lifetime Pro purchases through StoreKit. All include current and future app features; PulsHealth server, hosting and other services are separate. Buying Lifetime does not cancel an existing subscription.</li>
               <li>Each saved database’s bearer token normally lives in its own iOS Keychain item. Only the active database receives sync uploads. Unpairing removes its local connection and progress; data already uploaded remains on the server. The app does not retain synced health samples: an export you ask for is staged in temporary storage until you share it or confirm request delivery, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
               <li>Medication exports and sync include random aliases that stay consistent within this app installation. A protected, backup-excluded registry stores opaque Apple concept identifiers and their aliases without dose events or names; Apple archives stay on the phone. Removing the app creates new aliases.</li>
-              <li>This public website uses cookie-free, self-hosted analytics for pageviews, fixed action counts and browser performance. Referral links use aggregate redirect click counts without storing visitor identities. Form contents and health data are excluded.</li>
+              <li>This public website uses cookie-free, self-hosted analytics for pageviews, fixed action counts and browser performance. Referral links use aggregate redirect and App Store click counts. A 30-minute campaign-label cookie carries referrals into Apple campaign reports without storing visitor identities. Form contents and health data are excluded.</li>
             </ul>
           </CardContent>
         </Card>
