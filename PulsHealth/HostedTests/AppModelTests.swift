@@ -524,6 +524,50 @@ final class AppModelTests: XCTestCase {
                 || wakes.contains { $0.detail == "apply: backfill newly enabled types" })
     }
 
+    func testReviewDraftLeavesEngineUntouchedUntilApply() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        let original = h.model.config
+        var setup = DatabaseSetup(applied: h.model.appliedConfig)
+        setup.receivePairing(PairingPayload(
+            serverURL: URL(string: "http://127.0.0.1:9")!, token: "token", userID: user))
+        XCTAssertTrue(setup.needsInitialSyncReview(applied: h.model.appliedConfig, saved: []))
+        XCTAssertTrue(setup.commit(to: &h.model.config))
+        h.model.isSettingUpInitialSync = true
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        h.model.setSyncRawTypes([steps, heartRate])
+        h.model.setSyncStartDate(date)
+        let whileReviewing = await h.engine.store.configuration
+        XCTAssertEqual(whileReviewing, original)
+        XCTAssertFalse(h.model.backfillActive)
+        let plainSave = await h.model.applyConfiguration()
+        XCTAssertFalse(plainSave, "Settings Save cannot bypass first sync's Apply")
+        XCTAssertTrue(h.model.isSettingUpInitialSync)
+        let afterPlainSave = await h.engine.store.configuration
+        XCTAssertEqual(afterPlainSave, original)
+        XCTAssertNotNil(h.model.config.serverURL, "Add stages the destination on the main Sync screen")
+        h.model.discardChanges()
+        XCTAssertFalse(h.model.isSettingUpInitialSync)
+        XCTAssertFalse(h.model.hasPendingChanges, "Discard restores the applied configuration")
+        XCTAssertEqual(h.model.config, original)
+
+        h.model.setSyncRawTypes([steps])
+        h.model.setSyncStartDate(date)
+        setup.receivePairing(PairingPayload(
+            serverURL: URL(string: "http://127.0.0.1:9")!, token: "token", userID: user))
+        XCTAssertTrue(setup.commit(to: &h.model.config))
+        h.model.isSettingUpInitialSync = true
+        let applied = await h.model.applyDatabaseConfiguration()
+        XCTAssertTrue(applied)
+        XCTAssertFalse(h.model.isSettingUpInitialSync)
+        XCTAssertEqual(h.model.appliedConfig.startDate, date)
+        XCTAssertEqual(h.model.appliedConfig.enabledTypes, [steps])
+        XCTAssertEqual(h.model.appliedConfig.userID, user)
+        XCTAssertTrue(h.model.backfillActive)
+        let settled = await eventually { !h.model.isSyncingAll }
+        XCTAssertTrue(settled)
+    }
+
     func testFirstDatabaseApplyStartsBackfillAfterOnboarding() async throws {
         let h = try await makeModel(flags: ["onboardingCompleted": true])
         await h.model.start()
@@ -879,8 +923,16 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(Set(h.model.savedDestinations.map(\.userID)).count, 2)
         XCTAssertFalse(h.model.appliedConfig.isSignedInDatabase)
 
+        var returning = DatabaseSetup(applied: h.model.appliedConfig)
+        returning.receivePairing(PairingPayload(serverURL: mine, token: "first-account-token", userID: user))
+        XCTAssertFalse(returning.needsInitialSyncReview(
+            applied: h.model.appliedConfig, draft: h.model.config, saved: h.model.savedDestinations),
+            "returning to a saved user resumes its progress without first-sync setup")
+        h.model.isSettingUpInitialSync = true
+        h.model.config.serverURL = URL(string: "https://third.example.test")!
         let switched = await h.model.switchDestination(id: firstID)
         XCTAssertTrue(switched)
+        XCTAssertFalse(h.model.isSettingUpInitialSync, "switching discards the unstarted setup")
         XCTAssertEqual(h.model.appliedConfig.userID, user)
         XCTAssertEqual(h.model.appliedConfig.authToken, "first-account-token")
         XCTAssertTrue(h.model.appliedConfig.isSignedInDatabase)

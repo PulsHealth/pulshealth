@@ -130,6 +130,12 @@ struct SettingsView: View {
             // Only while there is something to apply: the draft holds edits
             // from this screen and the User page until this or another
             // Save & Apply commits them.
+            if model.isSettingUpInitialSync {
+                Section {
+                    Text("Finish setting up your database on the Sync tab. Apply there starts the first sync with your selected types and history.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+            }
             if model.hasPendingSettingsChanges {
                 Section {
                     Button {
@@ -140,6 +146,7 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
+                    .disabled(model.isSettingUpInitialSync)
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 4, trailing: 0))
                     .listRowSeparator(.hidden)
@@ -565,7 +572,7 @@ struct UserView: View {
                         } else if await model.applyConfiguration() { dismiss() }
                     }
                 }
-                .disabled(!userIDValid || account.busy || signingIn || (signedIn && account.profile == nil))
+                .disabled(model.isSettingUpInitialSync || !userIDValid || account.busy || signingIn || (signedIn && account.profile == nil))
             }
         }
         .navigationTitle("User").navigationBarTitleDisplayMode(.inline)
