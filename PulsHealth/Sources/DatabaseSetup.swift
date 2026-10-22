@@ -38,10 +38,14 @@ struct DatabaseSetup: Equatable {
     /// `preferred` is the choice the person already made before arriving (the
     /// Sync tab's first-time screen); it applies only on an install with no
     /// database, where the screen would otherwise ask.
-    init(applied: SyncConfiguration, scanOnArrival: Bool = false, preferred: DatabaseDestination? = nil) {
+    init(
+        applied: SyncConfiguration, scanOnArrival: Bool = false,
+        preferred: DatabaseDestination? = nil, isStaged: Bool = false
+    ) {
         if PulsHealthDatabase.isSignedIn(applied) {
             destination = .pulsHealth
             own = ServerFieldsDraft()
+            signedIn = isStaged ? ServerFieldsDraft(configuration: applied) : nil
         } else {
             destination = applied.serverURL != nil || scanOnArrival ? .own : preferred
             own = ServerFieldsDraft(configuration: applied)
@@ -104,8 +108,21 @@ struct DatabaseSetup: Equatable {
         }
     }
 
-    /// Save & Apply: writes the current choice's fields into the
-    /// configuration draft. False, and nothing written, when the choice has
+    /// A new server/user identity needs a review before its first upload.
+    /// Preview a copy so merely opening review never consumes a paired user ID
+    /// or writes connection fields into the shared configuration draft.
+    func needsInitialSyncReview(
+        applied: SyncConfiguration, draft: SyncConfiguration? = nil, saved: [SavedSyncDestination]
+    ) -> Bool {
+        var preview = draft ?? applied
+        var copy = self
+        guard copy.commit(to: &preview), let identity = ServerIdentity(configuration: preview) else { return false }
+        return identity != ServerIdentity(configuration: applied)
+            && !saved.contains { $0.identity == identity }
+    }
+
+    /// Add Database / Save & Apply: writes the current choice's fields into
+    /// the configuration draft. False, and nothing written, when the choice has
     /// nothing to commit (none made, or no sign-in yet).
     mutating func commit(to configuration: inout SyncConfiguration) -> Bool {
         switch destination {

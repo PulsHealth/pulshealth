@@ -12,9 +12,13 @@ Selecting managed hosting immediately shows its checkmark and opens the browser
 connection page. Sign in there and tap Connect this iPhone to return a pairing
 code directly to the app. An existing browser session is reused. This flow does
 not depend on the newer native account/profile endpoints being deployed.
-The app tests the connection and presents Save & Apply; only that action enables
-sync. Closing the browser without pairing explains that this iPhone is not yet
-connected. Create Account explains that hosting is currently full and opens the
+The app tests the connection. Add Database returns to the main Sync screen for a
+new database/user, with the staged types, existing edit pickers and a backfill
+start date. Nothing is uploaded until Apply. Discard cancels the setup. Apply
+shows brief guidance about longer backfills, keeping the app open and the phone
+unlocked and plugged in; Apply & Start Sync then saves and starts syncing.
+Existing saved destinations retain Save & Apply and their saved progress.
+Closing the browser without pairing explains that this iPhone is not yet connected. Create Account explains that hosting is currently full and opens the
 signup waitlist; users are notified by email after approval.
 
 Published as

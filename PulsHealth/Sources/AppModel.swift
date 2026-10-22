@@ -37,6 +37,8 @@ final class AppModel {
     /// The Export tab: the server-less way out. A model of its own so a run
     /// outlives the screen that started it (`ExportModel`).
     let subscriptions: SubscriptionStore
+    /// Add Database stages a new destination on Sync; only Apply saves it.
+    var isSettingUpInitialSync = false
     var showsPro = false
     var proContext: ProContext = .plan
     let export = ExportModel()
@@ -250,7 +252,7 @@ final class AppModel {
     }
 
     var reviewRequestsBlocked: Bool {
-        subscriptions.showsGiftWelcome || showsPro || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
+        subscriptions.showsGiftWelcome || showsPro || isSettingUpInitialSync || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
             || pairingAwaitsSyncTab || lastErrorMessage != nil || stateFileUnreadable
             || needsAuthorization || isSyncingAll || backfillActive || export.isRunning
             || statuses.contains(where: { $0.activity == .syncing })
@@ -836,6 +838,12 @@ final class AppModel {
         syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false,
         clearAuthToken: Bool = false
     ) async -> Bool {
+        // Other screens share this draft. Their plain Save must not silently
+        // commit a new database without the Sync screen's first-backfill Apply.
+        guard !isSettingUpInitialSync || wholeHistory else {
+            lastErrorMessage = "Finish setting up your database on the Sync tab and tap Apply to start its first sync."
+            return false
+        }
         guard connectionEditCanStart() else { return false }
         let submitted = config
         if submitted.serverURL != nil {
@@ -877,6 +885,7 @@ final class AppModel {
         }
         appliedConfig = await engine.store.configuration
         config = appliedConfig
+        isSettingUpInitialSync = false
         lastErrorMessage = nil
         await engine.eventLog.log(.info, "Database configuration applied")
         Task { await refreshServerCapabilities() }
@@ -998,7 +1007,7 @@ final class AppModel {
     /// with continued processing on supported iOS versions.
     @discardableResult
     func applyDatabaseConfiguration() async -> Bool {
-        let firstConnection = appliedConfig.serverURL == nil && config.serverURL != nil
+        let firstConnection = isSettingUpInitialSync || (appliedConfig.serverURL == nil && config.serverURL != nil)
         return await applyConfiguration(
             syncNewTypes: firstConnection, wholeHistory: firstConnection, clearAuthToken: config.authToken == nil)
     }
@@ -1081,6 +1090,7 @@ final class AppModel {
     }
 
     private func reloadDestination() async {
+        isSettingUpInitialSync = false
         config = await engine.store.configuration
         appliedConfig = config
         pendingServerChange = nil
@@ -1293,6 +1303,7 @@ final class AppModel {
 
     /// Reverts the staged draft back to what's currently applied.
     func discardChanges() {
+        isSettingUpInitialSync = false
         config = appliedConfig
     }
 
