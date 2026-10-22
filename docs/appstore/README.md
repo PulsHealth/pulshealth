@@ -238,15 +238,33 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
-### 2.3 (29) preparation (2026-10-22)
+### 2.3 (29) submitted for App Review (2026-10-22)
 
-Version/build settings and [release copy](2.3-copy.md) are prepared for the next
-release from current main, including the first-sync onboarding replay guard.
-The maintainer reports completed testing; this general confirmation does not
-identify a new archive or imply that build 29 has been uploaded or submitted.
-Candidate evidence, archive and matching symbols must be bound to the final
-clean source commit before upload. Backend and privacy-page delivery remain
-separate release checks.
+Build **2.3 (29)** was archived from clean source
+`7a540f83cd469af051399a80caab82da40e9e105`; the later site-only main revision
+`73c839a9014e1d55ea68f5d9c7b8fe3748282bf4` has identical iOS inputs. Apple
+processed the build and accepted the
+[submission](https://appstoreconnect.apple.com/apps/6757657354/distribution/reviewsubmissions/details/7b66a220-282e-4c1c-920f-0707312b577d)
+on **2026-10-22 at 14:58 PDT**. The verified status is **Waiting for Review**,
+with automatic release after approval to all users immediately. This is not
+Apple approval or a verified public release.
+
+The build includes the aggregate-options crash fix, medication display names
+and installation-local UUID aliases, skipping unchanged acknowledged workout
+streams, and first-sync selection/history review with the onboarding replay
+guard. [Release copy](2.3-copy.md), existing review credentials, screenshots,
+pricing and ratings are retained. The signed archive, exported IPA, matching
+dSYMs, signature/HealthKit/privacy verification and candidate receipt are kept
+privately. The integrated release PR passed iOS CI on Xcode 26.5 and 27.0.
+The maintainer reported completed testing before archiving; that general
+confirmation is distinct from per-scenario or archive-specific device evidence.
+
+The matching privacy page was published and verified against the tested site
+build. Migration 031 and the updated ingest receiver were deployed from
+`73c839a9014e1d55ea68f5d9c7b8fe3748282bf4`; its health, revision label,
+authentication enforcement and medication-ID column were verified, while the
+database container and viewer/API/MCP deployments remained unchanged. No
+historical medication repair was performed.
 
 ### 2.2 (28) submitted for App Review (2026-10-19)
 
