@@ -365,7 +365,7 @@ nor category samples.
 | `heartbeat_series` | One row per heartbeat-series sample | Beat-to-beat offsets stored as JSON |
 | `ecg_samples` | One row per ECG | Classification, average HR, sampling rate, symptoms status, voltage trace |
 | `state_of_mind` | One row per state-of-mind entry | Momentary emotion or daily mood, valence, labels, associations |
-| `medication_dose_events` | One row per medication dose event | Medication name, status, scheduled time, dose quantity and unit |
+| `medication_dose_events` | One row per medication dose event | Medication name, optional device-local `medication_id`, status, scheduled time, dose quantity and unit |
 
 These tables follow the same general pattern: HealthKit UUID, start/end time,
 optional source, metadata, user, and optional temporal context.

@@ -313,7 +313,8 @@ numbers: the lead I trace in microvolts, one entry per measurement, typically
 HealthKit's label and association cases).
 
 **`medicationDose`** (iOS 26) carries a `medicationDose` object:
-`medication` (string or null: the display name when resolvable), `status`
+`medication` (string or null: the display name when resolvable),
+`medicationID` (optional UUID string or null), `status`
 (`taken`, `skipped`, `snoozed`, `notLogged`, or another HealthKit log status
 name), `scheduledAt` (epoch ms or null), `scheduledAtContext`,
 `doseQuantity` (number or null) and `doseUnit` (string or null, the dose's own
@@ -323,8 +324,12 @@ unit, not a catalog unit).
 matching the dose's opaque HealthKit concept identifier against authorized
 medication concepts (including archived medications). If unavailable, send null;
 an Objective-C object description or memory address is not a medication name.
-Different concepts may share a name, and names may change. This v1 field does not
-provide a stable concept ID, strength conversion or a per-tablet mass. A dose in
+Different concepts may share a name, and names may change. `medicationID` is a
+random UUID assigned by the sender by comparing opaque HealthKit concept
+identifiers for equality. It groups doses only while that device's local identity
+map survives; it is not a cross-device or reinstall-stable ID and cannot be
+reconstructed from a display name. Older senders omit it. This does not provide
+strength conversion or a per-tablet mass. A dose in
 `count` must not be treated as grams or milligrams.
 
 

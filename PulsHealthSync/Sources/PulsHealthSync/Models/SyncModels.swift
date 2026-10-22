@@ -218,6 +218,8 @@ public struct StateOfMindDetail: Codable, Sendable, Equatable {
 public struct MedicationDoseDetail: Codable, Sendable, Equatable {
     /// HealthKit display name when resolvable, otherwise nil. Not a stable identifier.
     public var medication: String?
+    /// Locally assigned concept UUID; stable only while the device identity map survives.
+    public var medicationID: String?
     /// "taken" | "skipped" | "snoozed" | "notLogged" | ...
     public var status: String
     public var scheduledAt: Date?
@@ -226,11 +228,12 @@ public struct MedicationDoseDetail: Codable, Sendable, Equatable {
     public var doseUnit: String?
 
     public init(
-        medication: String? = nil, status: String, scheduledAt: Date? = nil,
+        medication: String? = nil, medicationID: String? = nil, status: String, scheduledAt: Date? = nil,
         scheduledAtContext: TemporalContext? = nil,
         doseQuantity: Double? = nil, doseUnit: String? = nil
     ) {
         self.medication = medication
+        self.medicationID = medicationID
         self.status = status
         self.scheduledAt = scheduledAt
         self.scheduledAtContext = scheduledAtContext
