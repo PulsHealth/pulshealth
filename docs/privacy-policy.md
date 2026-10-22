@@ -1,6 +1,6 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-19**
+**Last updated: 2026-10-22**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
@@ -597,6 +597,16 @@ Store click is not evidence of an installation. IP addresses are used
 transiently to derive anonymous identifiers that rotate daily; raw IP
 addresses are not stored in the analytics database. Operational network
 providers may process request addresses under their own policies.
+
+Campaign landing pages have fixed, public campaign labels in their paths. Their
+App Store buttons include Apple's provider and campaign tokens so Apple can
+report aggregated downloads, purchases and subscriptions associated with a
+campaign. Tokens identify a campaign, not a person. The operator compares
+these privacy-thresholded Apple reports with advertising spend and aggregate
+website actions to evaluate marketing. Apple reports do not expose a website
+visitor's identity or health data. There is no advertising pixel, browser
+fingerprinting or campaign identifier storage added to the app or website.
+Navigating away from a campaign page does not persist that campaign label.
 
 The browser and collection gateway discard URL query strings and fragments,
 referrer paths, page titles, form contents and user identifiers. Collection

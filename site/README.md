@@ -176,3 +176,26 @@ Public charts use relative dates or elapsed time and explain selection, units,
 coverage, weighting and the limits of example user data. Raw exports, executed
 notebooks and private HTML reports stay outside the site and public repository;
 see `../notebooks/healthkit-research/README.md` for the reproducible workflow.
+
+## Acquisition campaign pages
+
+`content/campaigns.json` is a public snapshot exported from the private
+Observatory campaign registry. It contains only public copy, landing paths,
+app ID and Apple's public provider/campaign tokens. Do not add spend, private
+experiment notes, API keys or personal data. Refresh it with Observatory's
+`scripts/export-campaigns.mjs`, passing this file as the destination.
+
+`/go/[campaign]/` statically exports registered variants. These pages are
+noindex and omitted from the sitemap. App Store buttons use the same campaign
+token as the landing path; header/footer badges are updated while that page
+is mounted. No campaign is persisted across navigation, in storage or in the
+iPhone app. The existing production tracker measures fixed action counts by
+page path, respecting DNT/GPC. Tracking query parameters remain discarded.
+An ad click, website visit, App Store click, Apple download and Apple purchase
+are separate events. Observatory owns spend imports, detailed Apple campaign
+reports, scenarios, strategy and private reporting; no app release is needed.
+
+The export checker validates campaign routes, Apple link tokens, noindex and
+local assets. New variants require a reviewed deployment before using their
+landing URL. Retire links only after campaigns stop; do not change an existing
+token's copy mid-test.

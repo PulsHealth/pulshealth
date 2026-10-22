@@ -8,10 +8,10 @@ export const APP_STORE_URL = "https://apps.apple.com/us/app/pulshealth/id6757657
  * Apple's official "Download on the App Store" badge, in the black-on-light and
  * white-on-dark variants. Sized to h-10 so it lines up with `Button size="lg"`.
  */
-export function AppStoreBadge({ className }: { className?: string }) {
+export function AppStoreBadge({ className, href = APP_STORE_URL }: { className?: string; href?: string }) {
   return (
     <a
-      href={APP_STORE_URL}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Download PulsHealth on the App Store"

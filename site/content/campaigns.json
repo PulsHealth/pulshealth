@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "appId": "6757657354",
+  "providerToken": "128397738",
+  "variants": [
+    {
+      "id": "ph-openai-export-a",
+      "path": "/go/ph-openai-export-a/",
+      "headline": "Your Apple Health data. Ready for your spreadsheet.",
+      "body": "Export the Apple Health data you choose to CSV or JSON. Start free on your iPhone."
+    },
+    {
+      "id": "ph-openai-control-b",
+      "path": "/go/ph-openai-control-b/",
+      "headline": "Take your Apple Health data further.",
+      "body": "Explore, export and sync your Apple Health data with the tools you choose. Start free on your iPhone."
+    },
+    {
+      "id": "ph-google-export-a",
+      "path": "/go/ph-google-export-a/",
+      "headline": "Export Apple Health to CSV",
+      "body": "Choose your data and export CSV or JSON from your iPhone. Free to start, with Pro for your full available history."
+    },
+    {
+      "id": "ph-reddit-export-a",
+      "path": "/go/ph-reddit-export-a/",
+      "headline": "Put your Apple Health data to work.",
+      "body": "Export CSV or JSON, explore your records, or sync to a compatible database. Open source. Free to start."
+    },
+    {
+      "id": "ph-meta-export-a",
+      "path": "/go/ph-meta-export-a/",
+      "headline": "From Apple Health to your spreadsheet.",
+      "body": "See how to export the data you choose from your iPhone. Start with a free export in PulsHealth."
+    },
+    {
+      "id": "ph-content-export-a",
+      "path": "/go/ph-content-export-a/",
+      "headline": "Your Apple Health data. Ready for your spreadsheet.",
+      "body": "Export the Apple Health data you choose to CSV or JSON. Start free on your iPhone."
+    }
+  ]
+}
