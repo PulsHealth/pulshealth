@@ -285,6 +285,7 @@ actor FlakyTransport: SyncTransport {
         #expect(state.fullRecomputeStartedAt == nil)
         #expect(state.fullRecomputeThrough == nil)
         #expect(state.forcedRestartPending == nil)
+        #expect(state.streamFingerprints == nil)
     }
 
     @Test func forcedRequestsPersistBeforeBoundaryAndPrequeueBothKinds() async {
@@ -374,6 +375,17 @@ actor FlakyTransport: SyncTransport {
 // MARK: - Full-pass resume scheduling
 
 @Suite struct WorkoutEnrichmentScheduleTests {
+    @Test func ordinaryIncrementalStillRequeriesSevenDaysForLateArrivingData() {
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        let now = start.addingTimeInterval(100 * 86_400)
+        let schedule = WorkoutEnrichmentSchedule.window(
+            startDate: start, computedThrough: now,
+            lastFullRecomputeAt: now.addingTimeInterval(-86_400),
+            fullRecomputeStartedAt: nil, fullRecomputeThrough: nil, now: now)
+        #expect(!schedule.fullPass)
+        #expect(schedule.from == now.addingTimeInterval(-7 * 86_400))
+    }
+
     @Test func interruptedInitialFullPassResumesFromAckedWorkout() {
         let start = Date(timeIntervalSince1970: 1_700_000_000)
         let cursor = start.addingTimeInterval(30 * 86_400)
@@ -478,6 +490,148 @@ actor FlakyTransport: SyncTransport {
         #expect(state.computedThrough == nil, "must not advance the watermark when a chunk fails")
         #expect(state.totalWorkoutsUploaded == 0)
         #expect(state.totalBatchesUploaded == 2, "only the acked chunks were recorded")
+    }
+}
+
+// MARK: - Content-aware stream uploads
+
+@Suite struct WorkoutStreamDeduplicationTests {
+    private func makeDir() -> URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("puls-tests-\(UUID())")
+    }
+
+    private func payload(_ uuid: UUID, type: String = "heartRate", values: [Double] = [1, 2, 3]) -> WorkoutSeriesPayload {
+        WorkoutSeriesPayload(workoutUUID: uuid, type: type, unit: "count/min",
+            points: values.enumerated().map {
+                SeriesPoint(t: Date(timeIntervalSince1970: Double($0.offset)), value: $0.element)
+            })
+    }
+
+    private func upload(_ payloads: [WorkoutSeriesPayload], engine: HealthSyncEngine,
+                        transport: any SyncTransport) async throws {
+        let prepared = try await engine.prepareWorkoutStreams(payloads, budget: 2, reason: .incremental)
+        try await engine.uploadWorkoutEnrichment(.streams, batches: prepared.batches,
+            workoutEnd: Date(timeIntervalSince1970: 100), transport: transport,
+            streamFingerprints: prepared.fingerprints)
+    }
+
+    @Test func unchangedContentSkipsUploadsAcrossReloadAndOnlyChangedMetricsUpload() async throws {
+        let dir = makeDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        let engine = HealthSyncEngine(store: store)
+        let transport = RecordingTransport()
+        let uuid = UUID()
+        let original = payload(uuid)
+        try await upload([original], engine: engine, transport: transport)
+        #expect(await transport.batches.count == 2)
+        // Query ordering and payload boundaries must not affect the fingerprint.
+        var reversed = original
+        reversed.points.reverse()
+        try await upload([reversed.slice(0..<1), reversed.slice(1..<3)], engine: engine, transport: transport)
+        #expect(await transport.batches.count == 2)
+        await store.persistNow()
+        let reloaded = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        let next = HealthSyncEngine(store: reloaded)
+        try await upload([original], engine: next, transport: transport)
+        #expect(await transport.batches.count == 2)
+        try await upload([original, payload(uuid, type: "power")], engine: next, transport: transport)
+        #expect(await transport.batches.count == 4)
+        let changed = payload(uuid, values: [1, 2, 4, 5])
+        try await upload([changed, payload(uuid, type: "power")], engine: next, transport: transport)
+        #expect(await transport.batches.count == 6)
+        #expect(await transport.batches.suffix(2).allSatisfy { $0.series.allSatisfy { $0.type == "heartRate" } })
+        // Unit/context changes also affect content; removed points produce a new
+        // fingerprint but are not tombstones under the insert-only wire contract.
+        var differentUnit = changed
+        differentUnit.unit = "count/s"
+        try await upload([differentUnit], engine: next, transport: transport)
+        #expect(await transport.batches.count == 8)
+        try await upload([payload(uuid, values: [1])], engine: next, transport: transport)
+        #expect(await transport.batches.count == 9)
+        var contextChanged = payload(uuid, values: [1])
+        contextChanged.points[0].temporalContext = .deviceCurrent(
+            for: contextChanged.points[0].t, timeZone: TimeZone(secondsFromGMT: 0)!)
+        try await upload([contextChanged], engine: next, transport: transport)
+        #expect(await transport.batches.count == 10)
+        // Empty/denied reads must not replace the previous acknowledged content.
+        let previous = await reloaded.workoutEnrichmentState(.streams).streamFingerprints
+        try await upload([], engine: next, transport: transport)
+        #expect(await transport.batches.count == 10)
+        #expect(await reloaded.workoutEnrichmentState(.streams).streamFingerprints == previous)
+    }
+
+    @Test func partialAckKeepsPreviousFingerprintAndRetriesAllChangedChunks() async throws {
+        let dir = makeDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        let engine = HealthSyncEngine(store: store)
+        let uuid = UUID()
+        let original = payload(uuid)
+        try await upload([original], engine: engine, transport: RecordingTransport())
+        let previous = await store.workoutEnrichmentState(.streams).streamFingerprints
+        let changed = payload(uuid, values: [4, 5, 6, 7, 8])
+        let flaky = FlakyTransport(failAfter: 1)
+        await #expect(throws: FlakyTransport.Timeout.self) {
+            try await upload([changed], engine: engine, transport: flaky)
+        }
+        #expect(await flaky.accepted == 1)
+        #expect(await store.workoutEnrichmentState(.streams).streamFingerprints == previous)
+        await store.persistNow()
+        let reloaded = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        let transport = RecordingTransport()
+        let next = HealthSyncEngine(store: reloaded)
+        try await upload([changed], engine: next, transport: transport)
+        #expect(await transport.batches.count == 3)
+        try await upload([changed], engine: next, transport: transport)
+        #expect(await transport.batches.count == 3)
+    }
+
+    @Test func fullPassAndForcedRecoveryClearCacheButResumingDoesNot() async throws {
+        let dir = makeDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        let engine = HealthSyncEngine(store: store)
+        let transport = RecordingTransport()
+        let original = payload(UUID())
+        try await upload([original], engine: engine, transport: transport)
+        await store.beginWorkoutEnrichmentFullRecompute(.streams)
+        try await upload([original], engine: engine, transport: transport)
+        #expect(await transport.batches.count == 4)
+        await store.beginWorkoutEnrichmentFullRecompute(.streams)
+        try await upload([original], engine: engine, transport: transport)
+        #expect(await transport.batches.count == 4)
+        await store.markWorkoutEnrichmentFullRecompute(.streams)
+        await store.requestForcedWorkoutEnrichmentFullRecompute([.streams])
+        #expect(await store.consumeForcedWorkoutEnrichmentFullRecompute(.streams))
+        try await upload([original], engine: engine, transport: transport)
+        #expect(await transport.batches.count == 6)
+        await store.resetWorkoutEnrichment(.streams)
+        try await upload([original], engine: engine, transport: transport)
+        #expect(await transport.batches.count == 8)
+        await store.resetAll()
+        try await upload([original], engine: engine, transport: transport)
+        #expect(await transport.batches.count == 10)
+    }
+
+    @Test func newDestinationDoesNotInheritFingerprintsAndSwitchBackRestoresThem() async throws {
+        let dir = makeDir()
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        await store.setConfiguration(SyncConfiguration(serverURL: URL(string: "https://one.example.test")!, authToken: "t"))
+        let engine = HealthSyncEngine(store: store)
+        let transport = RecordingTransport()
+        let original = payload(UUID())
+        try await upload([original], engine: engine, transport: transport)
+        var config = await store.configuration
+        config.serverURL = URL(string: "https://two.example.test")!
+        await store.setConfiguration(config)
+        try await upload([original], engine: engine, transport: transport)
+        #expect(await transport.batches.count == 4)
+        config.serverURL = URL(string: "https://one.example.test")!
+        await store.setConfiguration(config)
+        try await upload([original], engine: engine, transport: transport)
+        #expect(await transport.batches.count == 4)
     }
 }
 
