@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
 import { WebAppPreview } from "@/components/web-app-preview";
 import { AiChatPreview } from "@/components/ai-chat-preview";
+import { AiSetupPrompt } from "@/components/ai-setup-prompt";
 import { FaqList } from "@/components/faq-list";
 import { getAllTypes } from "@/lib/api";
 import { faq } from "@/lib/faq";
@@ -144,24 +145,36 @@ export default async function HomePage() {
           <p className="mt-8 text-base text-muted-foreground">Use the web app with an approved PulsHealth account, or <Link href="/server" className="text-brand hover:underline">run it with your own database</Link>.</p>
         </section>
 
-        <Feature id="sync" title="Keep your database in sync." intro="Your history, with new data flowing in." visual={
-          <div className={styles.syncVisual}>
-            <p className="text-2xl font-semibold tracking-tight">Automatic background sync</p>
-            <div className="my-10 grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-center">
-              <div><Smartphone className="mx-auto mb-4 h-14 w-14" strokeWidth={1.5} aria-hidden /><p className="text-lg font-semibold">Apple Health</p></div>
-              <ArrowRight className="h-8 w-8" aria-hidden />
-              <div><Database className="mx-auto mb-4 h-14 w-14" strokeWidth={1.5} aria-hidden /><p className="text-lg font-semibold">Your database</p></div>
+        <section id="sync" className="scroll-mt-24">
+          <Feature id="sync-overview" title="Keep your database in sync." intro="Your history, with new data flowing in." visual={
+            <div className={styles.syncVisual}>
+              <p className="text-2xl font-semibold tracking-tight">Automatic background sync</p>
+              <div className="my-10 grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-center">
+                <div><Smartphone className="mx-auto mb-4 h-14 w-14" strokeWidth={1.5} aria-hidden /><p className="text-lg font-semibold">Apple Health</p></div>
+                <ArrowRight className="h-8 w-8" aria-hidden />
+                <div><Database className="mx-auto mb-4 h-14 w-14" strokeWidth={1.5} aria-hidden /><p className="text-lg font-semibold">Your database</p></div>
+              </div>
+              <div className="space-y-3 border-t border-current/15 pt-6 text-lg">
+                {["Your health history", "New readings", "Custom summaries"].map(label => <p key={label} className="flex items-center justify-between gap-4">{label}<ArrowRight className="h-5 w-5" aria-hidden /></p>)}
+              </div>
             </div>
-            <div className="space-y-3 border-t border-current/15 pt-6 text-lg">
-              {["Your health history", "New readings", "Custom summaries"].map(label => <p key={label} className="flex items-center justify-between gap-4">{label}<ArrowRight className="h-5 w-5" aria-hidden /></p>)}
+          }>
+            <p>Build a personal health archive that keeps growing. Start free with five health data types from the last 30 days, then keep them up to date with automatic background sync.</p>
+            <p>Your database powers the web app and your connected AI tools. You can also build your own dashboards or query your data directly.</p>
+            <p className="text-base">Connect your own PulsHealth server or a compatible receiver. Prefer hosting? <a href={SIGNUP_URL} className="text-brand underline-offset-4 hover:underline">Request a PulsHealth account</a>.</p>
+            <Link href="/server" className={textLink}>Explore self-hosting <ArrowRight className="h-4 w-4" aria-hidden /></Link>
+          </Feature>
+
+          <div className="mt-12 grid items-center gap-10 border-t pt-12 lg:grid-cols-2 lg:gap-20 md:mt-16 md:pt-16">
+            <div>
+              <h3 className="max-w-xl text-3xl font-semibold leading-tight tracking-tight text-balance md:text-4xl">Set it up yourself. Or let your AI help.</h3>
+              <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground text-pretty">Run your own PulsHealth server with Docker and our setup guide. Prefer a helping hand? Give your coding assistant the docs and let it help deploy the stack and configure access.</p>
+              <p className="mt-4 max-w-lg text-lg leading-relaxed text-muted-foreground text-pretty">Then connect your iPhone and choose what to sync. Your server powers the dashboard and the AI tools you choose.</p>
+              <Link href="/docs/server" className={`${textLink} mt-6`}>Follow the setup guide <ArrowRight className="h-4 w-4" aria-hidden /></Link>
             </div>
+            <AiSetupPrompt />
           </div>
-        }>
-          <p>Build a personal health archive that keeps growing. Start free with five health data types from the last 30 days, then keep them up to date with automatic background sync.</p>
-          <p>Your database powers the web app and your connected AI tools. You can also build your own dashboards or query your data directly.</p>
-          <p className="text-base">Connect your own PulsHealth server or a compatible receiver. Prefer hosting? <a href={SIGNUP_URL} className="text-brand underline-offset-4 hover:underline">Request a PulsHealth account</a>.</p>
-          <Link href="/server" className={textLink}>Explore self-hosting <ArrowRight className="h-4 w-4" aria-hidden /></Link>
-        </Feature>
+        </section>
 
         <Feature id="export" title="Export what matters." intro="Your data, dates, and format." flip visual={
           <div className={styles.exportVisual}>
