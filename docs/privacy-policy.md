@@ -600,7 +600,7 @@ Everything above is about the app and, in the section just before this one,
 the developer's own viewer. This section is about pulshealth.com,
 which is a separate thing.
 
-The site is a set of static files. It uses self-hosted Umami analytics,
+The main site is served as static files. It uses self-hosted Umami analytics,
 without analytics cookies, advertising identifiers, session recordings or
 cross-site user identification. The operator collects page paths, referrer
 domains, coarse browser/device information, anonymous visit estimates,
@@ -611,15 +611,22 @@ transiently to derive anonymous identifiers that rotate daily; raw IP
 addresses are not stored in the analytics database. Operational network
 providers may process request addresses under their own policies.
 
-Campaign landing pages have fixed, public campaign labels in their paths. Their
-App Store buttons include Apple's provider and campaign tokens so Apple can
-report aggregated downloads, purchases and subscriptions associated with a
-campaign. Tokens identify a campaign, not a person. The operator compares
-these privacy-thresholded Apple reports with advertising spend and aggregate
-website actions to evaluate marketing. Apple reports do not expose a website
-visitor's identity or health data. There is no advertising pixel, browser
-fingerprinting or campaign identifier storage added to the app or website.
-Navigating away from a campaign page does not persist that campaign label.
+Advertising links lead to the normal homepage. Referral links can include a
+public campaign label in a `/r/` path. The redirect service records only the
+label's aggregate click count by UTC day before redirecting to the homepage,
+without storing the visitor's IP address, user agent, cookies, query strings
+or an individual visitor identifier in the referral counter. Repeat clicks
+can count separately. Detected bots, HEAD requests, prefetch requests and
+Do Not Track/Global Privacy Control opt-outs are excluded. These counters
+measure accepted redirect clicks, not unique people or app installations.
+Disabling a referral link stops counting but keeps its homepage redirect.
+
+The operator may compare historical, privacy-thresholded Apple campaign
+reports with advertising spend. Apple's public provider/campaign tokens
+identify campaigns, not people. Shared homepage visits and referral clicks
+are not matched to a visitor's identity, health data or Apple purchases.
+There is no advertising pixel, cross-site fingerprinting or campaign
+identifier storage added to the app or website.
 
 The browser and collection gateway discard URL query strings and fragments,
 referrer paths, page titles, form contents and user identifiers. Collection
