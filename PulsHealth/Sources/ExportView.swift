@@ -147,15 +147,15 @@ struct ExportView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            if export.draft.format == .csv {
-                Picker("Layout", selection: $export.draft.csvOptions.layout) {
-                    ForEach(ExportCSVLayout.allCases) { layout in
-                        Text(layout.title).tag(layout)
+            DisclosureGroup("More options") {
+                if export.draft.format == .csv {
+                    Picker("Layout", selection: $export.draft.csvOptions.layout) {
+                        ForEach(ExportCSVLayout.allCases) { layout in
+                            Text(layout.title).tag(layout)
+                        }
                     }
-                }
-                Text(export.draft.csvOptions.layout.explanation)
-                    .font(.caption).foregroundStyle(.secondary)
-                DisclosureGroup("More options") {
+                    Text(export.draft.csvOptions.layout.explanation)
+                        .font(.caption).foregroundStyle(.secondary)
                     Toggle("Source and device details", isOn: $export.draft.csvOptions.includeSourceDetails)
                     Toggle("Sample metadata", isOn: $export.draft.csvOptions.includeMetadata)
                     Picker("Split large tables", selection: $export.draft.csvOptions.rowsPerFile) {
@@ -166,8 +166,8 @@ struct ExportView: View {
                     Text("Details add columns to sample tables. Splitting repeats the header in each numbered file and keeps every record intact.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
+                Toggle("Zip into one file", isOn: $export.draft.zipped)
             }
-            Toggle("Zip into one file", isOn: $export.draft.zipped)
         } header: {
             Text("Files")
         } footer: {
@@ -209,8 +209,6 @@ struct ExportView: View {
             VStack(alignment: .leading, spacing: 6) {
                 if selection.isEmpty {
                     Text("Nothing is selected. Choose data types or aggregated types above.")
-                } else if model.exportBlockedByBackfill {
-                    Text("A backfill is running. It reads the same Health data, and the two would slow each other to a crawl. Export once it has finished.")
                 }
                 if let layoutIssue { Text(layoutIssue).foregroundStyle(.orange) }
                 if model.exportLacksMedicationAccess {
