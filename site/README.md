@@ -177,25 +177,32 @@ coverage, weighting and the limits of example user data. Raw exports, executed
 notebooks and private HTML reports stay outside the site and public repository;
 see `../notebooks/healthkit-research/README.md` for the reproducible workflow.
 
-## Acquisition campaign pages
+## Ad destinations and legacy campaign redirects
+
+All new ads should link directly to **https://pulshealth.com/**. Visitors see
+the normal homepage and its normal App Store links. There are no separate ad
+landing pages or campaign-specific changes to the homepage.
 
 `content/campaigns.json` is a public snapshot exported from the private
-Observatory campaign registry. It contains only public copy, landing paths,
-app ID and Apple's public provider/campaign tokens. Do not add spend, private
-experiment notes, API keys or personal data. Refresh it with Observatory's
-`scripts/export-campaigns.mjs`, passing this file as the destination.
+Observatory campaign registry. Keep its historical IDs and paths so existing
+links continue to resolve; its old copy is not rendered. Refresh the snapshot
+with Observatory's `scripts/export-campaigns.mjs`, never private experiment
+data, spend or keys.
 
-`/go/[campaign]/` statically exports registered variants. These pages are
-noindex and omitted from the sitemap. App Store buttons use the same campaign
-token as the landing path; header/footer badges are updated while that page
-is mounted. No campaign is persisted across navigation, in storage or in the
-iPhone app. The existing production tracker measures fixed action counts by
-page path, respecting DNT/GPC. Tracking query parameters remain discarded.
-An ad click, website visit, App Store click, Apple download and Apple purchase
-are separate events. Observatory owns spend imports, detailed Apple campaign
-reports, scenarios, strategy and private reporting; no app release is needed.
+`/go/[campaign]/` retains registered old links as immediate homepage redirects,
+with a homepage canonical and noindex. No campaign is persisted or carried
+to the App Store.
 
-The export checker validates campaign routes, Apple link tokens, noindex and
-local assets. New variants require a reviewed deployment before using their
-landing URL. Retire links only after campaigns stop; do not change an existing
-token's copy mid-test.
+Existing homepage analytics count visits, referring origins and fixed actions,
+respecting DNT/GPC. Query parameters remain discarded. Overall homepage traffic
+cannot be assigned to individual ads or creative variants. Ad-platform clicks,
+website visits, App Store clicks, Apple downloads and Apple purchases remain
+separate measures; historical campaign reports must not be presented as
+attribution for these untagged homepage visits. Observatory owns spend imports,
+historical Apple campaign reports, scenarios and private reporting; no app
+release is needed.
+
+The export checker validates every legacy redirect, homepage canonical,
+noindex, and removal of campaign content and Apple campaign tags. Future
+registry exports must preserve existing redirect IDs rather than reintroduce
+landing pages.

@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { loadPosts } from "../src/lib/blog";
 import { DOCS } from "../src/lib/docs";
 import { STATIC_PAGES } from "../src/lib/pages";
-import { campaigns, campaignStoreURL } from "../src/lib/campaigns";
+import { campaigns } from "../src/lib/campaigns";
 import type { BlogPost } from "../src/lib/types";
 
 export function filesIn(directory: string): string[] {
@@ -163,7 +163,9 @@ export function checkExport(siteDir = process.cwd()): void {
   for (const item of campaigns) {
     const html = requireFile(path.join(campaignDir, item.id, "index.html"));
     if (!html.includes('content="noindex, follow"')) throw new Error(`Campaign must be noindex: ${item.id}`);
-    if (!decode(html).includes(campaignStoreURL(item.id))) throw new Error(`Campaign App Store attribution missing: ${item.id}`);
+    if (!html.includes('http-equiv="refresh" content="0;url=/"')) throw new Error(`Campaign must redirect to homepage: ${item.id}`);
+    if (!html.includes('rel="canonical" href="https://pulshealth.com/"')) throw new Error(`Campaign canonical must be homepage: ${item.id}`);
+    if (decode(html).includes(item.headline) || html.includes(`ct=${item.id}`)) throw new Error(`Retired campaign content remains: ${item.id}`);
     checkLocalLinks(html, item.path, outDir);
   }
   console.log(`export: ${identifiers.length} knowledge-base pages and ${DOCS.length} documentation pages checked`);
