@@ -600,66 +600,31 @@ Everything above is about the app and, in the section just before this one,
 the developer's own viewer. This section is about pulshealth.com,
 which is a separate thing.
 
-The main site is served as static files. It uses self-hosted Umami analytics,
-without analytics cookies, advertising identifiers, session recordings or
-cross-site user identification. The operator collects page paths, referrer
-domains, coarse browser/device information, anonymous visit estimates,
-fixed action counts and allowlisted App Store button placements (such as hero, export section and footer; no free text), including successful form
-submissions, and browser loading/interaction/layout performance. An App
-Store click is not evidence of an installation. IP addresses are used
-transiently to derive anonymous identifiers that rotate daily; raw IP
-addresses are not stored in the analytics database. Operational network
-providers may process request addresses under their own policies.
+We use self-hosted, anonymous daily totals to improve this website: page groups,
+broad traffic-source categories, fixed actions (such as App Store button clicks
+and successful form responses), button locations and performance ratings. We do
+not store individual event records, visitor or session identifiers, IP-derived
+identities, raw URLs, form contents or health data in these counters, or join
+visits into a journey. Daily totals are kept for about 13 months; expired totals are removed during routine checks. Network
+providers still process connection addresses to deliver and secure requests.
 
-The privacy page offers an “Exclude my visits” control. It stores only a boolean
-`umami.disabled` preference in this website’s browser-local storage until you
-change it or clear site data. It stops Umami page/action/performance collection
-in that browser and prevents new homepage-to-App-Store campaign tagging.
-A referral redirect can still count before the page loads; use the normal
-homepage for your own browsing. Do Not Track and Global Privacy Control
-continue to take precedence.
+You can exclude this browser using the control above. It saves only an on/off
+preference until you change it or clear site data. Do Not Track and Global
+Privacy Control are also respected. No analytics or referral cookies are set;
+old campaign cookies are removed. Historical website analytics collected before
+this change used daily rotating identifiers and remain separate from these totals.
 
-Advertising links lead to the normal homepage. Referral links can include a
-public campaign label in a `/r/` path. The redirect service records only the
-label's aggregate click count by UTC day before redirecting to the homepage,
-without storing the visitor's IP address, user agent, cookies, query strings
-or an individual visitor identifier in the referral counter. Repeat clicks
-can count separately. Detected bots, HEAD requests, prefetch requests and
-Do Not Track/Global Privacy Control opt-outs are excluded. These counters
-measure accepted redirect clicks, not unique people or app installations.
-Disabling a referral link stops counting but keeps its homepage redirect.
+Referral links count aggregate clicks before opening the normal homepage, without
+remembering the campaign on your device. Separate, direct App Store campaign
+links carry a shared campaign label to Apple. Apple may provide delayed,
+privacy-thresholded download and purchase totals; these are not matched to
+website visitors or health records. Clicks are not installations, and purchase
+transactions are not necessarily new customers. A browser opt-out takes effect
+on the page; a referral redirect can count before it opens.
 
-For an active referral, the redirect can set a Secure, host-only, SameSite=Lax
-cookie named `__Host-puls-campaign`, lasting 30 minutes. It holds only the
-shared referral label, not a visitor or click identifier. A newer referral
-replaces it. The normal homepage uses that label to route its App Store
-buttons through a fixed App Store redirect carrying Apple's public provider
-and campaign tokens. Disabled links, opt-outs and lookup failures do not add
-Apple attribution. The App Store redirect separately counts accepted click
-actions by campaign and UTC day; it never records purchase or health details.
-Blocking cookies or returning later can prevent this attribution.
-
-The operator may read privacy-thresholded Apple campaign reports for first-time
-downloads, purchase transactions, refunds, estimated sales/proceeds and
-subscription events or balances. Apple applies its own campaign rules and
-reporting delays; small groups may be withheld. Campaign tokens identify
-campaigns, not people. The operator does not match these reports to visitor
-identities, health data or individual Apple transactions. Purchase counts can
-include renewals and repeat purchases, and proceeds are estimates, not payouts.
-The website funnel uses anonymous, daily rotating Umami identifiers to report
-ordered homepage-to-App-Store-button activity; it does not identify installed
-apps or purchasers. There is no advertising pixel, cross-site fingerprinting
-or campaign identifier storage added to the iPhone app.
-
-The browser and collection gateway discard URL query strings and fragments,
-referrer paths, page titles, form contents and user identifiers. Collection
-respects Do Not Track and Global Privacy Control. Website analytics are
-separate from the iPhone app and the hosted health viewer. Authorized AI
-assistants may read aggregate website statistics to help the operator
-understand and monitor the site. No health data ever
-passes through it: the app does not talk to it, and there is nothing to sign
-in to on it. Its "Sign in" link leads to the developer's invite-only viewer
-at `app.pulshealth.com`, a separate site described in the section above.
+Website statistics stay separate from the iPhone app and hosted health viewer.
+Authorized AI assistants can read aggregate reports for the operator. The website's
+sign-in links open the separate service at `app.pulshealth.com`, described above.
 
 Two forms on the site — "Sign up for updates" and the consulting contact
 form — send exactly what you type into them (a name, an email address, and

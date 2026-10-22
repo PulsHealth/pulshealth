@@ -135,13 +135,13 @@ Related metrics on a type page link only to types with a knowledge-base
 page; other related concepts remain visible as text cards.
 
 `.env.production` carries public build-time values for the form endpoint and
-optional self-hosted Umami collector URL/site ID. They are tracked because
+optional self-hosted aggregate collector URL/site ID. They are tracked because
 the static export publishes them; never put analytics API keys here.
 `.env.example` documents local configuration. Unset both analytics values
 to disable collection. The tracker runs only on the production marketing
 hostname, respects Do Not Track/Global Privacy Control, excludes URL query
 strings/fragments, referrer paths, titles, form values and identity data,
-and collects pageviews, fixed conversion-action names and browser Web Vitals.
+and sends only fixed page groups, source categories, action names, App Store button placements and Web Vitals rating buckets. No visitor/session IDs or raw URLs/timing values are sent or stored. Counters are UTC daily sums in Observatory, not Umami event records.
 `form-dialog` distinguishes attempts, success and errors without sending
 the contents. App Store clicks indicate intent, not installations. No
 analytics cookies, replay, heatmaps or health-viewer tracking are enabled.
@@ -199,7 +199,7 @@ data, spend or keys.
 with a homepage canonical and noindex. No campaign is persisted or carried
 to the App Store.
 
-Existing homepage analytics count visits, referring origins and fixed actions,
+Homepage statistics count page groups, broad source categories and fixed actions,
 respecting DNT/GPC. Query parameters remain discarded. Overall homepage traffic
 cannot be assigned to individual ads or creative variants. Ad-platform clicks,
 website visits, App Store clicks, Apple downloads and Apple purchases remain

@@ -39,7 +39,8 @@
     "rehype-pretty-code": "^0.14.5",
     "remark-gfm": "^4.0.1",
     "shiki": "^4.4.3",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "web-vitals": "6.2.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
