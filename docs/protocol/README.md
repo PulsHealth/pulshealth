@@ -580,7 +580,12 @@ wins within a batch.
 
 Identity: `(workoutUUID, t)` for route points and `(workoutUUID, type, t)`
 for series points; insert-if-absent. Chunks of one stream may arrive in
-several batches and in any order relative to each other.
+several batches and in any order relative to each other. Resending an edited
+series can add new timestamps, but existing values remain unchanged; omitting
+previous points does not delete them. Content fingerprints in the client only
+suppress unchanged uploads, and do not turn these records into replacements.
+Receivers that need edit/removal support require a separate explicit repair
+process; a full upload alone does not repair those changes.
 
 ### 6.7 Profile and users
 

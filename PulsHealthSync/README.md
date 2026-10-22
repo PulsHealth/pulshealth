@@ -298,6 +298,17 @@ configuration exclusion as uploads and throw when the transition cannot be
 applied. Unpairing is local only: it does not delete data or revoke tokens on
 the remote server. There is never more than one active destination.
 
+Workout streams retain a SHA-256 content fingerprint per workout and metric in
+that destination's protected sync state, after every chunk of the workout is
+acknowledged. The seven-day lookback still queries HealthKit but skips unchanged
+metrics; new or changed metrics upload normally. A monthly or forced full pass
+clears the fingerprints before starting, allowing recovery of receiver data.
+Resuming an interrupted full pass preserves fingerprints already acknowledged in
+that pass. Resetting sync state clears them too. Routes retain their existing
+upload behavior. These are upload acknowledgments, not a server-edit protocol:
+series points are insert-if-absent, so retransmission adds new timestamps but
+does not overwrite edited values or remove points missing from HealthKit.
+
 The app shows saved receivers in Sync → Database. Normal credentials use
 separate destination-scoped Keychain items. Write-failure fallbacks retain the
 same protected-file and backup-exclusion rules described above. An upgrade
