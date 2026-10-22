@@ -691,7 +691,10 @@ as or read for, defaulting to the seeded default user.
   activity-summary lines and an optional profile line, each counted in the
   header. Sample `kind` is `quantity`, `category`, `workout`,
   `heartbeatSeries`, `ecg`, `stateOfMind` or `medicationDose`, each in its
-  own table. Samples are keyed on UUID and never overwritten, so a retry is
+  own table. Medication doses optionally carry a sender-assigned `medicationID` UUID
+  stored as `medication_id`; it groups concepts within that device identity map,
+  not across devices or reinstalls. Apply migration `031_medication_identity.sql`
+  before deploying ingest with this field. Samples are keyed on UUID and never overwritten, so a retry is
   idempotent. (`quantity_samples`, a hypertable, can only key on `(uuid,
   start_ts)`; before inserting, ingest also drops any quantity sample whose
   UUID is stored with a start within 1 ms, since float epoch milliseconds
@@ -853,9 +856,10 @@ no credential — a batch's token is an integer id into `device_tokens`, which
 source .env
 
 cat > /tmp/puls-fixture.ndjson <<'EOF'
-{"batchID":"0a4fdc4e-9f3b-4f7e-9a64-0c2f7a1b9d11","deviceID":"curl-test","type":"HKQuantityTypeIdentifierHeartRate","reason":"manual","exportedAt":1718000000000,"schemaVersion":1,"clientVersion":"curl","sampleCount":2,"deletionCount":1,"aggregateCount":1,"activitySummaryCount":1}
+{"batchID":"0a4fdc4e-9f3b-4f7e-9a64-0c2f7a1b9d11","deviceID":"curl-test","type":"HKQuantityTypeIdentifierHeartRate","reason":"manual","exportedAt":1718000000000,"schemaVersion":1,"clientVersion":"curl","sampleCount":3,"deletionCount":1,"aggregateCount":1,"activitySummaryCount":1}
 {"uuid":"7f3e2b9a-1c4d-4e5f-8a6b-9c0d1e2f3a4b","type":"HKQuantityTypeIdentifierHeartRate","kind":"quantity","start":1718000000000,"end":1718000005000,"value":62.5,"unit":"count/min","sourceName":"Apple Watch","sourceBundleID":"com.apple.health","sourceVersion":"10.0","device":"Apple Watch","metadata":{"HKMetadataKeyHeartRateMotionContext":1}}
 {"uuid":"8a4f3c0b-2d5e-4f6a-9b7c-0d1e2f3a4b5c","type":"HKQuantityTypeIdentifierHeartRate","kind":"quantity","start":1718000010000,"end":1718000015000,"value":64.0,"unit":"count/min","sourceName":"Apple Watch","sourceBundleID":"com.apple.health","sourceVersion":"10.0"}
+{"uuid":"d2000000-0000-4000-8000-000000000001","type":"HKMedicationDoseEventTypeIdentifierMedicationDoseEvent","kind":"medicationDose","start":1718000000000,"end":1718000000000,"medicationDose":{"medication":"Ibuprofen","medicationID":"d1000000-0000-4000-8000-000000000001","status":"taken","doseQuantity":1,"doseUnit":"count"}}
 {"deleted":{"uuid":"9b5a4d1c-3e6f-4a7b-8c8d-1e2f3a4b5c6d","type":"HKQuantityTypeIdentifierHeartRate"}}
 {"aggregate":{"type":"HKQuantityTypeIdentifierHeartRate","func":"average","intervalValue":1,"intervalUnit":"hour","deviceFilter":"watch","bucketStart":1718000000000,"bucketEnd":1718003600000,"value":62.4,"unit":"count/min"}}
 {"activitySummary":{"date":1718000000000,"moveKcal":420.5,"moveGoalKcal":600.0,"exerciseMin":25.0,"exerciseGoalMin":30.0,"standHours":9.0,"standGoalHours":12.0,"moveMode":0,"moveTimeMin":null,"moveTimeGoalMin":null}}
@@ -872,8 +876,8 @@ gzip -c /tmp/puls-fixture.ndjson | curl -sS \
   -H "X-Wake-ID: 11111111-2222-4333-8444-555555555555" \
   -H "X-Wake-Trigger: observer" \
   --data-binary @-
-# → {"accepted":2,"deleted":0,"duplicates":0,"routePoints":0,"seriesPoints":0,"aggregateSamples":1,"activitySummaries":1}
-# Run it again → {"accepted":0,"deleted":0,"duplicates":2,"routePoints":0,"seriesPoints":0,"aggregateSamples":0,"activitySummaries":0}
+# → {"accepted":3,"deleted":0,"duplicates":0,"routePoints":0,"seriesPoints":0,"aggregateSamples":1,"activitySummaries":1}
+# Run it again → {"accepted":0,"deleted":0,"duplicates":3,"routePoints":0,"seriesPoints":0,"aggregateSamples":0,"activitySummaries":0}
 #   (the batch ID is reserved before health-data mutations, so a retry exits early)
 # Send it with -H "X-Puls-Protocol: 2" (or "schemaVersion":2 in the header line)
 #   → HTTP 400 {"error":"unsupported protocol version","supportedVersions":[1]}
