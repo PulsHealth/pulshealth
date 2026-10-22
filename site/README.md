@@ -14,10 +14,11 @@ below 1024 px; the dashboard adds its health/account options above the public li
 
 Page heroes begin with the title and description, without a page-label pill.
 
-The homepage AI section pairs assisted server setup with the existing AI data
-exploration example. It includes a copyable starting prompt linking to
-`/llms.txt`, a customer review excerpt, and links to the server and AI guides.
-Setup is described as assistance rather than a guaranteed one-prompt deployment.
+The homepage sync section includes self-hosted setup guidance and a copyable
+starting prompt linking to `/llms.txt`, so visitors can follow the Docker setup
+guide themselves or ask a coding assistant for help. Setup is described as
+assistance rather than a guaranteed one-prompt deployment. The separate AI
+section shows data exploration with a compatible assistant.
 
 The homepage leads with “Unlock your health data” and explains the promise as
 “Sync, export, and control your Apple Health data.” Its feature sequence is
