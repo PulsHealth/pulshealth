@@ -477,6 +477,13 @@ final class AppModel {
     /// The first-run flag is written first so a failure here cannot trap the
     /// user in the flow.
     func finishOnboarding() async {
+        // A replay can outlive the screen that opened it. Its broad Apply
+        // must never commit a database still waiting for Sync's review.
+        if isSettingUpInitialSync {
+            completeOnboarding()
+            lastErrorMessage = "Finish setting up your database on the Sync tab and tap Apply to start its first sync."
+            return
+        }
         defaults.set(true, forKey: Self.onboardingCompletedKey)
         await applyConfiguration(syncNewTypes: true, wholeHistory: true)
         showsOnboarding = false
@@ -486,6 +493,7 @@ final class AppModel {
     /// Settings → About: replay the flow on a configured install. Nothing
     /// is reset — the existing selection and server stay in the draft.
     func restartOnboarding() {
+        guard !isSettingUpInitialSync else { return }
         onboardingIsRerun = true
         preselectCommonTypesIfUnset()
         showsOnboarding = true

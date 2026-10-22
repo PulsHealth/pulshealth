@@ -524,6 +524,61 @@ final class AppModelTests: XCTestCase {
                 || wakes.contains { $0.detail == "apply: backfill newly enabled types" })
     }
 
+    func testInitialSyncReviewCannotBeAppliedThroughOnboardingReplay() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        let applied = h.model.appliedConfig
+        h.model.config.serverURL = URL(string: "http://127.0.0.1:9")!
+        h.model.config.authToken = "token"
+        h.model.config.enabledTypes = [steps]
+        h.model.isSettingUpInitialSync = true
+        let staged = h.model.config
+
+        h.model.restartOnboarding()
+
+        XCTAssertFalse(h.model.showsOnboarding, "Settings replay waits for Sync's first Apply")
+        XCTAssertFalse(h.model.onboardingIsRerun)
+        XCTAssertEqual(h.model.config, staged)
+        // Defense beyond the disabled button: an already queued completion
+        // must not use onboarding's wholeHistory Apply to save this database.
+        await h.model.finishOnboarding()
+        XCTAssertTrue(h.model.isSettingUpInitialSync)
+        XCTAssertEqual(h.model.config, staged)
+        XCTAssertEqual(h.model.appliedConfig, applied)
+        let persisted = await h.engine.store.configuration
+        XCTAssertEqual(persisted, applied)
+        let requests = await h.access.requests
+        XCTAssertTrue(requests.isEmpty)
+        XCTAssertFalse(h.model.backfillActive)
+    }
+
+    func testFinishingAnOpenReplayReturnsToPendingSyncReview() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        let applied = h.model.appliedConfig
+        h.model.restartOnboarding()
+        XCTAssertTrue(h.model.showsOnboarding)
+        XCTAssertTrue(h.model.onboardingIsRerun)
+        h.model.config.serverURL = URL(string: "http://127.0.0.1:9")!
+        h.model.config.authToken = "token"
+        h.model.config.enabledTypes = [steps]
+        h.model.isSettingUpInitialSync = true
+        let staged = h.model.config
+
+        await h.model.finishOnboarding()
+
+        XCTAssertFalse(h.model.showsOnboarding, "the replay exits so review remains accessible")
+        XCTAssertFalse(h.model.onboardingIsRerun)
+        XCTAssertTrue(h.model.isSettingUpInitialSync)
+        XCTAssertEqual(h.model.config, staged)
+        XCTAssertEqual(h.model.appliedConfig, applied)
+        let persisted = await h.engine.store.configuration
+        XCTAssertEqual(persisted, applied)
+        let requests = await h.access.requests
+        XCTAssertTrue(requests.isEmpty)
+        XCTAssertFalse(h.model.backfillActive)
+    }
+
     func testReviewDraftLeavesEngineUntouchedUntilApply() async throws {
         let h = try await makeModel(flags: ["onboardingCompleted": true])
         await h.model.start()
