@@ -222,7 +222,10 @@ uploaded server data or revoke credentials on the server.
   PulsHealth database — the database address that sign-in delivered, so the
   app can tell that database from one you run. The state also includes opaque
   HealthKit query anchors,
-  per-type counters, and progress watermarks. It is written atomically with
+  per-type counters, progress watermarks, and workout UUIDs paired with metric
+  identifiers and SHA-256 content fingerprints of successfully uploaded workout
+  streams. These fingerprints help skip unchanged uploads; they contain no
+  individual point values or timestamps. It is written atomically with
   iOS file protection and is excluded from device backups. It holds **no health
   samples** — a sync streams those to your database and keeps none of them in
   the app. The one time health samples rest in the app's storage is an export you
