@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { AnalyticsControls } from "@/components/analytics-controls";
 import { GitHubIcon } from "@/components/brand-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RepoMarkdown, readRepoFile, stripLeadingH1 } from "@/lib/markdown";
@@ -59,6 +60,7 @@ export default function PrivacyPage() {
         <h1 className="text-4xl font-bold tracking-tight mb-4">Privacy Policy</h1>
         {updated && <p className="text-muted-foreground mb-8">Last updated: {updated}</p>}
 
+        <AnalyticsControls />
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Privacy at a glance</CardTitle>

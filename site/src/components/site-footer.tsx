@@ -57,7 +57,7 @@ function FooterLinkItem({ link }: { link: FooterLink }) {
 
   if (link.external) {
     return (
-      <a href={link.href} target="_blank" rel="noopener noreferrer" className={className}>
+      <a href={link.href} data-analytics-placement={link.href === APP_STORE_URL ? "footer" : undefined} target="_blank" rel="noopener noreferrer" className={className}>
         {link.title}
       </a>
     )

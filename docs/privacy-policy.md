@@ -604,12 +604,20 @@ The main site is served as static files. It uses self-hosted Umami analytics,
 without analytics cookies, advertising identifiers, session recordings or
 cross-site user identification. The operator collects page paths, referrer
 domains, coarse browser/device information, anonymous visit estimates,
-fixed action counts (such as App Store link clicks and successful form
-submissions), and browser loading/interaction/layout performance. An App
+fixed action counts and allowlisted App Store button placements (such as hero, export section and footer; no free text), including successful form
+submissions, and browser loading/interaction/layout performance. An App
 Store click is not evidence of an installation. IP addresses are used
 transiently to derive anonymous identifiers that rotate daily; raw IP
 addresses are not stored in the analytics database. Operational network
 providers may process request addresses under their own policies.
+
+The privacy page offers an “Exclude my visits” control. It stores only a boolean
+`umami.disabled` preference in this website’s browser-local storage until you
+change it or clear site data. It stops Umami page/action/performance collection
+in that browser and prevents new homepage-to-App-Store campaign tagging.
+A referral redirect can still count before the page loads; use the normal
+homepage for your own browsing. Do Not Track and Global Privacy Control
+continue to take precedence.
 
 Advertising links lead to the normal homepage. Referral links can include a
 public campaign label in a `/r/` path. The redirect service records only the
