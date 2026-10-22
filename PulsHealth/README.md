@@ -128,6 +128,10 @@ Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
 
 ## Source map
 
+Explore categories start collapsed and use full category rows matching the Export
+data-type selector. Tap a category to expand it; View Options can expand or
+collapse all categories. Category choices are remembered, and search covers all types.
+
 Four tabs, each its own `NavigationStack`: **Explore** (the catalog, with the
 Health-access cards), **Export** (files, no server needed), **Sync** (the
 database — the PulsHealth database or your own — status, Raw Samples and
