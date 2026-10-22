@@ -37,7 +37,7 @@ export function SiteAnalytics() {
       let name: SiteEvent | undefined;
       try {
         const url = new URL(link.href, location.origin);
-        if (url.hostname === "apps.apple.com") name = "app_store_click";
+        if (url.hostname === "apps.apple.com" || (url.origin === location.origin && /^\/r\/[a-z0-9][a-z0-9-]{2,63}\/store$/.test(url.pathname))) name = "app_store_click";
         else if (url.hostname === "github.com" && url.pathname.startsWith("/PulsHealth/")) name = "github_click";
         else if (url.hostname === "app.pulshealth.com") name = url.pathname.startsWith("/signup") ? "hosted_signup_click" : url.pathname.startsWith("/demo") ? "demo_click" : "hosted_signin_click";
         else if (url.origin === location.origin && url.pathname.startsWith("/docs")) name = "docs_click";

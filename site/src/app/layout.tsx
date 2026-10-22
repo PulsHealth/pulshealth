@@ -7,6 +7,7 @@ import { SearchDialogLoader } from "@/components/search-dialog-loader";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteAnalytics } from "@/components/site-analytics";
+import { ReferralAttribution } from "@/components/referral-attribution";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -84,6 +85,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
         />
         <SiteAnalytics />
+        <ReferralAttribution />
         <ThemeProvider>
           <SearchProvider>
             <SiteHeader />

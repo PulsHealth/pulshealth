@@ -621,12 +621,27 @@ Do Not Track/Global Privacy Control opt-outs are excluded. These counters
 measure accepted redirect clicks, not unique people or app installations.
 Disabling a referral link stops counting but keeps its homepage redirect.
 
-The operator may compare historical, privacy-thresholded Apple campaign
-reports with advertising spend. Apple's public provider/campaign tokens
-identify campaigns, not people. Shared homepage visits and referral clicks
-are not matched to a visitor's identity, health data or Apple purchases.
-There is no advertising pixel, cross-site fingerprinting or campaign
-identifier storage added to the app or website.
+For an active referral, the redirect can set a Secure, host-only, SameSite=Lax
+cookie named `__Host-puls-campaign`, lasting 30 minutes. It holds only the
+shared referral label, not a visitor or click identifier. A newer referral
+replaces it. The normal homepage uses that label to route its App Store
+buttons through a fixed App Store redirect carrying Apple's public provider
+and campaign tokens. Disabled links, opt-outs and lookup failures do not add
+Apple attribution. The App Store redirect separately counts accepted click
+actions by campaign and UTC day; it never records purchase or health details.
+Blocking cookies or returning later can prevent this attribution.
+
+The operator may read privacy-thresholded Apple campaign reports for first-time
+downloads, purchase transactions, refunds, estimated sales/proceeds and
+subscription events or balances. Apple applies its own campaign rules and
+reporting delays; small groups may be withheld. Campaign tokens identify
+campaigns, not people. The operator does not match these reports to visitor
+identities, health data or individual Apple transactions. Purchase counts can
+include renewals and repeat purchases, and proceeds are estimates, not payouts.
+The website funnel uses anonymous, daily rotating Umami identifiers to report
+ordered homepage-to-App-Store-button activity; it does not identify installed
+apps or purchasers. There is no advertising pixel, cross-site fingerprinting
+or campaign identifier storage added to the iPhone app.
 
 The browser and collection gateway discard URL query strings and fragments,
 referrer paths, page titles, form contents and user identifiers. Collection
