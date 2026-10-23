@@ -309,7 +309,7 @@ sql_file "$d" 002_slow.sql <<<"SELECT pg_sleep(3); CREATE TABLE once_only (x int
 # to mark its lock session with: a run must recognise its own session, not
 # take another run's held lock for its own.
 docker exec -e PGAPPNAME=puls-migrate-lock-1 "$db" psql -X -U postgres -d c_lock -q -o /dev/null \
-  -c "SELECT pg_advisory_lock(1886743667, 1)" -c "SELECT pg_sleep(6)" &
+  -c "SELECT pg_advisory_lock(1886743667, 1); SELECT pg_sleep(6)" &
 holder=$!
 for _ in $(seq 1 50); do
   [[ $(sql c_lock "SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND granted") -ge 1 ]] && break

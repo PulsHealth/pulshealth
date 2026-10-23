@@ -4,13 +4,14 @@ import { Suspense } from "react";
 import { ActivityRings, type RingDatum } from "@/components/ActivityRings";
 import { Distance } from "@/components/Distance";
 import { MetricCard } from "@/components/MetricCard";
+import { SleepCard } from "@/components/SleepCard";
 import { PageHeader } from "@/components/PageHeader";
 import { GroupIcon, ChevronRight } from "@/components/Icons";
 import { GROUPS, GROUP_LABELS, typeByIdentifier, typesInGroup } from "@/lib/catalog";
 import { formatActivity } from "@/lib/activity";
 import { GROUP_COLOR } from "@/lib/colors";
 import { isCumulative } from "@/lib/metrics";
-import { getActivityRings, getLatestMany, getSeries, getStats, getTodayTotals, getWorkouts } from "@/lib/queries";
+import { getActivityRings, getLatestMany, getSeries, getSleepDays, getStats, getTodayTotals, getWorkouts } from "@/lib/queries";
 import { viewerUser } from "@/lib/viewer";
 import { formatCompact, formatDuration, formatFull } from "@/lib/format";
 import { greetingAt } from "@/lib/time";
@@ -23,7 +24,6 @@ const KEY_METRICS = [
   "HKQuantityTypeIdentifierStepCount",
   "HKQuantityTypeIdentifierActiveEnergyBurned",
   "HKQuantityTypeIdentifierRestingHeartRate",
-  "HKCategoryTypeIdentifierSleepAnalysis",
   "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
   "HKQuantityTypeIdentifierDistanceWalkingRunning",
   "HKQuantityTypeIdentifierVO2Max",
@@ -42,14 +42,16 @@ export default async function Dashboard() {
   const now = new Date();
   const user = await viewerUser();
   const timeZone = await reportingTimeZone(user);
+  // Start all independent reads together; sample counts stream below.
   // All at once: none of these needs another's answer. The per-type sample
   // counts in Browse are the exception, streamed in below.
-  const [latest, todays, workouts, activity, seriesList] = await Promise.all([
+  const [latest, todays, workouts, activity, seriesList, sleepDays] = await Promise.all([
     getLatestMany(user, KEY_METRICS.filter((id) => !isCumulative(id))),
     getTodayTotals(user, [...new Set([...RING_TYPES, ...KEY_METRICS.filter(isCumulative)])]),
     getWorkouts(user, 3),
     getActivityRings(user),
     Promise.all(KEY_METRICS.map((id) => getSeries(user, id, "30D"))),
+    getSleepDays(user, 14),
   ]);
   const seriesById = new Map(seriesList.map((s) => [s.identifier, s]));
 
@@ -112,22 +114,31 @@ export default async function Dashboard() {
         </div>
       </section>
 
+      {/* Sleep */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "30px 0 14px" }}>
+        <h2 className="eyebrow" style={{ margin: 0 }}>Sleep</h2>
+        <Link href="/sleep" style={{ fontSize: 13, color: "var(--muted)", display: "inline-flex", alignItems: "center", gap: 2 }}>
+          View sleep <ChevronRight size={14} />
+        </Link>
+      </div>
+      <div className="rise" style={{ animationDelay: "80ms" }}>
+        <SleepCard sleep={sleepDays[0] ?? null} />
+      </div>
+
       {/* Highlights */}
-      <h2 className="eyebrow" style={{ margin: "30px 0 14px" }}>Highlights</h2>
+      <h2 className="eyebrow" style={{ margin: "34px 0 14px" }}>Highlights</h2>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(232px, 1fr))", gap: 14 }}>
-        {KEY_METRICS.map((id, i) => {
+        {KEY_METRICS.map((id) => {
           const type = typeByIdentifier(id);
           if (!type) return null;
           const s = seriesById.get(id);
           const spark = (s?.points ?? []).slice(-14).map((p) => p.value);
-          let value: number | null;
-          if (id === "HKCategoryTypeIdentifierSleepAnalysis") value = s?.points.at(-1)?.value ?? null;
-          else if (isCumulative(id)) value = todays.get(id) ?? null;
-          else value = latest.get(id)?.value ?? s?.points.at(-1)?.value ?? null;
-          const unit = id === "HKCategoryTypeIdentifierSleepAnalysis" ? "h" : type.unit;
+          const value = isCumulative(id)
+            ? todays.get(id) ?? null
+            : latest.get(id)?.value ?? s?.points.at(-1)?.value ?? null;
           return (
-            <div key={id} className="rise" style={{ animationDelay: `${80 + i * 30}ms` }}>
-              <MetricCard type={type} value={value} unit={unit} spark={spark} t={latest.get(id)?.t} />
+            <div key={id} className="rise" style={{ animationDelay: "80ms" }}>
+              <MetricCard type={type} value={value} unit={type.unit} spark={spark} t={latest.get(id)?.t} />
             </div>
           );
         })}
@@ -170,9 +181,6 @@ export default async function Dashboard() {
   );
 }
 
-// The per-type sample counts come from the per-user stats, a count over every
-// sample: cached, but the first read after a restart takes seconds, so the
-// cards render at once and the counts stream in.
 async function BrowseWithCounts({ user }: { user: string }) {
   return <Browse stats={await getStats(user)} />;
 }
@@ -186,9 +194,7 @@ function Browse({ stats }: { stats?: Map<string, TypeStat> }) {
         return (
           <Link key={g} href={g === "workouts" ? "/workouts" : `/category/${g}`} className="card" style={{ padding: 18 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span
-                style={{ width: 38, height: 38, borderRadius: 11, display: "grid", placeItems: "center", background: `${GROUP_COLOR[g]}1a`, color: GROUP_COLOR[g] }}
-              >
+              <span style={{ width: 38, height: 38, borderRadius: 11, display: "grid", placeItems: "center", background: `${GROUP_COLOR[g]}1a`, color: GROUP_COLOR[g] }}>
                 <GroupIcon group={g} size={20} />
               </span>
               <ChevronRight size={16} className="muted" />
