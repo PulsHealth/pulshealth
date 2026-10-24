@@ -8,8 +8,8 @@ reads your own Postgres.
 The desktop and mobile navigation list Dashboard (the hosted viewer at
 app.pulshealth.com), Knowledge Base, Docs, and Consulting in that order.
 Sign-in lives in the dashboard demo banner rather than the public navigation.
-Blog remains linked from the footer. The navbar spans the viewport with a 56 px
-row and 32 px desktop / 24 px mobile edge padding (20 px on narrow phones), matching the dashboard. Both switch to a dropdown
+Blog remains linked from the footer. The navbar uses a centered 1280 px content row, 72 px high on desktop and
+64 px on phones, with 32 px desktop / 24 px mobile edge padding (20 px on narrow phones), matching the dashboard. Both switch to a dropdown
 below 1024 px; the dashboard adds its health/account options above the public links.
 
 Page heroes begin with the title and description, without a page-label pill.
@@ -17,22 +17,22 @@ Page heroes begin with the title and description, without a page-label pill.
 The homepage sync section includes self-hosted setup guidance and a copyable
 starting prompt linking to `/llms.txt`, so visitors can follow the Docker setup
 guide themselves or ask a coding assistant for help. Setup is described as
-assistance rather than a guaranteed one-prompt deployment. The separate AI
-section shows data exploration with a compatible assistant.
+assistance rather than a guaranteed one-prompt deployment. The hero links to
+the guide for connecting a compatible AI assistant through the database.
 
 The homepage leads with “Unlock your health data” and explains the promise as
-“Sync, export, and control your Apple Health data.” Its feature sequence is
-the web app, sync, export, data types/custom summaries, AI, then control.
-The web app has a prominent demo action and an accessible screenshot switcher
-for the Today dashboard and workout history. Keep this vocabulary
-consistent with the App Store copy in `docs/appstore/2.1-copy.md`, the About page,
+“Sync, export, and control your Apple Health data.” An animated diagram separates
+background sync to your database (and its dashboard/API/AI tools) from direct CSV
+and JSON exports. Motion pauses offscreen and respects reduced motion. Mobile uses a separate
+vertical flow layout without overlapping artwork. The hero centers a real app screenshot between a CSV preview and a database illustration, with animated data streams.
+The web section uses an interactive, simplified dashboard and an API example,
+with a short iPhone-to-database-to-browser animation, followed by
+“Control your own health data” and the copyable AI setup prompt. Detailed export,
+exploration, aggregation, and sync information lives at `/features/`.
+Keep the headline vocabulary consistent with the App Store copy, About page,
 footer, and search metadata. Local exploration and exports need no account;
-database sync needs a compatible destination; AI tools connect through the
-database. Hosted account calls to action say “Request” because access requires
-approval. The pale blue, mint, and lilac product illustrations echo the approved
-Style A campaign while preserving the site's dark shell. Regenerate the tracked
-social sharing card with `cd site && bun scripts/gen-social-card.tsx` when that
-message changes.
+database sync needs a compatible destination; AI tools connect through the database.
+Hosted account calls to action say “Request” because access requires approval.
 
 Subscription details stay out of the primary navigation; the footer links to
 Pro and `/pricing/`. These two compact
@@ -41,10 +41,9 @@ limits. Prices follow `docs/appstore/subscriptions.md`; the app displays Apple�
 localized price. Hosting is separate, and the database remains open source and
 free to run yourself. Keep the shared home/support FAQ aligned with these plans.
 
-The main site is always dark and has no theme selector. Blog articles retain
-a light/dark toggle, default to dark, and save their choice separately in
-`pulshealth-blog-theme`; neither follows the system theme. The app's theme
-controls are independent.
+The entire site, including blog articles, is always dark with no theme selector.
+It shares the homepage's navy surfaces, blue accents and Geist typography with
+the web viewer. Earlier saved light-mode preferences do not change the theme.
 
 It reads content from the **repository around it**, by relative path, so
 `site/` and the things it reads must stay where they are:

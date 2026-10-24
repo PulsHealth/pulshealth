@@ -10,7 +10,7 @@ Dashboard pages keep the public site's top navigation: PulsHealth, Dashboard,
 Knowledge Base, Docs, and Consulting, with GitHub, public-site search and sign-in controls. Account/settings controls remain in the health navigation.
 The brand and public resource links go to pulshealth.com; Dashboard stays on the
 current viewer. The sidebar contains health-data navigation and viewer controls,
-without a separate return-to-site link. On mobile, one 56 px brand header opens a combined menu: health navigation
+without a separate return-to-site link. On mobile, one 64 px brand header opens a combined menu: health navigation
 first, then account controls and website resources. It closes on Escape, an
 outside click, or choosing a link. Sign-in, sign-up, invite and password-recovery
 pages always use a standalone, centered card without the site header, sidebar
@@ -630,7 +630,8 @@ navigation, including categories, account controls and website resources. Choosi
 or pressing Escape closes it; Escape returns focus to the header menu button.
 The shared demo keeps a visible **Demo** badge even with the menu closed.
 The mobile menu puts health navigation above the same public resource links used
-on pulshealth.com. Both headers use full-width 56 px rows, 32 px desktop / 24 px mobile edge padding (20 px on narrow phones),
+on pulshealth.com. Both headers use centered 1280 px content rows, 72 px high on desktop and 64 px on phones,
+32 px desktop / 24 px mobile edge padding (20 px on narrow phones),
 and the same 1024 px desktop breakpoint.
 
 Page headers begin with the title and description, without a page label above
@@ -697,7 +698,8 @@ endpoints.
 - Read-only by design — this is a viewer; it never writes to the health store.
 - Pages render dynamically. Data-source and catalog-stat checks use short in-process
   TTL caches to avoid repeated database work.
-- Theme (dark/light) is set before paint and persisted to `localStorage`.
+- The viewer always uses the shared dark PulsHealth theme. Earlier saved
+  light-mode preferences are ignored; there is no theme selector.
 
 For the developer-hosted database, `WEB_INGEST_URL` must be an HTTPS address
 under `pulshealth.com`. The iOS app checks that domain before naming the
