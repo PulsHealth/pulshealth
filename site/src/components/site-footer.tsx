@@ -10,6 +10,7 @@ const columns: { heading: string; links: FooterLink[] }[] = [
     heading: "Project",
     links: [
       { title: "Get the App", href: APP_STORE_URL, external: true },
+      { title: "App features", href: "/features/" },
       { title: "PulsHealth Database", href: "https://app.pulshealth.com/signup", external: true },
       { title: "Self-hosting", href: "/server" },
       { title: "PulsHealth Pro", href: "/pro" },

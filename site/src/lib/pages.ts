@@ -1,6 +1,7 @@
 import { SearchItem } from './types';
 
 export const STATIC_PAGES: SearchItem[] = [
+  { id: 'page-features', type: 'page', title: 'PulsHealth App Features', description: 'Explore Apple Health on iPhone, export CSV and JSON, create custom summaries, and sync your database.', href: '/features/', icon: 'Smartphone' },
   { id: 'page-pro', type: 'page', title: 'PulsHealth Pro', description: 'Optional app subscription for full available Apple Health history and sync of all supported types. Open source, with your own database.', href: '/pro/', icon: 'Heart' },
   { id: 'page-pricing', type: 'page', title: 'PulsHealth App Pricing', description: 'Compare Free and Pro: recent exports and five sync types free, or full history and all sync types with the app subscription. Hosting is separate.', href: '/pricing/', icon: 'Info' },
   { id: 'page-watch-workout-pro', type: 'page', title: 'Watch Workout Pro', description: 'Create, save, share, and schedule structured workouts on iPhone for Apple Workout on Apple Watch. Optional on-device Apple Intelligence and Pro subscription.', href: '/watch-workout-pro/', icon: 'Activity' },

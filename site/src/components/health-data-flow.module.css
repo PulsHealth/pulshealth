@@ -1,0 +1,87 @@
+.figure { position: relative; margin: 0 auto; max-width: 1160px; }
+.stage { min-height: 460px; width: 100%; position: relative; isolation: isolate; aspect-ratio: 1100 / 460; }
+.grid { position: absolute; z-index: -1; inset: 0; background: radial-gradient(ellipse at 52% 47%, #19345260, transparent 64%), radial-gradient(#708caa26 1px, transparent 1px); background-size: auto, 22px 22px; mask-image: radial-gradient(ellipse, black 30%, transparent 72%); }
+.connections { position: absolute; width: 100%; height: 100%; overflow: visible; }
+.track { stroke: #80b7e535; stroke-width: 1.3; }
+.packet { stroke: #82caff; stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 6 94; animation: flow 4.6s linear infinite; filter: drop-shadow(0 0 5px #55b2ff); }
+.exportRoute .track { stroke: #72d5b83b; }
+.exportRoute .packet { stroke: #7ce0bb; filter: drop-shadow(0 0 5px #7ce0bb); }
+.phone { position: absolute; width: 21%; left: 6.5%; top: 4.5%; padding: 11px 14px 10px; border: 1px solid #7c8b9e; border-radius: 32px; background: linear-gradient(135deg, #202735, #10151d 45%); box-shadow: 0 0 0 5px #202630, 0 0 0 6px #455062, 0 26px 65px #0008; transform: rotate(-4deg); }
+.phoneTop { display: flex; justify-content: space-between; align-items: center; font-size: 9px; font-weight: 600; margin: 0 4px 25px; }
+.island { width: 60px; height: 17px; background: #05070c; border-radius: 20px; }
+.phoneHeading { display: flex; gap: 7px; align-items: center; font-size: 13px; font-weight: 600; }
+.appIcon { display: grid; place-items: center; width: 29px; height: 29px; color: #fff; background: #168aec; border-radius: 8px; }
+.phoneTitle { font-size: 25px; font-weight: 600; letter-spacing: -1px; margin-top: 16px; }
+.phoneSubtitle { font-size: 10px; color: #a8b6ca; margin: 2px 0 17px; }
+.reading { display: flex; gap: 8px; align-items: center; padding: 13px 0; border-top: 1px solid #ffffff0e; font-size: 10px; }
+.reading > svg { color: #f58c9c; flex-shrink: 0; }
+.reading:nth-of-type(5) > svg { color: #74cdb6; }
+.reading:nth-of-type(6) > svg { color: #b9a3f1; }
+.reading strong { margin-left: auto; font-size: 14px; font-weight: 500; white-space: nowrap; }
+.reading small { display: block; font-size: 8px; color: #a8b6ca; font-weight: 400; margin-top: 3px; }
+.reading strong small { text-align: right; }
+.syncStatus { font-size: 8px; color: #a9c4d7; display: flex; gap: 5px; align-items: center; margin: 14px -3px 18px; padding: 8px 5px; border-radius: 6px; background: #6fc6ee0d; }
+.syncStatus > span { width: 4px; height: 4px; border-radius: 50%; background: #7ce0bb; }
+.syncStatus svg { margin-left: auto; }
+.phoneBar { height: 3px; width: 65px; border-radius: 10px; margin: auto; background: #e1e8f0; }
+.database { position: absolute; left: 47.2%; top: 25%; width: 13%; display: flex; align-items: center; flex-direction: column; }
+.databaseIcon { width: 85px; height: 85px; display: grid; place-items: center; border: 1px solid #5ba9f057; border-radius: 23px; background: linear-gradient(135deg, #243e59, #142131); color: #9bd1ff; box-shadow: 0 0 55px #3898e81a, inset 0 1px #a7d9ff25; }
+.database strong { font-size: 15px; margin-top: 15px; white-space: nowrap; font-weight: 500; }
+.database > span { color: #99adc4; font-size: 11px; margin-top: 5px; }
+.databaseBars { display: flex; gap: 3px; align-items: end; height: 24px; margin-top: 17px; }
+.databaseBars i { width: 4px; height: 6px; background: #70baff; opacity: .6; animation: bars 3s ease-in-out infinite alternate; }
+.databaseBars i:nth-child(3n) { height: 14px; animation-delay: -.8s; }
+.databaseBars i:nth-child(3n + 1) { height: 20px; animation-delay: -1.8s; }
+.destination { display: flex; align-items: center; gap: 13px; position: absolute; width: 24%; padding: 20px 17px; border: 1px solid #61758e40; border-radius: 12px; background: linear-gradient(120deg, #182230, #101720); box-shadow: 0 15px 40px #0003; transition: border-color .2s, background .2s; }
+.destination:hover { border-color: #80b7e5; background: #1d2b3b; }
+.destination > svg:first-child { color: #9bcfff; flex-shrink: 0; }
+.destination > svg:last-child { color: #8496ab; margin-left: auto; flex-shrink: 0; }
+.destination strong { display: block; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.destination small { display: block; margin-top: 5px; font-size: 10px; color: #9bacc0; white-space: nowrap; }
+.dashboard { left: 73.5%; top: 20%; }
+.ai { left: 73.5%; top: 56%; }
+.ai > svg:first-child { color: #bda9f0; }
+.files { left: 46.3%; top: 75%; width: 27%; }
+.files > svg:first-child { color: #7ce0bb; }
+.syncLabel, .exportLabel { position: absolute; font-size: 10px; color: #9bacc0; }
+.syncLabel { left: 31%; top: 34%; }
+.exportLabel { left: 32%; top: 88%; }
+.caption { display: flex; justify-content: center; align-items: center; gap: 20px; color: #a0aec0; font-size: 12px; margin-top: 10px; }
+.sampleLabel { color: #8998ac; margin-left: 5px; }
+.motionButton { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid #61758e40; border-radius: 6px; cursor: pointer; }
+.figure a:focus-visible, .motionButton:focus-visible { outline: 2px solid #82caff; outline-offset: 5px; }
+.figure[data-paused="true"] .packet, .figure[data-paused="true"] .databaseBars i { animation-play-state: paused; }
+@keyframes flow { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@keyframes bars { to { transform: scaleY(.35); opacity: .3; } }
+@media (max-width: 1000px) {
+  .figure { max-width: 480px; }
+  .stage { min-height: 0; aspect-ratio: auto; height: 675px; }
+  .connections, .syncLabel, .exportLabel { display: none; }
+  .grid { inset: -10% -5%; }
+  .phone { left: 8%; top: 20px; width: 195px; transform: rotate(-4deg) scale(.85); transform-origin: top left; }
+  .database { width: 110px; left: auto; right: 1%; top: 110px; }
+  .database::before { content: ""; position: absolute; right: 100%; top: 42px; width: 40px; height: 2px; background: linear-gradient(90deg, #80b7e530, #82caff); }
+  .databaseIcon { width: 70px; height: 70px; }
+  .database strong { font-size: 13px; }
+  .databaseBars { margin-top: 10px; }
+  .destination { padding: 15px 18px; width: 90%; left: 5%; }
+  .destination strong { font-size: 14px; }
+  .destination small { font-size: 11px; }
+  .dashboard { top: 410px; }
+  .ai { top: 498px; }
+  .files { top: 586px; }
+  .caption { align-items: start; font-size: 11px; text-align: left; gap: 10px; margin: 16px 5% 0; }
+  .sampleLabel { display: block; margin: 5px 0 0; }
+  .motionButton { flex-shrink: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .packet, .databaseBars i { animation: none; }
+  .packet { stroke-dasharray: none; opacity: .5; }
+  .motionButton { display: none; }
+}
+
+@media (max-width: 359px) {
+  .phone { left: 2%; transform: rotate(-4deg) scale(.74); }
+  .database { width: 100px; right: 0; }
+  .database::before { width: 20px; }
+}

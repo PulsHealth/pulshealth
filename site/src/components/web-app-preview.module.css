@@ -1,0 +1,55 @@
+.preview { border: 1px solid #607b9c50; border-radius: 16px; overflow: hidden; background: #101821; box-shadow: 0 20px 70px #0003; }
+.toolbar { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 12px 18px; border-bottom: 1px solid #607b9c30; background: #17202c; }
+.controls { display: flex; gap: 6px; }
+.controls button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 7px; padding: 10px 17px; cursor: pointer; font-size: 13px; color: #a9b9cc; transition: background .15s; }
+.controls button:hover { background: #ffffff09; }
+.controls button[aria-pressed="true"] { color: #e1f0ff; background: #30465f; box-shadow: inset 0 1px #a9d4fa1a; }
+.preview :is(button, select, a, pre):focus-visible { outline: 2px solid #9ecfff; outline-offset: 3px; }
+.serverLabel { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #9aacc1; }
+.description { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 23px 27px; border-bottom: 1px solid #607b9c25; }
+.description h3 { font-size: 16px; font-weight: 500; }
+.description p { font-size: 13px; margin-top: 7px; color: #a5b2c4; }
+.description a { display: flex; gap: 6px; color: #acd3f4; font-size: 12px; white-space: nowrap; }
+.imageViewport { overflow-x: auto; animation: appear .35s ease-out; background: #0a0a0a; }
+.screenshot { display: block; width: 100%; }
+.apiPanel { min-height: 550px; display: grid; grid-template-columns: .7fr 1.3fr; gap: 45px; align-items: center; padding: 50px 40px; }
+.apiIntro > svg { color: #91bce1; margin-bottom: 25px; }
+.apiIntro h4 { font-size: 32px; line-height: 1.2; letter-spacing: -.04em; }
+.apiIntro p { font-size: 14px; line-height: 1.8; color: #a5b2c4; margin-top: 20px; }
+.apiIntro a { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: #acd3f4; margin-top: 24px; }
+.codePanel { min-width: 0; border: 1px solid #607b9c40; border-radius: 10px; background: #0b1119; overflow: hidden; }
+.sampleControls { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; align-items: center; padding: 18px; background: #17202c; font-size: 11px; color: #a5b2c4; }
+.sampleControls select { color: #d9e8f7; padding: 6px; border: 1px solid #607b9c50; border-radius: 5px; background: #111b28; max-width: 100%; }
+.request { display: flex; gap: 12px; padding: 22px 18px; font-size: 11px; border-bottom: 1px solid #607b9c30; }
+.request span { color: #8be0ba; }
+.request code { color: #c0d4e9; overflow-wrap: anywhere; }
+.responseLabel { display: flex; justify-content: space-between; gap: 10px; padding: 22px 18px 0; font-size: 10px; color: #8f9eb1; }
+.responseLabel > span { color: #8be0ba; }
+.codePanel pre { padding: 20px 18px; font-size: 11px; line-height: 2; color: #a8d2fa; overflow-x: auto; animation: appear .3s ease-out; }
+.caption { padding: 14px 25px; font-size: 11px; color: #9aacc1; border-top: 1px solid #607b9c30; }
+.scrollHint { display: none; }
+@keyframes appear { from { opacity: .4; } to { opacity: 1; } }
+@media (max-width: 767px) {
+  .toolbar { padding: 10px; }
+  .controls { width: 100%; justify-content: space-between; gap: 3px; }
+  .controls button { padding: 10px 11px; font-size: 12px; gap: 6px; }
+  .serverLabel { display: none; }
+  .description { padding: 20px; display: block; }
+  .description p { line-height: 1.6; }
+  .description a { margin-top: 15px; }
+  .screenshot { min-width: 920px; max-width: none; width: 920px; margin-left: -155px; }
+  .imageViewport { max-height: 575px; }
+  .caption { padding: 15px 20px; line-height: 1.6; }
+  .scrollHint { display: block; margin-top: 4px; color: #b3cee7; }
+  .apiPanel { display: block; padding: 24px 17px; }
+  .apiIntro { margin-bottom: 25px; }
+  .apiIntro > svg { display: none; }
+  .apiIntro h4 { font-size: 25px; }
+  .apiIntro h4 br { display: none; }
+  .apiIntro p { margin-top: 12px; }
+  .apiIntro a { margin-top: 15px; }
+}
+@media (prefers-reduced-motion: reduce) { .imageViewport, .codePanel pre { animation: none; } }
+
+.request code { background: transparent; border: 0; padding: 0; }
+.codePanel pre code { color: inherit; }

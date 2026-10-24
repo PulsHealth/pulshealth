@@ -17,22 +17,21 @@ Page heroes begin with the title and description, without a page-label pill.
 The homepage sync section includes self-hosted setup guidance and a copyable
 starting prompt linking to `/llms.txt`, so visitors can follow the Docker setup
 guide themselves or ask a coding assistant for help. Setup is described as
-assistance rather than a guaranteed one-prompt deployment. The separate AI
-section shows data exploration with a compatible assistant.
+assistance rather than a guaranteed one-prompt deployment. The hero links to
+the guide for connecting a compatible AI assistant through the database.
 
 The homepage leads with “Unlock your health data” and explains the promise as
-“Sync, export, and control your Apple Health data.” Its feature sequence is
-the web app, sync, export, data types/custom summaries, AI, then control.
-The web app has a prominent demo action and an accessible screenshot switcher
-for the Today dashboard and workout history. Keep this vocabulary
-consistent with the App Store copy in `docs/appstore/2.1-copy.md`, the About page,
+“Sync, export, and control your Apple Health data.” An animated diagram separates
+background sync to your database (and its dashboard/API/AI tools) from direct CSV
+and JSON exports. Motion has a pause control, pauses offscreen, and respects reduced
+motion. All illustrated readings are synthetic. The web preview switches between
+real demo screenshots and an explicitly illustrative API example, followed by
+“Control your own health data” and the copyable AI setup prompt. Detailed export,
+exploration, aggregation, and sync information lives at `/features/`.
+Keep the headline vocabulary consistent with the App Store copy, About page,
 footer, and search metadata. Local exploration and exports need no account;
-database sync needs a compatible destination; AI tools connect through the
-database. Hosted account calls to action say “Request” because access requires
-approval. The pale blue, mint, and lilac product illustrations echo the approved
-Style A campaign while preserving the site's dark shell. Regenerate the tracked
-social sharing card with `cd site && bun scripts/gen-social-card.tsx` when that
-message changes.
+database sync needs a compatible destination; AI tools connect through the database.
+Hosted account calls to action say “Request” because access requires approval.
 
 Subscription details stay out of the primary navigation; the footer links to
 Pro and `/pricing/`. These two compact
