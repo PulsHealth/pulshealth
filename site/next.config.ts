@@ -8,9 +8,6 @@ const nextConfig: NextConfig = {
   // Blog MDX lives beside site/ and supplies utility classes to Tailwind.
   turbopack: { root: path.resolve(__dirname, '..') },
   trailingSlash: true,
-  // Search landings should paint without a separate stylesheet request chain.
-  // Keep this pinned framework option covered by export and browser checks.
-  experimental: { inlineCss: true },
   images: {
     unoptimized: true,
   },

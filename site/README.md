@@ -97,14 +97,12 @@ bun run dev        # localhost:3000
 
 ## Build and lint
 
-The pinned Next.js build uses `experimental.inlineCss` so the initial HTML
-contains its styles instead of waiting for separate render-blocking CSS
-requests. This favors first-time search landings: HTML is larger, and styles
-cannot be cached separately on a full page load. Next still uses stylesheets
-for client navigation. Recheck direct loads and client navigation across home,
-docs, blog and knowledge pages when upgrading Next, since this option remains
-experimental. Only the primary text font is preloaded; the monospace font loads
-when used.
+Styles remain separately cacheable assets, and both text fonts are preloaded.
+Global CSS inlining was measured against the production export: it increased
+compressed homepage HTML from about 18 KB to 91 KB for only a small mobile
+LCP change (3.2 s to 3.0 s). The experiment, which also deferred the monospace
+font, showed layout shifts. Reconsider these choices only with measurements across both landing
+pages and documentation, including transfer size and layout stability.
 
 Build verification requires `python3` (3.9 or later) and Git as well as Bun.
 Build from a Git checkout so the export can be tied to its source inputs.
