@@ -1,96 +1,89 @@
 # PulsHealth
 
-**Sync, export, and control your Apple Health data.**
+**Your Apple Health data. Your database. Your next project.**
 
-Build a personal health database you manage. Bring your history, keep new data
-flowing with automatic background sync, and use it with dashboards, SQL,
-notebooks, and your own AI tools. Choose individual readings or custom summaries,
-from hourly averages to daily totals.
+Sync Apple Health to a database you control, export files for a spreadsheet,
+and build dashboards or AI tools on your own history. PulsHealth includes an
+iPhone and iPad app, a self-hosted stack, and an open sync protocol — all under
+[Apache-2.0](LICENSE).
 
-**[Get the free iPhone and iPad app](https://apps.apple.com/us/app/pulshealth/id6757657354)**
-· **[Set up your database](docs/setup.md)**
-· **[Try the dashboard](https://app.pulshealth.com/demo)**
-
-PulsHealth is open source and free to download. Pro adds optional unlimited
-export history and sync types; see [plans](https://pulshealth.com/pricing/).
-The reference backend runs on your own
-Docker host: PostgreSQL 17 + TimescaleDB, a Go ingest server, a read-only product
-API, Grafana dashboards, a web viewer, and an MCP server. The open
-[Puls Sync Protocol v1](docs/protocol/README.md) also lets you connect a
-compatible receiver. PulsHealth offers
-[hosted accounts](https://app.pulshealth.com/signup) as an alternative.
-
-**No database needed to explore or export.** Explore shows what Apple Health
-holds, with charts, sources, and explanations for each type. Export lets you
-choose measurements, dates, and CSV, JSON, or JSONL. Keep raw readings or custom
-aggregations, choose a CSV layout, then save or share your files. Exploring
-stays on your phone; an ordinary export uploads nothing and needs no account.
-See [export formats and options](docs/export.md#on-device-export-no-server).
+**[Try the dashboard demo](https://app.pulshealth.com/demo)** ·
+**[Get the iOS app](https://apps.apple.com/us/app/pulshealth/id6757657354)** ·
+**[Self-host it](docs/setup.md)** · **[Read the docs](https://pulshealth.com/docs/)**
 
 <p align="center">
-  <a href="https://app.pulshealth.com/demo"><img src="docs/images/web/today.png" alt="PulsHealth web dashboard with activity rings, daily health metrics, trends, and recent workouts, shown with synthetic demo data" width="90%"></a>
+  <a href="https://app.pulshealth.com/demo"><img src="docs/images/web/today.png" alt="PulsHealth demo dashboard: activity rings and trends for steps, sleep, heart rate, HRV, and more" width="100%"></a>
 </p>
 
-Your self-managed database powers the dashboard and connected AI tools.
-[Try it with demo data](https://app.pulshealth.com/demo), or follow the
-[quickstart](#quickstart) to use your own records.
+*The working dashboard with demo data. [Open the interactive demo](https://app.pulshealth.com/demo)
+without connecting your phone.*
 
-> **The backend is pre-release (0.x).** The app ships from the App Store, but
-> standing up the server it syncs to expects someone comfortable with Docker.
->
-> - The wire protocol, the **Puls Sync Protocol v1**, is specified in
->   [`docs/protocol/`](docs/protocol/README.md) with JSON Schema and a fixture
->   corpus. It is young: expect clarifications, and report gaps through the
->   "Backend implementer question" issue template.
-> - **Backups are opt-in and off by default.** Until you enable the `backup`
->   Compose profile (or run `make backup`), your Postgres volume is the only
->   copy of your data, and only the restore drill in `server/README.md`
->   ("Backup & restore") verifies a dump.
->
-> What is still outstanding is [`docs/roadmap.md`](docs/roadmap.md).
+## What can you build?
 
-## Components
+| You want to… | Start here |
+|---|---|
+| **Keep a health database you control** | [Docker setup](docs/setup.md): PostgreSQL + TimescaleDB, automatic phone sync, a web viewer, and Grafana |
+| **Use your data in Excel or Python** | [Export CSV, JSON, or JSONL](docs/export.md#on-device-export-no-server) directly on your phone; no account or server needed |
+| **Ask an AI assistant about your history** | [Connect read-only MCP tools](docs/ai.md) over the product API; your chosen AI provider receives the records it reads |
+| **Build an app, dashboard, or automation** | [Product API](docs/api.md), [Python walkthrough](https://pulshealth.com/blog/analyze-apple-health-with-python/), and [Home Assistant integration](https://github.com/PulsHealth/home-assistant) |
+| **Write your own receiver** | [Open protocol + fixtures](docs/protocol/README.md) and a [Python + SQLite example](examples/receivers/python-sqlite/README.md) |
 
-| Component | Path | What it is |
-|---|---|---|
-| **iOS app** | [`PulsHealth/`](PulsHealth/README.md) | SwiftUI app over the package, in four tabs: **Explore** (every HealthKit type by category, each with a page of analysis charts, an aggregate preview and the type's typical range), **Export** (raw types, aggregates, any date range, CSV, JSON or JSONL, flexible CSV layouts — no server needed), **Sync** (the database connection, backfill progress and ETA, what is sent — Raw Samples and Aggregates, each with its own picker — per-type status, the event log and background-activity telemetry) and **Settings** (user, sync tuning, privacy and data, diagnostics). |
-| **`PulsHealthSync`** | [`PulsHealthSync/`](PulsHealthSync/README.md) | Swift package (iOS 17+, Swift 6 strict concurrency, zero dependencies): anchored-query sync engine, on-device aggregates, activity rings, background scheduling, HTTP transport, NDJSON encoding, on-device export. Embeddable in other apps. |
-| **Reference server** | [`server/`](server/README.md) | Docker Compose stack: TimescaleDB, Go ingest API, Go product API (OpenAPI 3.1), Grafana with provisioned dashboards and alert rules. |
-| **Web viewer** | [`web/`](web/README.md) | Next.js viewer (activity rings, trends, workouts, catalog) reading Postgres directly. |
-| **Marketing site** | [`site/`](site/README.md) | Next.js static export behind pulshealth.com: product pages, this repository's documentation (`/docs`), the blog, and the knowledge-base viewer. Distinct from `web/`. |
-| **Knowledge base** | [`knowledge-base/`](knowledge-base/README.md) | 178 YAML files describing every HealthKit type — what it measures, how it is interpreted, typical and notable ranges, sources. Read by `site/` and bundled into the app. |
-| **Blog** | [`blog/`](blog/BLOG_SYSTEM.md) | The site's MDX posts and their images. |
-| **Protocol** | [`docs/protocol/`](docs/protocol/README.md) | The Puls Sync Protocol v1 specification, JSON Schema, fixture corpus, a checker (`tools/protocol-check/`), and a minimal Python + SQLite receiver (`examples/receivers/python-sqlite/`). |
-| **MCP server** | [`server/mcp/`](server/mcp/README.md) | Read-only MCP server over the product API for Claude Desktop, Claude Code, Cursor and remote connectors, with an embedded guide for the model. Setup in [`docs/ai.md`](docs/ai.md). |
+### Why PulsHealth?
+
+- **Start on your phone.** Explore types, sources, and charts before setting up
+  anything. Export only the measurements and dates you choose.
+- **Keep new data flowing.** Resumable history imports, incremental updates,
+  deletions, activity rings, workout routes, and on-device aggregates.
+- **Keep your options open.** Query SQL, use the read API, connect MCP, or replace
+  the reference receiver with your own implementation of the documented protocol.
+- **Inspect the whole path.** The Swift sync library, Go services, database
+  migrations, viewer, and protocol are all in this repository.
+
+The app is free to download. **Free includes full Explore, manual exports of all
+supported types from the last 30 days, and sync of up to five distinct types
+from the last 30 days.** Pro unlocks all available history and unlimited sync
+types, subject to Health access. See [current plans](https://pulshealth.com/pricing/).
+The self-hosted server is open source; running it does not remove the app's limits.
+[Hosted accounts](https://app.pulshealth.com/signup) are also available, subject
+to approval and availability.
+
+If this is useful to you, **[star the repo](https://github.com/PulsHealth/pulshealth)**
+to help other people discover it. Building something with it? Share your project
+in [an issue](https://github.com/PulsHealth/pulshealth/issues).
+
+## See the app
 
 <p align="center">
-  <img src="docs/images/app/unlock.png" alt="First run: Unlock your Health Data, with Explore, Export and Sync" width="200">
-  <img src="docs/images/app/explore.png" alt="Explore tab: Apple Health types by category, each with its sample count over the past year" width="200">
-  <img src="docs/images/app/type-page.png" alt="Heart Rate's Type page: description, analysis, sample counts, sources and the start of the value histogram" width="200">
-  <img src="docs/images/app/export.png" alt="Export tab: the builder with raw samples, aggregated types, a date range, CSV, JSON or JSONL, CSV layouts and a zip option" width="200">
+  <img src="docs/images/app/explore.png" alt="Explore: browse Apple Health types and inspect their sources and recorded history" width="240">
+  <img src="docs/images/app/type-page.png" alt="Heart Rate detail: synthetic sample history, coverage, and analysis" width="240">
+  <img src="docs/images/app/export.png" alt="Export: choose raw samples, aggregates, date range, and CSV, JSON, or JSONL" width="240">
 </p>
 
-The app: the first run, Explore, a Type page and the updated 2.1 Export
-builder. These simulator captures use synthetic demo data, not real health
-records.
+*Current source captures with synthetic Explore fixtures. Export shows the
+builder, not a completed export. [Screenshot provenance](docs/images/README.md).*
+
+<details>
+<summary><strong>More screenshots: workouts and Grafana</strong></summary>
 
 <p align="center">
-  <img src="docs/images/web/workouts.png" alt="Web viewer, Workouts: session, time, energy and distance totals over a list of logged workouts with duration, calories and distance" width="80%">
+  <img src="docs/images/web/workouts.png" alt="Demo workout list with duration, energy, distance, and totals for the latest 120 listed sessions" width="100%">
 </p>
 
 <p align="center">
-  <img src="docs/images/server/grafana-health.png" alt="Grafana PulsHealth dashboard: heart rate with workout annotations, daily steps, a device aggregate series, the metric explorer and sleep stages over the last seven days" width="80%">
+  <img src="docs/images/server/grafana-health.png" alt="Provisioned Grafana dashboard with synthetic heart rate, steps, and sleep data" width="100%">
 </p>
 
-The self-hosted web viewer (`web/`, the dashboard above and Workouts) and the
-provisioned Grafana dashboard (`server/grafana/`), both filled with generated demo data:
-the viewer's own local demo mode and a throwaway stack seeded through ingest
-with synthetic batches. No screenshot in this repository shows anyone's real
-health data.
+The web viewer uses the public demo account. Grafana shows a synthetic seed
+in a throwaway stack; it is a separate dashboard from the blog tutorial.
 
-The database's data model, table guide and query patterns (including how to
-avoid iPhone + Watch double counting) are in
-[`docs/database-guide.md`](docs/database-guide.md).
+</details>
+
+> **Status:** the iOS app is on the App Store; the self-hosted backend is
+> **pre-release (0.x)** and expects familiarity with Docker. Background delivery
+> depends on iOS, Health access, and Watch-to-phone sync.
+> **Backups are opt-in:** enable the `backup` Compose profile or run `make backup`,
+> then test recovery on a scratch stack. See the [roadmap](docs/roadmap.md) and
+> [backup guide](server/README.md#backup--restore).
 
 ## Architecture
 
@@ -244,8 +237,8 @@ scores), heartbeat series, ECGs, State of Mind logs and medication doses.
 Every quantity is in one canonical unit per type; every timestamp is epoch
 milliseconds.
 
-Any **2xx** acknowledges the batch and advances the anchor. **4xx** is never
-retried (the anchors stay put, so nothing is lost, but the type stalls until
+Any **2xx** acknowledges the batch and advances the anchor. **4xx other than
+429** is never retried (the anchors stay put, so nothing is lost, but the type stalls until
 the server accepts it); **5xx**, **429** and network errors are retried with
 jittered exponential backoff. Retried batches are no-ops server-side. The
 normative description is the [Puls Sync Protocol v1](docs/protocol/README.md);
@@ -278,9 +271,11 @@ Gaps in the spec go in the "Backend implementer question" issue template.
 
 ## Performance expectations
 
-Measure your own device with **Settings → Diagnostics → Run Throughput
-Benchmark** (reads real HealthKit data through a discarding transport; does
-not touch sync state). Planning numbers:
+Measure your own device with **Settings → Developer → Run Throughput
+Benchmark**. To reveal Developer, tap **Settings → About → Version** seven
+times and confirm. The benchmark reads HealthKit through a discarding transport
+and does not touch sync state. The following are planning estimates, not
+guaranteed timings:
 
 **Initial backfill** (foreground, plugged in, LAN or VPN to the server):
 
@@ -290,8 +285,9 @@ not touch sync state). Planning numbers:
 | Apple Watch wearer, 3 years | ~5–10 M samples (heart rate at ~3.5 K/day dominates) | **15–40 min** |
 | Heavy Watch user (daily workouts), 5+ years, all types | ~15–25 M samples | **45–90 min** |
 
-Device-side HealthKit reads are the bottleneck (~3–10 K samples/s per type on
-recent iPhones); the server ingests 50–100 K rows/s, so it never queues.
+HealthKit reads often dominate the initial import. Device speed, selected
+types, server capacity, and network latency all affect throughput; measure
+your installation rather than assuming a fixed ingest rate.
 Backfills pause if iOS suspends the app and resume on the next open without
 losing progress.
 
@@ -305,13 +301,13 @@ after failures.
 | Data path | Typical latency | Why |
 |---|---|---|
 | Written on iPhone, immediate-class type (workouts, body mass, HRV, …) | **seconds** (≈1–10 s) | `.immediate` background delivery is honoured |
-| Steps / active energy / distance (iPhone) | **up to ~1 h** | iOS silently limits background delivery for these types to about hourly |
+| Steps / active energy / distance (iPhone) | **often about hourly or longer** | Background delivery is limited and is not a guaranteed upload schedule |
 | Anything recorded on Apple Watch | **minutes–hours** | Watch → iPhone HealthKit sync is opportunistic and Apple provides no API to force it. Opening the app (or charging the Watch) usually triggers it |
-| Device locked | deferred | The Health database is encrypted ~10 min after lock; the next unlock or wake catches up |
+| Device locked | deferred | HealthKit can be unreadable while locked; the next unlocked run catches up |
 | App force-quit by the user | until the next app open | iOS stops waking force-quit apps |
 | Activity rings | next sync run, at most hourly off observer wakes | Activity summaries are not observable and have no background delivery; the current day is re-queried on every run and upserted |
 
-Upload plus ingest adds under a second on a LAN. A type's **Sample to upload
+Upload and ingest latency depend on the network and server. A type's **Sample to upload
 latency** (in its sync details) shows the number you are actually getting.
 
 ## FAQ
@@ -321,11 +317,12 @@ Watch → iPhone HealthKit transfer is scheduled by watchOS and cannot be
 forced by any app. Opening PulsHealth, or putting the Watch on its charger,
 usually prompts it. Once the data is on the phone it syncs normally.
 
-**Steps, active energy, and distance lag by up to an hour, while workouts
-appear in seconds.**
-iOS throttles "immediate" background delivery for those high-frequency types
-to roughly hourly, without saying so, and it is not configurable. Anything
-else you record on the phone, and every foreground open, syncs right away.
+**Steps, active energy, and distance lag behind workouts.**
+Background delivery has type-specific limits; Apple documents an hourly
+maximum notification frequency for steps on iOS. A notification is an
+opportunity to sync, not a promised upload deadline. Opening the app with
+the phone unlocked provides another opportunity to catch up. See the
+[sync troubleshooting guide](https://pulshealth.com/blog/apple-health-not-syncing/).
 
 **Nothing synced overnight.**
 While the phone is locked HealthKit is unreadable, and iOS prefers to run
@@ -424,6 +421,19 @@ The full list of design properties, and how to report a vulnerability, is in
 - **Not a writer.** It never modifies HealthKit data.
 - **Not a sink for every cloud.** The app speaks HTTP to one URL; S3, Google
   Sheets, Notion and similar are a receiver's job, not the app's.
+
+## Inside the repository
+
+| Component | Source | Purpose |
+|---|---|---|
+| iOS app | [PulsHealth](PulsHealth/README.md) | SwiftUI Explore, Export, Sync, and Settings |
+| Sync library | [PulsHealthSync](PulsHealthSync/README.md) | Swift 6, iOS 17+, zero dependencies; embeddable in other apps |
+| Server | [server](server/README.md) | Go ingest and read APIs, PostgreSQL 17 + TimescaleDB, Grafana |
+| Web viewer | [web](web/README.md) | Next.js dashboard for synced data |
+| MCP server | [server/mcp](server/mcp/README.md) | Read-only tools over the product API |
+| Protocol | [docs/protocol](docs/protocol/README.md) | Schemas, fixture corpus, and receiver contract |
+| Site and articles | [site](site/README.md), [blog](blog/BLOG_SYSTEM.md) | pulshealth.com, documentation, and worked examples |
+| HealthKit reference | [knowledge-base](knowledge-base/README.md) | 178 type guides, also bundled into the app |
 
 ## Development
 

@@ -4,7 +4,10 @@ Import dashboard.json in Grafana on the current PulsHealth reference stack.
 It uses the provisioned PostgreSQL datasource UID `puls-tsdb` and SELECT-only
 `grafana` database role. It contains no connection details or credentials.
 Set the User UUID textbox to your own existing PulsHealth user UUID.
-Set the dashboard display time zone to the stack's PULS_TIME_ZONE.
+Set the dashboard display time zone to the account reporting zone (users.time_zone,
+falling back to PULS_TIME_ZONE). SQL uses puls_user_time_zone(user UUID).
+Phone aggregates retain their recorded day when temporal context is available;
+that may differ from raw reporting days during travel.
 
 The default UUID is a placeholder. No data is expected before replacing it.
 The UUID is SQL-escaped with `${user:sqlstring}` and cast to uuid. It is a
@@ -19,7 +22,7 @@ ignores the time picker and uses a rolling 90-day lookback; it measures upload
 receipt, not measurement recency or complete sync coverage. No value means
 no receipt was found within that lookback.
 
-Validation: JSON parsed; all four SQL queries executed as read-only queries
+Historical validation before the October 24, 2026 account-calendar update: JSON parsed; all four SQL queries executed as read-only queries
 against synthetic PostgreSQL 15 fixture tables with the documented columns
 and explicit substitutions for Grafana macros. Other-user and out-of-range
 fixtures were excluded. The four queries also executed successfully against
@@ -34,6 +37,14 @@ not test production TimescaleDB performance. Review the Query Inspector and
 compare a known day after import.
 
 queries.sql contains Grafana templates, not standalone psql statements.
-Setup: https://pulshealth.com/docs/server/
+Setup: https://pulshealth.com/docs/setup/
 Schema: https://pulshealth.com/docs/database/
 Article: https://pulshealth.com/blog/apple-health-grafana-dashboard/
+
+October 24, 2026 validation: the updated four queries ran as the read-only
+Grafana role against the disposable PostgreSQL 17 fixture: 14 daily points,
+1 receipt-age row, 6 workouts, and 14 provenance rows. Other-user and
+out-of-range sentinels were excluded. A Los Angeles account-calendar check
+placed 00:30 UTC on the prior date and local midnight at 07:00 UTC. Download
+SQL matches the JSON queries. Production TimescaleDB and a fresh Grafana
+render were not re-tested for this calendar-only update.

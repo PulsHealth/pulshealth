@@ -1,6 +1,7 @@
 ---
 title: "Why Apple Health Isn't Syncing to Your Other Apps"
 date: "2026-10-08"
+updated: "2026-10-24"
 draft: false
 author: "Sean Wade"
 tags: ["apple-health", "sync", "troubleshooting", "healthkit"]
@@ -63,7 +64,7 @@ In Health's profile, find the app under its privacy/app-access settings and insp
 
 A reassuring connection indicator is not proof that every category is readable. HealthKit intentionally prevents apps from reliably distinguishing denied read access from an absence of external records. An empty chart can therefore mean missing permission as well as missing measurements. [HealthKit's read-access privacy behavior](https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data)
 
-Where the OS offers a limited history window, check that choice as well. Recent data can be available while older records remain outside the app's authorized range. Apple's current developer documentation describes an earliest-authorized-date API; its availability depends on the OS and SDK. Do not infer that old records were deleted merely because an app cannot retrieve them. [Apple's history-access documentation](https://developer.apple.com/documentation/healthkit/hkhealthstore/earliestauthorizedsampledate(for:))
+Where the OS offers a limited history window, check that choice as well. Recent data can be available while older records remain outside the app's authorized range. Apple's current developer documentation describes an earliest-authorized-date API; its availability depends on the OS and SDK. Do not infer that old records were deleted merely because an app cannot retrieve them. [Apple's history-access documentation](https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data#Respond-to-limited-authorization)
 
 After changing access, reopen the app and use its refresh or backfill action. Granting broader permission and finishing a historical import are separate steps.
 
@@ -92,7 +93,7 @@ Useful distinctions include:
 
 PulsHealth only advances its record cursor after a server acknowledgement. A failed upload leaves those records eligible for a later attempt; retries are designed to avoid inserting the same raw object twice. That is why a failed request is not, by itself, evidence of lost Health history. [Puls Sync Protocol](/docs/protocol/)
 
-For self-hosted installations, the [server guide](/docs/server/) covers setup. The [database guide](/docs/database/) explains successful batches, rejection records, and timestamps. Use read-only inspection while diagnosing a live installation.
+For self-hosted installations, the [setup guide](/docs/setup/) covers installation and pairing. The [database guide](/docs/database/) explains successful batches, rejection records, and timestamps. Use read-only inspection while diagnosing a live installation.
 
 ## 6. Distinguish a fresh upload from fresh measurements
 

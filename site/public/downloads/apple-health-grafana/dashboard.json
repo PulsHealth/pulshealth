@@ -40,7 +40,7 @@
             "uid": "puls-tsdb"
           },
           "rawQuery": true,
-          "rawSql": "SELECT day::timestamp AT TIME ZONE puls_time_zone() AS time,\n       value, source AS metric\nFROM metric_daily\nWHERE identifier = 'HKQuantityTypeIdentifierStepCount'\n  AND user_id = ${user:sqlstring}::uuid\n  AND day >= ($__timeFrom()::timestamptz AT TIME ZONE puls_time_zone())::date\n  AND day <= ($__timeTo()::timestamptz AT TIME ZONE puls_time_zone())::date\nORDER BY time",
+          "rawSql": "SELECT day::timestamp AT TIME ZONE puls_user_time_zone(${user:sqlstring}::uuid) AS time,\n       value, source AS metric\nFROM metric_daily\nWHERE identifier = 'HKQuantityTypeIdentifierStepCount'\n  AND user_id = ${user:sqlstring}::uuid\n  AND day >= ($__timeFrom()::timestamptz AT TIME ZONE puls_user_time_zone(${user:sqlstring}::uuid))::date\n  AND day <= ($__timeTo()::timestamptz AT TIME ZONE puls_user_time_zone(${user:sqlstring}::uuid))::date\nORDER BY time",
           "format": "time_series"
         }
       ],
@@ -171,7 +171,7 @@
             "uid": "puls-tsdb"
           },
           "rawQuery": true,
-          "rawSql": "SELECT day::text AS day, value AS steps, source\nFROM metric_daily\nWHERE identifier = 'HKQuantityTypeIdentifierStepCount'\n  AND user_id = ${user:sqlstring}::uuid\n  AND day >= ($__timeFrom()::timestamptz AT TIME ZONE puls_time_zone())::date\n  AND day <= ($__timeTo()::timestamptz AT TIME ZONE puls_time_zone())::date\nORDER BY day DESC",
+          "rawSql": "SELECT day::text AS day, value AS steps, source\nFROM metric_daily\nWHERE identifier = 'HKQuantityTypeIdentifierStepCount'\n  AND user_id = ${user:sqlstring}::uuid\n  AND day >= ($__timeFrom()::timestamptz AT TIME ZONE puls_user_time_zone(${user:sqlstring}::uuid))::date\n  AND day <= ($__timeTo()::timestamptz AT TIME ZONE puls_user_time_zone(${user:sqlstring}::uuid))::date\nORDER BY day DESC",
           "format": "table"
         }
       ],

@@ -71,19 +71,19 @@ A dashboard removes the repeated file-transfer step. The data still needs to tra
 
 For the hosted PulsHealth database, begin at the [access page](https://app.pulshealth.com/signup). Access is managed through requests and invitations, so submitting the form should not be understood as a promise of immediate access.
 
-There is a release distinction to keep in mind. As of this revision, the [App Store's version 1.6 listing](https://apps.apple.com/us/app/pulshealth/id6757657354) documents export and connection to a configured database, but still describes the product as having no hosted cloud. The current source adds a hosted sign-in flow. Do not assume your installed version has a **Sign In to PulsHealth** button.
+The [current App Store app](https://apps.apple.com/us/app/pulshealth/id6757657354) supports signing in with an approved PulsHealth account as well as connecting your own server. Update the app before following current setup instructions.
 
-After receiving access, use the pairing instructions supplied with your account. Builds with the hosted flow expose it under **Sync → Database**; the documented manual alternative uses the database's pairing code or connection fields. Review the destination and save the connection, then choose the types to sync and grant the relevant Health access. Check progress before signing in to the viewer on your computer.
+After receiving access, sign in under **Sync → Database**. For a self-managed server, scan or paste its pairing code. Review the destination, types, and history before applying the setup. Grant the relevant Health access and check sync progress before opening the viewer on your computer. [Pairing and first sync](/docs/setup/#4-pair-the-app-and-choose-what-to-sync)
 
 Pairing prepares the connection; it is not applied until you save it. The phone's chosen data is then stored in the hosted database. This is different from the Export tab, which creates files without sending them to that database. The [app and backend source documentation](https://github.com/PulsHealth/pulshealth) describes both workflows. Follow the access instructions for the version you actually have.
 
 The viewer brings activity rings, metric trends, and workouts into a browser. Initial history can take time to arrive, especially with years of records. Check that the time range you want has actually synced before interpreting an empty old chart as a period without measurements.
 
-<BlogImage src="/blog/view-apple-health-on-mac-pc/viewer-today.webp" alt="PulsHealth demo viewer with activity rings, metric cards, and recent workouts." caption="The Today view in the existing demo screenshot. The date and values are demonstration content, not a live account or a health target." width="1440" height="900" />
+<BlogImage src="/blog/view-apple-health-on-mac-pc/viewer-today.webp" alt="PulsHealth demo viewer with activity rings, metric cards, and recent workouts." caption="Public demo Today view, captured October 24, 2026. Values are sample data, not a personal account or a health target." width="1440" height="1000" />
 
-Start with the date above the rings and the timestamps on the metric cards. A filled dashboard still needs a freshness check.
+Start with the timestamps on the metric cards and the dates on individual records. A filled dashboard still needs a freshness check.
 
-<BlogImage src="/blog/view-apple-health-on-mac-pc/viewer-workouts.webp" alt="PulsHealth demo workout list with session duration, energy, distance, and totals." caption="The demo workout list. The summary explicitly covers the latest 120 listed sessions; it is not a lifetime activity total." width="1440" height="900" />
+<BlogImage src="/blog/view-apple-health-on-mac-pc/viewer-workouts.webp" alt="PulsHealth demo workout list with session duration, energy, distance, and totals." caption="Public demo workout list, captured October 24, 2026. Summary totals cover the latest 120 listed sessions, not a lifetime activity total." width="1440" height="1000" />
 
 For a workout review, read the list scope before comparing totals. Open a session when you need its detail, and distinguish recorded sessions from days on which you exercised.
 
@@ -111,7 +111,7 @@ Mirroring is worth considering for a quick glance. A file or dashboard is more u
 
 **Identify the last measurement, not just the last page refresh.** A browser page can reload successfully while the phone has not uploaded newer data. Check the latest record and the app's sync status.
 
-**Match the time range and time zone.** Midnight in UTC may still be the previous local evening. In a self-hosted PulsHealth stack, the server's configured time zone needs to match the phone's for daily summaries.
+**Match the time range and time zone.** Midnight in UTC may still be the previous local evening. PulsHealth uses the account reporting time zone (falling back to the stack setting) for raw rollups; phone aggregates retain their recorded calendar day when temporal context is available. Those days can differ during travel. Check the [calendar rules](/docs/database/) before comparing them.
 
 **Compare the same kind of value.** A daily HealthKit aggregate, a raw-sample sum, and an activity-ring total are not interchangeable. If steps disagree, use our [step-count troubleshooting guide](/blog/apple-health-step-counts-dont-match/) before deciding which chart is wrong.
 
