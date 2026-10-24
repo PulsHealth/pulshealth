@@ -1,6 +1,6 @@
 .home { --home-ink: #f2f6fc; --home-muted: #a5b2c4; --home-blue: #8bc9ff; background: #0b1018; color: var(--home-ink); }
 .home a:focus-visible { outline: 2px solid var(--home-blue); outline-offset: 5px; border-radius: 4px; }
-.hero { padding: 54px 32px 28px; overflow: hidden; background: radial-gradient(ellipse at 50% 65%, #14263b65, transparent 66%); }
+.hero { padding: 54px 32px 28px; overflow: visible; background: transparent; }
 .heroCopy { text-align: center; max-width: 1000px; margin: auto; }
 .hero h1 { font-size: clamp(46px, 6.2vw, 86px); line-height: 1.08; letter-spacing: -.065em; font-weight: 550; text-wrap: balance; }
 .subtitle { margin: 22px 0 0; font-size: clamp(19px, 2vw, 25px); line-height: 1.5; color: #bdc9d8; text-wrap: balance; }

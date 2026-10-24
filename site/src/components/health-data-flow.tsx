@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { FileSpreadsheet, Sparkles } from "lucide-react";
+import { FileJson, FileSpreadsheet, Sparkles } from "lucide-react";
 import styles from "./health-data-flow.module.css";
 
 export function HealthDataFlow() {
@@ -37,10 +37,16 @@ export function HealthDataFlow() {
         <path d="M 175 336 V 360 Q 175 375 155 375 H 95 Q 80 375 80 395" pathLength="100" className={styles.packet} />
         <path d="M 175 336 V 360 Q 175 375 195 375 H 255 Q 270 375 270 395" pathLength="100" className={styles.packet} />
       </svg>
-      <Link href="/features/#export" className={styles.sheet} aria-label="Export CSV and JSON files">
-        <div className={styles.sheetHeader}><FileSpreadsheet size={18} aria-hidden /><span>health.csv</span><i /></div>
-        <div className={styles.cells} aria-hidden>{Array.from({ length: 20 }, (_, i) => <span key={i}><i /></span>)}</div>
-        <div className={styles.sheetFooter} aria-hidden><span /><span /><span /></div>
+      <Link href="/features/#export" className={styles.fileStack} aria-label="Export workouts as CSV or steps as JSON">
+        <div className={styles.jsonSheet}>
+          <div className={styles.sheetHeader}><FileJson size={18} aria-hidden /><span>steps.json</span></div>
+          <div className={styles.jsonLines} aria-hidden><span>{"{"}</span><i /><i /><i /><span>{"}"}</span></div>
+        </div>
+        <div className={styles.sheet}>
+          <div className={styles.sheetHeader}><FileSpreadsheet size={18} aria-hidden /><span>workouts.csv</span><i /></div>
+          <div className={styles.cells} aria-hidden>{Array.from({ length: 20 }, (_, i) => <span key={i}><i /></span>)}</div>
+          <div className={styles.sheetFooter} aria-hidden><span /><span /><span /></div>
+        </div>
       </Link>
       <div className={styles.phone}>
         <Image src="/screenshots/app-explore.webp" alt="PulsHealth on iPhone, showing real app screens for activity, heart rate, sleep, and workouts" width={600} height={1304} sizes="(max-width: 600px) 46vw, 240px" priority />

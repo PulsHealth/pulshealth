@@ -1,16 +1,23 @@
 .figure { position: relative; max-width: 1100px; margin: 0 auto; }
 .stage { position: relative; isolation: isolate; aspect-ratio: 1100 / 560; }
-.halo { position: absolute; z-index: -1; width: 80%; height: 100%; left: 10%; top: 0; background: radial-gradient(ellipse at 50% 60%, #1960aa42, #155e9c12 45%, transparent 70%); }
-.halo::after { content: ""; position: absolute; left: 20%; right: 20%; bottom: 3%; height: 10%; background: #0008; filter: blur(20px); border-radius: 50%; }
+.halo { position: absolute; z-index: -1; inset: 0; background: radial-gradient(ellipse 45% 40% at 50% 50%, #1960aa38, #155e9c12 55%, transparent 100%); }
 .mobileStreams { display: none; }
-.streams { position: absolute; inset: 0; width: 100%; height: 100%; }
+.streams { overflow: visible; position: absolute; inset: 0; width: 100%; height: 100%; }
 .thread { stroke: #73b9f0; stroke-opacity: .13; stroke-width: 1; vector-effect: non-scaling-stroke; }
 .packet { stroke: #a0dcff; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 9 91; vector-effect: non-scaling-stroke; animation: flow 4s linear infinite; filter: drop-shadow(0 0 5px #67baff); }
 .fileStream .packet { stroke: #93e7cf; filter: drop-shadow(0 0 4px #6ed6bb); }
 .fileStream .thread { stroke: #74bfae; }
 .phone { position: absolute; left: 39%; top: 4%; width: 22%; border: 4px solid #313a47; border-radius: 34px; background: #000; overflow: hidden; transform: rotate(-5deg); box-shadow: 0 0 0 1px #9aaeb960, 10px 24px 55px #0008, -3px 0 0 1px #8fa8b223; }
 .phone img { width: 100%; height: auto; display: block; }
-.sheet { position: absolute; left: 7%; top: 31%; width: 20%; padding: 18px 15px 14px; border: 1px solid #9ee4d233; border-radius: 12px; background: linear-gradient(140deg, #19352f, #101d27); box-shadow: 0 20px 60px #0004; transform: perspective(800px) rotateY(16deg) rotateZ(-5deg); }
+.fileStack { position: absolute; left: 5%; top: 25%; width: 24%; height: 48%; transform: perspective(800px) rotateY(12deg) rotateZ(-5deg); }
+.sheet, .jsonSheet { position: absolute; padding: 18px 15px 14px; border-radius: 12px; box-shadow: 0 20px 45px #0004; }
+.sheet { left: 0; top: 25%; width: 88%; z-index: 1; border: 1px solid #9ee4d233; background: linear-gradient(140deg, #19352f, #101d27); }
+.jsonSheet { left: 23%; top: 0; width: 84%; min-height: 170px; border: 1px solid #adb9ed35; background: linear-gradient(140deg, #29334b, #172134); transform: rotate(9deg); }
+.jsonSheet .sheetHeader { color: #bfccef; }
+.jsonLines { color: #889bc2; font: 13px var(--font-geist-mono), monospace; display: flex; flex-direction: column; gap: 9px; }
+.jsonLines i { display: block; width: 57%; height: 4px; border-radius: 2px; margin-left: 14px; background: #8c9ccc55; }
+.jsonLines i:nth-of-type(2) { width: 73%; background: #8cb9da60; }
+.jsonLines i:nth-of-type(3) { width: 45%; }
 .sheetHeader { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #b4ded2; padding-bottom: 15px; }
 .sheetHeader > i { margin-left: auto; width: 5px; height: 5px; background: #8dd9ba; border-radius: 50%; }
 .cells { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1fr; }
@@ -32,9 +39,15 @@
   .desktopStreams { display: none; }
   .mobileStreams { display: block; }
   .phone { width: 44%; left: 28%; top: 2%; border-width: 3px; border-radius: 23px; transform: none; }
-  .sheet { left: 6%; top: 78%; width: 32%; padding: 9px 8px; transform: none; border-radius: 9px; }
+  .fileStack { left: 3%; top: 76%; width: 43%; height: 24%; transform: none; }
+  .sheet { left: 0; top: 27%; width: 94%; padding: 9px 7px; border-radius: 9px; }
+  .jsonSheet { left: 14%; top: 0; width: 86%; min-height: 74px; padding: 8px 7px; border-radius: 8px; transform: rotate(6deg); }
+  .jsonLines { gap: 4px; font-size: 8px; }
+  .jsonLines i { height: 2px; margin-left: 8px; }
+  .jsonLines i:nth-of-type(3), .jsonLines > span:last-child { display: none; }
   .sheetHeader { font-size: 10px; padding-bottom: 7px; gap: 5px; }
-  .sheetHeader svg { width: 13px; }
+  .sheetHeader svg { width: 12px; flex-shrink: 0; }
+  .sheetHeader > i { display: none; }
   .cells > span { height: 12px; padding: 0 3px; }
   .cells > span:nth-child(n + 13) { display: none; }
   .sheetFooter { display: none; }
