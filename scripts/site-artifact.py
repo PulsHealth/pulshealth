@@ -3,6 +3,7 @@
 
 import argparse
 import hashlib
+import fcntl
 import os
 import json
 import subprocess
@@ -11,6 +12,8 @@ import tempfile
 from pathlib import Path
 from urllib.request import Request, urlopen
 
+from site_indexnow import KEY_FILE, notify
+
 from dev_evidence import fingerprint, git, sha256, state_dir, timestamp, write_json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # silently escaping provenance. Generated public assets are gitignored.
 INPUTS = ["site", "llms.txt", "blog", "knowledge-base", "server/api/openapi.json", "*.md",
           "**/*.md", "scripts/site-artifact.py", "scripts/dev_evidence.py",
-          "scripts/deploy-site.sh"]
+          "scripts/deploy-site.sh", "scripts/site_indexnow.py"]
 MANIFEST = ".puls-build.json"
 
 
@@ -142,7 +145,11 @@ def deploy(root, args):
         shutil.copytree(root / "site/out", snapshot)
         if inventory(snapshot) != record["files"] or site_fingerprint(root) != record["inputs_sha256"]:
             raise RuntimeError("Build changed while staging deployment")
-        deploy_snapshot(root, args, record, snapshot)
+        lock_path = state_dir(root) / "site-publish.lock"
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        with lock_path.open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            deploy_snapshot(root, args, record, snapshot)
 
 
 def deploy_snapshot(root, args, record, snapshot):
@@ -156,7 +163,8 @@ def deploy_snapshot(root, args, record, snapshot):
                "built_from_sha": record["source_sha"],
                "build_source_dirty": record.get("source_dirty", False),
                "inputs_sha256": record["inputs_sha256"], "started_at": timestamp(),
-               "status": "uploading", "verified_files": []}
+               "status": "uploading", "verified_files": [],
+               "indexnow": {"status": "not-submitted"}}
     receipt_path = state_dir(root) / "deployments" / (receipt["started_at"].replace(":", "-") + ".json")
     write_json(receipt_path, receipt)
     try:
@@ -174,7 +182,7 @@ def deploy_snapshot(root, args, record, snapshot):
             write_json(receipt_path, receipt)
             subprocess.run(["aws", "cloudfront", "wait", "invalidation-completed",
                             "--distribution-id", "E2B9BMUXL8SCC8", "--id", receipt["invalidation_id"]], check=True)
-            paths = ["index.html", "privacy/index.html", "sitemap.xml", "robots.txt", "screenshots/app-explore.webp"]
+            paths = ["index.html", "privacy/index.html", "sitemap.xml", "robots.txt", "screenshots/app-explore.webp", KEY_FILE]
             for suffix in (".js", ".css"):
                 asset = next((p for p in record["files"] if p.startswith("_next/") and p.endswith(suffix)), None)
                 if asset:
@@ -183,6 +191,11 @@ def deploy_snapshot(root, args, record, snapshot):
             receipt["verified_files"] = verify_live(snapshot, "https://pulshealth.com", sorted(set(paths)))
             receipt["status"] = "verified"
             print("Deployment verified: CDN complete and live artifacts match the build")
+            write_json(receipt_path, receipt)
+            receipt["indexnow"] = notify(snapshot, state_dir(root) / "indexnow/state.json",
+                                         bootstrap=getattr(args, "indexnow_bootstrap", False))
+            outcome = receipt["indexnow"]
+            print(f"IndexNow: {outcome['status']} ({len(outcome.get('urls', []))} URLs); acceptance is not indexing")
     except Exception as error:
         receipt["status"] = "failed"
         receipt["error"] = type(error).__name__
@@ -199,6 +212,7 @@ def main():
     parser.add_argument("--skip-build", action="store_true")
     parser.add_argument("--no-invalidation", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--indexnow-bootstrap", action="store_true", help="Explicit first submission for a newly launched or recently changed site; otherwise initialize a baseline only")
     parser.add_argument("--verify-path", action="append", default=[], help="Additional exported file, e.g. blog/my-post/index.html")
     args = parser.parse_args()
     try:
