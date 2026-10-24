@@ -16,7 +16,7 @@ from dev_evidence import fingerprint, git, sha256, state_dir, timestamp, write_j
 ROOT = Path(__file__).resolve().parents[1]
 # All Markdown sources are conservative: docs.ts can add another input without
 # silently escaping provenance. Generated public assets are gitignored.
-INPUTS = ["site", "blog", "knowledge-base", "server/api/openapi.json", "*.md",
+INPUTS = ["site", "llms.txt", "blog", "knowledge-base", "server/api/openapi.json", "*.md",
           "**/*.md", "scripts/site-artifact.py", "scripts/dev_evidence.py",
           "scripts/deploy-site.sh"]
 MANIFEST = ".puls-build.json"

@@ -1,92 +1,58 @@
 # Use PulsHealth with AI assistants
 
-PulsHealth ships an [MCP](https://modelcontextprotocol.io) server
-(`server/mcp/`), so an AI assistant that speaks MCP, such as Claude,
-ChatGPT, Cursor or Qwen, can answer questions from your Apple Health data:
-"how many steps did I average last week", "compare my runs this month to
-last month", "did I close my rings yesterday". It is read-only and talks
-only to the product API, never to the database. This page is the
-client-side setup; the server's own README is
-[`server/mcp/README.md`](../server/mcp/README.md).
+Use an AI assistant to ask questions about data already synced to your
+PulsHealth database. The read-only MCP server translates those questions into
+product API requests; it cannot write to Apple Health or the database.
 
-For an assistant reading about the project rather than your data, the
-repository's [`llms.txt`](../llms.txt) indexes the documentation, and
-pulshealth.com serves it at <https://pulshealth.com/llms.txt>: the same file,
-rendered at build time with its links pointed at the pages the site renders
-under `/docs/` (the file on GitHub where there is none), so an assistant can
-follow them from either copy. [`AGENTS.md`](../AGENTS.md) is the companion
-for an assistant contributing to the code.
+**Setting up a server first?** Follow [Set up your server](setup.md), which
+includes a prompt for your coding assistant. [llms.txt](https://pulshealth.com/llms.txt)
+is the documentation index. Giving an assistant that URL does not grant access
+to your health data.
 
 ## Choose your connection
 
-For a **self-managed database**, start with [connection options](#two-ways-to-connect):
-run the MCP binary locally or expose your Compose MCP service over HTTPS.
-The database powers your assistant; the iOS app does not connect directly to AI.
+| Your situation | Start here |
+|---|---|
+| You use a hosted PulsHealth account | [Sign in to the hosted connector](#connect-an-ai-assistant-to-your-pulshealth-account) |
+| Your assistant runs locally and can reach your server | [Local MCP or private HTTP connection](#two-ways-to-connect) |
+| Your assistant connects from its provider's cloud | [Public HTTPS with account sign-in](#hosted-connectors-oauth-clients-that-sign-in-instead-of-taking-a-token) |
+| You want to try one question without a connector | [Paste a summary](#no-mcp-at-all-paste-a-summary) |
 
-PulsHealth also offers **hosted accounts**, with the connection steps below.
+A connection lets the assistant's provider process the data it reads, including
+profile details. Choose the scope and provider deliberately. The iOS app syncs
+to your database; it does not connect directly to AI.
 
 ## Connect an AI assistant to your PulsHealth account
 
-If your iPhone syncs to the PulsHealth database (you signed in on
-**Sync → Database** in the app, or have an account at
-<https://app.pulshealth.com>), there is nothing to install or run. The MCP
-server is already up at:
+If you already sync to a hosted PulsHealth account, add this remote MCP URL
+in a client that supports OAuth sign-in:
 
-```
+```text
 https://mcp.pulshealth.com/mcp
 ```
 
-**Any MCP client.** Add it as a remote MCP server (some apps call this a
-custom connector) with the URL above and no token. When the client
-connects, a PulsHealth page opens: sign in with your PulsHealth account,
-check the app named on it, and choose **Allow**. You do this once per app.
-The assistant can then read your data, and only yours, until you revoke it.
+Connect, sign in with your PulsHealth account, review the consent page, and
+choose **Allow**. Leave client ID and client secret fields empty when the
+client supports automatic registration. A client that only accepts a static
+token cannot use the hosted connection.
 
-The PulsHealth sign-in is a standard OAuth server (the MCP authorization
-spec, with dynamic client registration and PKCE), so the client registers
-itself and there is nothing to copy across. Any client that supports signing
-in to a remote MCP server should connect this way. Claude is the one it has
-been tested with; its steps are below. Clients that only take a pasted token
-cannot use the hosted server.
-
-**Example: the Claude app (iPhone, Android, desktop, claude.ai)**
-
-1. On claude.ai, open **Settings → Connectors** and choose **Add custom
-   connector**.
-2. Name it `PulsHealth`, paste the URL above, leave the advanced OAuth
-   fields empty, and choose **Add**.
-3. Choose **Connect**. A PulsHealth page opens: sign in, check the app named
-   on it, and choose **Allow**.
-
-Connectors follow your Claude account, so it appears in the mobile and
-desktop apps too. Turn it on for a chat from the tools menu in the message
-box, then ask, for example, *"How did I sleep last week?"* Custom connectors
-are a feature of Claude's plans; Anthropic's help pages say which ones.
-
-**Example: Claude Code**
+For Claude, use its custom remote connector flow. Available surfaces, menus
+and plan requirements are described in [Claude's connector guide](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
+For Claude Code:
 
 ```bash
-claude mcp add --transport http -s user pulshealth https://mcp.pulshealth.com/mcp
+claude mcp add --transport http --scope user pulshealth https://mcp.pulshealth.com/mcp
 ```
 
-Then, in any session, run `/mcp`, pick `pulshealth` and choose
-**Authenticate**: the same sign-in and **Allow** page opens in your browser.
-`claude mcp list` shows it as connected afterwards.
+Run `/mcp`, select `pulshealth`, and authenticate. Then ask:
+*“What data do you have about me, and how current is it?”*
 
-**What you are allowing.** Read-only access to everything on your account:
-the health data your iPhone synced and your profile (name, date of birth).
-Nothing can be written or deleted, and nobody else's records are reachable.
-What the assistant reads goes to its provider (Anthropic for Claude, OpenAI
-for ChatGPT, and so on) under that provider's terms. The
-[privacy policy](https://pulshealth.com/privacy) has the details.
-
-**Disconnecting.** Your account page at <https://app.pulshealth.com/account>
-lists every connected assistant under **AI assistants**, with **Revoke**. The
-assistant cannot renew its access after that, and the access it already
-holds expires within 30 minutes. Changing your password or deleting your
-account disconnects every assistant.
-
-The rest of this page is for people running their own PulsHealth database.
+The grant covers all health data and profile details on your account, read-only.
+Revoke a connection under **AI assistants** on your
+[account page](https://app.pulshealth.com/account). Refreshing stops immediately;
+an already issued access token can remain valid for up to 30 minutes.
+Changing your password or deleting the account also revokes its grants.
+See the [privacy policy](https://pulshealth.com/privacy/).
 
 ## What is available today
 
@@ -133,130 +99,115 @@ CLI instead of a tool call: [`export.md`](export.md).
 
 ## No MCP at all: paste a summary
 
-Any chat can read markdown. `GET /v1/summary` renders the last 7, 14, 30 or
-90 days as one page of under sixty lines (activity, heart, sleep, workouts,
-body and a coverage line, every figure with its unit and already
-deduplicated across iPhone and Watch), so a chat with no connector at all
-gets a usable picture from one `curl` and a paste:
+After [server setup](setup.md), run this on the server from the repository root.
+Load the trusted local settings without pasting tokens into a chat:
 
 ```bash
-curl -H "Authorization: Bearer $PULS_API_TOKEN" "$API/v1/summary?range=7d"
+set -a
+. server/.env
+set +a
+curl --fail-with-body -sS \
+  -H "Authorization: Bearer $PULS_API_TOKEN" \
+  'http://127.0.0.1:8081/v1/summary?range=7d'
 ```
 
-`range` is `7d` (the default), `14d`, `30d` or `90d`; `format=json` returns
-the same numbers as a `Summary` object. The page carries averages and totals
-only, and the header says which calendar days and which time zone it covers,
-so the model does not have to guess either. Add `user=<uuid>` on a shared
-server, under the same `PULS_MULTI_USER` rule as every other route. The MCP
-server exposes the same page as `get_summary`, and
-[`notebooks/healthkit_database_exploration.ipynb`](../notebooks/healthkit_database_exploration.ipynb)
-renders it straight from the database at the end of its analyses, with an
-optional cell that sends it to Claude.
+Read the result before sharing it. It contains health information.
+`range` accepts `7d`, `14d`, `30d` or `90d`; `format=json` returns the same
+figures as JSON. The summary names its date range, time zone, units and
+coverage. On a remote computer, replace the loopback address with your
+reachable API URL or use an SSH tunnel.
 
 ## Two ways to connect
 
-1. **Local binary (stdio).** The assistant launches `pulshealth-mcp` on
-   your machine; it needs to reach the product API. Simplest when the API
-   is published on your tailnet
-   (`tailscale serve --bg --https=8444 http://localhost:8081` on the server,
-   as in `server/README.md`) or through an SSH tunnel
-   (`ssh -N -L 8081:127.0.0.1:8081 <user>@<host>`, then
-   `PULS_API_URL=http://127.0.0.1:8081`).
-2. **Remote connector (streamable HTTP).** The Compose stack's `mcp`
-   service serves `/mcp` on `127.0.0.1:8082`; publish it over HTTPS and any
-   client that can send a bearer header connects to it. No binary on the
-   client side. Clients that only sign in (claude.ai, the Claude mobile app)
-   use OAuth through the web viewer: "Hosted connectors (OAuth)" below.
+1. **Local binary (stdio):** your assistant launches `pulshealth-mcp`.
+   It needs the product API URL and `PULS_API_TOKEN`. Keep the API private
+   through a VPN or SSH tunnel; no public endpoint is required.
+2. **Remote MCP (HTTP):** use the Compose `mcp` service with a reachable
+   `/mcp` URL and `PULS_MCP_TOKEN`. The client must support bearer headers.
+   Cloud clients need a public HTTPS endpoint; clients requiring sign-in
+   also need [OAuth](#hosted-connectors-oauth-clients-that-sign-in-instead-of-taking-a-token).
+
+The API is port **8081**; MCP is **8082**. Neither uses the phone's ingest
+token. See [MCP configuration](../server/mcp/README.md#environment) for all settings.
 
 ### Get the binary
 
-```bash
-# from a checkout
-go build -o pulshealth-mcp ./server/mcp && sudo mv pulshealth-mcp /usr/local/bin/
+Only needed for stdio. With Go 1.26 or newer, run from the repository root:
 
-# or the latest commit on main (the binary lands as $(go env GOPATH)/bin/mcp)
-go install github.com/PulsHealth/pulshealth/server/mcp@latest
+```bash
+mkdir -p "$HOME/.local/bin"
+(cd server/mcp && go build -o "$HOME/.local/bin/pulshealth-mcp" .)
+"$HOME/.local/bin/pulshealth-mcp" --version
 ```
 
-Go 1.26 or newer. Check it with `PULS_API_TOKEN=x pulshealth-mcp --version`.
+Use the full binary path in your client configuration. There is no Go module
+at the repository root. Build from the same revision as your server.
 
-Every stdio snippet below uses the same two variables: `PULS_API_URL`
-(the product API) and `PULS_API_TOKEN` (from `server/.env`). The calendar
-zone needs no setting: the MCP server asks `GET /v1/users?user=...` for the
-selected account's `timeZone`. Its account setting takes precedence over
-`PULS_TIME_ZONE`; that environment variable is only a legacy fallback for
-older APIs without per-account zones.
+To reach a remote API privately, keep this command running in another terminal
+(replace `user@server` with your SSH destination):
+
+```bash
+ssh -N -L 8081:127.0.0.1:8081 user@server
+```
+
+Then use `PULS_API_URL=http://127.0.0.1:8081` on your computer.
 
 ### Claude Desktop
 
-Edit `claude_desktop_config.json` (macOS:
-`~/Library/Application Support/Claude/claude_desktop_config.json`; Windows:
-`%APPDATA%\Claude\claude_desktop_config.json`), then restart Claude Desktop:
+For a local MCP configuration, use the JSON below in the client settings that
+support launching a command. Replace the path and token locally; keep the
+file out of version control. Desktop, chat and mobile support differ; consult
+[Claude's local and remote connector guide](https://support.claude.com/en/articles/11725091-when-to-use-desktop-and-web-connectors).
 
 ```json
 {
   "mcpServers": {
     "pulshealth": {
-      "command": "/usr/local/bin/pulshealth-mcp",
+      "command": "/absolute/path/to/pulshealth-mcp",
       "env": {
-        "PULS_API_URL": "https://<machine>.<tailnet>.ts.net:8444",
-        "PULS_API_TOKEN": "<PULS_API_TOKEN from server/.env>"
+        "PULS_API_URL": "http://127.0.0.1:8081",
+        "PULS_API_TOKEN": "YOUR_API_TOKEN"
       }
     }
   }
 }
 ```
-
-The tools appear under the connector icon in the chat box; ask something and
-approve the first tool call.
 
 ### Claude Code
 
-Stdio, available in every project (`-s user`):
+With `PULS_API_TOKEN` already loaded securely in your local shell:
 
 ```bash
-claude mcp add pulshealth -s user \
-  -e PULS_API_URL=https://<machine>.<tailnet>.ts.net:8444 \
-  -e PULS_API_TOKEN=<PULS_API_TOKEN from server/.env> \
-  -- /usr/local/bin/pulshealth-mcp
+claude mcp add --scope user \
+  --env PULS_API_URL=http://127.0.0.1:8081 \
+  --env "PULS_API_TOKEN=$PULS_API_TOKEN" \
+  --transport stdio pulshealth -- "$HOME/.local/bin/pulshealth-mcp"
 ```
 
-Or the remote connector, with the MCP token as a header:
+For an HTTP connector, replace the example hostname and load its MCP token:
 
 ```bash
-claude mcp add --transport http pulshealth https://<machine>.<tailnet>.ts.net:8445/mcp \
-  --header "Authorization: Bearer <PULS_MCP_TOKEN from server/.env>"
+claude mcp add --transport http --scope user \
+  --header "Authorization: Bearer $PULS_MCP_TOKEN" \
+  pulshealth https://mcp.example.com/mcp
 ```
 
-`claude mcp list` shows the connection; `/mcp` inside a session shows the
-tools. Try `/mcp__pulshealth__weekly_summary` for the built-in prompt.
+Use one configuration for the name `pulshealth`. `claude mcp list` and `/mcp`
+show its status. See [Claude Code's MCP guide](https://code.claude.com/docs/en/mcp)
+for configuration and authentication commands.
 
 ### Cursor
 
-`~/.cursor/mcp.json` (global) or `.cursor/mcp.json` in a project:
+Use the stdio JSON above in your private `~/.cursor/mcp.json`, adding
+`"type": "stdio"` inside the `pulshealth` entry. Alternatively, configure
+an HTTP connector (see [Cursor MCP configuration](https://cursor.com/docs/mcp)):
 
 ```json
 {
   "mcpServers": {
     "pulshealth": {
-      "command": "/usr/local/bin/pulshealth-mcp",
-      "env": {
-        "PULS_API_URL": "https://<machine>.<tailnet>.ts.net:8444",
-        "PULS_API_TOKEN": "<PULS_API_TOKEN from server/.env>"
-      }
-    }
-  }
-}
-```
-
-Remote instead:
-
-```json
-{
-  "mcpServers": {
-    "pulshealth": {
-      "url": "https://<machine>.<tailnet>.ts.net:8445/mcp",
-      "headers": { "Authorization": "Bearer <PULS_MCP_TOKEN from server/.env>" }
+      "url": "https://mcp.example.com/mcp",
+      "headers": { "Authorization": "Bearer YOUR_MCP_TOKEN" }
     }
   }
 }
@@ -264,222 +215,108 @@ Remote instead:
 
 ### Remote connector: the Compose service over HTTPS
 
-On the server:
+The bootstrap starts `mcp` with its own generated token. From the repository root:
 
 ```bash
-cd server
-openssl rand -hex 32            # → PULS_MCP_TOKEN in .env (scripts/bootstrap.sh generates it)
-docker compose up -d mcp        # pulls ghcr.io/pulshealth/mcp; `make dev-up` builds it from the checkout
-curl -s localhost:8082/healthz  # → {"api":true,"ok":true}
+docker compose -f server/docker-compose.yml ps mcp api
+curl --fail-with-body -sS http://127.0.0.1:8082/healthz
 ```
 
-The service binds to loopback and depends on `api`. Publish it the same way
-as the product API and Grafana: through a TLS-terminating proxy, never
-directly:
+Expect `{"api":true,"ok":true}`. Keep port 8082 on loopback and forward your
+HTTPS endpoint to it. For an existing Tailscale network, one option is:
 
 ```bash
 tailscale serve --bg --https=8445 http://localhost:8082
 ```
 
-The endpoint is then `https://<machine>.<tailnet>.ts.net:8445/mcp` with
-`Authorization: Bearer $PULS_MCP_TOKEN`. Any reverse proxy that terminates
-TLS works the same (Caddy, nginx, a cloud tunnel); keep `/healthz` reachable
-for monitoring if you like, it needs no token. Wrong tokens are throttled per
-client address like the API's (ten, then one every six seconds, `429` with
-`Retry-After`) and logged, but not a request with no token (an OAuth
-client's discovery request) or an access token the server signed, valid or
-expired, so connectors sharing an address never lock each other out; behind a proxy that is the only way in, set
-`TRUST_PROXY_HEADERS=true` so each client keeps its own budget instead of
-sharing the proxy's.
+Use the HTTPS URL printed by Tailscale, with `/mcp` appended. This is private
+to that network, so it works only when the client can join it.
+[Server networking](../server/README.md#exposing-the-server) covers other proxies.
+Set `TRUST_PROXY_HEADERS=true` only when a trusted proxy is the sole entry point.
 
-Clients that take a static bearer header (Claude Code, Cursor, the MCP
-Inspector, your own code) connect as shown above. Clients that take no
-header, only an OAuth sign-in (claude.ai's connectors and the Claude mobile
-app, for example), are in the next section.
-
-Quick check from a shell:
-
-```bash
-curl -s -X POST https://<machine>.<tailnet>.ts.net:8445/mcp \
-  -H "Authorization: Bearer $PULS_MCP_TOKEN" \
-  -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
-```
-
-A `401` means the token; a `503` from `/healthz` means the product API (or
-its database) is down.
+The token presented by the client is `PULS_MCP_TOKEN`; the MCP service keeps
+`PULS_API_TOKEN` for its own API calls. A health check verifies dependencies,
+not client authentication. Finish by connecting the assistant and asking it
+to list available data and its latest date.
 
 ### Hosted connectors (OAuth): clients that sign in instead of taking a token
 
-Some clients take no pasted token and only sign in with OAuth, following the
-MCP authorization spec. claude.ai's custom connectors (which the Claude
-mobile app then uses too) are one: they connect from Anthropic's cloud. The
-server speaks it, so any client that signs in this way can use it. The web
-viewer in accounts mode is the **authorization server**: a person signs in
-there with their own viewer account and approves the assistant, and the
-viewer issues it a 30-minute access token (renewed with a refresh token).
-The `mcp` service is the **resource server**: it checks each token's
-signature with a secret it shares with the viewer, without a database, and
-reads **only the signed-in person's data**: every API call names them, a
-tool asking about anyone else is refused, and `list_users` shows them alone.
-`PULS_MCP_TOKEN` keeps working beside it for the clients above.
+For your own cloud-accessible connector, configure:
 
-What it needs:
+- The [viewer in accounts mode](../web/README.md#accounts-mode), with each
+  person's account bound to their synced user ID.
+- A public HTTPS viewer URL and a public HTTPS MCP URL. A private tailnet URL
+  cannot be reached by a cloud client.
+- These settings in `server/.env` (generate a fresh secret locally):
 
-- **The viewer in accounts mode on a public HTTPS address**
-  (`WEB_ACCOUNTS=true`, `WEB_PUBLIC_URL=https://viewer.example.com`; see
-  `server/README.md`, "The web viewer on your own domain"). People sign in
-  there, so their accounts are the ones `make web-invite` (or approved
-  sign-ups) created.
-- **The MCP server on a public HTTPS address.** The client's provider makes
-  the calls from its own servers (Anthropic's, for claude.ai), so a
-  tailnet-only or loopback URL will not do. With the Compose
-  `tunnel` profile already serving the viewer, add a second published route
-  on the same Cloudflare tunnel: `mcp.example.com` → `http://mcp:8082`
-  (port 8082 stays on loopback; Cloudflare terminates TLS and so sees the
-  traffic). Any other TLS-terminating proxy works too; keep
-  `TRUST_PROXY_HEADERS=true` when it is the only way in.
-- **Two lines in `server/.env`**, read by both `web` and `mcp`:
-
-  ```bash
-  PULS_MCP_OAUTH_SECRET=<openssl rand -hex 32>
-  PULS_MCP_URL=https://mcp.example.com/mcp   # the exact URL you give the connector
-  ```
-
-  The issuer is the viewer's `WEB_PUBLIC_URL` (Compose passes it as
-  `PULS_MCP_OAUTH_ISSUER`). Then `docker compose up -d`. The `mcp` log's
-  `listening` line names the URL and the issuer under `oauth` (`off` when
-  it is not on), and
-  `curl -s https://mcp.example.com/.well-known/oauth-protected-resource/mcp`
-  returns the resource document naming the viewer.
-- **`PULS_MULTI_USER=true`** on the API for anyone but the default user
-  (`PULS_USER_ID`): otherwise the API refuses their reads (a `403` in the
-  tool's error). With it on, `PULS_MCP_TOKEN` can read everyone, so pin it:
-  `PULS_MCP_USER_ID=<the person it is for>`.
-
-Any client that signs in connects the same way: give it the URL, sign in
-to the viewer, choose **Allow**. Two examples:
-
-**claude.ai and the mobile app.** Settings → Connectors → **Add custom
-connector**; give it a name and the URL (`https://mcp.example.com/mcp`) and
-leave the advanced OAuth fields (client ID and secret) empty: the client
-registers itself. **Connect** opens the viewer's sign-in and a consent page
-naming the client; **Allow** returns you to Claude. The connector then
-appears in the Claude mobile app on the same account. Each person who uses
-it connects with their own viewer account and sees only their own data.
-
-**Claude Code.**
-
-```bash
-claude mcp add --transport http pulshealth https://mcp.example.com/mcp
+```dotenv
+WEB_ACCOUNTS=true
+WEB_PUBLIC_URL=https://viewer.example.com
+PULS_MCP_OAUTH_SECRET=REPLACE_WITH_A_RANDOM_SECRET_OF_AT_LEAST_32_CHARACTERS
+PULS_MCP_URL=https://mcp.example.com/mcp
 ```
 
-then `/mcp` inside a session, choose `pulshealth` and **Authenticate**: the
-same sign-in and consent in your browser.
+Compose passes `WEB_PUBLIC_URL` to MCP as `PULS_MCP_OAUTH_ISSUER`.
+Recreate `web` and `mcp` using the same Compose files used for installation.
+Verify `https://mcp.example.com/.well-known/oauth-protected-resource/mcp`
+names your viewer, then connect and sign in through your assistant.
 
-Things to know:
+For users other than the API's default person, enable `PULS_MULTI_USER=true`
+on the API. Also pin the static MCP credential with
+`PULS_MCP_USER_ID=<intended-user-uuid>` so it cannot select every person.
+OAuth calls always use the signed-in person's ID, regardless of that pin.
 
-- **Revocation takes up to 30 minutes.** The account page's AI assistants
-  list revokes a connection, and disabling, deleting or resetting the password
-  of an account revokes all of its connections; the refresh is refused at
-  once, but an access token already issued is valid until it expires (at
-  most 30 minutes), because the MCP server does not ask the database. Rotating
-  `PULS_MCP_OAUTH_SECRET` (`docker compose up -d web mcp`) ends every access
-  token immediately.
-- **Your data passes through the AI provider.** Every answer a tool gives
-  (readings, workouts, sleep, your profile's name and date of birth) goes to
-  whoever runs the client (Anthropic, for Claude) to be read by the model, under that
-  provider's terms and retention, exactly as with any other connector. The
-  consent page says what is shared; connect only if that is acceptable.
-- **The grant is read-only and all-or-nothing:** one scope, `health:read`,
-  covering every type the server holds for you.
+The grant is `health:read` over all of that person's data. Revocation stops
+refreshes immediately; access tokens expire within 30 minutes. Rotating the
+shared OAuth secret invalidates existing access tokens, but does not revoke
+refresh grants. See the [viewer OAuth reference](../web/README.md#ai-assistants-oauth)
+and [MCP security model](../server/mcp/README.md#oauth-resource-server).
 
 ## ChatGPT: the product API as a custom GPT Action
 
-ChatGPT does not speak to the MCP server with a pasted bearer token. What it
-does take is an **Action**: an OpenAPI document plus a credential, from which
-it calls the HTTP API itself. The product API already publishes the document.
-Read the caveats first: this route works differently from everything above.
-
-**OpenAI's servers, not your browser, fetch the document and call the
-endpoints.** A tailnet-only URL (`https://<machine>.<tailnet>.ts.net:8444`),
-a loopback address or an SSH tunnel **will not work**: import fails, and even
-if it did not, every call would. The API has to be reachable from the public
-internet for as long as the Action is in use.
+An existing private GPT Action can call the product API with its OpenAPI
+schema and a bearer API key. Availability and configuration depend on the
+client and workspace; see [OpenAI's current Action documentation](https://help.openai.com/en/articles/9442513-configuring-actions-in-gpts).
+For a new connection, use an MCP-capable client where available, or paste a
+summary. Actions require a public API URL reachable by the provider.
 
 ### 1. Publish the API on a public HTTPS URL
 
-Any TLS-terminating tunnel or proxy does: `tailscale funnel --bg --https=443
-http://localhost:8081`, a Cloudflare Tunnel, or a reverse proxy on a VPS.
-Treat this as a temporary window; see the caveats.
+Forward a TLS proxy to `127.0.0.1:8081`. Keep the database private.
+With a trusted proxy as the only entry point, set `TRUST_PROXY_HEADERS=true`
+so the API uses its forwarded host and scheme. Check:
 
 ```bash
-curl -s https://health.example.net/healthz                     # {"ok":true,"db":true}
-curl -s https://health.example.net/openapi.json | python3 -m json.tool >/dev/null && echo "schema ok"
+curl --fail-with-body -sS https://api.example.com/healthz
+curl --fail-with-body -sS https://api.example.com/openapi.json
 ```
 
-The document fills its `servers[0].url` in from the request it arrived on
-(honouring `X-Forwarded-Host` / `X-Forwarded-Proto`), so **fetch it through
-the public URL**: a copy pulled from `127.0.0.1` names the loopback address
-and the Action will call the wrong host.
+Verify `servers[0].url` names that public endpoint, not loopback.
 
 ### 2. Import it
 
-In ChatGPT: **Create a GPT → Configure → Create new action → Import from
-URL**, and give it `https://health.example.net/openapi.json`. (Pasting the
-JSON works too.) Every endpoint arrives with an `operationId` the model calls
-by name: `getDailyMetrics`, `getSleepNights`, `listWorkouts`,
-`exportDataset` and so on.
+Import `https://api.example.com/openapi.json` in the Action's schema editor.
+Use the schema from your deployed server, which matches its API version.
 
 ### 3. Configure the token
 
-**Authentication → API Key → Auth Type: Bearer**, and paste the value of
-`PULS_API_TOKEN` from `server/.env`. That single token is the whole trust
-boundary; `/`, `/docs`, `/openapi.json` and `/healthz` stay open, everything
-under `/v1/` needs it.
-
-ChatGPT asks for a privacy policy URL for the Action before it will let you
-share the GPT with anyone else. Don't; see the caveats.
+Choose API key authentication with **Bearer**, and enter `PULS_API_TOKEN`
+locally. This is the read token, not `PULS_TOKEN` or `PULS_MCP_TOKEN`.
 
 ### 4. Check it
 
-Ask *"what health data do you have about me, and how current is it?"*: that
-is one `listCatalogTypes` call, which lists every type with the row count and
-the timestamps of its oldest and newest record. Approve the first call when
-ChatGPT asks. (Unlike the MCP tool of the same shape, the raw endpoint does
-*not* report the server's current date: `latest` is the newest **data**, so an
-assistant that reads it as "today" is wrong by however far sync has lagged.)
+Ask which data is available and how current it is. Check that the result names
+the expected person and real sync dates. `latest` means the newest uploaded
+record, not today's date. Ask the assistant to use `/v1/users` for the selected
+person's reporting zone and `/v1/metrics/daily` for daily totals.
 
 ### Caveats
 
-- **Keep the GPT private.** The API key is stored with the Action, so anyone
-  who can use the GPT can read your health data, including your name, email
-  and date of birth from `/v1/profile`. Do not share or publish it.
-- **Rotate the token afterwards.** It has been handed to a third party and
-  travelled over a public endpoint. When you are done: generate a new one
-  (`openssl rand -hex 32`), set `PULS_API_TOKEN` in `server/.env`,
-  `docker compose up -d api mcp`, and update your other clients. Take the
-  public endpoint down at the same time (`tailscale funnel --https=443 off`).
-- **A public endpoint is a public endpoint.** The product API throttles
-  failed token guesses per client IP (`server/README.md`, "Rate limiting")
-  and nothing else: no IP allowlist, no limit on requests that carry the
-  right token. The token is all that stands between the internet and the
-  data. Keep the window short.
-- **Actions time out (tens of seconds) and truncate large answers.** Ask for
-  narrow ranges. `exportDataset` streams a CSV or JSONL *file*, which is
-  exactly the wrong shape for a chat turn. Use the JSON endpoints for
-  questions and the `puls-export` CLI for files ([`export.md`](export.md)).
-- **Dates are epoch milliseconds.** The server's calendar zone is the
-  `timeZone` field of `listUsers`; tell the GPT in its instructions to read
-  it (or name the zone, `PULS_TIME_ZONE`, outright), or it will guess.
-- **The Action can name a user.** Every `/v1/*` operation takes an optional
-  `user` query parameter and `listUsers` names everyone with data, so a GPT
-  built on a shared server can read another household member's records if
-  the API's `PULS_MULTI_USER` is on: one more reason to keep the GPT
-  private. Leave `PULS_MULTI_USER` off unless you mean it.
-- The MCP server remains the better route wherever the client supports it:
-  it speaks calendar days, keeps the model honest about units and
-  double counting, and never needs a public endpoint.
+Keep the GPT private: anyone able to use its stored credential can read the
+data it authorizes. With `PULS_MULTI_USER=true`, that credential can read every
+person. Use short date ranges and JSON endpoints; use the export CLI for files.
+When retiring the integration, rotate the API token, recreate `api` and `mcp`
+with the installation's Compose files, and remove unneeded public routes.
 
 ## Try these
 
@@ -512,51 +349,32 @@ assistant that reads it as "today" is wrong by however far sync has lagged.)
 
 ## How the server keeps the model honest
 
-- **Units travel with every value** (`count/min`, `kg`, `m`, `kcal`, ...),
-  and the descriptions warn that `%` is a fraction (blood oxygen 0.97).
-- **Days, not milliseconds.** The API speaks epoch milliseconds and
-  half-open ranges; the tools speak `YYYY-MM-DD` in your time zone and map
-  an inclusive range to exactly those days, DST included.
-- **No double counting.** Daily values come from HealthKit's own daily
-  aggregate when the phone synced one, otherwise from a single-source rollup;
-  the guide tells the model never to total raw samples itself.
-- **Cumulative versus discrete.** Steps are daily sums; heart rate is a
-  daily average; the latest raw sample of a cumulative type is an increment,
-  not a total. The tool descriptions spell all of this out.
-- **Errors are readable.** A bad date, an unknown workout, a rejected token
-  or an unreachable API come back as tool errors with the reason and the
-  HTTP status, so the assistant can explain instead of guessing.
+Daily tools carry units and use calendar dates in the selected person's zone.
+They prefer the phone's aggregates, with server rollups where supported;
+raw samples remain undeduplicated. Missing data stays missing rather than
+becoming zero. The embedded [assistant guide](../server/mcp/guide.md) explains
+these rules and provides question-to-tool recipes.
 
 ## Security
 
-- **The tokens grant read access to your health data**, including the
-  profile (name, email, date of birth). `PULS_API_TOKEN` (used by the stdio
-  binary) and `PULS_MCP_TOKEN` (presented by remote clients) are separate
-  secrets; rotate either without touching the other.
-- **Client config files hold the token.** `claude_desktop_config.json`,
-  `.cursor/mcp.json` and Claude Code's settings are as sensitive as
-  `server/.env`; keep them out of version control.
-- **HTTP mode only behind TLS.** The compose service binds to loopback;
-  never publish port 8082 directly or over plain HTTP. See the security
-  notes in `server/mcp/README.md`.
-- With the API's `PULS_MULTI_USER` off (the default) the assistant sees one
-  person only. With it on, pin each connector to its person (`PULS_USER_ID`;
-  see the multi-user note above). An OAuth sign-in is always pinned to the
-  person who signed in. Nothing here can write to the database or to Apple
-  Health.
-- **A hosted connector sends your data to its provider** and is revoked with
-  up to 30 minutes' delay; see "Hosted connectors (OAuth)".
+- Read tokens expose health and profile data. Keep client configuration and
+  `server/.env` private; use HTTPS for remote HTTP connections.
+- An unpinned static MCP token can select other people only when the API
+  enables multi-user reads. OAuth is always pinned to the signed-in account.
+- Read-only access still sends returned data to the assistant's provider.
+  Review its data-use settings before connecting.
 
 ## Troubleshooting
 
-| Symptom | Likely cause |
+| Symptom | Check |
 |---|---|
-| The tool returns `product API returned 401 ...` | `PULS_API_TOKEN` given to the MCP server differs from the API's. |
-| `product API unreachable at ...` | Wrong `PULS_API_URL`, tunnel not up, or the API container is down (`docker compose ps`). |
-| `PULS_MCP_TOKEN (or OAuth: …) must be set to serve --http` at startup | HTTP mode refuses to run without its token; set it in `.env`. |
-| `OAuth needs all of PULS_MCP_OAUTH_SECRET, PULS_MCP_URL and PULS_MCP_OAUTH_ISSUER` at startup | One of the OAuth settings is set without the others; the issuer comes from `WEB_PUBLIC_URL`. |
-| The client (claude.ai, say) cannot connect, or never shows a sign-in | The MCP URL is not reachable from the internet, or OAuth is off (`/.well-known/oauth-protected-resource/mcp` is a 404); check the `mcp` log's `listening` line. |
-| A signed-in connector's tools fail with a `403` from the product API | The person is not the API's default user and `PULS_MULTI_USER` is off. |
-| Daily figures are off by a day, or a day splits in two | `PULS_TIME_ZONE` set on the MCP server differs from the stack's (its log warns); unset it to use the API's. |
-| A tool fails with `could not learn the server's time zone` | The MCP server could not reach `GET /v1/users` to ask for the zone; it tries again on the next call. Fix the API connection, or set `PULS_TIME_ZONE`. |
-| Client shows the server as failed to start | Run it by hand with the same env: errors go to stderr as JSON. `pulshealth-mcp --version` checks the binary. |
+| API `401` in a tool result | MCP's `PULS_API_TOKEN` must match the API. |
+| MCP `401` before tools load | The client's MCP token is wrong, or OAuth needs sign-in. |
+| API unreachable or MCP health `503` | Check the API container, its database, and `PULS_API_URL`. |
+| Cloud client cannot connect | Its provider must reach the public HTTPS MCP URL; a private VPN address is insufficient. |
+| OAuth discovery `404` | Check all OAuth settings; the viewer also requires accounts mode. |
+| API `403` after sign-in | The account differs from the default user and `PULS_MULTI_USER` is off. |
+| No data or stale data | Confirm the selected user and a completed phone sync. The catalog can lag uploads because it is cached. |
+| Wrong calendar day | Check the account's reporting zone. Rings and phone aggregates keep their recorded phone dates; travel can differ from raw-day grouping. |
+| Time-zone lookup fails | Restore API connectivity; changing a fallback zone does not repair an unavailable API. |
+| Local process fails to start | Run the same binary with the same environment; errors go to stderr. `--version` checks installation only. |

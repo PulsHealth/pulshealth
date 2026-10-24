@@ -1,4 +1,16 @@
-# Bulk export
+# Export your health data
+
+Choose the source first:
+
+| You want to export | Use |
+|---|---|
+| Data directly from your iPhone, without a server | [The app's Export tab](#on-device-export-no-server) |
+| Data already synced to your database | [The server API](#parameters) or [puls-export CLI](#the-puls-export-cli) |
+| A selection someone has asked you to share once | [Data Requests](requests.md) |
+
+For spreadsheets, start with CSV. Use JSON or JSONL on the phone when you
+need full record details. Server exports support CSV and JSONL. A server
+export contains only data already uploaded; it cannot read more from HealthKit.
 
 `GET /v1/export` on the product API returns a whole range of one dataset as a
 **file** — CSV for a spreadsheet, JSONL for a notebook or a chat attachment —
@@ -7,7 +19,20 @@ go out as they are read, so an export of a busy type is bounded by the disk it
 lands on rather than by the server's memory.
 
 `tools/puls-export` is a small client for it. Everything below works equally
-with `curl`.
+with `curl`. Install the [CLI](#the-puls-export-cli), then load your trusted
+local `server/.env` from the repository root. Keep tokens out of chats:
+
+```bash
+set -a
+. server/.env
+set +a
+export PULS_API_URL=http://127.0.0.1:8081
+```
+
+Run on the server or use a reachable HTTPS API URL. The examples below use
+fixed illustrative dates; choose a range where you have synced data. CLI date
+bounds use `$PULS_TIME_ZONE` (UTC if unset); set `--time-zone` to the account
+reporting zone when it differs.
 
 ```bash
 # a year of sleep, as a spreadsheet
@@ -79,8 +104,9 @@ path.
 | `state_of_mind` | `/v1/state-of-mind` | `uuid`, `date`, `timestamp`, `kind`, `valence`, `valenceClassification`, `labels`, `associations` |
 
 Values follow the same rules as the JSON endpoints — epoch milliseconds for
-instants, `YYYY-MM-DD` local calendar days (in the server's `PULS_TIME_ZONE`)
-for days, canonical units — with two format-specific conventions:
+instants, `YYYY-MM-DD` calendar days in the selected account's reporting
+zone for raw-day grouping, preserved phone dates for rings and daily phone
+aggregates, and canonical units — with two format-specific conventions:
 
 - **A null is an empty CSV cell** and an explicit `null` in JSONL, never a
   zero and never a missing key. Every line of a dataset has the same shape.
@@ -93,8 +119,7 @@ Use `daily_metrics` for totals.
 
 One thing to know before double-clicking a CSV: cells are written verbatim, so
 a value that begins with `=`, `+`, `-` or `@` is a formula to a spreadsheet.
-Every column here is a number, a date, a UUID or a HealthKit identifier except
-`source`, which is the display name of whatever app wrote the sample. Import
+Text fields such as source names and labels may come from other apps. Import
 the file as text — or use JSONL — if you do not trust every app that has ever
 written to your Health store.
 
@@ -123,12 +148,18 @@ The response is an attachment named
 
 ## The `puls-export` CLI
 
+Build from the same checkout as your server. From the repository root,
+with Go 1.26 or newer:
+
 ```bash
-go install github.com/PulsHealth/pulshealth/tools/puls-export@latest
-# or, from a checkout — it is its own Go module, so build it from its own
-# directory; there is no module at the repository root
-cd tools/puls-export && go build -o puls-export .
+mkdir -p "$HOME/.local/bin"
+(cd tools/puls-export && go build -o "$HOME/.local/bin/puls-export" .)
+export PATH="$HOME/.local/bin:$PATH"
+puls-export --version
 ```
+
+The subshell keeps your terminal at the repository root. Add that bin directory
+to your shell's PATH for later sessions, or invoke the binary by its full path.
 
 It is a thin client: it builds the query, sends the bearer token, and copies
 the response through. Everything the server can reject is left to the server
@@ -157,14 +188,10 @@ A `403` is explained the way a `401` is: the server only exports its
 
 ## On-device export (no server)
 
-Everything above needs a server the phone has synced to. The app can also
-write files **straight from HealthKit**, with no server involved:
-`HealthExporter` in the `PulsHealthSync` package
-([`PulsHealthSync/README.md`](../PulsHealthSync/README.md), "On-device export")
-runs the ordinary sync sweep — the same queries, the same canonical-unit
-conversion, the same aggregate math — against a throwaway engine whose
-transport appends to files instead of POSTing. The files are staged in the
-app's temporary directory for the share sheet.
+Open **Export** in the app to create files directly from HealthKit. No
+server or account is required. Available history depends on your app access
+and Health permissions; see [Free and Pro](https://pulshealth.com/pricing/).
+Export uses isolated state and never advances your database sync.
 
 **In the app it is the Export tab**, a builder. Pick the data types (raw
 samples), the aggregated types — the same Aggregates picker and type pages as
@@ -194,11 +221,8 @@ before moving on.
 
 Keep the app open and the phone unlocked while it runs: HealthKit cannot be
 read on a locked phone, and an export that runs into a lock finishes
-**incomplete** and says which types it could not read. For scale: 340,000
-samples came to 41 MB as CSV and 212 MB as JSONL (the wire format carries
-each sample's time-zone context and source), written in 5–7 seconds on a
-simulator. A phone is slower, and years of Apple Watch heart rate run to
-millions of samples.
+**incomplete** and says which types it could not read. Large histories can
+contain millions of records; start with a short range before exporting years.
 
 The app offers CSV, JSON and JSONL. The server API above still offers CSV
 and JSONL. The detailed formats and CSV are not symmetrical:
@@ -362,10 +386,11 @@ for ordinary exports as well as requests. `complete` describes extraction; check
 `notRepresented` for CSV omissions and `warnings` for missing optional details,
 even when extraction completed. Its main job is `"complete": false`
 with a `failures` list whenever a selected type could not be read to the end
-(access never granted for it, the phone locked part-way through) or a sample
+(for example, the phone locked part-way through) or a sample
 could not be converted to its canonical unit. A file that stops short looks
 exactly like the file of someone with less data; the manifest tells them
-apart.
+apart. HealthKit can return no records when read access is denied, so
+`complete: true` does not prove that every expected record was accessible.
 
 On iOS 27, Health access can be limited to recent history (the permission
 sheet's "Past 30 Days and Future Data", or Limited Access under Settings →

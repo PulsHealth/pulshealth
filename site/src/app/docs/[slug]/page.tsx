@@ -85,6 +85,14 @@ function DocHeader({ doc }: { doc: DocEntry }) {
         >
           edit this page
         </a>
+        {doc.format !== "openapi" && (
+          <>
+            {" "}·{" "}
+            <a href={`/docs/${doc.slug}.md`} className="hover:text-brand">
+              Plain Markdown
+            </a>
+          </>
+        )}
       </p>
     </header>
   );

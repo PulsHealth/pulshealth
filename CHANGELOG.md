@@ -2,9 +2,11 @@
 
 What changed in each release of the **server stack** — the four images
 `ghcr.io/pulshealth/{ingest,api,mcp,web}`, which share one version that
-`PULS_VERSION` in `.env` selects. Upgrading is: bump it, bring the checkout
-to the same release (`git checkout vX.Y.Z` — the compose file and the schema
-migrations come from it, not from the images), then `make pull up`.
+`PULS_VERSION` in `.env` selects. Before upgrading, back up the database and
+read the target release's operator notes below. Keep the checkout and image
+version together: Compose files and migrations come from the checkout.
+Follow [the upgrade procedure](server/README.md#deploying-and-upgrading), or
+[Server setup](docs/setup.md) for a new installation.
 
 Two things are versioned separately and are not in this file:
 
@@ -28,13 +30,15 @@ operator action, and when it does this file says so at the top of the entry.
 
 Every server release so far speaks protocol v1 and every app release since
 self-hosted sync (1.4) sends v1, so any app version syncs to any server
-version. Features that need both sides say so here.
+version. This means the basic v1 upload format is accepted, not that every new app
+feature is available on an older server. Features that need both sides say so
+here; entries under **Unreleased** are not published image releases.
 
 | App ↓ / Server → | 0.1.x | 0.2.x | 0.3.x |
 |---|---|---|---|
 | 1.4 | syncs | syncs; per-device tokens work (the app just sends the token) | syncs |
 | 1.5, 1.6 | syncs; pairing links and QR codes | syncs | syncs; the viewer's "Connect this iPhone" code pairs through a link or the camera |
-| next (in-app PulsHealth database sign-in) | syncs | syncs | syncs; the sign-in needs a 0.3 viewer in accounts mode with `WEB_INGEST_URL` set |
+| Web sign-in pairing | syncs | syncs | syncs; the sign-in needs a 0.3 viewer in accounts mode with `WEB_INGEST_URL` set |
 
 New HealthKit type identifiers (iOS 27's Recovery HRV, for one) reach any
 server: ingest registers types on first sight. What a receiver must accept

@@ -1,9 +1,10 @@
 # PulsHealth: a guide for AI assistants
 
 This server gives read-only access to Apple Health data — usually one
-person's. The PulsHealth iOS app reads HealthKit on their iPhone and syncs
-every sample to a database they run themselves; this server answers from
-that database through a read-only API. Nothing here can change any data.
+person's. The PulsHealth iOS app syncs selected HealthKit data to their
+self-managed or hosted database; this server reads it through the product
+API. Nothing here can change data. This guide is for interpreting tool
+results. For installation, use https://pulshealth.com/docs/setup/.
 
 Free text in the results — source and device names, workout events and
 activities, State of Mind labels and associations, profile names — was
@@ -73,13 +74,13 @@ rounded to four decimals.
   `HKWorkoutTypeIdentifier`; rings are `HKActivitySummaryTypeIdentifier`.
   Always pass the full identifier.
 - **Raw samples** are the individual HealthKit records: a heart-rate reading
-  every few seconds during a workout, one weight entry per weigh-in, one
-  step-count interval per minute. `get_latest_metrics` returns the newest raw
+  during a workout, a weight entry, or a step-count interval. Recording
+  cadence varies by device, app and conditions; do not infer a fixed schedule. `get_latest_metrics` returns the newest raw
   sample of a type.
 - **Daily metrics** are one number per local calendar day per type. They come
   from the daily aggregates HealthKit computes on the phone when the app
-  synced them (`aggregate_rows > 0` in the catalog), otherwise from a
-  single-source rollup on the server. This is the surface for totals,
+  synced them, otherwise from server rollups where the type has known
+  sum/average semantics. This is the surface for totals,
   averages and trends.
 - **Activity rings** are the Apple Watch's own daily summaries (Move in kcal,
   Exercise in minutes, Stand in hours, each with a goal). They are what the
@@ -133,8 +134,9 @@ distance).
   weight, blood oxygen, VO2 max, respiratory rate, temperature. Their daily
   value is an **average** of that day's readings; their latest raw sample is
   the current reading.
-- Only types the phone aggregates daily appear in `get_daily_metrics`. A
-  type with raw rows but no aggregate rows has latest readings only.
+- Daily metrics need a known sum/average series definition for the type.
+  Raw-only data can supply a fallback when that definition already exists;
+  raw row counts alone do not guarantee daily coverage.
 
 ## The double-counting rule
 
@@ -142,7 +144,8 @@ An iPhone and an Apple Watch both record steps, distance and energy for the
 same minutes. Adding raw samples across both devices roughly doubles daily
 step counts — the most common way to misread this data. The daily tools
 avoid it: HealthKit's own daily aggregate already merges the devices, and the
-server's fallback takes a single source per day. `get_sleep` applies the same
+server's cumulative fallback takes the highest single-source daily total;
+discrete fallback values are sample-weighted averages across sources. `get_sleep` applies the same
 idea per night. Trust `get_daily_metrics`, `get_activity_rings` and
 `get_sleep`; never total raw readings yourself.
 
@@ -174,12 +177,13 @@ most sleep.
 
 ## The time-zone rule
 
-Every date is a calendar day in the selected person's reporting time zone
-(`time_zone` in `list_available_types` and `get_profile`), configured to
-match the phone's zone. Inclusive `start_date`/`end_date` ranges return
-exactly those days. Instants (`timestamp`, `start`, `end`, `latest`) are ISO
-8601 with the zone's UTC offset. If the person travelled, days are still cut
-in the configured zone.
+Request dates use the selected person's reporting time zone (`time_zone`
+in `list_available_types` and `get_profile`). The date range is inclusive.
+Instants (`timestamp`, `start`, `end`, `latest`) use ISO 8601 with its UTC
+offset. Raw-day grouping follows this reporting zone. Activity rings and
+phone daily aggregates preserve their recorded phone calendar dates, which
+can differ during travel. Do not shift those date labels or assume all
+surfaces use the same calendar after a zone change.
 
 ## What is not available yet
 

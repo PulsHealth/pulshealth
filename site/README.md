@@ -52,7 +52,7 @@ It reads content from the **repository around it**, by relative path, so
 |---|---|---|
 | [`../knowledge-base/`](../knowledge-base/README.md) | `src/lib/api.ts` | `path.join(process.cwd(), "..", "knowledge-base")` — 178 YAML type files become `/knowledge-base/types/<slug>/` |
 | [`../blog/`](../blog/BLOG_SYSTEM.md) | `src/lib/blog.ts`, `package.json` | published `../blog/articles/*.{md,mdx}` become `/blog/<slug>/`; image sync recreates `public/blog/` from published posts, and preview watches drafts and images |
-| [`../llms.txt`](../llms.txt) | `scripts/gen-llms-txt.ts`, `package.json` | `gen-llms-txt` renders it to `public/llms.txt` before every dev run and build, so the site serves it at `/llms.txt`. Its repo-relative Markdown links are rewritten the way links inside a rendered document are: to `https://pulshealth.com/docs/<slug>/` for a file in the docs manifest below, otherwise to the file on GitHub; absolute URLs pass through. The output is gitignored; the repository file is the only source |
+| [`../llms.txt`](../llms.txt) | `scripts/gen-llms-txt.ts`, `package.json` | `gen-llms-txt` renders it to `public/llms.txt` before every dev run and build, so the site serves it at `/llms.txt`. Its repo-relative Markdown links are rewritten the way links inside a rendered document are: to `https://pulshealth.com/docs/<slug>/` for a file in the docs manifest below, otherwise to the file on GitHub; absolute URLs pass through. The same generator publishes each Markdown doc at `/docs/<slug>.md` and combines them in `/llms-full.txt`, from the docs manifest. Outputs are gitignored; edit the repository sources. The export checker verifies every copy against its source |
 | Thirteen Markdown documents: `docs/recording-behavior.md`, `server/README.md`, `docs/protocol/README.md`, `docs/database-guide.md`, `docs/api.md`, `docs/export.md`, `docs/ai.md`, `server/mcp/README.md`, `web/README.md`, `PulsHealthSync/README.md`, `SECURITY.md`, `CHANGELOG.md`, `docs/roadmap.md` (and `docs/privacy-policy.md` for `/privacy`) | `src/lib/docs.ts` (the registry), `src/lib/markdown.tsx` (the renderer) | Each becomes `/docs/<slug>/`, rendered at build time from the file itself. Relative links inside a document resolve to the other rendered documents where there is one, otherwise to the file on GitHub |
 | [`../server/api/openapi.json`](../server/api/openapi.json) | `src/lib/openapi.ts`, `src/components/api-reference.tsx`, `scripts/gen-openapi.ts` | The product API's OpenAPI document, the same file the Go service embeds. Its manifest entry carries `format: "openapi"`, so `/docs/api-reference/` renders it as an endpoint reference rather than as Markdown. `gen-openapi` also copies it to `public/openapi.json` (gitignored) before every dev run and build, with the server URL set to the API's default local address, for the reference's download link |
 
@@ -101,7 +101,7 @@ Build verification requires `python3` (3.9 or later) and Git as well as Bun.
 Build from a Git checkout so the export can be tied to its source inputs.
 
 ```bash
-bun run build      # static export to site/out/ (226 pages)
+bun run build      # static export to site/out/; checks counts against source
 bun run lint       # ESLint, no warnings or errors
 bun run test       # blog regression tests
 bun run blog:check # lint, tests, build and export checks

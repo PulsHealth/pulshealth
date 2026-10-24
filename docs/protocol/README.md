@@ -6,6 +6,12 @@ any language; the reference receiver is the Go ingest server in
 [`server/ingest/`](../../server/ingest/), and a deliberately minimal one is
 [`examples/receivers/python-sqlite/`](../../examples/receivers/python-sqlite/).
 
+To run the existing backend, follow [Server setup](../setup.md). You do not
+need to implement this protocol to use the app. To build a receiver, start with
+[the checklist](#11-minimal-conformant-receiver-checklist), then use the schemas
+and fixtures below to validate it. Reading synced data is a separate interface:
+the [product API](../api.md).
+
 | Artifact | Where |
 |---|---|
 | This specification | `docs/protocol/README.md` |
@@ -638,9 +644,10 @@ a generic one.
 | 429 | Receiver asks the app to back off | yes |
 | 5xx | Anything transient: database down, deadlock, timeout, disk full | yes |
 
-A non-429 4xx is terminal for that page: the app keeps its cursor, logs the
-error, and re-sends the same page on its next run, which fails the same way
-until the receiver changes. **Answer 4xx only for input that is genuinely
+A non-429 4xx is terminal for that page: the app keeps its cursor and logs the
+error. Current clients put terminal refusals into a cooldown before automatic
+retries; a manual sync can retry immediately ([8.1](#81-retry-contract)).
+**Answer 4xx only for input that is genuinely
 malformed**, and answer transient failures with 5xx or 429 so the app's
 backoff does its job. A receiver that cannot store a valid line it does not
 understand SHOULD discard it and still return 2xx, not 400.
@@ -662,8 +669,9 @@ version" message instead of a stall.
 
 ## 8. Sender behaviour a receiver can rely on
 
-Derived from `HTTPSyncTransport` and the sync engine; version 1 clients
-behave this way and a receiver MAY depend on it.
+Derived from the current `HTTPSyncTransport` and sync engine. Retry scheduling
+can change between app releases without changing protocol v1; durable
+acknowledgment and idempotent storage remain the receiver contract.
 
 ### 8.1 Retry contract
 
@@ -675,12 +683,22 @@ behave this way and a receiver MAY depend on it.
   with default 4. During a background wake triggered by HealthKit
   (`X-Wake-Trigger: observer`) the app spends **one** retry and gives up,
   because the wake's execution budget is short; the next wake re-sends.
-- **Retried**: 5xx, 429, and network errors (connection refused, reset,
-  timeout, TLS failure). **Never retried**: any other 4xx, a missing
-  configuration.
+- **Server-directed delay**: current clients honor `Retry-After` on 429 and
+  503 (seconds or an HTTP date). A delay above 60 seconds, or 10 seconds in an
+  observer wake, ends that run instead of retrying early.
+- **Retried**: 5xx, 429, and transient network errors such as connection
+  refusal, reset or timeout. **Never retried within the run**: other 4xx,
+  missing configuration, invalid URLs, ATS refusal or certificate errors
+  that need a configuration fix.
+- **Cooldown**: current clients pause automatic runs for a type after a
+  terminal refusal (4xx except 408/429, incompatible protocol or terminal
+  network error). The pause starts at 15 minutes and doubles to six hours.
+  A manual sync bypasses it; an acknowledged upload or applied configuration
+  change clears it. Older clients may retry on every wake.
 - **Cursor**: the HealthKit anchor or watermark behind a batch advances only
-  after a 2xx. A retried or re-sent batch therefore carries exactly the same
-  lines, and a batch that never succeeds is sent again on every later run.
+  after a 2xx. Retries of an upload keep its payload; a later run can reread
+  the unacknowledged page. Receivers must tolerate repeated sample UUIDs even
+  when the new upload has a different `batchID`.
 
 ### 8.2 Batch shapes
 

@@ -8,13 +8,12 @@ notebooks, and your own AI tools. Choose individual readings or custom summaries
 from hourly averages to daily totals.
 
 **[Get the free iPhone and iPad app](https://apps.apple.com/us/app/pulshealth/id6757657354)**
-· **[Set up your database](#quickstart)**
+· **[Set up your database](docs/setup.md)**
 · **[Try the dashboard](https://app.pulshealth.com/demo)**
 
-PulsHealth is open source and free to download. The Pro subscription implementation
-adds optional unlimited export history and sync types; see the
-[plans and release setup](docs/appstore/subscriptions.md) for limits and
-remaining release gates. The reference backend runs on your own
+PulsHealth is open source and free to download. Pro adds optional unlimited
+export history and sync types; see [plans](https://pulshealth.com/pricing/).
+The reference backend runs on your own
 Docker host: PostgreSQL 17 + TimescaleDB, a Go ingest server, a read-only product
 API, Grafana dashboards, a web viewer, and an MCP server. The open
 [Puls Sync Protocol v1](docs/protocol/README.md) also lets you connect a
@@ -127,160 +126,56 @@ Choose where to start:
 
 ### Server
 
-You need a Linux or macOS host with Docker (and its Compose plugin), `openssl`
-and `curl`.
+Follow **[Set up your PulsHealth server](docs/setup.md)** for the complete path:
+prepare Docker, start the stack, choose a reachable address, pair the phone and
+verify that data arrives. It includes a copyable AI prompt and troubleshooting.
+The [server reference](server/README.md) covers configuration and operations.
+
+For a fresh installation built from this checkout:
 
 ```bash
 git clone https://github.com/PulsHealth/pulshealth.git
 cd pulshealth
-git checkout "$(git describe --tags --abbrev=0 --match 'v*')"   # the latest release
-scripts/bootstrap.sh --time-zone Europe/Berlin   # the zone your phone lives in
+scripts/bootstrap.sh --build --time-zone Europe/Berlin
 ```
 
-Check out the release rather than running `main`: the compose file and the
-schema migrations come from the checkout, the images from the release, and
-`main` documents features no published image has yet. On a release tag the
-script pins `PULS_VERSION` to it in `server/.env`, and on anything else it
-warns before pulling.
-
-That creates `server/.env` with every secret generated, starts the stack
-(`docker compose up -d`, which pulls the published images from
-`ghcr.io/pulshealth` and runs the `migrate` service before anything else),
-waits for ingest to answer, and prints a **pairing block**: the URL the phone
-should use, the bearer token, the user ID, and a QR code encoding all three
-(drawn by `qrencode` if you have it, otherwise by the ingest container).
-Without `--time-zone` it uses the host's zone and says so; every daily view
-buckets by this calendar, so it must match the phone's. `make pairing` prints
-the block again, and `scripts/bootstrap.sh --issue-device "My iPhone"` prints
-one for a token of that phone's own instead of the shared one
-([per-device tokens](server/README.md#tokens)).
-
-Then decide how the phone reaches the server. Until you do, ingest listens on
-`127.0.0.1` only, where no phone can reach it, and the pairing block's URL
-reads `(none yet)` with no QR code. Re-run the script with one of these (it
-changes only that setting):
-
-- **Same Wi-Fi:** `scripts/bootstrap.sh --lan` binds ingest to every
-  interface (`INGEST_BIND_ADDR=0.0.0.0`) and puts `http://<this host's LAN
-  IP>:8080` in the pairing block; the app accepts plain `http://` for
-  local-network addresses. The token is then the only protection, so use it
-  only on a network you control.
-- **From anywhere:** put a TLS-terminating proxy or Tailscale Serve/Funnel in
-  front of port 8080 (`server/README.md`, "Exposing the server") and pass its
-  URL: `scripts/bootstrap.sh --url https://health.example.net`. Ingest stays
-  on loopback and the QR code carries the HTTPS URL.
-
-Everything else binds to loopback on fixed host ports, which must be free: the
-product API on `8081`, the MCP server on `8082`, Grafana on `3000`, the web
-viewer on `3001`, Postgres on `5432`. Re-running `scripts/bootstrap.sh` never
-regenerates secrets. `make up`, `make down`, `make logs` and `make ps` wrap
-Compose (`make help` lists the rest). To upgrade, check out the new release
-(`git fetch --tags && git checkout v<version>`), set `PULS_VERSION=<version>`
-in `server/.env` and `make pull up`: the compose file and the schema
-migrations come from the checkout, so it moves with the images
-(`CHANGELOG.md` says what each release needs).
-[`server/README.md`](server/README.md) covers configuration, images and
-versions, schema migrations, the database roles and Grafana.
-
-To run the code in your checkout instead of the published images (after a
-change in `server/` or `web/`), use `make dev-up`, or `scripts/bootstrap.sh
---build` on a first run: both build the four app images through the
-`server/compose.build.yml` overlay.
+Replace the time zone with your usual reporting zone. This creates private
+`server/.env` credentials and starts the database, dashboard, API and MCP server.
+The services initially listen only on the host; complete the guide's
+[network step](docs/setup.md#3-give-the-phone-a-reachable-address) before pairing.
+For later starts and updates of this source-built installation, keep using
+`--build` or `make dev-up`; `make up` selects published images instead.
 
 ### App
 
-Install it from the App Store:
-**[PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354)**, free.
+Install [PulsHealth from the App Store](https://apps.apple.com/us/app/pulshealth/id6757657354)
+and complete its Health permission step. To sync, open **Sync → Connect Your
+Server**, scan or paste the server's pairing code, then review the types and
+history before applying the setup. See [pairing and first sync](docs/setup.md#4-pair-the-app-and-choose-what-to-sync)
+for the controls and verification. Explore and Export work without pairing.
 
-To build it from source you need Xcode 26 or later,
-[XcodeGen](https://github.com/yonaskolb/XcodeGen), and, for a real iPhone, a
-paid Apple Developer team (the HealthKit background-delivery entitlement
-requires one).
+Building the iOS app yourself is optional; [the app README](PulsHealth/README.md#project-generation)
+covers Xcode, XcodeGen and local signing.
 
-```bash
-brew install xcodegen
-cd PulsHealth
-xcodegen          # generates PulsHealth.xcodeproj; seeds Config/Local.xcconfig
-open PulsHealth.xcodeproj
-```
-
-Put your Team ID in `PulsHealth/Config/Local.xcconfig` (gitignored, like the
-generated project), select your device, and run.
-
-In the app:
-
-1. Swipe through the first run and grant Health access when asked (the app is
-   read-only; it never writes to HealthKit). It asks about a "Common" starter
-   set; add more types later under **Sync → Raw Samples → Edit**. It does not
-   ask for a database.
-2. **Sync tab → Set Up** (later, **Sync → Database**): scan the pairing
-   block's QR code with **Scan Pairing Code**, paste its `puls://pair?…` line
-   with **Paste Pairing Code**, or type the **Database URL** and **Token**.
-   The iOS Camera app works too: it offers to open PulsHealth, which asks you
-   to confirm the host before it fills anything in. Then tap **Test
-   Connection** and **Save & Apply**.
-3. **Sync → Raw Samples** and **Sync → Aggregates**, each with **Edit**:
-   choose which types send every sample and which send a daily total or
-   average (add hourly, weekly or per-device aggregates on a type's page),
-   then tap Apply. New types backfill from your chosen start date; the Sync
-   tab shows per-type progress, rate and ETA.
-
-Open the web viewer at `http://localhost:3001` on the server, or Grafana at
-`http://localhost:3000`, and watch the data arrive.
-
-Without step 2 the app syncs nothing and the Sync tab shows its first-time
-setup screen instead of a status; Explore and Export work regardless.
-
-**Several people on one server.** Every install starts with the same default
-user ID, so give each phone its own under **Settings → User**, and its own
-token with `scripts/bootstrap.sh --issue-device "<label>" --user <that user
-ID>`, which ends in a QR code for that phone. A device token is bound to its
-user, so no phone can write as another. Reads default to `PULS_USER_ID`;
-`PULS_MULTI_USER=true` in `server/.env` lets the product API answer for any
-user a request names (`?user=<uuid>`, listed by `GET /v1/users`), which is
-how the MCP server picks whose data you see. It is off by default because
-the API's one token then reads everyone. The web viewer does not read it: in
-basic and open mode its user switcher offers every user to whoever gets past
-its one password, and in accounts mode there is no switcher, since each
-person sees only their own records.
+**Several people on one server:** give each person a separate user ID and
+[per-device tokens](server/README.md#tokens), and choose the appropriate
+[viewer access mode](web/README.md#access-control). The single-password viewer
+can show everyone on that server; API multi-user access is a separate setting.
 
 ## Use it with AI
 
-The stack includes a read-only [MCP](https://modelcontextprotocol.io) server
-(`server/mcp/`) so an AI assistant can answer questions from your data: "how
-many steps did I average last week", "compare my runs this month to last
-month", "did I close my rings yesterday". It talks only to the product API,
-returns deduplicated daily values with their units, and carries a guide for
-the model on the data's traps (iPhone + Watch double counting, cumulative
-versus discrete metrics, the time-zone rule). Its tools cover users, a recent
-summary, the profile, the type catalogue, latest and daily metrics, activity
-rings, workouts and their intra-workout series, raw samples, sleep, and state
-of mind.
+For help **installing the server**, give a coding assistant [the setup guide](docs/setup.md)
+or point it at [pulshealth.com/llms.txt](https://pulshealth.com/llms.txt).
 
-Local clients (Claude Desktop, Claude Code, Cursor) run the binary in stdio
-mode against your API; in Claude Code, for example:
+To **ask questions about synced health data**, connect an assistant through the
+read-only MCP server or product API. Start with [Connect an AI assistant](docs/ai.md)
+for local, remote and hosted-account options, credentials and example questions.
+MCP reads through the product API, never directly from Postgres. An AI provider
+can receive the health data its tools return, so connect only an assistant you
+want to share that data with.
 
-```bash
-go build -o pulshealth-mcp ./server/mcp
-claude mcp add pulshealth -s user \
-  -e PULS_API_URL=https://<your-api-host>:8444 \
-  -e PULS_API_TOKEN=<PULS_API_TOKEN from server/.env> \
-  -e PULS_TIME_ZONE=Europe/Berlin \
-  -- "$PWD/pulshealth-mcp"
-```
-
-Remote clients connect to the Compose `mcp` service over HTTPS with
-`PULS_MCP_TOKEN`. [`docs/ai.md`](docs/ai.md) has the config for every client,
-the remote-connector recipe, demo prompts, the security notes, and the
-ChatGPT route (the API's `/openapi.json` as a custom GPT Action).
-
-**Hosted accounts:** PulsHealth also runs the database and MCP connection for
-you. Sign in on **Sync → Database** in the app, then connect an assistant
-through your account. See [hosted AI setup](docs/ai.md#connect-an-ai-assistant-to-your-pulshealth-account).
-
-For a whole range as a *file* rather than an answer in a chat,
-`GET /v1/export` streams any dataset as CSV or JSONL and `tools/puls-export`
-is a small CLI for it: [`docs/export.md`](docs/export.md).
+For a whole range as a file, [bulk export](docs/export.md) covers the app's
+CSV/JSON/JSONL files, the API's streamed export and the `puls-export` CLI.
 
 ## How syncing works
 

@@ -1,25 +1,20 @@
 # Roadmap — what is left
 
-**Current findings list and roadmap:** [`deep-review-2026-10.md`](deep-review-2026-10.md)
-(the October 2026 deep review, with each item's status); read it first.
+This page tracks outstanding work and deliberate exclusions. To install or use
+PulsHealth, start with [Server setup](setup.md), not this backlog. The
+[October 2026 review](deep-review-2026-10.md) records detailed findings and their
+status; [the release record](appstore/README.md#release-record) holds dated app
+submission evidence. Neither establishes the current App Store state.
 
-Reviewed 2026-10-01, after the app's 1.6 reached the App Store, and pruned the
-same day to what is worth doing. This is what is still outstanding, roughly in
-the order worth doing it; what was considered and dropped is under **Not
-planned** at the end, with the reason, so it is not proposed again without
-something new. Requirement IDs (OSS-4, APP-11, …) tie items to
-[`open-source-plan.md`](open-source-plan.md), which records the decisions
-behind them.
+The priorities and exclusions below were reviewed on 2026-10-01. Requirement
+IDs (OSS-4, APP-11, …) refer to [the open-source plan](open-source-plan.md).
 
 ## 1. The next app release
 
-The latest recorded candidate is **2.3 (29)**, submitted for App Review on
-2026-10-22. The verified submission status is Waiting for Review, with automatic
-release after approval to all users immediately. This is submission evidence;
-check App Store Connect before reporting current approval or public availability.
-Any replacement upload needs a build number above every build Apple has accepted;
-29 is the latest accepted build recorded here. Version 2.2 (28) was separately
-verified Ready for Distribution on 2026-10-22.
+The release record documents **2.3 (30)** replacing build 29 in App Review on
+2026-10-22. Read [that entry](appstore/README.md#23-30-replacement-submitted-for-app-review-2026-10-22)
+for source, test and submission evidence. Verify App Store Connect before
+claiming approval, public availability or choosing another build number.
 
 - The maintainer confirmed that the Explore/Export tap bug is working and the
   purchase lifecycle has been tested on 2026-10-20. Keep these confirmations
@@ -30,12 +25,12 @@ verified Ready for Distribution on 2026-10-22.
   [#210](https://github.com/PulsHealth/pulshealth/issues/210) still needs the
   reporter's build and stack before it can be attributed or closed.
 - The aggregate-options crash found in refreshed 2.1 (22) reports on
-  2026-10-22 is fixed in the submitted 2.3 (29) build. Monitor the affected
+  2026-10-22 is fixed in build 29 and retained in replacement build 30. Monitor the affected
   Same as Sync toggle and released-build reports for recurrence.
   See [crash diagnostics](appstore/crash-diagnostics.md#aggregate-options-crash-found-on-2026-10-22).
 - Medication export names and installation-local UUID aliases address
-  [#291](https://github.com/PulsHealth/pulshealth/issues/291) in submitted build
-  2.3 (29). The maintainer reports completed testing; reporter acceptance and
+  [#291](https://github.com/PulsHealth/pulshealth/issues/291), included from
+  build 29 onward. The maintainer reports completed testing; reporter acceptance and
   post-release verification remain separate. Existing server rows need
   a fresh phone export and the explicit, reviewed
   [historical repair plan](../tools/repair-medications/README.md); resetting
@@ -57,7 +52,7 @@ Not backlog — things that come due on someone else's schedule.
 | Within 90 days of the first public 2.2 release | Review retirement of the temporary early-user Pro gift in [#290](https://github.com/PulsHealth/pulshealth/issues/290); follow the [staged cleanup plan](appstore/subscriptions.md#retiring-the-gift) and honor active gifts before removing code. |
 | A new iOS runtime | Re-run the app-hosted `AggregateMatrixTests` (378 type×function combos): the legal set is HealthKit's, not ours. |
 | A major Xcode/iOS SDK update | Refresh `010_category_labels.sql` from `HKCategoryValues.h` and check the seed shape (`server/README.md`). |
-| Never yet done on real data | The backup restore drill. CI now runs it on synthetic data (`server/backup/test-restore.sh` in the stack smoke test); the one recorded in `server/README.md` ran against a throwaway stack, and nothing yet verifies that a real install's dump restores. |
+| Before relying on an installation's backups, and after backup changes | Run a restore drill on a separate scratch stack using that installation's dump. CI's synthetic restore test does not verify your backups. See [server operations](../server/README.md#the-restore-drill). |
 | Publishing images from a new organization or a fork | A package `release.yml` creates starts private, and it can be made public only once the organization's package-creation policy allows public packages. Change the policy first, then flip each of the four in its package settings. |
 | Dependabot re-proposes eslint 10 or TypeScript 7 for `web`/`site` | Check upstream, then close against [#37](https://github.com/PulsHealth/pulshealth/issues/37). Both blockers are `eslint-config-next`'s own dependencies: `typescript-eslint` refuses TS >= 6.1 ([typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940)), and `eslint-plugin-react` still calls `context.getFilename()`, which ESLint 10 removed. Still true against `eslint-config-next` 16.3.8 (2026-10-01). |
 | A red `advisories` workflow run | Bump the dependency in its own pull request. `advisories.yml` is separate from `ci.yml` so it can go red without blocking a merge or a release; its header says when it runs and why. |

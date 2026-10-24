@@ -8,8 +8,11 @@ a database connection, so the API's bearer token and read-only database role
 remain the whole trust boundary, and the API's deduplicated daily surfaces
 are what the model sees.
 
-For the client-side setup (config snippets, the remote-connector recipe, demo
-prompts) see [`docs/ai.md`](../../docs/ai.md).
+Start with [Connect your AI assistant](../../docs/ai.md) for client setup,
+or [Set up your server](../../docs/setup.md) if you do not have a database yet.
+This page is the MCP operator and developer reference. The normal Compose
+installation already includes this service; building a binary is only needed
+for a local stdio client or development.
 
 ## What it exposes
 
@@ -63,11 +66,17 @@ PULS_API_URL=https://<api-host>:8444 PULS_API_TOKEN=... ./pulshealth-mcp
 PULS_API_URL=http://127.0.0.1:8081 PULS_API_TOKEN=... PULS_MCP_TOKEN=... ./pulshealth-mcp --http 127.0.0.1:8082
 ```
 
-Build it from a checkout (`go build -o pulshealth-mcp ./server/mcp`) or
-install the latest commit on `main` with `go install
-github.com/PulsHealth/pulshealth/server/mcp@latest` (the binary is then
-named `mcp` in `$(go env GOPATH)/bin`; rename it if you like). Go 1.26 or
-newer. `--version` prints the build.
+Build from the same checkout as your server with Go 1.26 or newer:
+
+```bash
+cd server/mcp
+go build -o pulshealth-mcp .
+./pulshealth-mcp --version
+```
+
+Run the examples above from that directory, or use the full binary path.
+There is no Go module at the repository root. `--version` checks the binary,
+not its API connection.
 
 The Compose stack runs it as the `mcp` service on `127.0.0.1:8082` in HTTP
 mode, pointed at `http://api:8081` over the internal network.
@@ -125,8 +134,8 @@ present, is the access control.
 
 ### OAuth (resource server)
 
-Hosted connector screens (claude.ai, the Claude mobile app) accept only
-OAuth, and Claude Code's `/mcp` sign-in uses it too. The web viewer in
+Clients that use account sign-in connect through OAuth. This includes the
+hosted PulsHealth connection and Claude Code's `/mcp` authentication flow. The web viewer in
 accounts mode is the authorization server (`web/README.md`); this server is
 the resource server and still never touches the database. An access token is
 an HS256 JWT the viewer signs with `PULS_MCP_OAUTH_SECRET`
@@ -159,7 +168,7 @@ minutes; the viewer refuses the refresh at once.
   and date of birth from the profile. `PULS_API_TOKEN` and `PULS_MCP_TOKEN`
   are separate secrets so the MCP-facing one can be rotated without touching
   other API consumers; generate each with `openssl rand -hex 32`.
-- **Never expose `--http` mode without TLS and the token.** The compose
+- **Expose remote HTTP only through TLS with token or OAuth authentication.** The compose
   service binds to loopback; publish it only through an HTTPS-terminating
   proxy (`tailscale serve --bg --https=8445 http://localhost:8082`, or your
   reverse proxy). Plain HTTP puts the token on the wire.
