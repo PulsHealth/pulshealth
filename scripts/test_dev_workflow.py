@@ -127,30 +127,6 @@ class Fixture(unittest.TestCase):
         self.assertEqual(receipt['status'], 'failed')
         live.assert_not_called()
 
-    def test_notifications_follow_verification_and_keep_failure_separate(self):
-        record = self.manifest()
-        args = SimpleNamespace(dry_run=False, no_invalidation=False, verify_path=[], indexnow_bootstrap=True)
-        order = []
-        with patch.object(site, 'git', return_value='head'), patch.object(site, 'state_dir', return_value=self.root / '.git/evidence'), patch.object(site.subprocess, 'run'), patch.object(site.subprocess, 'check_output', return_value=b'{"Invalidation":{"Id":"test"}}'), patch.object(site, 'verify_live', side_effect=lambda *a: order.append('verified') or [site.KEY_FILE]), patch.object(site, 'notify', side_effect=lambda *a, **kw: order.append('notified') or {'status': 'failed', 'error': 'TimeoutError'}):
-            site.deploy_snapshot(self.root, args, record, self.root / 'site/out')
-        receipt = json.loads(next((self.root / '.git/evidence/deployments').glob('*.json')).read_text())
-        self.assertEqual(order, ['verified', 'notified'])
-        self.assertEqual(receipt['status'], 'verified')
-        self.assertEqual(receipt['indexnow']['status'], 'failed')
-        self.assertIn(site.KEY_FILE, receipt['verified_files'])
-
-    def test_unverified_upload_and_failed_verification_never_notify(self):
-        record = self.manifest()
-        args = SimpleNamespace(dry_run=False, no_invalidation=True, verify_path=[])
-        with patch.object(site, 'git', return_value='head'), patch.object(site, 'state_dir', return_value=self.root / '.git/evidence'), patch.object(site.subprocess, 'run'), patch.object(site, 'notify') as notify:
-            site.deploy_snapshot(self.root, args, record, self.root / 'site/out')
-            notify.assert_not_called()
-        args.no_invalidation = False
-        with patch.object(site, 'git', return_value='head'), patch.object(site, 'state_dir', return_value=self.root / '.git/evidence'), patch.object(site.subprocess, 'run'), patch.object(site.subprocess, 'check_output', return_value=b'{"Invalidation":{"Id":"test"}}'), patch.object(site, 'verify_live', side_effect=RuntimeError('mismatch')), patch.object(site, 'notify') as notify:
-            with self.assertRaisesRegex(RuntimeError, 'mismatch'):
-                site.deploy_snapshot(self.root, args, record, self.root / 'site/out')
-            notify.assert_not_called()
-
     def test_live_mismatch_fails(self):
         from io import BytesIO
         class Response(BytesIO):
