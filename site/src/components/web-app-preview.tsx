@@ -55,7 +55,6 @@ export function WebAppPreview() {
       </div>
       <div id="web-app-preview-content">
         {view === "dashboard" ? <div className={styles.dashboard}>
-          <div className={styles.dashboardHeading}><div><h3>Your health, at a glance.</h3><p>A little more room to see the whole picture.</p></div><span className={styles.syncStatus}><i aria-hidden />Synced from iPhone</span></div>
           <div className={styles.metrics} role="group" aria-label="Explore a health metric">
             {metrics.map((item, index) => <button type="button" key={item.label} aria-pressed={metric === index} aria-controls="health-week-chart" onClick={() => setMetric(index)} style={{ "--metric-color": item.color } as CSSProperties}>
               <span className={styles.metricLabel}><item.icon size={15} aria-hidden />{item.label}</span>
