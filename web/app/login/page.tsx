@@ -48,7 +48,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
       </form>
       {signupsOpen() ? (
         <p className="form-hint" style={{ margin: "18px 0 0", lineHeight: 1.5 }}>
-          New here? <a href="/signup" style={{ textDecoration: "underline" }}>Sign up</a>. Forgotten your password? <a href="/forgot-password">Reset it by email</a>.
+          New here? <a href="/signup" style={{ textDecoration: "underline" }}>Create account</a>. Forgotten your password? <a href="/forgot-password">Reset it by email</a>.
         </p>
       ) : (
         <p className="form-hint" style={{ margin: "18px 0 0", lineHeight: 1.5 }}>

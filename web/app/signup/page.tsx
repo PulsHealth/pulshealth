@@ -13,7 +13,7 @@ import { currentSession } from "@/lib/viewer";
 // never says an account was made. An administrator approves on /admin, and
 // only then does the person get an email with a link to choose a password.
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Sign up — PulsHealth" };
+export const metadata: Metadata = { title: "Create account — PulsHealth" };
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -29,7 +29,6 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
     return (
       <AuthCard title="You're on the waitlist" notice={noticeMessage("received")}>
         <p className="form-hint" style={{ margin: 0, lineHeight: 1.5 }}>
-          Until then nothing is set up for you, and your iPhone has nowhere to send data.{" "}
           <Link href="/login" style={{ textDecoration: "underline" }}>Back to sign in</Link>
         </p>
       </AuthCard>
@@ -86,7 +85,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
           </span>
         </label>
         <button type="submit" className="btn btn-primary btn-block">
-          Sign up
+          Create account
         </button>
       </form>
       <p className="form-hint" style={{ margin: "18px 0 0", lineHeight: 1.5 }}>

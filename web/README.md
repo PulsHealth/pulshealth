@@ -312,7 +312,9 @@ Details:
 
 `WEB_SIGNUPS=true` (accounts mode only) adds `/signup`, where anyone can sign
 up — name, email, an optional note, and a box confirming they read the
-privacy policy — and is told they are on the waitlist. **Nothing exists for them until an administrator
+privacy policy. Entry links and the submit button say **Create account**; after
+submitting, people are told PulsHealth is currently at capacity, they have joined
+the waitlist, and they will receive an email when access is available. **Nothing exists for them until an administrator
 approves**: a request creates no user, no account and no sync token, so no
 phone can send anything. In order:
 
@@ -628,7 +630,7 @@ In accounts mode with `WEB_DEMO_USER` configured, signed-out visitors to `/`
 are redirected through `/demo` into the existing view-only sample account.
 Signed-in visitors keep their own session. Other protected pages and APIs
 still require authentication. A banner above demo pages labels the sample
-data and offers sign-in and, when sign-ups are open, an account request.
+data and offers sign-in and, when sign-ups are open, a Create account link.
 These actions stay visible when the mobile menu is closed.
 
 Desktop shows a persistent sidebar. At widths of 1023 px and below, a compact
