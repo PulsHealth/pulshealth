@@ -57,7 +57,7 @@ export function AppNavigation({ children, ...sidebar }: Props) {
               </div>
               <div className="demo-banner-actions">
                 <a href="/login" className="btn">Sign in</a>
-                {sidebar.signupsOpen && <a href="/signup" className="demo-banner-request">Request an account <span aria-hidden="true">→</span></a>}
+                {sidebar.signupsOpen && <a href="/signup" className="demo-banner-request">Create account <span aria-hidden="true">→</span></a>}
               </div>
             </section>
           )}

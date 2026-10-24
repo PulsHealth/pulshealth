@@ -23,7 +23,7 @@ export function Sidebar({
   currentUserId: string;
   /** The signed-in account, in accounts mode; null otherwise. `demo`: the shared, view-only demo account. */
   account?: { email: string; isAdmin: boolean; demo?: boolean } | null;
-  /** Whether /signup takes requests (lib/mode.ts signupsOpen), for the demo banner's account request. */
+  /** Whether /signup takes requests (lib/mode.ts signupsOpen), for the demo banner's Create account link. */
   signupsOpen?: boolean;
   menuOpen: boolean;
   sidebarRef: RefObject<HTMLElement | null>;

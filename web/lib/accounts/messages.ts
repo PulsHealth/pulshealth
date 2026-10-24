@@ -36,7 +36,7 @@ const NOTICES: Record<string, string> = {
   recovered: "Password reset. Sign in with your new password. All previous browser sessions have been signed out.",
   password: "Password changed. Every other browser signed in to this account has been signed out.",
   sessions: "Signed out.",
-  received: "Thanks for signing up. We're at capacity right now, so you're on the waitlist. We'll email you when your spot opens.",
+  received: "Thanks for signing up! PulsHealth is currently at capacity, so you've joined the waitlist. We'll email you when access is available.",
   denied: "Declined and removed from the waitlist. No email was sent.",
   denied_many: "Those were declined and removed from the waitlist. No email was sent.",
   disabled: "Account disabled: it cannot sign in, and its iPhones were disconnected.",

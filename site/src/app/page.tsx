@@ -46,7 +46,7 @@ export default function HomePage() {
         </div>
         <WebAppPreview />
         <div className={styles.webDetails}>
-          <p>Use your own server, or <a href="https://app.pulshealth.com/signup">request a hosted account</a>.</p>
+          <p>Use your own server, or <a href="https://app.pulshealth.com/signup">create an account</a>.</p>
           <Link href="/docs/api-reference/"><Code2 size={17} aria-hidden />Explore the API</Link>
         </div>
       </section>
