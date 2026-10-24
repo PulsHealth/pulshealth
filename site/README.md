@@ -274,3 +274,34 @@ existing viewer-request function associated with the site's default behavior:
 
 Review Search Console and Bing after a release. A successful live URL test,
 sitemap fetch or indexing request is not proof of indexing or AI recommendation.
+
+## IndexNow publication notifications
+
+After CDN completion and live-byte verification, `scripts/deploy-site.sh`
+notifies [IndexNow](https://www.indexnow.org/documentation) of added, changed
+and removed canonical sitemap URLs. The public `indexnow-key.txt` file proves
+domain control; it is deliberately public, not a private API credential.
+Only public URLs are sent from the deployment machine. Visitors make no
+additional requests and no visitor data is collected.
+
+Change detection hashes main-page text, links, image references, search metadata
+and JSON-LD. It ignores CSS, JavaScript build identifiers, animation SVGs and
+repeated header/footer chrome, so rebuilding identical content does not notify
+all pages again. Removing a URL from the sitemap also sends that old URL.
+
+The publishing clone stores fingerprints under Git's private
+`pulshealth/indexnow/state.json`, shared across its worktrees. Preserve this file
+when moving the publishing clone. The first deployment without state only
+initializes a baseline. Use `--indexnow-bootstrap` once for a new launch or
+recent site-wide content update to explicitly submit the current public URLs;
+never use it to backfill old unchanged content. A per-clone publication lock
+prevents overlapping uploads and notification-state writes. Publish from one
+clone; this is not a cross-machine deployment lock.
+
+Dry runs, failed verification and `--no-invalidation` never notify IndexNow.
+Each deployment receipt records notification status separately from site
+verification. HTTP 200 means accepted; 202 means received pending verification;
+neither proves indexing or an AI recommendation. Failed submissions preserve
+previous fingerprints and retry after the next verified deployment (including
+an unchanged republish); no tight automatic retry loop is used. Each accepted batch is checkpointed; a later deployment retries unacknowledged
+changes. A failed state write may repeat a previously accepted batch.
