@@ -1,3 +1,4 @@
+import { AnimatedWord } from "@/components/animated-word";
 import Link from "next/link";
 import { ArrowRight, Check, Code2, Database, GitBranch, LockKeyhole, Smartphone } from "lucide-react";
 import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
@@ -31,7 +32,7 @@ export default function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
-          <h1>Unlock your health data.</h1>
+          <h1><AnimatedWord words={["Unlock", "Explore", "Understand", "Analyze", "Export"]} />your health data.</h1>
           <p className={styles.subtitle}>Sync, export, and control your Apple Health data.</p>
           <div className={styles.promises}>
             <span><Check aria-hidden />Free to start</span>

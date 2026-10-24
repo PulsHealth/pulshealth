@@ -3,11 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { FileSpreadsheet, Pause, Play, Sparkles } from "lucide-react";
+import { FileSpreadsheet, Sparkles } from "lucide-react";
 import styles from "./health-data-flow.module.css";
 
 export function HealthDataFlow() {
-  const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -16,10 +15,10 @@ export function HealthDataFlow() {
     return () => observer.disconnect();
   }, []);
 
-  return <figure ref={ref} className={styles.figure} data-paused={paused || !visible}>
+  return <figure ref={ref} className={styles.figure} data-paused={!visible}>
     <div className={styles.stage}>
       <div className={styles.halo} aria-hidden />
-      <svg className={styles.streams} viewBox="0 0 1100 560" fill="none" preserveAspectRatio="none" aria-hidden>
+      <svg className={`${styles.streams} ${styles.desktopStreams}`} viewBox="0 0 1100 560" fill="none" preserveAspectRatio="none" aria-hidden>
         {Array.from({ length: 7 }, (_, i) => {
           const y = 190 + i * 18;
           return <g key={i}>
@@ -31,6 +30,12 @@ export function HealthDataFlow() {
           <path d={`M 450 ${305 + i * 15} C 340 ${305 + i * 15}, 355 ${255 + i * 10}, 265 ${255 + i * 10}`} className={styles.thread} />
           <path d={`M 450 ${305 + i * 15} C 340 ${305 + i * 15}, 355 ${255 + i * 10}, 265 ${255 + i * 10}`} pathLength="100" className={styles.packet} style={{ animationDelay: `${i * -.8}s` }} />
         </g>)}
+      </svg>
+      <svg className={`${styles.streams} ${styles.mobileStreams}`} viewBox="0 0 350 510" fill="none" preserveAspectRatio="none" aria-hidden>
+        <path d="M 175 336 V 360 Q 175 375 155 375 H 95 Q 80 375 80 395" className={styles.thread} />
+        <path d="M 175 336 V 360 Q 175 375 195 375 H 255 Q 270 375 270 395" className={styles.thread} />
+        <path d="M 175 336 V 360 Q 175 375 155 375 H 95 Q 80 375 80 395" pathLength="100" className={styles.packet} />
+        <path d="M 175 336 V 360 Q 175 375 195 375 H 255 Q 270 375 270 395" pathLength="100" className={styles.packet} />
       </svg>
       <Link href="/features/#export" className={styles.sheet} aria-label="Export CSV and JSON files">
         <div className={styles.sheetHeader}><FileSpreadsheet size={18} aria-hidden /><span>health.csv</span><i /></div>
@@ -51,6 +56,6 @@ export function HealthDataFlow() {
       <Link href="/docs/ai/" className={styles.ai} aria-label="Connect AI tools through your database"><Sparkles size={22} strokeWidth={1.5} aria-hidden /></Link>
     </div>
     <figcaption className="sr-only">Your Apple Health data flows from the app into exported files or your own database, ready to connect to AI.</figcaption>
-    <button type="button" onClick={() => setPaused(!paused)} aria-pressed={paused} aria-label={paused ? "Play data animation" : "Pause data animation"} className={styles.motionButton}>{paused ? <Play size={13} aria-hidden /> : <Pause size={13} aria-hidden />}</button>
+
   </figure>;
 }

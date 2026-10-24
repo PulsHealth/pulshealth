@@ -2,6 +2,7 @@
 .stage { position: relative; isolation: isolate; aspect-ratio: 1100 / 560; }
 .halo { position: absolute; z-index: -1; width: 80%; height: 100%; left: 10%; top: 0; background: radial-gradient(ellipse at 50% 60%, #1960aa42, #155e9c12 45%, transparent 70%); }
 .halo::after { content: ""; position: absolute; left: 20%; right: 20%; bottom: 3%; height: 10%; background: #0008; filter: blur(20px); border-radius: 50%; }
+.mobileStreams { display: none; }
 .streams { position: absolute; inset: 0; width: 100%; height: 100%; }
 .thread { stroke: #73b9f0; stroke-opacity: .13; stroke-width: 1; vector-effect: non-scaling-stroke; }
 .packet { stroke: #a0dcff; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 9 91; vector-effect: non-scaling-stroke; animation: flow 4s linear infinite; filter: drop-shadow(0 0 5px #67baff); }
@@ -23,22 +24,23 @@
 .database svg { width: 100%; filter: drop-shadow(0 20px 25px #03112088); }
 .database > span { display: block; margin-top: 2px; }
 .ai { position: absolute; left: 88%; top: 34%; display: grid; place-items: center; width: 48px; height: 48px; color: #d4c3fc; border: 1px solid #b1a5db44; border-radius: 14px; background: linear-gradient(130deg, #38334e, #201f32); box-shadow: 0 8px 30px #0005; transform: rotate(8deg); }
-.motionButton { position: absolute; right: 1%; bottom: 0; display: grid; place-items: center; width: 36px; height: 36px; color: #8ea4bb; border-radius: 50%; cursor: pointer; }
-.motionButton:hover { background: #ffffff08; color: #d1e6fb; }
-.figure a:focus-visible, .motionButton:focus-visible { outline: 2px solid #9bd3ff; outline-offset: 6px; }
+.figure a:focus-visible { outline: 2px solid #9bd3ff; outline-offset: 6px; }
 .figure[data-paused="true"] .packet { animation-play-state: paused; }
 @keyframes flow { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
 @media (max-width: 600px) {
-  .stage { height: 370px; aspect-ratio: auto; }
-  .phone { width: 43%; max-width: 168px; left: 29%; top: 5%; border-width: 3px; border-radius: 22px; }
-  .sheet { left: -5%; top: 30%; width: 33%; padding: 10px 8px; z-index: 1; }
-  .sheetHeader { font-size: 9px; padding-bottom: 9px; gap: 5px; }
+  .stage { height: auto; aspect-ratio: 350 / 510; }
+  .desktopStreams { display: none; }
+  .mobileStreams { display: block; }
+  .phone { width: 44%; left: 28%; top: 2%; border-width: 3px; border-radius: 23px; transform: none; }
+  .sheet { left: 6%; top: 78%; width: 32%; padding: 9px 8px; transform: none; border-radius: 9px; }
+  .sheetHeader { font-size: 10px; padding-bottom: 7px; gap: 5px; }
   .sheetHeader svg { width: 13px; }
-  .cells > span { height: 17px; padding: 0 3px; }
-  .sheetFooter { margin-top: 8px; }
-  .database { left: 75%; top: 36%; width: 27%; font-size: 9px; z-index: 1; }
-  .ai { left: 91%; top: 35%; width: 29px; height: 29px; border-radius: 9px; z-index: 2; }
+  .cells > span { height: 12px; padding: 0 3px; }
+  .cells > span:nth-child(n + 13) { display: none; }
+  .sheetFooter { display: none; }
+  .database { left: 64%; top: 77%; width: 26%; font-size: 10px; }
+  .database > span { margin-top: -5px; }
+  .ai { left: 85%; top: 79%; width: 29px; height: 29px; border-radius: 9px; z-index: 2; }
   .ai svg { width: 16px; }
-  .streams { opacity: .8; }
 }
-@media (prefers-reduced-motion: reduce) { .packet { animation: none; stroke-dasharray: none; opacity: .4; } .motionButton { display: none; } }
+@media (prefers-reduced-motion: reduce) { .packet { animation: none; stroke-dasharray: none; opacity: .4; } }
