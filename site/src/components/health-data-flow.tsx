@@ -1,18 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Activity, ArrowUpRight, Bot, Check, Database, FileSpreadsheet, Heart, LayoutDashboard, Moon, Pause, Play } from "lucide-react";
+import { FileSpreadsheet, Pause, Play, Sparkles } from "lucide-react";
 import styles from "./health-data-flow.module.css";
 
-const routes = [
-  "M 300 195 H 395 Q 425 195 425 225 H 520",
-  "M 650 225 H 705 Q 735 225 735 135 H 810",
-  "M 650 225 H 705 Q 735 225 735 300 H 810",
-  "M 300 300 H 350 Q 375 300 375 385 H 510",
-];
-
-/** Illustrative data only. Database-backed tools and local exports use separate paths. */
 export function HealthDataFlow() {
   const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -23,46 +16,41 @@ export function HealthDataFlow() {
     return () => observer.disconnect();
   }, []);
 
-  return (
-    <figure ref={ref} className={styles.figure} data-paused={paused || !visible} aria-label="PulsHealth sends Apple Health data to your database for dashboards and AI, or exports files directly to your device.">
-      <div className={styles.stage}>
-        <div className={styles.grid} aria-hidden />
-        <svg className={styles.connections} viewBox="0 0 1100 460" fill="none" aria-hidden>
-          {routes.map((d, i) => <g key={d} className={i === 3 ? styles.exportRoute : undefined}>
-            <path d={d} className={styles.track} />
-            <path d={d} pathLength="100" className={styles.packet} style={{ animationDelay: `${i * -1.4}s` }} />
-          </g>)}
-        </svg>
-
-        <div className={styles.phone} aria-hidden>
-          <div className={styles.phoneTop}><span>9:41</span><span className={styles.island} /><span>•••</span></div>
-          <div className={styles.phoneHeading}><span className={styles.appIcon}><Activity size={21} /></span>PulsHealth</div>
-          <div className={styles.phoneTitle}>Your health.</div>
-          <p className={styles.phoneSubtitle}>Ready for what’s next.</p>
-          <div className={styles.reading}><Heart size={17} /><span>Heart rate<small>Latest reading</small></span><strong>64<small>bpm</small></strong></div>
-          <div className={styles.reading}><Activity size={17} /><span>Steps<small>Today</small></span><strong>8,432</strong></div>
-          <div className={styles.reading}><Moon size={17} /><span>Sleep<small>Last night</small></span><strong>7h 42m</strong></div>
-          <div className={styles.syncStatus}><span /> Connected to your database<Check size={13} /></div>
-          <div className={styles.phoneBar} />
-        </div>
-
-        <span className={styles.syncLabel}>Background sync</span>
-        <div className={styles.database}>
-          <div className={styles.databaseIcon}><Database size={39} strokeWidth={1.3} /></div>
-          <strong>Your database</strong><span>Owned by you</span>
-          <div className={styles.databaseBars} aria-hidden><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
-        </div>
-        <a href="#web-app" className={`${styles.destination} ${styles.dashboard}`}><LayoutDashboard size={23} /><span><strong>Explore on the web</strong><small>Dashboard & API</small></span><ArrowUpRight size={16} /></a>
-        <Link href="/docs/ai/" className={`${styles.destination} ${styles.ai}`}><Bot size={24} /><span><strong>Your AI tools</strong><small>Through your database</small></span><ArrowUpRight size={16} /></Link>
-        <Link href="/features/#export" className={`${styles.destination} ${styles.files}`}><FileSpreadsheet size={25} /><span><strong>CSV & JSON</strong><small>For spreadsheets & projects</small></span><ArrowUpRight size={16} /></Link>
-        <span className={styles.exportLabel}>Export directly</span>
+  return <figure ref={ref} className={styles.figure} data-paused={paused || !visible}>
+    <div className={styles.stage}>
+      <div className={styles.halo} aria-hidden />
+      <svg className={styles.streams} viewBox="0 0 1100 560" fill="none" preserveAspectRatio="none" aria-hidden>
+        {Array.from({ length: 7 }, (_, i) => {
+          const y = 190 + i * 18;
+          return <g key={i}>
+            <path d={`M 630 ${y} C 720 ${y}, 720 ${265 + i * 7}, 840 ${265 + i * 7}`} className={styles.thread} />
+            <path d={`M 630 ${y} C 720 ${y}, 720 ${265 + i * 7}, 840 ${265 + i * 7}`} pathLength="100" className={styles.packet} style={{ animationDelay: `${i * -.45}s` }} />
+          </g>;
+        })}
+        {Array.from({ length: 4 }, (_, i) => <g key={i} className={styles.fileStream}>
+          <path d={`M 450 ${305 + i * 15} C 340 ${305 + i * 15}, 355 ${255 + i * 10}, 265 ${255 + i * 10}`} className={styles.thread} />
+          <path d={`M 450 ${305 + i * 15} C 340 ${305 + i * 15}, 355 ${255 + i * 10}, 265 ${255 + i * 10}`} pathLength="100" className={styles.packet} style={{ animationDelay: `${i * -.8}s` }} />
+        </g>)}
+      </svg>
+      <Link href="/features/#export" className={styles.sheet} aria-label="Export CSV and JSON files">
+        <div className={styles.sheetHeader}><FileSpreadsheet size={18} aria-hidden /><span>health.csv</span><i /></div>
+        <div className={styles.cells} aria-hidden>{Array.from({ length: 20 }, (_, i) => <span key={i}><i /></span>)}</div>
+        <div className={styles.sheetFooter} aria-hidden><span /><span /><span /></div>
+      </Link>
+      <div className={styles.phone}>
+        <Image src="/screenshots/app-explore.webp" alt="PulsHealth on iPhone, showing real app screens for activity, heart rate, sleep, and workouts" width={600} height={1304} sizes="(max-width: 600px) 46vw, 240px" priority />
       </div>
-      <figcaption className={styles.caption}>
-        <span>Your data, wherever you want to take it. <span className={styles.sampleLabel}>Illustrative data.</span></span>
-        <button type="button" onClick={() => setPaused(!paused)} aria-pressed={paused} aria-label={paused ? "Play data animation" : "Pause data animation"} className={styles.motionButton}>
-          {paused ? <Play size={13} aria-hidden /> : <Pause size={13} aria-hidden />}<span>{paused ? "Play" : "Pause"}</span>
-        </button>
-      </figcaption>
-    </figure>
-  );
+      <Link href="/server/" className={styles.database} aria-label="Sync to your own database">
+        <svg viewBox="0 0 180 180" fill="none" aria-hidden>
+          <defs><linearGradient id="cylinder-surface" x1="10" y1="30" x2="160" y2="140" gradientUnits="userSpaceOnUse"><stop stopColor="#5b9ed9" stopOpacity=".4" /><stop offset=".5" stopColor="#183755" /><stop offset="1" stopColor="#244e71" /></linearGradient></defs>
+          {[95, 60, 25].map((y) => <g key={y}><path d={`M 20 ${y} V ${y + 32} C 20 ${y + 64} 160 ${y + 64} 160 ${y + 32} V ${y}`} fill="url(#cylinder-surface)" stroke="#80b9e4" strokeOpacity=".45" /><ellipse cx="90" cy={y} rx="70" ry="24" fill="#193a57" stroke="#a9d7ff" strokeOpacity=".65" /><ellipse cx="90" cy={y} rx="49" ry="14" stroke="#98c8f0" strokeOpacity=".16" /></g>)}
+          <circle cx="132" cy="78" r="3" fill="#a6e6fd" /><circle cx="132" cy="113" r="3" fill="#a6e6fd" />
+        </svg>
+        <span>Your database</span>
+      </Link>
+      <Link href="/docs/ai/" className={styles.ai} aria-label="Connect AI tools through your database"><Sparkles size={22} strokeWidth={1.5} aria-hidden /></Link>
+    </div>
+    <figcaption className="sr-only">Your Apple Health data flows from the app into exported files or your own database, ready to connect to AI.</figcaption>
+    <button type="button" onClick={() => setPaused(!paused)} aria-pressed={paused} aria-label={paused ? "Play data animation" : "Pause data animation"} className={styles.motionButton}>{paused ? <Play size={13} aria-hidden /> : <Pause size={13} aria-hidden />}</button>
+  </figure>;
 }

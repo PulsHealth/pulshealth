@@ -1,13 +1,13 @@
 .home { --home-ink: #f2f6fc; --home-muted: #a5b2c4; --home-blue: #8bc9ff; background: #0b1018; color: var(--home-ink); }
 .home a:focus-visible { outline: 2px solid var(--home-blue); outline-offset: 5px; border-radius: 4px; }
-.hero { padding: 76px 32px 38px; overflow: hidden; background: radial-gradient(ellipse at 50% 65%, #14263b65, transparent 66%); }
+.hero { padding: 54px 32px 28px; overflow: hidden; background: radial-gradient(ellipse at 50% 65%, #14263b65, transparent 66%); }
 .heroCopy { text-align: center; max-width: 1000px; margin: auto; }
 .hero h1 { font-size: clamp(46px, 6.2vw, 86px); line-height: 1.08; letter-spacing: -.065em; font-weight: 550; text-wrap: balance; }
 .subtitle { margin: 22px 0 0; font-size: clamp(19px, 2vw, 25px); line-height: 1.5; color: #bdc9d8; text-wrap: balance; }
 .promises { margin: 23px 0 0; display: flex; gap: 23px; flex-wrap: wrap; justify-content: center; font-size: 13px; color: #bac7d5; }
 .promises > * { display: inline-flex; align-items: center; gap: 6px; }
 .promises svg { width: 13px; height: 13px; color: #90b7cf; }
-.heroActions { margin: 29px 0 40px; display: flex; justify-content: center; gap: 14px; align-items: center; flex-wrap: wrap; }
+.heroActions { margin: 29px 0 20px; display: flex; justify-content: center; gap: 14px; align-items: center; flex-wrap: wrap; }
 .secondaryButton, .primaryButton { display: inline-flex; align-items: center; justify-content: center; gap: 18px; padding: 13px 20px; min-height: 48px; border-radius: 9px; font-size: 14px; font-weight: 500; text-align: center; transition: background .2s, border-color .2s; }
 .secondaryButton { border: 1px solid #71859f50; background: #ffffff04; }
 .secondaryButton:hover { background: #ffffff09; border-color: #91bce175; }

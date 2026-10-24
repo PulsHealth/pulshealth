@@ -24,7 +24,8 @@ The homepage leads with “Unlock your health data” and explains the promise a
 “Sync, export, and control your Apple Health data.” An animated diagram separates
 background sync to your database (and its dashboard/API/AI tools) from direct CSV
 and JSON exports. Motion has a pause control, pauses offscreen, and respects reduced
-motion. All illustrated readings are synthetic. The web preview switches between
+motion. The hero centers a real app screenshot between a CSV preview and a database illustration, with animated data streams.
+The web preview switches between
 real demo screenshots and an explicitly illustrative API example, followed by
 “Control your own health data” and the copyable AI setup prompt. Detailed export,
 exploration, aggregation, and sync information lives at `/features/`.
