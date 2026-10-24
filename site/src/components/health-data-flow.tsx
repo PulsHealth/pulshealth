@@ -60,14 +60,19 @@ export function HealthDataFlow() {
       <div className={styles.phone}>
         <Image src="/screenshots/app-explore.webp" alt="PulsHealth on iPhone, showing real app screens for activity, heart rate, sleep, and workouts" width={600} height={1304} sizes="(max-width: 600px) 46vw, 240px" priority />
       </div>
-      <Link href="/server/" className={styles.database} aria-label="Sync to your own database">
-        <svg viewBox="0 0 180 180" fill="none" aria-hidden>
+      <div className={styles.database}>
+        <Link href="/server/" aria-label="Sync to your own database">
+        <svg viewBox="0 0 180 155" fill="none" aria-hidden>
           <defs><linearGradient id="cylinder-surface" x1="10" y1="30" x2="160" y2="140" gradientUnits="userSpaceOnUse"><stop stopColor="#5b9ed9" stopOpacity=".4" /><stop offset=".5" stopColor="#183755" /><stop offset="1" stopColor="#244e71" /></linearGradient></defs>
           {[95, 60, 25].map((y) => <g key={y}><path d={`M 20 ${y} V ${y + 32} C 20 ${y + 64} 160 ${y + 64} 160 ${y + 32} V ${y}`} fill="url(#cylinder-surface)" stroke="#80b9e4" strokeOpacity=".45" /><ellipse cx="90" cy={y} rx="70" ry="24" fill="#193a57" stroke="#a9d7ff" strokeOpacity=".65" /><ellipse cx="90" cy={y} rx="49" ry="14" stroke="#98c8f0" strokeOpacity=".16" /></g>)}
           <circle cx="132" cy="78" r="3" fill="#a6e6fd" /><circle cx="132" cy="113" r="3" fill="#a6e6fd" />
         </svg>
-        <span>Your database</span>
-      </Link>
+        </Link>
+        <div className={styles.destinationCaption}>
+          <Link href="/server/">Your database</Link>
+          <Link href="/docs/ai/">Your AI</Link>
+        </div>
+      </div>
       <Link href="/docs/ai/" className={styles.ai} aria-label="Connect AI tools through your database"><Sparkles size={22} strokeWidth={1.5} aria-hidden /></Link>
     </div>
     <figcaption className="sr-only">Your Apple Health data flows from the app into exported files or your own database, ready to connect to AI.</figcaption>
