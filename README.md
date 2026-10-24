@@ -237,8 +237,8 @@ scores), heartbeat series, ECGs, State of Mind logs and medication doses.
 Every quantity is in one canonical unit per type; every timestamp is epoch
 milliseconds.
 
-Any **2xx** acknowledges the batch and advances the anchor. **4xx** is never
-retried (the anchors stay put, so nothing is lost, but the type stalls until
+Any **2xx** acknowledges the batch and advances the anchor. **4xx other than
+429** is never retried (the anchors stay put, so nothing is lost, but the type stalls until
 the server accepts it); **5xx**, **429** and network errors are retried with
 jittered exponential backoff. Retried batches are no-ops server-side. The
 normative description is the [Puls Sync Protocol v1](docs/protocol/README.md);
@@ -271,9 +271,11 @@ Gaps in the spec go in the "Backend implementer question" issue template.
 
 ## Performance expectations
 
-Measure your own device with **Settings → Diagnostics → Run Throughput
-Benchmark** (reads real HealthKit data through a discarding transport; does
-not touch sync state). Planning numbers:
+Measure your own device with **Settings → Developer → Run Throughput
+Benchmark**. To reveal Developer, tap **Settings → About → Version** seven
+times and confirm. The benchmark reads HealthKit through a discarding transport
+and does not touch sync state. The following are planning estimates, not
+guaranteed timings:
 
 **Initial backfill** (foreground, plugged in, LAN or VPN to the server):
 
@@ -283,8 +285,9 @@ not touch sync state). Planning numbers:
 | Apple Watch wearer, 3 years | ~5–10 M samples (heart rate at ~3.5 K/day dominates) | **15–40 min** |
 | Heavy Watch user (daily workouts), 5+ years, all types | ~15–25 M samples | **45–90 min** |
 
-Device-side HealthKit reads are the bottleneck (~3–10 K samples/s per type on
-recent iPhones); the server ingests 50–100 K rows/s, so it never queues.
+HealthKit reads often dominate the initial import. Device speed, selected
+types, server capacity, and network latency all affect throughput; measure
+your installation rather than assuming a fixed ingest rate.
 Backfills pause if iOS suspends the app and resume on the next open without
 losing progress.
 
@@ -298,13 +301,13 @@ after failures.
 | Data path | Typical latency | Why |
 |---|---|---|
 | Written on iPhone, immediate-class type (workouts, body mass, HRV, …) | **seconds** (≈1–10 s) | `.immediate` background delivery is honoured |
-| Steps / active energy / distance (iPhone) | **up to ~1 h** | iOS silently limits background delivery for these types to about hourly |
+| Steps / active energy / distance (iPhone) | **often about hourly or longer** | Background delivery is limited and is not a guaranteed upload schedule |
 | Anything recorded on Apple Watch | **minutes–hours** | Watch → iPhone HealthKit sync is opportunistic and Apple provides no API to force it. Opening the app (or charging the Watch) usually triggers it |
-| Device locked | deferred | The Health database is encrypted ~10 min after lock; the next unlock or wake catches up |
+| Device locked | deferred | HealthKit can be unreadable while locked; the next unlocked run catches up |
 | App force-quit by the user | until the next app open | iOS stops waking force-quit apps |
 | Activity rings | next sync run, at most hourly off observer wakes | Activity summaries are not observable and have no background delivery; the current day is re-queried on every run and upserted |
 
-Upload plus ingest adds under a second on a LAN. A type's **Sample to upload
+Upload and ingest latency depend on the network and server. A type's **Sample to upload
 latency** (in its sync details) shows the number you are actually getting.
 
 ## FAQ
@@ -314,11 +317,12 @@ Watch → iPhone HealthKit transfer is scheduled by watchOS and cannot be
 forced by any app. Opening PulsHealth, or putting the Watch on its charger,
 usually prompts it. Once the data is on the phone it syncs normally.
 
-**Steps, active energy, and distance lag by up to an hour, while workouts
-appear in seconds.**
-iOS throttles "immediate" background delivery for those high-frequency types
-to roughly hourly, without saying so, and it is not configurable. Anything
-else you record on the phone, and every foreground open, syncs right away.
+**Steps, active energy, and distance lag behind workouts.**
+Background delivery has type-specific limits; Apple documents an hourly
+maximum notification frequency for steps on iOS. A notification is an
+opportunity to sync, not a promised upload deadline. Opening the app with
+the phone unlocked provides another opportunity to catch up. See the
+[sync troubleshooting guide](https://pulshealth.com/blog/apple-health-not-syncing/).
 
 **Nothing synced overnight.**
 While the phone is locked HealthKit is unreadable, and iOS prefers to run
