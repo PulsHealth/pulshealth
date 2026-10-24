@@ -21,6 +21,7 @@
 .sectionHeading > a { margin-bottom: 5px; }
 .webDetails { display: flex; justify-content: space-between; gap: 24px; font-size: 13px; color: var(--home-muted); margin-top: 22px; }
 .webDetails a { color: #b1d4f3; }
+.webDetails p a { text-decoration: underline; text-underline-offset: 4px; }
 .webDetails > a { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .webDetails a:hover, .inlineLinks a:hover, .faq a:hover { text-decoration: underline; text-underline-offset: 4px; }
 .ownershipSection { border-block: 1px solid #91afd31c; background: #111923; }

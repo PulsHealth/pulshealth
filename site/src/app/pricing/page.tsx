@@ -1,3 +1,4 @@
+import { appJsonLd } from "@/lib/product-schema";
 import Link from "next/link";
 import { PageHero } from "@/components/page-hero";
 
@@ -19,6 +20,7 @@ const features = [
 export default function PricingPage() {
   return (
     <main className="flex-1">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
       <PageHero size="compact" title="Start free. Go further with Pro." lede="Free to download. Open source. Your database stays yours." />
       <section aria-label="App plans" className="container mx-auto max-w-3xl px-5 py-14 md:py-20">
         <div className="grid gap-6 border-b pb-8 sm:grid-cols-2">

@@ -1,3 +1,4 @@
+import { appJsonLd } from "@/lib/product-schema";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -39,6 +40,7 @@ function Feature({ id, title, intro, children, visual, flip = false }: {
 export default async function FeaturesPage() {
  const kbCount = (await getAllTypes()).length;
  return <main className={styles.home}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
  <header className="container mx-auto max-w-7xl px-5 py-20">
  <Link href="/" className="text-brand">PulsHealth</Link>
  <h1 className="mt-6 max-w-3xl text-5xl font-semibold tracking-tight md:text-7xl">Unlock your health data.</h1>

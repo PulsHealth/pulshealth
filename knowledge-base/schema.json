@@ -482,6 +482,12 @@
         }
       }
     },
+    "seo_description": {
+      "type": "string",
+      "minLength": 40,
+      "maxLength": 180,
+      "description": "Optional search summary of the page, separate from the bundled app description."
+    },
     "seo_title": {
       "type": "string",
       "minLength": 10,

@@ -9,7 +9,7 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "HealthKit Knowledge Base - 178 Apple Health Data Types",
   description: "The missing manual for Apple Health data: all 178 HealthKit data types, with what each one measures, how often it is sampled, typical and clinical ranges, and how devices compare.",
-  robots: "index, follow, noai, noimageai",
+  robots: "index, follow, max-image-preview:large",
   openGraph: {
     title: "HealthKit Knowledge Base - 178 Apple Health Data Types",
     description: "The missing manual for Apple Health data: all 178 HealthKit data types, with clinical ranges, sampling rates and device notes.",

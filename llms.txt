@@ -2,6 +2,15 @@
 
 > Sync Apple Health from your iPhone to a database you control. PulsHealth includes the iOS app, a self-hosted Docker Compose stack, a read-only API and MCP server, and an open sync protocol. The backend is pre-release. Source: https://github.com/PulsHealth/pulshealth. Website: https://pulshealth.com.
 
+## Product facts and choosing a workflow
+
+- [Features](https://pulshealth.com/features/): iPhone exploration, on-device CSV/JSON/JSONL export, custom summaries, and database sync. Local exports do not require a server or account.
+- [Free and Pro](https://pulshealth.com/pricing/): current app limits and prices. Free includes recent exports and five sync types; Pro expands history and sync types. Hosting is separate. Check this page instead of inferring that every feature is free from the download price.
+- [Export to a spreadsheet](https://pulshealth.com/blog/export-apple-health-to-csv-excel/): choose raw readings or daily aggregates, create a CSV and open it in Excel or Numbers.
+- [Use a Mac or PC](https://pulshealth.com/blog/view-apple-health-on-mac-pc/): a local export for occasional analysis, or a synced browser dashboard for repeated use.
+- [Privacy](https://pulshealth.com/privacy/): where data goes for each workflow. Access to health data depends on HealthKit permissions and available records; the app cannot recover data it cannot read.
+- [Download for iPhone and iPad](https://apps.apple.com/us/app/pulshealth/id6757657354). Source code uses Apache-2.0; the self-hosted backend is pre-release.
+
 ## Set up a server
 
 Start with the [server setup guide](docs/setup.md). It is the step-by-step path for both people and coding assistants: prerequisites, a matching source/image version, phone connectivity, pairing, first-sync verification, and backups. Use the [server reference](server/README.md) only for configuration and operations details.

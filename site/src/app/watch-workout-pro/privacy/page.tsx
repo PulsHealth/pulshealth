@@ -2,14 +2,15 @@ import { notFound } from "next/navigation";
 import { RepoMarkdown, readRepoFile, stripLeadingH1 } from "@/lib/markdown";
 
 const CONTENT_PATH = "site/content/watchworkoutpro/privacy-policy.md";
+const socialImage = { url: "/watch-workout-pro/workout-library.jpg", width: 396, height: 860, alt: "Watch Workout Pro workout library on iPhone" };
 const description = "Privacy practices for Watch Workout Pro: on-device workout creation, optional sharing, iCloud collections, and Pro subscriptions.";
 
 export const metadata = {
   title: "Watch Workout Pro Privacy Policy",
   description,
   alternates: { canonical: "/watch-workout-pro/privacy/" },
-  openGraph: { title: "Watch Workout Pro Privacy Policy", description, url: "/watch-workout-pro/privacy/" },
-  twitter: { card: "summary", title: "Watch Workout Pro Privacy Policy", description },
+  openGraph: { title: "Watch Workout Pro Privacy Policy", description, url: "/watch-workout-pro/privacy/", images: [socialImage] },
+  twitter: { card: "summary_large_image", images: [socialImage.url], title: "Watch Workout Pro Privacy Policy", description },
 };
 
 // Product-specific content; separate from the PulsHealth app policy.

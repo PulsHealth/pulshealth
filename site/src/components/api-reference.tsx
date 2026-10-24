@@ -282,7 +282,7 @@ export function ApiReference({ doc }: { doc: ApiDocument }) {
       </div>
       <p className="mt-4 text-sm text-muted-foreground">
         New to the API? Start with the{" "}
-        <Link href={docHref("api")} className="text-brand hover:underline">
+        <Link href={docHref("api")} className="text-brand underline underline-offset-4">
           overview
         </Link>
         : reaching the service, choosing the user, paging, errors and rate limits.

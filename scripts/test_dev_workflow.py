@@ -71,6 +71,14 @@ class Fixture(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'Stale export'):
             site.validate(self.root)
 
+    def test_committing_identical_build_inputs_invalidates_git_derived_dates(self):
+        (self.root / 'site/source.txt').write_text('edited')
+        self.manifest()
+        subprocess.run(['git', '-C', str(self.root), 'add', '.'], check=True)
+        subprocess.run(['git', '-C', str(self.root), 'commit', '-qm', 'Content revision'], check=True)
+        with self.assertRaisesRegex(RuntimeError, 'Stale export'):
+            site.validate(self.root)
+
     def test_private_build_overrides_invalidate_export_without_exposing_values(self):
         self.manifest()
         (self.root / "site/.env.local").write_text("NEXT_PUBLIC_FORM_ENDPOINT=https://example.invalid/override")
@@ -126,6 +134,30 @@ class Fixture(unittest.TestCase):
         with patch.object(site, 'urlopen', return_value=Response(b'stale CDN')):
             with self.assertRaisesRegex(RuntimeError, 'differs'):
                 site.verify_live(self.root / 'site/out', 'https://example.invalid', ['index.html'])
+
+    def test_matching_bytes_with_wrong_cache_headers_are_not_verified(self):
+        from io import BytesIO
+        class Response(BytesIO):
+            status = 200
+            headers = {"Cache-Control": "public,max-age=31536000,immutable"}
+        with patch.object(site, 'urlopen', return_value=Response(b'built')):
+            with self.assertRaisesRegex(RuntimeError, 'cache policy'):
+                site.verify_live(self.root / 'site/out', 'https://example.invalid', ['index.html'])
+        response = Response(b'built')
+        response.headers = {"Cache-Control": site.REVALIDATE}
+        with patch.object(site, 'urlopen', return_value=response):
+            self.assertEqual(site.verify_live(self.root / 'site/out', 'https://example.invalid', ['index.html']), ['index.html'])
+
+    def test_upload_refreshes_unchanged_metadata_and_separates_mutable_assets(self):
+        (self.root / 'site/out/_next/static').mkdir(parents=True)
+        commands = site.upload_commands(self.root / 'site/out')
+        self.assertEqual([cmd[2] for cmd in commands], ['cp', 'cp', 'cp', 'sync'])
+        self.assertIn(site.IMMUTABLE, commands[0])
+        self.assertIn(site.MEDIA_CACHE, commands[1])
+        self.assertIn('--size-only', commands[-1])
+        self.assertEqual(site.cache_policy('robots.txt'), site.REVALIDATE)
+        self.assertEqual(site.cache_policy('_next/static/chunks/abc.css'), site.IMMUTABLE)
+        self.assertEqual(site.cache_policy('screenshots/app.webp'), site.MEDIA_CACHE)
 
     def test_task_status_does_not_change_git_or_claim_ownership(self):
         before = subprocess.check_output(['git', '-C', str(self.root), 'status', '--porcelain'])

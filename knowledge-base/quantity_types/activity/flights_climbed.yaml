@@ -49,6 +49,18 @@ description: '## What does Flights Climbed count?
   without evidence from the recording source.
 
 
+  ## How often are flights recorded?
+
+  This is an activity-dependent stream, not a reading expected every minute. In the selected source, stored intervals
+  ranged from approximately **2.57 seconds to 9.92 minutes**, with a median near **2.57 seconds**. The same count
+  can therefore span very different durations.
+
+
+  Dividing flights by interval duration describes a stored interval ratio. It does not prove the actual time spent
+  climbing or a reliable instantaneous stair-climbing speed. Long gaps can mean no exported stair observation, incomplete
+  wear or another recording circumstance; the raw stream alone cannot distinguish those explanations.
+
+
   ## What do example records look like?
 
   The reporting year contained **990 entries on 202 of 365 days**. In July–September, all sources together supplied
@@ -72,18 +84,6 @@ description: '## What does Flights Climbed count?
   | How frequently are records written? | Timestamp gaps and durations | Assuming a scheduled sensor reading |
 
   | How much height was gained? | Relevant altitude or route evidence | Exact conversion from flight count |
-
-
-  ## How often are flights recorded?
-
-  This is an activity-dependent stream, not a reading expected every minute. In the selected source, stored intervals
-  ranged from approximately **2.57 seconds to 9.92 minutes**, with a median near **2.57 seconds**. The same count
-  can therefore span very different durations.
-
-
-  Dividing flights by interval duration describes a stored interval ratio. It does not prove the actual time spent
-  climbing or a reliable instantaneous stair-climbing speed. Long gaps can mean no exported stair observation, incomplete
-  wear or another recording circumstance; the raw stream alone cannot distinguish those explanations.
 
 
   ## How do workouts, sleep and other sources affect interpretation?
@@ -144,7 +144,7 @@ references:
 - title: 'Apple: flightsClimbed'
   url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/flightsclimbed
   type: official
-last_updated: '2026-10-14'
+last_updated: '2026-10-24'
 research_notes: Executed private eleven-facet snapshot investigation before rewriting. Apple primary sources checked
   for units, category semantics and supported sources. Unsupported precise sensing claims and generic clinical targets
   removed.
@@ -182,4 +182,6 @@ figures:
   section: What do example records look like?
   width: 1500
   height: 600
-seo_title: 'Flights Climbed in Apple Health: Meaning, Recording and Examples'
+seo_title: "Flights Climbed in Apple Health: What Counts?"
+
+seo_description: "What does Apple Health count as a flight of stairs? Learn how iPhone and Apple Watch record flights, why counts vary, and how to read overlapping sources."

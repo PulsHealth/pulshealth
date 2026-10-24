@@ -59,7 +59,7 @@ export function HealthDataFlow() {
         </div>
       </Link>
       <div className={styles.phone}>
-        <Image src="/screenshots/app-explore.webp" alt="PulsHealth on iPhone, showing real app screens for activity, heart rate, sleep, and workouts" width={600} height={1304} sizes="(max-width: 600px) 46vw, 240px" priority />
+        <Image src="/screenshots/app-explore.webp" alt="PulsHealth on iPhone, showing real app screens for activity, heart rate, sleep, and workouts" width={600} height={1304} sizes="(max-width: 600px) 46vw, 240px" loading="eager" fetchPriority="high" />
       </div>
       <div className={styles.database}>
         <Link href="/server/" aria-label="Sync to your own database">

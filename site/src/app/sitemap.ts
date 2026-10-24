@@ -1,3 +1,4 @@
+import { contentModified } from "@/lib/content-dates";
 import type { MetadataRoute } from "next";
 import { getAllTypes } from "@/lib/api";
 import { getPublishedPosts } from "@/lib/blog";
@@ -9,6 +10,14 @@ export const dynamic = "force-static";
 /** The site exports with `trailingSlash: true`; canonicals and the sitemap must agree. */
 const withSlash = (href: string) => (href.endsWith("/") ? href : `${href}/`);
 
+function staticSources(href: string): string[] {
+  const route = href.replace(/^\/|\/$/g, "");
+  const sources = [`site/src/app/${route ? `${route}/` : ""}page.tsx`];
+  if (route === "privacy") sources.push("docs/privacy-policy.md");
+  if (/^watch-workout-pro\/(support|privacy)$/.test(route)) sources.push(`site/content/watchworkoutpro/${route.endsWith("/privacy") ? "privacy-policy" : "support"}.md`);
+  return sources;
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://pulshealth.com";
 
@@ -18,6 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_PAGES.filter((page) => !page.href.startsWith("/docs/")).map(
     (page) => ({
       url: `${baseUrl}${withSlash(page.href)}`,
+      lastModified: contentModified(staticSources(page.href)),
       changeFrequency: page.href === "/" ? "weekly" : "monthly",
       priority: page.href === "/" ? 1.0 : 0.7,
     }),
@@ -26,6 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Documentation rendered from the repository
   const docEntries: MetadataRoute.Sitemap = getAllDocs().map((doc) => ({
     url: `${baseUrl}${withSlash(docHref(doc.slug))}`,
+    lastModified: contentModified([doc.repoPath]),
     changeFrequency: "monthly",
     priority: 0.7,
   }));
