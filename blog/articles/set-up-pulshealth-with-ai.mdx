@@ -1,6 +1,7 @@
 ---
 title: "Use AI to Set Up PulsHealth and Build With Your Health Data"
 date: "2026-10-22"
+updated: "2026-10-24"
 excerpt: "Copyable prompts to set up a PulsHealth database with AI, build a personal dashboard, and connect an assistant to your Apple Health data."
 tags: ["apple-health", "ai", "self-hosting", "guides"]
 author: "Sean Wade"
@@ -11,7 +12,7 @@ An AI coding assistant can help you turn your Apple Health history into a databa
 
 There are two jobs here. During **setup**, an assistant helps run commands and configure your server. During **analysis**, an assistant reads the health records you choose to make available. You can use either independently: building a project does not require sending its data to a model.
 
-This guide takes you from an empty machine to a first project, with prompts you can adapt. The prompts are templates, not transcripts of a completed installation.
+This article focuses on prompts and a first project. Installation commands and troubleshooting now live in the [server setup guide](/docs/setup/), so you and your assistant can follow the same maintained instructions. The prompts below are templates, not transcripts of a completed installation.
 
 ## Give your coding assistant a clear starting point
 
@@ -29,8 +30,8 @@ Phone connection: [same trusted home Wi-Fi, or a private HTTPS/VPN connection]
 Reporting time zone: [IANA name, such as Europe/Berlin]
 Existing installation: [none, or describe it]
 
-Read https://pulshealth.com/llms.txt and the linked server setup guide first.
-If working in a clone, also read AGENTS.md and server/README.md.
+Read https://pulshealth.com/llms.txt and https://pulshealth.com/docs/setup/ first.
+Use server/README.md for configuration details; read AGENTS.md before code changes.
 
 Inspect the machine and explain what you find. Use the existing bootstrap
 script and Compose stack. Keep the checkout, schema, and application images
@@ -43,42 +44,21 @@ public ports. Tell me which phone and Health permission steps I must do.
 Finish with evidence of server health and a separate check of synced data.
 ```
 
-The [documentation index](https://pulshealth.com/llms.txt) gives the assistant a route into the current instructions. The [server guide](/docs/server/) is the authority for commands and configuration. PulsHealth's backend is pre-release software, so have the assistant report errors and the version it installed rather than claiming every environment will work unchanged.
+The [setup guide](/docs/setup/) walks through prerequisites, matching the application images to the checkout, network access, pairing and verification. PulsHealth's backend is pre-release software; have the assistant report errors and the installed version.
 
 ### What the setup should actually do
 
-The repository provides a bootstrap script that generates local secrets, starts the database and services, applies migrations, and prints pairing details. The AI's role is to adapt that path to your machine and diagnose failures. It does not need to design a database from scratch.
+The existing bootstrap script generates local secrets, starts the services, applies migrations and prints pairing details. The assistant should follow that path and diagnose failures, without designing a new database. Choose trusted LAN access or an HTTPS connection before running it; changing the URL alone does not create a working network route.
 
-For example, on a **fresh machine on trusted home Wi-Fi**, this source-build path runs from a new checkout:
-
-```bash
-git clone https://github.com/PulsHealth/pulshealth.git
-cd pulshealth
-scripts/bootstrap.sh --build --lan --time-zone Europe/Berlin
-```
-
-Replace `Europe/Berlin` with your reporting zone. `--build` builds the application services from the checkout so their code matches its migrations; the first build can take a while. For a released-image installation, have the assistant follow the server guide's version-pinning instructions instead.
-
-`--lan` makes the phone's ingest endpoint reachable on the local network over plain HTTP. Use that option only on a network you control. For a private HTTPS connection, use the guide's proxy setup and `--url` option instead. Keep PostgreSQL and the read API on their default loopback bindings, and do not forward the LAN port through your router. [Network options](/docs/server/#exposing-the-server)
-
-Bootstrap prints passwords and a QR code containing a credential. Read that output locally; keep it out of screenshots, shared logs, and the AI conversation. A terminal-enabled assistant may be able to see its output, so its access to setup credentials is part of the trust you give it.
+Bootstrap prints passwords and a QR code containing a credential. Read that output locally and keep it out of shared logs and the chat. A terminal-enabled assistant may see the output, so credential access is part of the trust you give it.
 
 ## Pair your iPhone and prove that data arrived
 
-On your phone, open PulsHealth, complete the Health permission flow, and connect your self-managed database from **Sync → Database** using the pairing details. Select the data you want to sync and apply the changes. Keep the phone unlocked while checking the first sync.
+Follow the [pairing instructions](/docs/setup/) on your iPhone, grant Health access and select the types to sync. Keep the phone unlocked while checking the first sync.
 
 Start with a few types you recognize, such as steps and resting heart rate. The app's free sync covers up to five distinct types and the most recent 30 days; Pro unlocks full-history sync for all supported types, subject to Health access. Self-hosting does not change the app's access limits. [Current app plans](/pricing/)
 
-Your assistant can check the server with these commands from the repository root:
-
-```bash
-docker compose -f server/docker-compose.yml ps
-docker compose -f server/docker-compose.yml logs migrate
-curl --fail --silent --show-error http://127.0.0.1:8080/healthz
-curl --fail --silent --show-error http://127.0.0.1:8081/healthz
-```
-
-The migrator is a one-shot service: a successful exit is expected. Healthy services establish that the stack can respond. They do not establish that your phone uploaded anything.
+Have your assistant run the [setup guide's verification steps](/docs/setup/). A healthy service proves the stack responds; it does not prove your phone uploaded records.
 
 Follow up with:
 
@@ -182,6 +162,6 @@ Read-only access still shares information. When a cloud assistant requests your 
 
 Finish with one small artifact: a dashboard with two charts, a weekly Markdown report, or an AI answer with its supporting table. Check dates, units, missing records, and one value against your phone before expanding it.
 
-Also ask the setup assistant to configure backups using the [server guide](/docs/server/). Backups are opt-in; a running database volume alone is not a backup. Verify restoration on a scratch stack before relying on the archive.
+Also ask the setup assistant to configure backups using the [operations guide](/docs/server/). Backups are opt-in; a running database volume alone is not a backup. Verify restoration on a scratch stack before relying on the archive.
 
 You now have a repeatable path from Apple Health to something you can build and inspect. Keep the prompts with your project, record the API version and assumptions, and add the next feature only after the first one agrees with its source data.

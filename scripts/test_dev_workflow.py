@@ -64,6 +64,13 @@ class Fixture(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'Export files changed'):
                 site.validate(self.root)
 
+    def test_ai_index_changes_invalidate_export(self):
+        (self.root / 'llms.txt').write_text('Original AI index')
+        self.manifest()
+        (self.root / 'llms.txt').write_text('Changed setup instructions')
+        with self.assertRaisesRegex(RuntimeError, 'Stale export'):
+            site.validate(self.root)
+
     def test_private_build_overrides_invalidate_export_without_exposing_values(self):
         self.manifest()
         (self.root / "site/.env.local").write_text("NEXT_PUBLIC_FORM_ENDPOINT=https://example.invalid/override")

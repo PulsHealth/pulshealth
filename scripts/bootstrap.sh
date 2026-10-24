@@ -470,7 +470,9 @@ print_pairing() {
   fi
   printf ' %-12s %s\n' "User ID" "$user_id"
   echo
-  echo " In the app: Settings > Server, scan the QR code or enter the three values, then Test Connection."
+  echo " In the app: Sync > Connect Your Server (or Database), then Scan Pairing Code or Paste Pairing Code."
+  echo " Test Connection, tap Add Database, review types and history, then Apply > Apply & Start Sync."
+  echo " An existing saved destination uses Save & Apply. Earlier app versions may use that label for setup too."
   echo " Keep the token private: with it, anyone who can reach the URL can upload and delete your data."
   echo "$hr"
 

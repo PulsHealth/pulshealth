@@ -34,6 +34,14 @@ export const DOC_GROUPS: DocGroup[] = ["Getting started", "Reference", "Project"
 
 export const DOCS: DocEntry[] = [
   {
+    slug: "setup",
+    title: "Set up your server",
+    repoPath: "docs/setup.md",
+    description:
+      "Follow the setup steps yourself or give them to an AI assistant: install, connect your iPhone, verify the first sync and keep a backup.",
+    group: "Getting started",
+  },
+  {
     slug: "recording-behavior",
     title: "Understand how health data is recorded",
     repoPath: "docs/recording-behavior.md",
@@ -42,7 +50,7 @@ export const DOCS: DocEntry[] = [
   },
   {
     slug: "server",
-    title: "Server setup and operations",
+    title: "Server configuration and operations",
     repoPath: "server/README.md",
     description:
       "The Docker Compose stack: bootstrap, configuration, exposing ingest, schema migrations, backups and restore, and upgrading the published images.",
@@ -91,10 +99,10 @@ export const DOCS: DocEntry[] = [
   },
   {
     slug: "ai",
-    title: "Use it with AI",
+    title: "Connect AI to your data",
     repoPath: "docs/ai.md",
     description:
-      "Connect compatible AI assistants to your self-managed database through the read-only MCP server, or sign in with a hosted PulsHealth account.",
+      "After your phone is syncing, give a compatible assistant read-only access through MCP, or share a summary.",
     group: "Getting started",
   },
   {
@@ -190,24 +198,24 @@ const SIGNUP_URL = "https://app.pulshealth.com/signup";
 
 export const GUIDES: DocGuide[] = [
   {
-    title: "The app",
+    title: "Explore and export on your iPhone",
     href: "/#how-it-works",
     description:
-      "Free on the App Store. Explore and export Apple Health on your iPhone, then sync it to a database.",
+      "Use the app without a server. Explore Apple Health, export files, or choose the types to sync.",
     group: "Getting started",
     label: "How it works",
     indexOnly: true,
   },
   {
-    title: "Self-hosting",
+    title: "Self-hosting overview",
     href: "/server/",
     description:
-      "Run the open-source PulsHealth database on a machine you own: one script brings it up and prints the code that pairs the app.",
-    group: "Getting started",
-    label: "Set it up",
+      "What runs on your server, how your phone connects, and what you maintain.",
+    group: "Reference",
+    label: "See what is included",
   },
   {
-    title: "The PulsHealth database",
+    title: "Use a hosted account",
     href: SIGNUP_URL,
     description:
       "We run the database, the web viewer and the AI connection for you. Create an account and connect the app to it.",
@@ -230,7 +238,7 @@ export interface DocLink {
 }
 
 /**
- * Guides first in their group, then the rendered documents in manifest order.
+ * Rendered documents first in their group, then the related guides.
  * The sidebar passes `sidebar` to leave out guides that live outside the docs.
  */
 export function getDocLinksByGroup({ sidebar = false }: { sidebar?: boolean } = {}): Array<{
@@ -240,19 +248,19 @@ export function getDocLinksByGroup({ sidebar = false }: { sidebar?: boolean } = 
   return DOC_GROUPS.map((group) => ({
     group,
     links: [
-      ...GUIDES.filter((guide) => guide.group === group && !(sidebar && guide.indexOnly)).map((guide) => ({
-        key: guide.href,
-        title: guide.title,
-        href: guide.href,
-        description: guide.description,
-        label: guide.label,
-      })),
       ...DOCS.filter((doc) => doc.group === group).map((doc) => ({
         key: doc.slug,
         title: doc.title,
         href: docHref(doc.slug),
         description: doc.description,
         repoPath: doc.repoPath,
+      })),
+      ...GUIDES.filter((guide) => guide.group === group && !(sidebar && guide.indexOnly)).map((guide) => ({
+        key: guide.href,
+        title: guide.title,
+        href: guide.href,
+        description: guide.description,
+        label: guide.label,
       })),
     ],
   })).filter(({ links }) => links.length > 0);

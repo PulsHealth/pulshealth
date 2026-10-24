@@ -24,7 +24,7 @@ const HREF = "/server/";
 const SIGNUP_URL = "https://app.pulshealth.com/signup";
 
 export const metadata = {
-  title: "Self-hosting - PulsHealth Docs",
+  title: "Self-hosting overview - PulsHealth",
   description: "Self-host the open-source PulsHealth database: PostgreSQL 17 with TimescaleDB, a Go ingest API, a read-only product API, Grafana, a web viewer and an MCP server for AI, all via Docker Compose on a machine you own. Free, Apache-2.0.",
   alternates: {
     canonical: HREF,
@@ -42,32 +42,32 @@ const toc = [
 const services = [
   {
     title: "PostgreSQL 17 + TimescaleDB",
-    description: "Samples land in hypertables, with columnstore compression on older chunks. Schema migrations are applied by a migrate service before anything else starts, so an upgrade is a pull and a restart.",
+    description: "Stores your health records. TimescaleDB organizes time-series data and compresses older records. A migration service prepares the schema.",
     icon: Database,
   },
   {
     title: "Ingest API (Go)",
-    description: "The one service designed to face the network. Bearer authentication, gzip NDJSON bodies, inserts that deduplicate by sample UUID, per-IP rate limiting on failed authentications, and structured per-batch logs.",
+    description: "Receives authenticated uploads from your phone. Repeated uploads of the same sample are safe.",
     icon: Server,
   },
   {
     title: "Product API (Go)",
-    description: "Read-only, with an OpenAPI 3.1 document. Deduplicated daily metrics, workouts and their series, activity rings, latest readings, and a streaming export endpoint.",
+    description: "Serves daily metrics, workouts, activity rings and exports to your own projects through a documented read-only API.",
     icon: Code2,
   },
   {
     title: "Grafana",
-    description: "Provisioned dashboards for the health data and for ingest health (batches per hour, rows per day, per-type totals, last-batch age), with alert rules already defined.",
+    description: "Includes health-data dashboards and server monitoring, with alert rules you can configure.",
     icon: LineChart,
   },
   {
     title: "Web viewer",
-    description: "A Next.js viewer over the same database: activity rings, trends, workouts and the type catalog. Set a password and every page sits behind HTTP Basic; leave it unset and it is an open read-only page.",
+    description: "Browse activity rings, trends, workouts and individual types. Fresh bootstrap installs generate a login password.",
     icon: LayoutDashboard,
   },
   {
     title: "MCP server",
-    description: "Read-only, talking only to the product API, so any AI assistant that speaks MCP (Claude, Cursor, Qwen and others) can answer questions from your data. Run it as a local binary or as a remote connector over HTTPS.",
+    description: "Lets compatible AI assistants read your data through the product API. Connecting an assistant is optional and requires separate configuration.",
     icon: Bot,
   },
 ];
@@ -75,17 +75,17 @@ const services = [
 const reach = [
   {
     title: "Same Wi-Fi",
-    description: "Bind ingest to the LAN and the pairing block carries a local address; the app accepts plain HTTP for local-network hosts. That is plaintext with the token as the only protection, so use it only on a network you control.",
+    description: "The LAN option lets your phone sync on trusted home Wi-Fi. It uses unencrypted HTTP, so it belongs only on a network you control.",
     icon: Plug,
   },
   {
     title: "From anywhere",
-    description: "Put a TLS-terminating proxy or a VPN such as Tailscale in front of the ingest port and hand the script its URL. Ingest stays on loopback and the QR code carries the HTTPS address.",
+    description: "Use an HTTPS proxy, optionally over a private VPN. The setup guide explains how to give the phone a reachable URL while keeping the other services private.",
     icon: Globe,
   },
   {
     title: "Backups are yours",
-    description: "A backup service ships with the stack, but it is an opt-in Compose profile and off until you turn it on. Until then the Postgres volume is the only copy of your data.",
+    description: "Backups are optional and start only when enabled. Keep a separate copy and test restoration; the database volume alone is not a backup.",
     icon: HardDriveDownload,
   },
 ];
@@ -121,12 +121,12 @@ export default function SelfHostingPage() {
             </details>
 
             <header className="mb-10">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand">Getting started</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand">Self-hosting overview</p>
               <h1 className="text-4xl font-bold tracking-tight text-balance">Self-hosting</h1>
               <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                Run the open-source database the PulsHealth app syncs to: PostgreSQL with
-                TimescaleDB and the services around it, free on a home machine, a NAS or a rented
-                box. Your data stays on hardware you control.
+                Keep a copy of your Apple Health data in a database you manage, with a dashboard,
+                exports and an API. The open-source stack runs with Docker Compose on Linux or
+                macOS. You manage the machine, access, updates and backups.
               </p>
               <p className="mt-4 rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
                 Would rather not run it yourself?{" "}
@@ -140,31 +140,13 @@ export default function SelfHostingPage() {
             <section>
               <h2 id="setup" className={h2}>Setup</h2>
               <p className={lede}>
-                You need a Linux or macOS box with Docker and its Compose plugin. The bootstrap
-                script generates every secret, starts the stack, waits for ingest to answer, and
-                prints a pairing block: the URL the phone should use, the bearer token, the user ID,
-                and a QR code encoding all three.
+                Follow one guide from choosing a network connection to seeing your first synced
+                records. It includes a copyable prompt for an AI coding assistant, the installation
+                commands, iPhone pairing and troubleshooting. The backend is pre-release software.
               </p>
-              <div className="mt-5 overflow-x-auto rounded-lg border bg-muted/40 px-5 py-4">
-                <pre className="font-mono text-sm leading-relaxed text-foreground/90">
-                  <code>{`git clone https://github.com/PulsHealth/pulshealth.git
-cd pulshealth
-scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
-                </pre>
-              </div>
-              <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
-                <li>
-                  Pass the time zone your phone lives in, since every daily view buckets by that
-                  calendar. Re-running the script is safe; it never regenerates secrets.
-                </li>
-                <li>
-                  The script pulls the published images from GHCR. Add <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">--build</code> to
-                  compile them from the checkout instead, for example to run an unreleased change.
-                </li>
-              </ul>
               <p className="mt-5 text-sm">
-                <Link href={`${docHref("server")}#setup`} className={textLink}>
-                  The full setup and operations manual <ArrowRight className="h-3.5 w-3.5" />
+                <Link href={docHref("setup")} className={textLink}>
+                  Set up your server <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </p>
             </section>
@@ -222,11 +204,9 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
                     <h3 className="font-semibold">Write a receiver</h3>
                   </div>
                   <p className="flex-1 text-sm leading-relaxed text-muted-foreground">
-                    This stack is one receiver, not the only one. A receiver has to accept the
-                    batch, deduplicate samples by UUID, upsert aggregate buckets and activity
-                    summaries, and return 2xx. All of that is specified in the Puls Sync Protocol
-                    v1, with a JSON Schema per line type, a fixture corpus, a batch checker, and a
-                    complete receiver in one standard-library Python file writing to SQLite.
+                    The app also syncs to compatible receivers you build. The protocol specifies
+                    uploads, authentication and acknowledgments, with schemas, test fixtures and
+                    a complete Python/SQLite example.
                   </p>
                   <Link href={docHref("protocol")} className={`mt-4 text-sm ${textLink}`}>
                     Read the specification <ArrowRight className="h-3.5 w-3.5" />
@@ -240,10 +220,9 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
                     <h3 className="font-semibold">Embed the sync engine</h3>
                   </div>
                   <p className="flex-1 text-sm leading-relaxed text-muted-foreground">
-                    PulsHealthSync, the Swift package underneath the app, is usable on its own: iOS
-                    17+, Swift 6 strict concurrency, zero third-party dependencies. Anchored-query
-                    sync, on-device aggregates, activity rings, background scheduling, the HTTP
-                    transport and the NDJSON encoding, without the UI.
+                    Add HealthKit sync to your own iOS app with PulsHealthSync, the Swift package
+                    underneath PulsHealth. It includes queries, aggregation, background scheduling
+                    and upload handling.
                   </p>
                   <Link href={docHref("swift-package")} className={`mt-4 text-sm ${textLink}`}>
                     Read the package docs <ArrowRight className="h-3.5 w-3.5" />
@@ -255,17 +234,18 @@ scripts/bootstrap.sh --time-zone Europe/Berlin`}</code>
             <section className="mt-14">
               <h2 id="security" className={`${h2} flex items-center gap-2`}>
                 <ShieldCheck className="h-6 w-6 text-brand" aria-hidden />
-                Security is your job too
+                Access and maintenance
               </h2>
               <p className={lede}>
-                The database holds identifiable health data. Each phone can have its own bearer
-                token, bound to one user, stored only as a hash and revocable on its own. The shared
-                token a new install starts with still works until you switch it off, and anyone who
-                has that one can upload and delete for any user in the database. TLS, network
-                exposure and retention are yours to set up. The security policy lists the known
-                limitations.
+                Keep credentials private and use a separate token for each phone when you need
+                individual revocation. Configure HTTPS for remote access and back up before
+                upgrades. Connecting a cloud AI assistant sends the records it requests to that
+                provider; self-hosting does not keep those responses local.
               </p>
               <p className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                <Link href={docHref("server")} className={textLink}>
+                  Operations guide <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
                 <Link href={docHref("security")} className={textLink}>
                   Security policy <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
