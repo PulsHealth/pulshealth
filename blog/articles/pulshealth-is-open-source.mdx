@@ -1,7 +1,7 @@
 ---
 title: "PulsHealth Is Open Source: Explore, Export, and Use Your Apple Health Data"
 date: "2026-09-15"
-updated: "2026-10-08"
+updated: "2026-10-24"
 draft: false
 author: "Sean Wade"
 tags: ["announcement", "self-hosting", "apple-health", "open-source"]
@@ -14,7 +14,7 @@ Apple Health collects a useful history, but the next step often happens somewher
 
 The iPhone app, Swift sync library, reference server, protocol specification, dashboards, and this website are in [one Apache-2.0 repository](https://github.com/PulsHealth/pulshealth). You can inspect them, run the stack yourself, or build a receiver that accepts the documented format.
 
-*Rewritten October 8, 2026: this post now covers Explore and Export, the hosted database's access-request process, and current AI connections. The original publication date is retained.*
+*Updated October 24, 2026: refreshed export formats, app access limits, screenshots, and hosted pairing instructions. The original publication date is retained.*
 
 ## Start with the data already on your phone
 
@@ -22,7 +22,11 @@ You do not need a server or a PulsHealth account to start. The free [iPhone app]
 
 **Explore** helps you understand what is in Apple Health. Open a data type to inspect its sample count, sources, value distribution, and how observations arrive over time. That answers a practical first question: do you have the measurements needed for the analysis you had in mind?
 
-**Export** writes selected data to CSV or JSONL files. Choose the types and date range for that export, then save or share the result. This works on demand without configuring sync. CSV is useful for a spreadsheet; JSONL retains the richer structured representation. Their differences are documented in the [export guide](/docs/export/).
+**Export** writes selected data to CSV, JSON, or JSONL files. Choose the types and date range for that export, then save or share the result. This works on demand without configuring sync. CSV is useful for a spreadsheet; JSONL retains the richer structured representation. Their differences are documented in the [export guide](/docs/export/).
+
+Free includes full Explore, manual exports of all supported types from the last 30 days, and sync of up to five distinct types from the last 30 days. Pro unlocks all available history and unlimited sync types, subject to Health access. Self-hosting does not remove those app limits. [Current plans](/pricing/)
+
+<BlogImage src="/blog/pulshealth-is-open-source/viewer-today.webp" alt="PulsHealth demo dashboard with activity rings and health trends." caption="The public demo dashboard, captured October 24, 2026. Sample data only; try it without connecting your phone." width="1440" height="1000" />
 
 The distinction matters when you have a single task. If you want to make one chart from last month's measurements, a file may be all you need. A continuously updated database becomes useful when you want that chart to stay current, query a longer history repeatedly, or connect other tools.
 
@@ -37,7 +41,7 @@ The distinction matters when you have a single task. If you want to make one cha
   />
   <FlowRow
     label="Export"
-    steps="Selected readable records | CSV or JSONL | Your chosen file destination"
+    steps="Selected readable records | CSV, JSON, or JSONL | Your chosen file destination"
     note="Make an on-demand copy for a spreadsheet or notebook."
   />
   <FlowRow
@@ -57,7 +61,7 @@ PulsHealth can send selected records to a database hosted for you or a database 
 | Hosted PulsHealth database | Request access, connect your phone, choose what to sync | The PulsHealth operator's server |
 | Self-hosted database | Run, secure, update, and back up the stack | Infrastructure you control |
 
-Hosted access currently starts with an [access request](https://app.pulshealth.com/signup). Submitting the form does not immediately create a working account: requests require approval. Once admitted, use your account page's pairing instructions to connect your iPhone. As of this update, the App Store version is **1.6**: use its existing database pairing flow. The newer in-app hosted sign-in flow is in the source repository but is not part of that shipped version. The [release record](https://github.com/PulsHealth/pulshealth/blob/main/docs/appstore/README.md#release-record) tracks the distinction.
+Hosted access starts with an [access request](https://app.pulshealth.com/signup), subject to approval and availability. Once approved, sign in under **Sync → Database** in the app, review the destination, then choose the types and history before applying the setup. For your own server, follow the [pairing guide](/docs/setup/#4-pair-the-app-and-choose-what-to-sync). The [current App Store listing](https://apps.apple.com/us/app/pulshealth/id6757657354) describes both connection options.
 
 For self-hosting, the [server guide](/docs/server/) covers the Docker Compose stack and phone connection. It includes PostgreSQL with TimescaleDB, ingestion, a read API, a web viewer, Grafana, and the MCP integration. Use the maintained guide for commands and current requirements rather than copying an old installation recipe from an announcement.
 
@@ -86,3 +90,5 @@ You do not have to use the reference database. The [Puls Sync Protocol](/docs/pr
 That is an important part of making the source useful. A receiver should be able to follow an explicit contract rather than reverse-engineer whichever server implementation happens to exist today.
 
 If you want to try PulsHealth, begin with Explore or a small export. If you need ongoing access, choose a hosted account or follow the self-hosting guide. If something is unclear or broken, bring a reproducible example to [GitHub issues](https://github.com/PulsHealth/pulshealth/issues), with private records and credentials removed. Useful health-data tools begin with understanding what the data actually says.
+
+If you want to build on this, [explore the repository and star it](https://github.com/PulsHealth/pulshealth). A star helps other people find the project; contributions can start with a clearer guide, a reproducible bug report, or a receiver example.

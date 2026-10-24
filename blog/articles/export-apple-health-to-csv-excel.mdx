@@ -71,7 +71,7 @@ For a first export:
 1. Grant read access to the types you want to export.
 2. Open **Export** and select a small date range, such as the last 30 days.
 3. For a daily steps chart, add Step Count under **Aggregates** and select its daily total. For individual measurements, choose the type under **Raw Samples** instead.
-4. Choose **CSV**. Turn on **Zip into one file** if you want one transfer containing the datasets and manifest.
+4. Choose **CSV**. Open **More options** and turn on **Zip into one file** if you want one transfer containing the datasets and manifest.
 5. Run the export with the app open and phone unlocked.
 6. Read the result, then use **Share or Save to Files**. Save it before starting another export.
 
@@ -81,16 +81,18 @@ Check whether the result is marked incomplete. The accompanying manifest records
 
 Date ranges have an exclusive end. To export all of September, select September 1 through October 1. A daily aggregate that would cross the end is excluded instead of presented as a complete day.
 
-<BlogImage src="/blog/export-apple-health-to-csv-excel/app-export.webp" alt="PulsHealth Export builder with type selection, aggregate series, date range, CSV or JSONL format, and ZIP option." caption="Export builder from the version 1.6 App Store screenshot set. It shows an example selection, not a completed export; labels and layout can differ in newer builds." width="600" height="1304" />
+<BlogImage src="/blog/export-apple-health-to-csv-excel/app-export.webp" alt="PulsHealth Export builder with raw samples, aggregates, date range, and CSV, JSON, and JSONL formats." caption="Current source Export builder, captured October 24, 2026 on a simulator. It shows the selection controls, not a completed export. Free exports cover the most recent 30 days; Pro extends history subject to Health access." width="600" height="1304" />
 
 ## Open the right CSV
 
-PulsHealth creates a separate CSV for each dataset containing rows. These files answer different questions:
+With the default **Separate datasets** layout, PulsHealth creates a separate CSV for each dataset containing rows. These files answer different questions:
 
 - **`samples`** contains individual quantity and category records. It includes type, unit, start and end times, value, and source.
 - **`aggregates`** contains the configured statistical series. It includes the type, function, interval, device filter, bucket boundaries, value, and unit.
 - **`workouts`** contains workout records, including duration, distance, and energy where available.
 - **`activity`** contains daily activity-ring values and goals.
+
+For other layouts, open **More options → Layout**. You can choose one file per type, one combined table, or a daily summary of one-day aggregate series. A combined table keeps separate records; it does not add raw readings and aggregates together. [CSV layouts](/docs/export/#csv-layouts-and-optional-details)
 
 The on-device export does **not** contain the server's `daily_metrics` or `sleep` datasets. Those are computed server views. On the phone, daily quantity summaries are aggregates; sleep-stage records are samples. This distinction matters when following examples written for the server API.
 

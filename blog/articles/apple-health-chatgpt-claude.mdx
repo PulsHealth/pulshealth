@@ -1,7 +1,7 @@
 ---
 title: "Using Apple Health with ChatGPT or Claude: A Practical Guide"
 date: "2026-07-16"
-updated: "2026-10-08"
+updated: "2026-10-24"
 excerpt: "Compare native Apple Health connections, selected file uploads, and PulsHealth MCP, then ask questions you can check against the underlying records."
 tags: ["apple-health", "ai", "privacy", "guides"]
 author: "Sean Wade"
@@ -12,7 +12,7 @@ You can use ChatGPT or Claude to explore Apple Health data without building a da
 
 The more important decision comes after connecting: what should you ask, and how will you know the answer is right? A useful first conversation compares two periods, names the records it used, and shows the arithmetic. It should leave you with something you can check.
 
-*Revised October 8, 2026: connection options and privacy references below reflect the current documentation, including changes announced after this article's editorial date.*
+*Revised October 24, 2026: rechecked provider connection guides and updated PulsHealth export formats.*
 
 ## Choose how the assistant gets your data
 
@@ -28,9 +28,9 @@ These are different ways to supply evidence. None guarantees that the assistant 
 
 OpenAI announced ChatGPT Health on January 7, 2026, with an Apple Health connection. Its July 23 update expanded the launch to U.S. adults on web and iOS. The original announcement is useful history, but its initial waitlist and interface descriptions should not be treated as today's setup instructions. [OpenAI's announcement and update](https://openai.com/index/introducing-chatgpt-health/)
 
-As checked on October 8, OpenAI's help page still describes an account-dependent rollout. On the current iOS app, start in **Health**, follow the connection flow, and choose the categories you want to share. Later, the Health menu provides Apple Health settings. If Health is absent, consult that page rather than assuming a broken phone permission. [Current ChatGPT Health instructions](https://help.openai.com/en/articles/20001036-health-in-chatgpt)
+As checked on October 24, OpenAI's help page still describes an account-dependent rollout. On the current iOS app, start in **Health**, follow the connection flow, and choose the categories you want to share. Later, the Health menu provides Apple Health settings. If Health is absent, consult that page rather than assuming a broken phone permission. [Current ChatGPT Health instructions](https://help.openai.com/en/articles/20001036-health-in-chatgpt)
 
-Anthropic announced its Apple Health beta in January 2026. Its current iOS guide explains the supported health integration and permissions; follow those instructions in the Claude iPhone app. Availability and plan conditions can change, so the current guide is the authority for your account. [Anthropic's launch announcement](https://www.anthropic.com/news/healthcare-life-sciences), [Claude's iOS guide](https://support.claude.com/en/articles/11869619-use-claude-with-ios-apps)
+Anthropic announced its Apple Health beta in January 2026. Its current iOS guide explains the supported health integration and permissions; follow those instructions in the Claude iPhone app. As checked on October 24, health features are in beta for Pro and Max plans in the United States. Availability can change, so the current guide is the authority for your account. [Anthropic's launch announcement](https://www.anthropic.com/news/healthcare-life-sciences), [Claude's iOS guide](https://support.claude.com/en/articles/11869619-use-claude-with-ios-apps)
 
 Start with one category you recognize. Ask for yesterday's recorded activity or a particular workout and compare the answer with your phone before requesting a long-term interpretation.
 
@@ -38,7 +38,7 @@ Start with one category you recognize. Ask for yesterday's recorded activity or 
 
 A small export is often enough. Select the relevant types and dates, inspect the file, and attach it with a short description of its columns. A table of nightly sleep duration is easier to audit than years of unrelated measurements.
 
-PulsHealth's Export tab creates CSV or JSONL on the phone without a database. The files go wherever you choose in the share sheet. They can contain source-device names and other metadata, so inspect both the data and the accompanying manifest before sharing. The app's local export behavior does not determine how an AI provider handles the copy you upload. [PulsHealth export reference](/docs/export/), [privacy policy](/privacy/)
+PulsHealth's Export tab creates CSV, JSON, or JSONL on the phone without a database. The files go wherever you choose in the share sheet. They can contain source-device names and other metadata, so inspect both the data and the accompanying manifest before sharing. The app's local export behavior does not determine how an AI provider handles the copy you upload. [PulsHealth export reference](/docs/export/), [privacy policy](/privacy/)
 
 Include the time zone and explain whether rows are individual samples or already-computed daily values. Ask the assistant to identify missing columns before calculating anything. Do not let it silently substitute a different metric because a requested one is absent.
 

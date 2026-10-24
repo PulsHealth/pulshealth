@@ -1,7 +1,7 @@
 ---
 title: "How to Back Up Apple Health Data Before Switching iPhones"
 date: "2026-08-22"
-updated: "2026-10-08"
+updated: "2026-10-24"
 excerpt: "Protect your Health history with iCloud settings, an encrypted computer backup, and an independent export—and verify the new phone before erasing the old one."
 tags: ["apple-health", "backup", "privacy", "guides"]
 author: "Sean Wade"
@@ -39,7 +39,7 @@ There are two different goals. One is getting your existing Health history onto 
 | Health in iCloud | Keep Health information available across supported devices on your Apple Account | It is a synchronized collection, not a dated export you inspect independently |
 | Encrypted computer backup | Support Apple's device restoration workflow, including Health data | You need a completed backup and its encryption password |
 | Health XML export | Keep an independent copy of available Health data | It is not a one-click restore into the Health app |
-| Selected CSV or JSONL export | Keep usable records for a spreadsheet or analysis | Only the chosen, readable types and dates are included |
+| Selected CSV, JSON, or JSONL export | Keep usable records for a spreadsheet or analysis | Only the chosen, readable types and dates are included |
 | Synced external database | Maintain another usable collection over time | Its coverage and backup arrangements need their own verification |
 
 Apple distinguishes iCloud synchronization from iCloud Backup: information already synchronized to iCloud is handled separately from the device data included in a backup. A recent device-backup timestamp is therefore not, by itself, your whole Health checklist. [What iCloud backs up](https://support.apple.com/en-us/108770)
@@ -84,7 +84,7 @@ In Health, tap your profile picture and choose **Export All Health Data**. Apple
 
 Give the saved file a date and leave the original archive intact. Work from a copy when converting it. Open the archive to confirm it can be read, then inspect whether it contains the kinds of records and historical dates you expected. A large file size alone says little about completeness.
 
-For spreadsheet work, PulsHealth can instead export selected types and dates as CSV or JSONL directly on the phone. It requires no database for that operation. Check the export's completion status and accompanying manifest, including any reported history limitations. Those details are described in the [export reference](/docs/export/).
+For spreadsheet work, PulsHealth can instead export selected types and dates as CSV, JSON, or JSONL directly on the phone. It requires no database for that operation. Check the export's completion status and accompanying manifest, including any reported history limitations. Those details are described in the [export reference](/docs/export/).
 
 An export is sensitive. It can include source names, timestamps, and information that reveals routines. Keep it in protected storage, and do not upload the entire archive to a converter simply because the website accepts a ZIP file.
 

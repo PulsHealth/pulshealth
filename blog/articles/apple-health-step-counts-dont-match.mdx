@@ -101,7 +101,7 @@ For a useful comparison:
 1. Choose a completed day without a recent time-zone change.
 2. Use local midnight to the next local midnight, rather than assuming every day contains exactly 24 hours.
 3. Check the export's offset and the chart's time zone.
-4. In a self-hosted PulsHealth installation, confirm `PULS_TIME_ZONE` matches the intended phone calendar zone.
+4. In PulsHealth, check the account reporting time zone (`users.time_zone`, falling back to `PULS_TIME_ZONE`). Phone aggregates with temporal context retain the day recorded on the phone, which can differ from a reporting day during travel. See the [database calendar rules](/docs/database/).
 
 Travel requires an explicit convention: the day at your destination, the day in your home zone, or the zone carried by each record. These are different analytical choices. Document yours instead of treating a shifted total as missing movement.
 

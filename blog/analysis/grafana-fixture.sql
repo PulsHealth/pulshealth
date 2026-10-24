@@ -1,6 +1,9 @@
 -- Synthetic teaching fixture ONLY. Run in an empty, disposable PostgreSQL DB.
 -- These minimal tables exercise the tutorial queries, not the production schema.
-CREATE FUNCTION puls_time_zone() RETURNS text LANGUAGE sql AS $$ SELECT 'UTC'::text $$;
+CREATE FUNCTION puls_user_time_zone(uuid) RETURNS text LANGUAGE sql AS $$
+  SELECT CASE WHEN $1 = '11111111-1111-4111-8111-111111111111'::uuid
+    THEN 'America/Los_Angeles' ELSE 'UTC' END::text
+$$;
 CREATE TABLE metric_daily (day date, value double precision, source text, identifier text, user_id uuid);
 CREATE TABLE workouts (start_ts timestamptz, duration_s double precision, user_id uuid);
 CREATE TABLE batches (received_at timestamptz, user_id uuid);

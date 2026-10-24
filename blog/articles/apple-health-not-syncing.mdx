@@ -1,6 +1,7 @@
 ---
 title: "Why Apple Health Isn't Syncing to Your Other Apps"
 date: "2026-10-08"
+updated: "2026-10-24"
 draft: false
 author: "Sean Wade"
 tags: ["apple-health", "sync", "troubleshooting", "healthkit"]
@@ -92,7 +93,7 @@ Useful distinctions include:
 
 PulsHealth only advances its record cursor after a server acknowledgement. A failed upload leaves those records eligible for a later attempt; retries are designed to avoid inserting the same raw object twice. That is why a failed request is not, by itself, evidence of lost Health history. [Puls Sync Protocol](/docs/protocol/)
 
-For self-hosted installations, the [server guide](/docs/server/) covers setup. The [database guide](/docs/database/) explains successful batches, rejection records, and timestamps. Use read-only inspection while diagnosing a live installation.
+For self-hosted installations, the [setup guide](/docs/setup/) covers installation and pairing. The [database guide](/docs/database/) explains successful batches, rejection records, and timestamps. Use read-only inspection while diagnosing a live installation.
 
 ## 6. Distinguish a fresh upload from fresh measurements
 
