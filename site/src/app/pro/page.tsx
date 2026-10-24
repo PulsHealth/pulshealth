@@ -1,3 +1,4 @@
+import { appJsonLd } from "@/lib/product-schema";
 import Link from "next/link";
 import { AppStoreBadge } from "@/components/app-store-badge";
 import { PageHero } from "@/components/page-hero";
@@ -11,6 +12,7 @@ export const metadata = {
 export default function ProPage() {
   return (
     <main className="flex-1">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
       <PageHero
         size="compact"
         title="More of your health history."

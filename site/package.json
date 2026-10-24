@@ -15,7 +15,7 @@
     "test": "bun test tests",
     "check:export": "bun scripts/check-export.ts",
     "blog:check": "bun run lint && bun run test && bun run build",
-    "build:export": "next build && bun run check:export"
+    "build:export": "next build && bun run check:export && bun scripts/build-edge-router.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

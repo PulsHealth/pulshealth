@@ -23,8 +23,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: data.seo_title ? `${data.seo_title} | PulsHealth` : `${data.human_readable_name} - Apple HealthKit - PulsHealth`,
-    description: data.short_description,
-    robots: "index, follow, noai, noimageai",
+    description: data.seo_description || data.short_description,
+    robots: "index, follow, max-image-preview:large",
     alternates: {
       canonical: `/knowledge-base/types/${slug}/`,
     },
@@ -61,7 +61,7 @@ export default async function TypeDetailPage({ params }: PageProps) {
       {
         "@type": "Article",
         headline: data.seo_title || data.human_readable_name,
-        description: data.short_description,
+        description: data.seo_description || data.short_description,
         dateModified: data.last_updated,
         author: { "@type": "Organization", name: "PulsHealth", url: "https://pulshealth.com/" },
         publisher: { "@id": "https://pulshealth.com/#org" },

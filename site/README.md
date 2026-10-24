@@ -211,3 +211,57 @@ The export checker validates every legacy redirect, homepage canonical,
 noindex, and removal of campaign content and Apple campaign tags. Future
 registry exports must preserve existing redirect IDs rather than reintroduce
 landing pages.
+
+### Search discovery and cache policy
+
+Search crawlers and user-directed AI retrieval can read all public pages. Separate
+training/reuse agents retain their knowledge-base restriction in `robots.ts`.
+`llms.txt` is a convenience index, not a substitute for crawlable HTML, internal
+links, or search-engine indexing. Product pages share the `#app` entity; do not
+add invented ratings to qualify for a software-app rich result.
+
+The sitemap uses authored revision dates for blog/knowledge pages and Git content
+history for static/documentation pages. Dirty or shallow sources omit Git-derived
+dates. Production builds therefore need complete history and a clean commit;
+the artifact fingerprint includes Git state as well as content.
+
+Deployment uploads hashed assets first, mutable media second, and documents last.
+It refreshes Cache-Control even for unchanged bytes: one year immutable for
+`_next/static`, one day for replaceable images/fonts, and revalidation for HTML
+and discovery documents. Old hashed assets remain available for open tabs; any
+separate bucket cleanup must retain assets referenced by still-served releases.
+Live release verification checks both bytes and cache headers.
+
+### Edge redirects
+
+The build generates `out/_edge/router.js` from the actual exported routes and
+legacy meta-refresh pages. It combines host, legacy-path and trailing-slash
+redirects into one HTTP 301, preserves query parameters, and leaves unknown
+paths alone. The HTML stubs remain useful when previewing without CloudFront.
+The generated function must stay below CloudFront's 10 KB limit; the build fails
+if it grows too large.
+
+Publishing an export to S3 does **not** publish a CloudFront Function. When
+releasing a route change, also publish this exact generated artifact to the
+existing viewer-request function associated with the site's default behavior:
+
+1. Read the live distribution/function configuration. Preserve other behaviors
+   (including `/r/*`), runtime and associations. Back up LIVE and DEVELOPMENT
+   code/configuration outside the repository. Stop if DEVELOPMENT contains an
+   unrelated unpublished change.
+2. Update DEVELOPMENT with `aws cloudfront update-function --name <function>
+   --if-match <current-etag> --function-config file://<saved-config>
+   --function-code fileb://<export>/_edge/router.js`.
+3. Use `aws cloudfront test-function` against DEVELOPMENT before publishing.
+   Check a legacy path, a slashless document, www plus a legacy path, repeated
+   query parameters, and a nonexistent path. `site/tests/edge-router.test.ts`
+   provides the expected behavior. A function error is a release failure.
+4. Publish using `aws cloudfront publish-function --name <function> --if-match
+   <updated-etag>`. Read LIVE back and compare its bytes with the tested artifact.
+5. Verify actual HTTP responses after propagation: `/app/` → `/`, `/sync/` →
+   `/server/`, `/docs/database` → `/docs/database/`, no extra hop from www, and a
+   unique nonexistent URL still returns 404. Save the source SHA, function ETag,
+   test results and HTTP evidence with the private deployment receipt.
+
+Review Search Console and Bing after a release. A successful live URL test,
+sitemap fetch or indexing request is not proof of indexing or AI recommendation.

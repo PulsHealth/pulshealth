@@ -42,6 +42,20 @@ description: '## What does Walking Asymmetry measure?
   defines the measurement and recording conditions.
 
 
+  ## What can change or prevent an estimate?
+
+
+  Automatic collection requires iPhone 8 or later, carried near the waist, during steady walking on flat ground.
+  Apple says these samples are not recorded when wheelchair status is enabled. Phone placement and which walking
+  bouts meet the algorithm’s criteria can therefore change the observed distribution without establishing a physiological
+  change.
+
+
+  The stored value 0.308 corresponds to 30.8%, not 0.308%. Percent units retain 0–1 ratios in the database. Compare
+  persistent changes under similar conditions with how walking feels and functions. Consumer walking estimates do
+  not replace a supervised gait assessment; a single extreme value should not be assigned a diagnosis.
+
+
   ## What do example records look like?
 
 
@@ -109,23 +123,7 @@ description: '## What does Walking Asymmetry measure?
   [Walking speed](/knowledge-base/types/HKQuantityTypeIdentifierWalkingSpeed/), [step length](/knowledge-base/types/HKQuantityTypeIdentifierWalkingStepLength/),
   [double support](/knowledge-base/types/HKQuantityTypeIdentifierWalkingDoubleSupportPercentage/) and [asymmetry](/knowledge-base/types/HKQuantityTypeIdentifierWalkingAsymmetryPercentage/)
   each add a different view of gait. [Walking Steadiness](/knowledge-base/types/HKQuantityTypeIdentifierAppleWalkingSteadiness/)
-  is a separate estimate, not a classification computed here from these charts.
-
-
-  ## What can change or prevent an estimate?
-
-
-  Automatic collection requires iPhone 8 or later, carried near the waist, during steady walking on flat ground.
-  Apple says these samples are not recorded when wheelchair status is enabled. Phone placement and which walking
-  bouts meet the algorithm’s criteria can therefore change the observed distribution without establishing a physiological
-  change.
-
-
-  The stored value 0.308 corresponds to 30.8%, not 0.308%. Percent units retain 0–1 ratios in the database. Compare
-  persistent changes under similar conditions with how walking feels and functions. Consumer walking estimates do
-  not replace a supervised gait assessment; a single extreme value should not be assigned a diagnosis.
-
-  '
+  is a separate estimate, not a classification computed here from these charts.'
 metadata_keys:
 - key: HKMetadataKeyDevicePlacementSide
   description: Recording-side information, documented for walking asymmetry. It does not identify an impaired leg.
@@ -146,8 +144,8 @@ references:
 - title: Apple HealthKit percent units
   url: https://developer.apple.com/documentation/healthkit/hkunit/percent()
   type: official
-last_updated: '2026-10-14'
-seo_title: 'Walking Asymmetry in Apple Health: Meaning, Recording and Examples'
+last_updated: '2026-10-24'
+seo_title: "Walking Asymmetry in Apple Health: What It Means"
 data_research:
   status: complete
   reviewed_on: '2026-10-14'
@@ -180,3 +178,5 @@ figures:
   section: What do example records look like?
   width: 1500
   height: 600
+
+seo_description: "What does walking asymmetry mean on iPhone? Understand the percentage, recording conditions, zero readings, and the limits of interpreting a single value."

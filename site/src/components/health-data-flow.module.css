@@ -31,7 +31,7 @@
 .database svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 20px 25px #03112088); }
 .database > a { display: block; }
 .destinationCaption { display: grid; justify-items: center; gap: 3px; margin-top: 8px; color: #b2c5d8; font-size: clamp(12px, 1.25vw, 14px); font-weight: 500; line-height: 1.4; letter-spacing: -.01em; }
-.destinationCaption a { color: inherit; font: inherit; white-space: nowrap; }
+.destinationCaption a { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding-inline: 8px; color: inherit; font: inherit; white-space: nowrap; }
 .destinationCaption a:hover { color: #e1effb; }
 .ai { --badge-size: clamp(24px, 3.8vw, 42px); position: absolute; left: 86%; top: 33%; width: calc(var(--badge-size) * 2 + 5px); height: calc(var(--badge-size) * 2 + 8px); }
 .ai > span { position: absolute; display: grid; place-items: center; width: var(--badge-size); height: var(--badge-size); border: 1px solid #a9c4df38; border-radius: 30%; background: linear-gradient(135deg, #263443, #141d29); box-shadow: 0 5px 16px #0004; }

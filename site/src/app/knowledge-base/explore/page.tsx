@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "All Apple Health Data Types - HealthKit Knowledge Base",
   description: "Every HealthKit data type, grouped by category, with its unit and a one-line description.",
-  robots: "index, follow, noai, noimageai",
+  robots: "index, follow, max-image-preview:large",
   alternates: {
     canonical: '/knowledge-base/explore/',
   },

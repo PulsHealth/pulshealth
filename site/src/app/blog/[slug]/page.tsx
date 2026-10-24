@@ -1,8 +1,9 @@
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import "@/app/code-styles.css";
 import { blogRevision } from "@/lib/blog-reload.generated";
 import { getAllPosts, getPostBySlug } from "@/lib/blog";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, ArrowLeft } from "lucide-react";
+import { Calendar, Clock, User } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
@@ -139,13 +140,7 @@ export default async function BlogPostPage({ params }: PageProps) {
       {post.draft && <p className="border-b bg-amber-50 px-4 py-3 text-center text-amber-950">Draft preview — excluded from publishing.</p>}
       <header className="border-b bg-muted/30">
         <div className="container mx-auto max-w-4xl px-4 py-10">
-          <Link
-            href="/blog/"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            All posts
-          </Link>
+          <Breadcrumbs items={[{ name: "Blog", href: "/blog/" }, { name: post.title, href: `/blog/${slug}/` }]} />
 
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground leading-tight">
             {post.title}
@@ -228,7 +223,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               </Link>
               <Link
                 href="/knowledge-base/"
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-brand text-white hover:bg-brand/90 h-10 px-4 py-2"
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-brand text-brand-foreground hover:bg-brand/90 h-10 px-4 py-2"
               >
                 Knowledge base
               </Link>
