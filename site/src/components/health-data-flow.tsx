@@ -33,16 +33,15 @@ export function HealthDataFlow() {
       </svg>
       <svg className={`${styles.streams} ${styles.mobileStreams}`} viewBox="0 0 350 510" fill="none" preserveAspectRatio="none" aria-hidden>
         {["files", "database"].map((destination) => <g key={destination} className={destination === "files" ? styles.fileStream : undefined}>
-          {Array.from({ length: 5 }, (_, i) => {
+          {Array.from({ length: 3 }, (_, i) => {
             const left = destination === "files";
-            const startX = left ? 137 + i * 7 : 185 + i * 7;
-            const endX = left ? 52 + i * 13 : 245 + i * 10;
-            const d = `M ${startX} 316 C ${startX} ${358 + i * 3}, ${endX} ${351 + i * 6}, ${endX} 425`;
-            const timing = { animationDelay: `${-(i * .73 + (left ? 0 : 1.4))}s`, animationDuration: `${4.2 + i * .27}s` };
+            const startX = left ? 151 + i * 6 : 350 - (151 + i * 6);
+            const endX = left ? 76 + i * 8 : 350 - (76 + i * 8);
+            const d = `M ${startX} 316 C ${startX} 365, ${endX} 365, ${endX} 418`;
+            const timing = { animationDelay: `${-i * 1.7}s`, animationDuration: "6s" };
             return <g key={i}>
               <path d={d} className={styles.thread} />
               <path d={d} pathLength="100" className={styles.packet} style={timing} />
-              <path d={d} pathLength="100" className={`${styles.packet} ${styles.particle}`} style={{ ...timing, animationDelay: `${-(i * .73 + (left ? 2.1 : 3.5))}s` }} />
             </g>;
           })}
         </g>)}
