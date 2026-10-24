@@ -32,10 +32,20 @@ export function HealthDataFlow() {
         </g>)}
       </svg>
       <svg className={`${styles.streams} ${styles.mobileStreams}`} viewBox="0 0 350 510" fill="none" preserveAspectRatio="none" aria-hidden>
-        <path d="M 175 336 V 360 Q 175 375 155 375 H 95 Q 80 375 80 395" className={styles.thread} />
-        <path d="M 175 336 V 360 Q 175 375 195 375 H 255 Q 270 375 270 395" className={styles.thread} />
-        <path d="M 175 336 V 360 Q 175 375 155 375 H 95 Q 80 375 80 395" pathLength="100" className={styles.packet} />
-        <path d="M 175 336 V 360 Q 175 375 195 375 H 255 Q 270 375 270 395" pathLength="100" className={styles.packet} />
+        {["files", "database"].map((destination) => <g key={destination} className={destination === "files" ? styles.fileStream : undefined}>
+          {Array.from({ length: 5 }, (_, i) => {
+            const left = destination === "files";
+            const startX = left ? 137 + i * 7 : 185 + i * 7;
+            const endX = left ? 52 + i * 13 : 245 + i * 10;
+            const d = `M ${startX} 316 C ${startX} ${358 + i * 3}, ${endX} ${351 + i * 6}, ${endX} 425`;
+            const timing = { animationDelay: `${-(i * .73 + (left ? 0 : 1.4))}s`, animationDuration: `${4.2 + i * .27}s` };
+            return <g key={i}>
+              <path d={d} className={styles.thread} />
+              <path d={d} pathLength="100" className={styles.packet} style={timing} />
+              <path d={d} pathLength="100" className={`${styles.packet} ${styles.particle}`} style={{ ...timing, animationDelay: `${-(i * .73 + (left ? 2.1 : 3.5))}s` }} />
+            </g>;
+          })}
+        </g>)}
       </svg>
       <Link href="/features/#export" className={styles.fileStack} aria-label="Export workouts as CSV or steps as JSON">
         <div className={styles.jsonSheet}>

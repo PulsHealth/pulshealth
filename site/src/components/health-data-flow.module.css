@@ -38,6 +38,9 @@
   .stage { height: auto; aspect-ratio: 350 / 510; }
   .desktopStreams { display: none; }
   .mobileStreams { display: block; }
+  .mobileStreams .thread { stroke-opacity: .23; stroke-width: .8; }
+  .mobileStreams .packet { stroke-width: 1.4; stroke-dasharray: 7 93; }
+  .mobileStreams .particle { stroke-width: 2.3; stroke-dasharray: .5 99.5; opacity: .8; }
   .phone { width: 44%; left: 28%; top: 2%; border-width: 3px; border-radius: 23px; transform: none; }
   .fileStack { left: 3%; top: 76%; width: 43%; height: 24%; transform: none; }
   .sheet { left: 0; top: 27%; width: 94%; padding: 9px 7px; border-radius: 9px; }
@@ -56,4 +59,4 @@
   .ai { left: 85%; top: 79%; width: 29px; height: 29px; border-radius: 9px; z-index: 2; }
   .ai svg { width: 16px; }
 }
-@media (prefers-reduced-motion: reduce) { .packet { animation: none; stroke-dasharray: none; opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .packet, .mobileStreams .packet { animation: none; stroke-dasharray: none; opacity: .4; } .mobileStreams .particle { display: none; } }
