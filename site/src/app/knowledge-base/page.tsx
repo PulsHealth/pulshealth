@@ -53,8 +53,8 @@ export default async function KnowledgeBasePage() {
           </span>
         }
       >
-        {/* PageHero lays its buttons out by content width, so the search gets an explicit one. */}
-        <KnowledgeBaseSearch className="w-[min(40rem,calc(100vw-2rem))]" />
+        {/* Search fills the shared hero content width, including narrow phones. */}
+        <KnowledgeBaseSearch className="max-w-[40rem]" />
       </PageHero>
 
       <section className="container mx-auto max-w-6xl px-4 py-20">

@@ -75,31 +75,29 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: var(--brand);
-  --primary-foreground: var(--brand-foreground);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #0b1018;
+  --foreground: #f2f6fc;
+  --card: #111b28;
+  --card-foreground: #f2f6fc;
+  --popover: #111b28;
+  --popover-foreground: #f2f6fc;
+  --primary: #a9d6ff;
+  --primary-foreground: #091a2b;
+  --secondary: #192635;
+  --secondary-foreground: #d3e2f2;
+  --muted: #172332;
+  --muted-foreground: #a5b2c4;
+  --accent: #203248;
+  --accent-foreground: #e1effb;
   --destructive: oklch(0.704 0.191 22.216);
-
-  /* Brand colors - PulsHealth Blue (lighter for dark mode) */
-  --brand: oklch(0.72 0.18 250);
-  --brand-foreground: oklch(0.145 0 0);
-  --brand-light: oklch(0.78 0.14 250);
-  --brand-dark: oklch(0.62 0.2 250);
-  --brand-muted: oklch(0.72 0.18 250 / 20%);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.72 0.18 250 / 60%);
+  --brand: #2fa8ff;
+  --brand-foreground: #091a2b;
+  --brand-light: #a9d6ff;
+  --brand-dark: #167ac0;
+  --brand-muted: #8bc9ff1a;
+  --border: #94b2d129;
+  --input: #94b2d13d;
+  --ring: #8bc9ff;
 }
 
 @layer base {
@@ -109,6 +107,7 @@
   body {
     @apply bg-background text-foreground;
   }
+  html { scroll-padding-top: calc(var(--site-header-height, 72px) + 24px); }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -161,7 +160,7 @@
 }
 
 .dark .cta-gradient {
-  background: linear-gradient(to bottom right, oklch(0.20 0 0), oklch(0.12 0 0));
+  background: linear-gradient(135deg, #172b42, #101a27);
 }
 
 /* Inline code (not in code blocks) */
@@ -221,3 +220,18 @@ code[data-theme*=" "] span {
 .docs-prose [data-rehype-pretty-code-title] + pre {
   @apply rounded-t-none;
 }
+
+/* The same reading palette as the product UI, including long-form pages. */
+.dark .prose {
+  --tw-prose-body: #b9c7d7;
+  --tw-prose-headings: #f2f6fc;
+  --tw-prose-links: #a9d6ff;
+  --tw-prose-bold: #e1effb;
+  --tw-prose-quotes: #d3e2f2;
+  --tw-prose-counters: #a5b2c4;
+  --tw-prose-bullets: #8ba7c5;
+  --tw-prose-hr: #94b2d129;
+}
+.site-footer { background: var(--background); }
+.site-footer > div { max-width: 1224px; padding-inline: 32px; }
+@media (max-width: 767px) { .site-footer > div { padding-inline: 20px; } }

@@ -89,12 +89,12 @@ export default async function Dashboard() {
       />
 
       {/* Hero: rings + headline numbers */}
-      <section className="panel rise" style={{ padding: 28, marginBottom: 22, animationDelay: "40ms" }}>
-        <div style={{ display: "flex", gap: 34, alignItems: "center", flexWrap: "wrap" }}>
+      <section className="panel rise dashboard-overview" style={{ animationDelay: "40ms" }}>
+        <div className="overview-layout">
           <div style={{ position: "relative", flex: "none" }}>
             <ActivityRings rings={rings} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 22, flex: 1, minWidth: 240 }}>
+          <div className="overview-metrics">
             {rings.map((r) => (
               <div key={r.label}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
