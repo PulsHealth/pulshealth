@@ -64,7 +64,7 @@ In Health's profile, find the app under its privacy/app-access settings and insp
 
 A reassuring connection indicator is not proof that every category is readable. HealthKit intentionally prevents apps from reliably distinguishing denied read access from an absence of external records. An empty chart can therefore mean missing permission as well as missing measurements. [HealthKit's read-access privacy behavior](https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data)
 
-Where the OS offers a limited history window, check that choice as well. Recent data can be available while older records remain outside the app's authorized range. Apple's current developer documentation describes an earliest-authorized-date API; its availability depends on the OS and SDK. Do not infer that old records were deleted merely because an app cannot retrieve them. [Apple's history-access documentation](https://developer.apple.com/documentation/healthkit/hkhealthstore/earliestauthorizedsampledate(for:))
+Where the OS offers a limited history window, check that choice as well. Recent data can be available while older records remain outside the app's authorized range. Apple's current developer documentation describes an earliest-authorized-date API; its availability depends on the OS and SDK. Do not infer that old records were deleted merely because an app cannot retrieve them. [Apple's history-access documentation](https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data#Respond-to-limited-authorization)
 
 After changing access, reopen the app and use its refresh or backfill action. Granting broader permission and finishing a historical import are separate steps.
 
