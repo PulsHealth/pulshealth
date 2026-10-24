@@ -97,6 +97,15 @@ bun run dev        # localhost:3000
 
 ## Build and lint
 
+The pinned Next.js build uses `experimental.inlineCss` so the initial HTML
+contains its styles instead of waiting for separate render-blocking CSS
+requests. This favors first-time search landings: HTML is larger, and styles
+cannot be cached separately on a full page load. Next still uses stylesheets
+for client navigation. Recheck direct loads and client navigation across home,
+docs, blog and knowledge pages when upgrading Next, since this option remains
+experimental. Only the primary text font is preloaded; the monospace font loads
+when used.
+
 Build verification requires `python3` (3.9 or later) and Git as well as Bun.
 Build from a Git checkout so the export can be tied to its source inputs.
 
@@ -144,6 +153,8 @@ and sends only fixed page groups, source categories, action names, App Store but
 `form-dialog` distinguishes attempts, success and errors without sending
 the contents. App Store clicks indicate intent, not installations. No
 analytics cookies, replay, heatmaps or health-viewer tracking are enabled.
+Optional audience requests abort after five seconds and are never retried:
+an unknown delivery outcome must not create a duplicate counter increment.
 Keep this aligned with the website section of `docs/privacy-policy.md` and
 the `/privacy` summary. The native app's analytics-free claims still apply.
 
