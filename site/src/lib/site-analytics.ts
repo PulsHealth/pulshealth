@@ -1,4 +1,5 @@
 import {excludedInThisBrowser, appStorePlacement} from "./analytics-preferences";
+import {postAudience} from "./audience-request";
 export type SiteEvent =
   | "app_store_click" | "github_click" | "hosted_signin_click" | "hosted_signup_click" | "demo_click" | "docs_click" | "contact_click"
   | "updates_submit" | "updates_success" | "updates_error"
@@ -15,6 +16,6 @@ export function audienceEnabled():boolean {return typeof window!=="undefined" &&
 export function countAudience(event:SiteEvent|"pageview"|"performance",data:{page?:string;placement?:string;source?:string;metric?:string;rating?:string}={}):boolean {
   if(!audienceEnabled())return false;
   const payload={website,hostname:location.hostname,event,page:data.page || pageCategory(location.pathname),...(event==="app_store_click"?{placement:appStorePlacement(data.placement)}:{}),...(event==="pageview"?{source:data.source || "direct"}:{}),...(event==="performance"?{metric:data.metric,rating:data.rating}:{})};
-  try{void fetch(`${endpoint!.replace(/\/$/,"")}/api/send`,{method:"POST",body:JSON.stringify({type:"aggregate",payload}),headers:{"Content-Type":"application/json"},credentials:"omit",referrerPolicy:"no-referrer",cache:"no-store",keepalive:true}).catch(()=>{});return true;}catch{return false;}
+  try{void postAudience(`${endpoint!.replace(/\/$/,"")}/api/send`,JSON.stringify({type:"aggregate",payload}));return true;}catch{return false;}
 }
 export function trackSiteEvent(name:SiteEvent,data?:{placement:string}){countAudience(name,data);}
