@@ -33,7 +33,7 @@ export default function HomePage() {
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
           <h1><AnimatedWord words={["Unlock", "Explore", "Understand", "Analyze", "Export"]} />your health data.</h1>
-          <p className={styles.subtitle}>Sync, export, and control your Apple Health data.</p>
+          <p className={styles.subtitle}>Sync, export, and control your <span className="whitespace-nowrap">Apple Health data.</span></p>
           <div className={styles.promises}>
             <span><Check aria-hidden />Free to start</span>
             <a href={GITHUB_URL}><Check aria-hidden />Open source</a>
@@ -41,7 +41,7 @@ export default function HomePage() {
           </div>
           <div className={styles.heroActions}>
             <AppStoreBadge placement="hero" className="[&_img]:h-12" />
-            <a href={DEMO_URL} className={styles.secondaryButton}>Try the dashboard <ArrowRight size={16} aria-hidden /></a>
+            <a href={DEMO_URL} className={styles.secondaryButton}>Try web dashboard <ArrowRight size={16} aria-hidden /></a>
           </div>
         </div>
         <HealthDataFlow />
@@ -50,10 +50,10 @@ export default function HomePage() {
       <section id="web-app" className={`${styles.section} ${styles.webSection}`}>
         <div id="how-it-works" className={styles.sectionHeading}>
           <div>
-            <h2>Your health, with<br className={styles.desktopBreak} /> room to explore.</h2>
-            <p>See your day. Look closer at a workout. Build something with your data. Your database brings it all to the web.</p>
+            <h2>Your health data.<br />Beyond your phone.</h2>
+            <p>Open your dashboard in a browser. Explore your activity, sleep, and workouts together—or use the API to build with your data.</p>
           </div>
-          <a href={DEMO_URL} className={styles.primaryButton}>Try the dashboard <ArrowRight size={17} aria-hidden /></a>
+          <a href={DEMO_URL} className={styles.primaryButton}>Try web dashboard <ArrowRight size={17} aria-hidden /></a>
         </div>
         <WebAppPreview />
         <div className={styles.webDetails}>
@@ -66,7 +66,7 @@ export default function HomePage() {
         <div className={`${styles.section} ${styles.ownershipGrid}`}>
           <div>
             <h2>Control your own<br /> health data.</h2>
-            <p className={styles.sectionIntro}>Your database. On your server.<br />With a little help from AI.</p>
+            <p className={styles.sectionIntro}>Your database. Your server.</p>
             <p className={styles.bodyCopy}>Run PulsHealth on a machine you own. Your health history lives in your own PostgreSQL database, ready for the dashboard, API, and AI tools you choose.</p>
             <p className={styles.bodyCopy}>Give your coding assistant our setup prompt. It can walk you through deploying the server and connecting your iPhone.</p>
             <div className={styles.inlineLinks}>
@@ -83,24 +83,22 @@ export default function HomePage() {
             <div className={styles.setupHeader}><span className={styles.assistantIcon}><Code2 size={22} aria-hidden /></span><div><strong>A head start for your AI assistant</strong><p>From setup to your first sync.</p></div></div>
             <AiSetupPrompt />
             <div className={styles.setupSteps} aria-label="Setup steps"><span>Deploy your server</span><ArrowRight size={14} aria-hidden /><span>Pair your iPhone</span><ArrowRight size={14} aria-hidden /><span>Start syncing</span></div>
-            <p className={styles.setupNote}>Bring your own server and review the changes your assistant makes. Start free with five sync types and 30 days of history.</p>
           </div>
         </div>
       </section>
 
       <section id="iphone" className={`${styles.section} ${styles.appDetails}`}>
         <div className={styles.appDetailsIcon}><Smartphone size={32} strokeWidth={1.5} aria-hidden /></div>
-        <div><h2>There’s more in the app.</h2><p>Flexible exports. Individual readings. Custom summaries.<br className={styles.desktopBreak} /> Choose exactly what to keep, and how to use it.</p></div>
+        <div><h2>There’s more in the app.</h2><p>Make one-time exports with individual readings or custom summaries. Share export requests with multiple people for programs, studies, and other groups.</p></div>
         <Link href="/features/" className={styles.secondaryButton}>Explore app features <ArrowRight size={16} aria-hidden /></Link>
       </section>
 
       <section className={`${styles.section} ${styles.faq}`}>
         <h2>A few things to know.</h2>
         <FaqList items={faq.filter(item => item.home)} />
-        <p>More answers on the <Link href="/support/">support page</Link>.</p>
       </section>
       <section className={`${styles.section} ${styles.finalCta}`}>
-        <h2>Your data. Your next possibility.</h2>
+        <h2>Your health. Your data. Your control.</h2>
         <p>Start with an export. See where it takes you.</p>
         <AppStoreBadge placement="closing_cta" className="[&_img]:h-12" />
       </section>

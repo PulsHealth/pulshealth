@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { FileJson, FileSpreadsheet, Sparkles } from "lucide-react";
+import { FileJson, FileSpreadsheet } from "lucide-react";
+import { ChatGPTIcon, GeminiIcon, ClaudeIcon } from "./brand-icons";
 import styles from "./health-data-flow.module.css";
 
 export function HealthDataFlow() {
@@ -73,7 +74,11 @@ export function HealthDataFlow() {
           <Link href="/docs/ai/">Your AI</Link>
         </div>
       </div>
-      <Link href="/docs/ai/" className={styles.ai} aria-label="Connect AI tools through your database"><Sparkles size={22} strokeWidth={1.5} aria-hidden /></Link>
+      <Link href="/docs/ai/" className={styles.ai} aria-label="Explore AI connections: ChatGPT, Gemini, and Claude">
+        <span className={styles.chatgpt} title="ChatGPT"><ChatGPTIcon /></span>
+        <span className={styles.gemini} title="Gemini"><GeminiIcon /></span>
+        <span className={styles.claude} title="Claude"><ClaudeIcon /></span>
+      </Link>
     </div>
     <figcaption className="sr-only">Your Apple Health data flows from the app into exported files or your own database, ready to connect to AI.</figcaption>
 

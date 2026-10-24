@@ -33,7 +33,12 @@
 .destinationCaption { display: grid; justify-items: center; gap: 3px; margin-top: 8px; color: #b2c5d8; font-size: clamp(12px, 1.25vw, 14px); font-weight: 500; line-height: 1.4; letter-spacing: -.01em; }
 .destinationCaption a { color: inherit; font: inherit; white-space: nowrap; }
 .destinationCaption a:hover { color: #e1effb; }
-.ai { position: absolute; left: 88%; top: 34%; display: grid; place-items: center; width: 48px; height: 48px; color: #d4c3fc; border: 1px solid #b1a5db44; border-radius: 14px; background: linear-gradient(130deg, #38334e, #201f32); box-shadow: 0 8px 30px #0005; transform: rotate(8deg); }
+.ai { --badge-size: clamp(24px, 3.8vw, 42px); position: absolute; left: 86%; top: 33%; width: calc(var(--badge-size) * 2 + 5px); height: calc(var(--badge-size) * 2 + 8px); }
+.ai > span { position: absolute; display: grid; place-items: center; width: var(--badge-size); height: var(--badge-size); border: 1px solid #a9c4df38; border-radius: 30%; background: linear-gradient(135deg, #263443, #141d29); box-shadow: 0 5px 16px #0004; }
+.ai svg { display: block; width: 58%; height: 58%; }
+.ai .chatgpt { left: 0; top: 0; color: #e4eee9; }
+.ai .gemini { right: 0; top: 50%; color: #a2b8ff; transform: translateY(-50%); background: linear-gradient(135deg, #2d3450, #1c2337); }
+.ai .claude { left: 0; bottom: 0; color: #e6aa8f; background: linear-gradient(135deg, #3b302f, #251f25); }
 .figure a:focus-visible { outline: 2px solid #9bd3ff; outline-offset: 6px; }
 .figure[data-paused="true"] .packet { animation-play-state: paused; }
 @keyframes flow { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
@@ -58,7 +63,6 @@
   .sheetFooter { display: none; }
   .database { left: 60%; top: 77%; width: 32%; font-size: 10px; }
   .destinationCaption { margin-top: 6px; gap: 2px; font-size: 11px; }
-  .ai { left: 85%; top: 79%; width: 25px; height: 25px; transform: none; border-radius: 9px; z-index: 2; }
-  .ai svg { width: 16px; }
+  .ai { --badge-size: 25px; left: 82%; top: 78%; z-index: 2; }
 }
 @media (prefers-reduced-motion: reduce) { .packet, .mobileStreams .packet { animation: none; stroke-dasharray: none; opacity: .4; } }

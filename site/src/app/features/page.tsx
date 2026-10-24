@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, Heart, Moon, Footprints, Activity, Utensils, SlidersHorizontal, RefreshCw } from "lucide-react";
+import { ArrowRight, Heart, Moon, Footprints, Activity, Utensils, SlidersHorizontal, Database } from "lucide-react";
 import { AppStoreBadge, APP_STORE_URL } from "@/components/app-store-badge";
 import { getAllTypes } from "@/lib/api";
 import styles from "./features.module.css";
@@ -41,7 +41,7 @@ export default async function FeaturesPage() {
  return <main className={styles.home}>
  <header className="container mx-auto max-w-7xl px-5 py-20">
  <Link href="/" className="text-brand">PulsHealth</Link>
- <h1 className="mt-6 max-w-3xl text-5xl font-semibold tracking-tight md:text-7xl">A little app. A lot of possibilities.</h1>
+ <h1 className="mt-6 max-w-3xl text-5xl font-semibold tracking-tight md:text-7xl">Unlock your health data.</h1>
  <p className="my-7 max-w-2xl text-xl leading-relaxed text-muted-foreground">Explore your Apple Health data, export exactly what you need, and keep your own database up to date. You choose the detail.</p>
  <AppStoreBadge />
  </header>
@@ -74,11 +74,22 @@ export default async function FeaturesPage() {
         </Feature>
 
 
- <section id="sync" className="rounded-2xl border p-8 md:p-12">
- <RefreshCw className="mb-6 h-8 w-8 text-brand" aria-hidden />
- <h2 className="text-4xl font-semibold tracking-tight">Keep your database in sync.</h2>
- <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">Connect your own PulsHealth server or a compatible receiver. Start free with five health data types from the last 30 days. Automatic background sync sends new readings as iOS allows, building an archive you can use with the web dashboard, API, and compatible AI tools.</p>
- <div className="mt-7 flex flex-wrap gap-6"><Link href="/server/" className={textLink}>Set up a database <ArrowRight aria-hidden className="h-4 w-4" /></Link><Link href="/pricing/" className={textLink}>Compare Free and Pro</Link></div>
- </section>
+        <Feature id="sync" title="Keep your database in sync." intro="Your health data, beyond your phone." flip visual={
+          <div className={styles.syncVisual}>
+            <svg className={styles.syncConnection} viewBox="0 0 500 500" fill="none" preserveAspectRatio="none" aria-hidden>
+              {[0, 1, 2].map(i => <path key={i} d={`M 350 ${230 + i * 18} C 250 ${230 + i * 18}, 240 ${220 + i * 18}, 140 ${220 + i * 18}`} stroke="currentColor" strokeOpacity={.2 + i * .1} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />)}
+            </svg>
+            <div className={styles.syncDestination}>
+              <Database size={80} strokeWidth={1.25} aria-hidden />
+              <strong>Your database</strong>
+              <p>Ready for the web,<br />your tools, and AI.</p>
+            </div>
+            <Phone src="/screenshots/app-explore.webp" alt="PulsHealth on iPhone, showing health data types you can sync to your own database" />
+          </div>
+        }>
+          <p>Connect your own PulsHealth server or a compatible receiver. Automatic background sync sends new readings as iOS allows, keeping your health history in a database you control.</p>
+          <p>Explore it in the web dashboard, use the API, or connect compatible AI tools. Start free with five health data types from the last 30 days.</p>
+          <div className="flex flex-wrap gap-6"><Link href="/server/" className={textLink}>Set up a database <ArrowRight aria-hidden className="h-4 w-4" /></Link><Link href="/pricing/" className={textLink}>Compare Free and Pro</Link></div>
+        </Feature>
  </div></main>;
 }
