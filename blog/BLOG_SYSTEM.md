@@ -141,6 +141,7 @@ optional components are defined in `site/src/components/mdx-components.tsx`:
 - `<DataTypeLink identifier="HKQuantityTypeIdentifierHeartRateVariabilitySDNN">HRV</DataTypeLink>`: link to the knowledge-base type page. Child text is optional.
 - `<BlogImage src="/blog/my-post/figure.webp" alt="…" caption="…" width="1920" height="1080" priority />`: captioned figure. Use quoted literal pixel dimensions (MDX expression props are disabled); figures include a full-size link and tall phone captures are width-limited; `priority` only on the first image above the fold.
 - `<BlogFlow title="…" caption="Workflow diagram."><FlowRow label="Export" steps="Phone | CSV | Spreadsheet" note="Refresh the file for newer data." /></BlogFlow>`: a text-based figure for routes, choices, or checkpoints. Rows read left to right on desktop and top to bottom on mobile, with selectable text and both article themes supported. Label schematics clearly; do not present them as measured results or product screenshots.
+- `<CalorieExplorer />`: an interactive, illustrative calorie ledger. Daily resting and active energy add to the total; the workout slider reallocates a share of active energy without adding it twice. Native labeled sliders support keyboards, the initial example renders without JavaScript, and inputs stay in memory without storage or network requests. Use it only where the article explains this accounting distinction.
 
 Add new components to the implementation and this list together.
 

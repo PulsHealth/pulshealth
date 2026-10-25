@@ -1,0 +1,246 @@
+{
+  "periodStart": "2026-10-12",
+  "periodEndExclusive": "2026-10-19",
+  "calendar": "America/Los_Angeles",
+  "retrievedAt": "2026-10-25T21:28:21.806261+00:00",
+  "description": "Selected daily aggregates and workout summaries from the author, used for the published audit. Not raw HealthKit samples. Unneeded fields and identifiers omitted.",
+  "metrics": [
+    {
+      "identifier": "HKQuantityTypeIdentifierStepCount",
+      "unit": "count",
+      "days": [
+        {
+          "date": "2026-10-12",
+          "value": 5293,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-13",
+          "value": 11507,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-14",
+          "value": 4765,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-15",
+          "value": 5281.507144253798,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-16",
+          "value": 6229.736659381765,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-17",
+          "value": 12909.563472737225,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-18",
+          "value": 5396.122462179317,
+          "source": "aggregate"
+        }
+      ]
+    },
+    {
+      "identifier": "HKQuantityTypeIdentifierActiveEnergyBurned",
+      "unit": "kcal",
+      "days": [
+        {
+          "date": "2026-10-12",
+          "value": 826.9020240935471,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-13",
+          "value": 1465.6803153462404,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-14",
+          "value": 838.2243236621415,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-15",
+          "value": 777.4700012314293,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-16",
+          "value": 822.5619471685934,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-17",
+          "value": 1331.725829606614,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-18",
+          "value": 592.4920626321074,
+          "source": "aggregate"
+        }
+      ]
+    },
+    {
+      "identifier": "HKQuantityTypeIdentifierRestingHeartRate",
+      "unit": "count/min",
+      "days": [
+        {
+          "date": "2026-10-12",
+          "value": 55,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-13",
+          "value": 51,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-14",
+          "value": 56,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-15",
+          "value": 54,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-16",
+          "value": 52,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-17",
+          "value": 54,
+          "source": "aggregate"
+        },
+        {
+          "date": "2026-10-18",
+          "value": 53,
+          "source": "aggregate"
+        }
+      ]
+    }
+  ],
+  "workouts": [
+    {
+      "date": "2026-10-17",
+      "activityType": "running",
+      "durationMinutes": 46.03321908315023
+    },
+    {
+      "date": "2026-10-16",
+      "activityType": "cycling",
+      "durationMinutes": 13.798089865843455
+    },
+    {
+      "date": "2026-10-16",
+      "activityType": "cycling",
+      "durationMinutes": 12.578429067134858
+    },
+    {
+      "date": "2026-10-15",
+      "activityType": "cycling",
+      "durationMinutes": 21.26743756731351
+    },
+    {
+      "date": "2026-10-15",
+      "activityType": "cycling",
+      "durationMinutes": 16.808362116416294
+    },
+    {
+      "date": "2026-10-14",
+      "activityType": "cycling",
+      "durationMinutes": 21.91954648296038
+    },
+    {
+      "date": "2026-10-14",
+      "activityType": "cycling",
+      "durationMinutes": 13.626902401447296
+    },
+    {
+      "date": "2026-10-13",
+      "activityType": "cycling",
+      "durationMinutes": 16.905939481655757
+    },
+    {
+      "date": "2026-10-13",
+      "activityType": "running",
+      "durationMinutes": 44.8243040839831
+    },
+    {
+      "date": "2026-10-13",
+      "activityType": "cycling",
+      "durationMinutes": 24.92558568318685
+    },
+    {
+      "date": "2026-10-12",
+      "activityType": "cycling",
+      "durationMinutes": 29.273178549607596
+    },
+    {
+      "date": "2026-10-12",
+      "activityType": "cycling",
+      "durationMinutes": 17.09068980018298
+    }
+  ],
+  "sleepSessions": [
+    {
+      "date": "2026-10-12",
+      "asleepMinutes": 497.13798865
+    },
+    {
+      "date": "2026-10-13",
+      "asleepMinutes": 438.28012279999996
+    },
+    {
+      "date": "2026-10-14",
+      "asleepMinutes": 435.30532526666667
+    },
+    {
+      "date": "2026-10-15",
+      "asleepMinutes": 460.2376835833333
+    },
+    {
+      "date": "2026-10-16",
+      "asleepMinutes": 465.34544804999996
+    },
+    {
+      "date": "2026-10-17",
+      "asleepMinutes": 503.6346184166666
+    },
+    {
+      "date": "2026-10-18",
+      "asleepMinutes": 444.4762241666666
+    }
+  ],
+  "rings": [
+    {
+      "date": "2026-10-12",
+      "moveKcal": 828.0325357821862,
+      "moveGoalKcal": 700
+    },
+    {
+      "date": "2026-10-13",
+      "moveKcal": 1526.0042106906544,
+      "moveGoalKcal": 700
+    },
+    {
+      "date": "2026-10-14",
+      "moveKcal": 841.1345416515911,
+      "moveGoalKcal": 700
+    },
+    {
+      "date": "2026-10-15",
+      "moveKcal": 129.80200000000002,
+      "moveGoalKcal": 700
+    }
+  ]
+}

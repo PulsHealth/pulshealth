@@ -1,0 +1,85 @@
+---
+title: "What My Apple Watch Recorded During Marathon Training"
+date: "2026-10-25"
+draft: false
+author: "Sean Wade"
+tags: ["apple-watch", "running", "apple-health", "data-analysis"]
+excerpt: "I looked back at 16 weeks before the 2024 Missoula Marathon: 286 recorded training miles, a 17-mile longest run, and two weeks the workout history cannot explain."
+featured_image: "/blog/apple-watch-marathon-training-data/social.webp"
+---
+
+I ran the Missoula Marathon on June 30, 2024. Looking back at the 16 weeks ending on race day, my Apple Watch history contains **51 training runs totaling 286.0 miles**, plus the race itself. The biggest week was 33.6 miles. The longest training run was 17.0 miles.
+
+It also contains two entire weeks without a recorded running workout.
+
+Those gaps belong in the picture. A retrospective that smooths them away would tell a different story from the records. Here is what I found when I pulled the workouts out of Apple Health, grouped them by week, and kept the race separate from the training.
+
+## The build shows up clearly, and so do the gaps
+
+The first two weeks in this window have about 19 miles each. April rises from 16.6 to 31.8 recorded miles per week. May contains the peak, then drops back into the twenties. June has much less recorded training.
+
+<BlogImage
+  src="/blog/apple-watch-marathon-training-data/weekly-running.webp"
+  alt="Weekly recorded training miles from March 11 through June 30, 2024. Mileage peaks at 33.6 in the week of May 13. The weeks of March 25 and June 3 have no running workouts recorded. The race is excluded."
+  caption="My synced Apple Health running workouts, grouped into Monday–Sunday weeks. Crosses mark weeks with no running record; they do not establish that I was inactive. The June 30 race is excluded from the bars."
+  width="1600"
+  height="1000"
+  priority
+/>
+
+The two empty weeks begin **March 25** and **June 3**. There is no workout record here that explains either one. This export cannot distinguish an actual break from an unrecorded run or a missing historical record. I have left them as gaps in the running history rather than labeling them illness, injury, travel, or rest.
+
+The final four weeks contain 0, 6.0, 14.3, and 2.4 recorded training miles. It would be easy to call that a taper. The records support the narrower statement that recorded mileage fell before the race; they do not establish the plan or the reason.
+
+That distinction is useful when revisiting an old training block. Workout files preserve dates and measurements. They do not automatically preserve the context that made those weeks look that way.
+
+## Weekly mileage hides how the miles were distributed
+
+The week beginning March 18 contains five recorded runs and 18.7 miles. Its longest run is 6.1 miles. The week beginning May 6 contains three runs and 25.8 miles, with **16.0 miles in a single workout**. That one run accounts for 62% of the week's recorded distance.
+
+Both weeks can be reduced to a mileage total. They look quite different when the longest run and the number of running days sit next to it.
+
+<BlogImage
+  src="/blog/apple-watch-marathon-training-data/long-runs-and-frequency.webp"
+  alt="For each of 16 weeks, a horizontal mark shows the longest recorded training run and dots show the count of days with a run. The longest run grows from 10 to 12.2 to 14 to 16 to 17 miles between mid-April and mid-May."
+  caption="Longest run and recorded running days answer different questions. The blue dots show a count, not which weekdays I ran. All 51 training workouts fell on separate days. Race day is excluded."
+  width="1600"
+  height="1340"
+/>
+
+From the week of April 15 through the week of May 13, the longest recorded run progresses through **10.0, 12.2, 14.0, 16.0, and 17.0 miles**. That is the clearest progression in the dataset. The highest-mileage week also contains the longest run, which supplies about half of its 33.6 miles.
+
+Across the 14 weeks with at least one training run, the median is four recorded running days. I prefer that phrasing to saying I “ran four days a week.” The latter hides both empty weeks and the variation from one to five days.
+
+This is a description of my training record, not a marathon plan. It cannot tell another runner how many miles to run, whether my preparation was sufficient, or whether a different schedule would have produced a different result.
+
+## Keep the race out of the training total
+
+The June 30 workout records **26.58 miles** and a stored duration of **4:47:43**. These are the watch record's values, not an official course measurement or chip time.
+
+Including that workout in the final week's training total would turn 2.4 miles into 29.0 miles. The chart would appear to show a rebound in training immediately before the race, when almost all of those miles were the race. Separating the event makes the comparison easier to read.
+
+There are two other details worth preserving when working with exported workouts:
+
+- **Distance remains a device measurement.** Apple says calibration can improve distance and pace accuracy, including when GPS is limited. A stored distance should not silently become a certified course distance. [Apple's calibration guidance](https://support.apple.com/en-us/105048).
+- **Workout duration is its own field.** HealthKit can store a supplied duration or calculate active duration using workout events. Subtracting start from finish is not a universal replacement. In this race record, stored duration and elapsed time agree to the displayed second. [HealthKit's duration definition](https://developer.apple.com/documentation/healthkit/hkworkout/duration).
+
+I did not use today's running features to fill in missing historical measurements. Apple now documents views for cadence, stride length, running power, and other metrics, but that does not establish that every older workout contains them. This analysis uses the distance, duration, and dates actually present in my records. [Apple's running metrics guide](https://support.apple.com/guide/watch/workout-views-and-running-metrics-apd1f24d4d35/watchos).
+
+## How I counted the workouts
+
+The analysis was run on October 25, 2026, against my synced Apple Health history. I selected running workouts starting from **March 11 through June 30, 2024**, grouped them into Monday–Sunday weeks, and separated the June 30 race workout. Distances were converted from meters using 1 mile = 1,609.344 meters; sums were calculated before rounding.
+
+The selected records have Apple Watch source names across three source identities. I checked for overlapping running intervals and found none. That removes one obvious reason to suspect duplicate copies of the same run, although it does not prove that every run I took is present.
+
+These older records have no saved time-zone context, so I used the account's `America/Los_Angeles` reporting calendar throughout. The race was in Montana; its workout starts on June 30 in both zones. Other historical travel could affect which calendar day or week an overnight workout belongs to.
+
+Only selected summaries appear here. The figures contain no route coordinates, device identifiers, or raw health-record downloads.
+
+## Make this view from your own history
+
+Start with one event and a fixed window. Export your running workouts, keep their source and duration fields, and make three columns for each week: total recorded distance, number of running days, and longest run. Keep the event itself separate. Before interpreting a surprising week, inspect the individual workouts behind it.
+
+Our [Apple Health export guide](/blog/export-apple-health-to-csv-excel/) covers getting a usable file, and the [Python analysis walkthrough](/blog/analyze-apple-health-with-python/) provides a starting point for making charts. The [export reference](/docs/export/) documents the fields.
+
+For this training block, the useful view is small enough to fit in two figures: the miles accumulated, how much came from the longest run, and where the history goes quiet. That is enough to ask better questions about the training without making the watch answer questions it never recorded.
