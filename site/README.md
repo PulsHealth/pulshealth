@@ -89,12 +89,17 @@ must be verified before replacing the launch notice with a download action.
 
 ## Sharing preview
 
-The default sharing card includes the PulsHealth logo and “Unlock and control
-your health data.” Homepage Open Graph and X titles use the same headline.
-Regenerate `public/og-unlock-control.png` with `bun scripts/gen-social-card.tsx`
-from `site/` after editing the generator. Keep the previous card available for
-old links; a new image URL lets sharing services fetch the updated artwork.
-Blog posts with featured images and other products keep their own previews.
+The default sharing card uses the website's navy card color (`#111b28`), the
+PulsHealth logo/name, and “Export and sync your health data” on one line.
+Homepage Open Graph and X titles use the same wording. The card has no domain
+or trailing period. Blog featured images and other products keep their own previews.
+
+Regenerate `public/og-pulshealth-navy.png` and its legacy image copies with
+`bun scripts/gen-social-card.tsx` from `site/`. The generator uses macOS-supplied
+Arial; on other systems, set `SOCIAL_CARD_FONT_DIR` to a licensed installation
+containing `Arial.ttf` and `Arial Bold.ttf`. Fonts are not redistributed.
+The new image URL allows sharing services to fetch the selected artwork;
+existing Messages or social cards can remain cached by their apps.
 
 ## Develop
 
