@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { appJsonLd } from "@/lib/product-schema";
 import { AnimatedWord } from "@/components/animated-word";
 import Link from "next/link";
@@ -10,6 +11,20 @@ import { FaqList } from "@/components/faq-list";
 import { faq } from "@/lib/faq";
 import { GITHUB_URL } from "@/lib/github";
 import styles from "./home.module.css";
+
+export const metadata: Metadata = {
+  openGraph: {
+    title: "Unlock and control your health data",
+    description: "Sync, export, and control your Apple Health data with PulsHealth.",
+    images: [{ url: "/og-unlock-control.png", width: 1200, height: 630, alt: "PulsHealth logo. Unlock and control your health data." }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Unlock and control your health data",
+    description: "Sync, export, and control your Apple Health data with PulsHealth.",
+    images: ["/og-unlock-control.png"],
+  },
+};
 
 const DEMO_URL = "https://app.pulshealth.com/demo";
 
