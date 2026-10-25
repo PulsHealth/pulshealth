@@ -1,22 +1,22 @@
 # PulsHealth
 
-**Your Apple Health data. Your database. Your next project.**
+**Sync, export, and control your Apple Health data.**
 
 Sync Apple Health to a database you control, export files for a spreadsheet,
 and build dashboards or AI tools on your own history. PulsHealth includes an
 iPhone and iPad app, a self-hosted stack, and an open sync protocol — all under
 [Apache-2.0](LICENSE).
 
-**[Try the dashboard demo](https://app.pulshealth.com/demo)** ·
 **[Get the iOS app](https://apps.apple.com/us/app/pulshealth/id6757657354)** ·
+**[Export your data](docs/export.md#on-device-export-no-server)** ·
 **[Self-host it](docs/setup.md)** · **[Read the docs](https://pulshealth.com/docs/)**
 
 <p align="center">
-  <a href="https://app.pulshealth.com/demo"><img src="docs/images/web/today.png" alt="PulsHealth demo dashboard: activity rings and trends for steps, sleep, heart rate, HRV, and more" width="100%"></a>
+  <img src="docs/images/overview/data-flow.png" alt="Unlock your health data: export CSV, JSON, or JSONL files from PulsHealth, or sync Apple Health to your own PostgreSQL database" width="100%">
 </p>
 
-*The working dashboard with demo data. [Open the interactive demo](https://app.pulshealth.com/demo)
-without connecting your phone.*
+Export files straight from your phone, or keep a database you control in sync.
+Use your data in a spreadsheet, dashboard, app, or AI tool.
 
 ## What can you build?
 
@@ -50,6 +50,18 @@ to approval and availability.
 If this is useful to you, **[star the repo](https://github.com/PulsHealth/pulshealth)**
 to help other people discover it. Building something with it? Share your project
 in [an issue](https://github.com/PulsHealth/pulshealth/issues).
+
+## See the dashboard
+
+Open your synced history in a browser to explore activity, sleep, heart rate,
+and workouts together.
+
+<p align="center">
+  <a href="https://app.pulshealth.com/demo"><img src="docs/images/web/today.png" alt="PulsHealth demo dashboard: activity rings and trends for steps, sleep, heart rate, HRV, and more" width="100%"></a>
+</p>
+
+*The working dashboard with demo data. [Open the interactive demo](https://app.pulshealth.com/demo)
+without connecting your phone.*
 
 ## See the app
 

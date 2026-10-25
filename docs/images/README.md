@@ -1,6 +1,6 @@
-# Product screenshot provenance
+# Product image provenance
 
-Reviewed October 24, 2026. These product captures use synthetic data or an
+Reviewed October 25, 2026. These product captures use synthetic data or an
 empty simulator. Published research figures in the blog have their own methods
 and may describe the author's explicitly disclosed historical records.
 
@@ -27,3 +27,18 @@ captions and revision dates when materially changing their content. Run
 `make blog-check` to validate image references, local links, feeds, search,
 sitemap entries, and the exported site. A screenshot validates appearance;
 it does not establish background delivery, data completeness, or a release.
+
+## README overview
+
+`overview/data-flow.svg` is the editable source for the README opening visual;
+`overview/data-flow.png` is its raster rendering for GitHub. It follows the
+website hero: the app can export files or sync to a database you control. The
+phone uses the synthetic `app/explore.png` capture documented above; the file
+and database artwork is illustrative, with no personal health records.
+
+After editing the SVG, re-render the PNG with CairoSVG (requires Cairo) and
+inspect the result:
+
+```bash
+uv run --with cairosvg --with pillow python -c "import cairosvg; cairosvg.svg2png(url='docs/images/overview/data-flow.svg', write_to='docs/images/overview/data-flow.png')"
+```
