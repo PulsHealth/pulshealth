@@ -87,6 +87,15 @@ Product policy content lives in `content/watchworkoutpro/`. Marketing screenshot
 are resized from the app's approved dark source captures. App Store availability
 must be verified before replacing the launch notice with a download action.
 
+## Sharing preview
+
+The default sharing card includes the PulsHealth logo and “Unlock and control
+your health data.” Homepage Open Graph and X titles use the same headline.
+Regenerate `public/og-unlock-control.png` with `bun scripts/gen-social-card.tsx`
+from `site/` after editing the generator. Keep the previous card available for
+old links; a new image URL lets sharing services fetch the updated artwork.
+Blog posts with featured images and other products keep their own previews.
+
 ## Develop
 
 ```bash

@@ -30,11 +30,11 @@ export const metadata: Metadata = {
   },
   openGraph: {
     siteName: "PulsHealth",
-    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'PulsHealth: Unlock your health data. Sync, export, and control your Apple Health data.' }],
+    images: [{ url: '/og-unlock-control.png', width: 1200, height: 630, alt: 'PulsHealth logo. Unlock and control your health data.' }],
   },
   twitter: {
     card: 'summary_large_image',
-    images: ['/og-default.png'],
+    images: ['/og-unlock-control.png'],
   },
 };
 

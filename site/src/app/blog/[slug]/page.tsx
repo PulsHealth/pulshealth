@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const url = `https://pulshealth.com/blog/${slug}/`;
-  const ogImage = post.featured_image || "https://pulshealth.com/og-default.png";
+  const ogImage = post.featured_image || "https://pulshealth.com/og-unlock-control.png";
 
   return {
     title: `${post.title} - PulsHealth`,
@@ -99,7 +99,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   }
 
   const url = `https://pulshealth.com/blog/${slug}/`;
-  const ogImage = post.featured_image || "https://pulshealth.com/og-default.png";
+  const ogImage = post.featured_image || "https://pulshealth.com/og-unlock-control.png";
 
   const jsonLd = {
     "@context": "https://schema.org",
