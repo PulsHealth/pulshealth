@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "HealthKit Knowledge Base - 178 Apple Health Data Types",
     description: "The missing manual for Apple Health data: all 178 HealthKit data types, with clinical ranges, sampling rates and device notes.",
-    images: [{ url: '/og-unlock-control.png', width: 1200, height: 630 }],
+    images: [{ url: '/og-pulshealth-navy.png', width: 1200, height: 630 }],
   },
   alternates: {
     canonical: '/knowledge-base/',

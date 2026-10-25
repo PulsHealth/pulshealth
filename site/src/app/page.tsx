@@ -14,15 +14,15 @@ import styles from "./home.module.css";
 
 export const metadata: Metadata = {
   openGraph: {
-    title: "Unlock and control your health data",
+    title: "Export and sync your health data",
     description: "Sync, export, and control your Apple Health data with PulsHealth.",
-    images: [{ url: "/og-unlock-control.png", width: 1200, height: 630, alt: "PulsHealth logo. Unlock and control your health data." }],
+    images: [{ url: "/og-pulshealth-navy.png", width: 1200, height: 630, alt: "PulsHealth logo. Export and sync your health data" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Unlock and control your health data",
+    title: "Export and sync your health data",
     description: "Sync, export, and control your Apple Health data with PulsHealth.",
-    images: ["/og-unlock-control.png"],
+    images: ["/og-pulshealth-navy.png"],
   },
 };
 
