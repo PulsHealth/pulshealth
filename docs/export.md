@@ -203,11 +203,17 @@ the same raw types, aggregates and workout route/stream switches. What you chang
 this export's alone, never the sync's, and the sync start date in Settings
 plays no part.
 
-An end date is exclusive: samples that start before it, activity-ring days
-before its local day, and routes and streams of workouts that started before
-it. An aggregate bucket that straddles the end date is left out rather than
-written as a partial value, so a daily series ends on the last whole day
-before it.
+The app’s custom **End** picker is the **last included local day**. To export
+all of September, select September 1 through September 30. The app converts
+that last day into the start of the following day internally: October 1 at
+local midnight. A selection reaching today exports through now.
+
+When set, the manifest’s `endDate` and the engine’s boundary are **exclusive**, as are
+server API `end` and CLI `--end` (so the CLI uses September 1 through October
+1 for the same month). Records are selected by start time before the boundary;
+activity-ring dates must precede its local day. Routes and streams follow the
+selected workouts. An aggregate bucket crossing the boundary is omitted
+rather than written as a partial value.
 
 When it finishes, **Share or Save to Files** opens the iOS share sheet with
 every file of the export, manifest included. With **Zip into one file** on,

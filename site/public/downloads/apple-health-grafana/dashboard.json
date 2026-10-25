@@ -1,7 +1,7 @@
 {
   "id": null,
   "uid": "puls-blog-starter",
-  "title": "PulsHealth \u2014 daily data and coverage",
+  "title": "PulsHealth: daily data and coverage",
   "description": "Starter dashboard. Read README before use. Uses existing puls-tsdb datasource; no credentials included.",
   "schemaVersion": 39,
   "version": 1,
@@ -21,7 +21,7 @@
       "id": 1,
       "title": "Daily steps by provenance",
       "type": "timeseries",
-      "description": "Daily values in the stack time zone; aggregate and fallback series stay distinct. Edge days are whole-day totals.",
+      "description": "Daily values displayed in the selected account reporting zone; phone aggregates retain their recorded calendar day. Aggregate and fallback series stay distinct. Edge days are whole-day totals.",
       "datasource": {
         "type": "postgres",
         "uid": "puls-tsdb"

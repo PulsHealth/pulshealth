@@ -1,89 +1,72 @@
 ---
-title: "Use AI to Set Up PulsHealth and Build With Your Health Data"
-date: "2026-10-22"
-updated: "2026-10-24"
-excerpt: "Copyable prompts to set up a PulsHealth database with AI, build a personal dashboard, and connect an assistant to your Apple Health data."
+title: "Use AI to Set Up a Self-Hosted PulsHealth Database"
+date: "2026-08-16"
+updated: "2026-10-25"
+excerpt: "Copyable prompts for an AI coding assistant to install PulsHealth, verify your first sync, and build a small private dashboard through the read-only API."
 tags: ["apple-health", "ai", "self-hosting", "guides"]
 author: "Sean Wade"
 draft: false
 ---
 
-An AI coding assistant can help you turn your Apple Health history into a database you can build on. Give it the PulsHealth repository, describe the machine you want to use, and let it work through the documented setup. Once your iPhone is syncing, the same data can power a small dashboard, a Python project, or questions in an AI chat.
+A coding assistant can help install PulsHealth and build something with the records your phone syncs. The useful starting point is a small job with a visible result: get one day's data into the database, then show it on a page you can check.
 
-There are two jobs here. During **setup**, an assistant helps run commands and configure your server. During **analysis**, an assistant reads the health records you choose to make available. You can use either independently: building a project does not require sending its data to a model.
+**Setup and analysis are separate permissions.** Installing the server requires access to the machine. Answering questions about your health requires access to records. An assistant can help with the installation and build a page using synthetic examples before it reads your history.
 
-This article focuses on prompts and a first project. Installation commands and troubleshooting now live in the [server setup guide](/docs/setup/), so you and your assistant can follow the same maintained instructions. The prompts below are templates, not transcripts of a completed installation.
+The [server setup guide](/docs/setup/) owns the installation commands. This article adds prompts that give an assistant a bounded task and a way to prove it worked. They are templates, not transcripts of a completed installation.
 
-## Give your coding assistant a clear starting point
+## Start with the machine you already have
 
-For self-hosting, you need a Linux or macOS machine with Docker and its Compose plugin, Git, `openssl`, and `curl`. Keep Docker running and the machine available when your phone needs to sync. You also need the [PulsHealth iPhone app](https://apps.apple.com/us/app/pulshealth/id6757657354) and Health data you have allowed it to read. You can use the App Store app; there is no need to build an iOS app or configure Apple signing.
+Use a Linux or macOS host that can run the documented Docker Compose stack, and a coding assistant with terminal access to it. A browser chat without that access can explain the steps but cannot run or verify them. Install the [PulsHealth iPhone app](https://apps.apple.com/us/app/pulshealth/id6757657354); you do not need Xcode or Apple signing to use the App Store version.
 
-Use a coding assistant that can read the repository and run a terminal on that machine. A browser chat can explain commands, but it cannot inspect your Docker installation unless you give it an appropriate connection.
-
-Start a conversation with this prompt. Replace the bracketed details before sending it:
+Replace the bracketed details in this prompt:
 
 ```text
 Help me set up a self-managed PulsHealth database for my Apple Health data.
 
-Machine: [Mac or Linux machine, and where it runs]
-Phone connection: [same trusted home Wi-Fi, or a private HTTPS/VPN connection]
+Machine: [Mac or Linux host, and where it runs]
+Phone connection: [trusted home Wi-Fi, or a private HTTPS/VPN connection]
 Reporting time zone: [IANA name, such as Europe/Berlin]
 Existing installation: [none, or describe it]
 
-Read https://pulshealth.com/llms.txt and https://pulshealth.com/docs/setup/ first.
-Use server/README.md for configuration details; read AGENTS.md before code changes.
+Read https://pulshealth.com/llms.txt and https://pulshealth.com/docs/setup/.
+Inspect the machine and follow that guide, using the existing bootstrap
+script and Compose stack. Keep the checkout, migrations, and application
+images on a matching version. Record the installed revision.
 
-Inspect the machine and explain what you find. Use the existing bootstrap
-script and Compose stack. Keep the checkout, schema, and application images
-on a matching version; explain whether you are using a release or building
-from source. Do not invent a new schema or receiver.
+Preserve existing configuration and data. A second checkout on the same
+Docker host is not an isolated installation. Keep secrets in ignored local
+files; do not repeat passwords or pairing codes in chat. Do not open public
+ports. Explain which phone and Health permission steps I must perform.
 
-Preserve existing configuration and data. Keep credentials in ignored local
-files, and do not paste secrets or pairing codes into the chat. Do not open
-public ports. Tell me which phone and Health permission steps I must do.
-Finish with evidence of server health and a separate check of synced data.
+Finish with separate evidence for server health, phone connectivity, and
+actual synced records. Configure backups and report any unfinished steps.
 ```
 
-The [setup guide](/docs/setup/) walks through prerequisites, matching the application images to the checkout, network access, pairing and verification. PulsHealth's backend is pre-release software; have the assistant report errors and the installed version.
+Bootstrap prints credentials and a pairing QR code locally. An assistant operating that terminal may see them even if it does not repeat them in chat. Network access also needs a real route: changing a pairing URL does not create DNS, HTTPS, or a VPN connection. The setup guide covers both points.
 
-### What the setup should actually do
+If a stack already exists, have the assistant inspect it and follow the upgrade instructions. Do not let a failed connection turn into an unnecessary database reset.
 
-The existing bootstrap script generates local secrets, starts the services, applies migrations and prints pairing details. The assistant should follow that path and diagnose failures, without designing a new database. Choose trusted LAN access or an HTTPS connection before running it; changing the URL alone does not create a working network route.
+## Check one day before building on it
 
-Bootstrap prints passwords and a QR code containing a credential. Read that output locally and keep it out of shared logs and the chat. A terminal-enabled assistant may see the output, so credential access is part of the trust you give it.
+Follow the [phone pairing steps](/docs/setup/#4-pair-the-app-and-choose-what-to-sync), select a few familiar types, and keep the phone unlocked for the first sync. Daily aggregates are useful for daily totals and averages; raw readings alone are a different dataset.
 
-## Pair your iPhone and prove that data arrived
+Free sync includes up to five distinct types from the most recent 30 days. Pro unlocks all available history and unlimited sync types, subject to Health access. Self-hosting does not remove the app's limits. [Current plans](/pricing/).
 
-Follow the [pairing instructions](/docs/setup/) on your iPhone, grant Health access and select the types to sync. Keep the phone unlocked while checking the first sync.
+After pairing, ask the assistant to check the intended user, reporting time zone, available types, and newest record dates through the product API. Then compare one completed day's steps with your phone. Do that comparison yourself: the assistant cannot verify a phone display it has not seen.
 
-Start with a few types you recognize, such as steps and resting heart rate. The app's free sync covers up to five distinct types and the most recent 30 days; Pro unlocks full-history sync for all supported types, subject to Health access. Self-hosting does not change the app's access limits. [Current app plans](/pricing/)
-
-Have your assistant run the [setup guide's verification steps](/docs/setup/). A healthy service proves the stack responds; it does not prove your phone uploaded records.
-
-Follow up with:
-
-```text
-Verify the first sync through the product API. Use the API token from the
-local configuration without printing it. Check /v1/users and /v1/types for
-the intended user. Show which types have records, their earliest/latest
-dates, and the reporting time zone. Compare one completed day's steps with
-my phone. Separate server health from actual data coverage, and explain
-any missing data before we start building.
-```
-
-Do the phone comparison yourself. If the server is empty, check the destination, selected types, Health access, and sync log before changing database code. The [sync troubleshooting guide](/blog/apple-health-not-syncing/) helps locate where data stopped moving.
+A healthy service with no uploaded records is an unfinished setup. If the read-back is empty, check the destination, selected types, Health access, and sync log. The [sync troubleshooting guide](/blog/apple-health-not-syncing/) follows that path.
 
 <BlogFlow title="One database, two useful paths" caption="Architecture schematic. The iPhone uploads first; projects and assistants read the stored data through different interfaces.">
   <FlowRow label="Collect" steps="Apple Health | PulsHealth iPhone app | Ingest | PostgreSQL + TimescaleDB" note="Only data the app can read and is configured to sync reaches your database." />
-  <FlowRow label="Build" steps="Product API | Your project's backend | Dashboard or report" note="Keep the API token on the backend, outside browser code." />
-  <FlowRow label="Ask" steps="Product API | Read-only MCP server | Compatible AI assistant" note="A cloud assistant's provider receives the records returned by its tools." />
+  <FlowRow label="Build" steps="Product API | Your project's backend | Dashboard or report" note="Keep API credentials on the backend, outside browser code." />
+  <FlowRow label="Ask" steps="Product API | Read-only MCP server | Compatible AI assistant" note="The assistant's provider receives the records returned by its tools." />
 </BlogFlow>
 
-## Build one small project through the API
+## Build a small dashboard through the API
 
-For a first project, use the read-only product API. It gives your application documented endpoints without requiring it to understand every database table. Start with the [API guide](/docs/api/) and [endpoint reference](/docs/api-reference/).
+Use the [read-only product API](/docs/api/) for a first project. Its documented endpoints handle daily metrics and other summaries without requiring your application to understand every database table.
 
-A useful first request is the weekly summary. On the server, have your assistant load `PULS_API_TOKEN` from the ignored `server/.env` into the command's environment without displaying it, then run:
+One quick check is the built-in summary. On the server, load `PULS_API_TOKEN` from the trusted local configuration into the command's environment without displaying it, then run:
 
 ```bash
 curl --fail --silent --show-error \
@@ -91,77 +74,60 @@ curl --fail --silent --show-error \
   "http://127.0.0.1:8081/v1/summary?range=7d"
 ```
 
-This returns a compact Markdown report with recorded activity, heart, sleep, workouts, body metrics, and coverage. `format=json` requests the structured version. Use `PULS_API_TOKEN` for these reads; the phone's ingest token and the remote MCP token have different jobs. [Summary reference](/docs/ai/#no-mcp-at-all-paste-a-summary)
+The result is Markdown; add `&format=json` for structured output. **This range ends today**, so today's values may still be incomplete. It is a quick overview, not a report of seven completed days. Use explicit date bounds on the daily, sleep, and workout endpoints for that analysis. [Summary reference](/docs/ai/#no-mcp-at-all-paste-a-summary).
 
-For a dashboard, give the coding assistant a bounded project:
+For a dashboard, give the assistant this prompt:
 
 ```text
 Build a private dashboard in a separate project directory using my existing
-PulsHealth product API. Leave the PulsHealth sync stack unchanged.
+PulsHealth product API. Leave the sync stack unchanged.
 
-First read /docs/api/ and /docs/api-reference/ on pulshealth.com, and inspect
-the installed API's /openapi.json. Discover available types before choosing
-charts. Start with daily steps and resting heart rate for the last 14
-completed days, but report it clearly if either type is unavailable.
+Read /docs/api/ and /docs/api-reference/ on pulshealth.com, then inspect the
+installed API's /openapi.json. Discover available types. Start with daily
+steps and resting heart rate for the last 14 completed days; show a clear
+empty state if either is unavailable.
 
-Put API requests and credentials on the server side. Read the URL and token
-from environment variables; do not put them in frontend code or public
-environment variables. Keep this first version local.
+Keep API requests and credentials on the server side. Read the URL and token
+from environment variables, never frontend code or public environment
+variables. Keep the first version local.
 
-Use the documented daily metrics endpoint. Show units, reporting time zone,
-requested dates, recorded-day count, and missing days. Preserve missing
-values as gaps. Do not sum overlapping raw iPhone and Watch step samples.
-Follow pagination and surface connection errors instead of showing fake data.
+Show units, time zone, date range, recorded-day count, and missing days.
+Preserve missing values as gaps. Use the daily metrics endpoint; do not sum
+overlapping raw iPhone and Watch step samples. Follow pagination where used.
+Show connection errors rather than silently substituting sample data.
 
-Show me a working page and compare one plotted value with the API response.
+Show me the working page and compare one plotted value with its API response.
 ```
 
-Other manageable projects include a monthly workout calendar, a private weekly report, or a sleep notebook using a [CSV export](/docs/export/). If you need SQL for a more specialized project, read the [database guide](/docs/database/) first and use a read-only role. Start with its documented daily surfaces: raw phone and Watch records can overlap, and adding them together can inflate totals.
+A workout calendar or a sleep notebook is another manageable first project. For SQL work, use a read-only role and the [database guide](/docs/database/). For an occasional analysis, a [CSV export](/docs/export/) may be enough.
 
-## Connect an AI assistant through MCP
+## Add an AI connection when you need one
 
-[MCP, the Model Context Protocol](https://modelcontextprotocol.io/docs/getting-started/intro), is a standard for connecting AI applications to tools and data. PulsHealth's MCP server translates read-only tool calls into requests to the product API. It never connects directly to PostgreSQL. [PulsHealth MCP reference](/docs/mcp/)
+PulsHealth's MCP server exposes read-only tools over the product API. It never connects directly to PostgreSQL. The [AI connection guide](/docs/ai/) documents three arrangements:
 
-For a local desktop client, the stdio connection avoids making an MCP endpoint public. The client launches a local binary, which needs network access to your read API. Ask your coding assistant:
+- A local desktop assistant can launch the **stdio binary** and reach your API privately.
+- A remote client can use the **HTTP service** if it supports the configured authentication.
+- A cloud-hosted connector needs a reachable **HTTPS endpoint and compatible authorization**. A localhost or private VPN URL cannot be reached from the provider's servers.
+
+For a hosted PulsHealth account, follow the guide's account sign-in flow. Claude is the documented, tested hosted client. General MCP support does not establish compatibility with every client's authorization flow.
+
+Once connected, try a bounded question:
 
 ```text
-Connect my MCP-capable desktop assistant to this self-managed PulsHealth
-installation using the local stdio option in docs/ai.md.
+Check which types and dates are available. Summarize my last seven completed
+days in the account's reporting time zone, excluding today.
 
-Inspect the client's supported configuration and the required Go version.
-Build the MCP binary from its own module directory, server/mcp. Use an
-absolute binary path and keep credentials in an untracked local config.
-Point it at the read API on this machine, or use the documented private
-connection if the API is on another host. Do not expose a public endpoint.
+Fetch the supporting daily metrics, nightly sleep summaries, and workouts
+with explicit date bounds. The built-in summary ends today, so do not use
+it alone for this completed-day window. Follow any pagination.
 
-Verify the connection by listing the available tools, then checking the
-intended user and available data types. Do not retrieve my profile unless
-it is needed for my question.
+Show the daily table, units, missing dates, and the recorded-day denominator
+for each average. Date sleep by wake-up day. Describe observations without
+guessing causes. Tell me when coverage is too limited to answer.
 ```
 
-Client configuration differs, so follow the [connection guide](/docs/ai/) for your client. A cloud-hosted connector needs a server it can reach, and clients that require OAuth need the documented HTTPS and sign-in setup. A localhost URL on your laptop is not reachable from a provider's servers. General MCP support also does not guarantee that every client supports the same authorization flow.
+The [AI analysis guide](/blog/apple-health-chatgpt-claude/) includes more questions and a synthetic example with a checked answer. It is a useful way to test an assistant before sharing personal records.
 
-If you prefer to skip server administration, a hosted PulsHealth account is another path. Sync your phone to that account and follow the same guide's hosted connection instructions; Claude is the documented, tested hosted client.
+Read-only access still sends returned data to the assistant's provider. A hosted PulsHealth grant covers the account's synced data and profile; asking about steps does not narrow the grant to steps. Review the [access details](/privacy/) for the route you choose.
 
-Once connected, try a question with a checkable answer:
-
-```text
-Check which types and dates are available, then summarize my last seven
-completed days in the account's reporting time zone. Use deduplicated daily
-metrics for steps and nightly summaries for sleep. Show the supporting
-daily table, units, missing dates, and the number of recorded days used in
-each average. Date sleep by the wake-up day. Describe observations without
-guessing causes. Tell me if sync coverage is too limited to answer.
-```
-
-Start with `list_available_types` and `get_summary`; use `get_daily_metrics` or `get_sleep` for the supporting rows. Raw `get_samples` results are useful for inspecting individual records, not for summing overlapping activity sources. The [AI analysis guide](/blog/apple-health-chatgpt-claude/) has more worked questions and a synthetic example you can check without sharing health records.
-
-Read-only access still shares information. When a cloud assistant requests your records, its provider receives them under the terms for that connection. Self-hosting the database does not keep those tool responses local. A hosted PulsHealth AI grant covers the account's synced data and profile; asking about only steps does not narrow that grant. Review the [access and privacy details](/privacy/) before connecting.
-
-## Keep the first result easy to check
-
-Finish with one small artifact: a dashboard with two charts, a weekly Markdown report, or an AI answer with its supporting table. Check dates, units, missing records, and one value against your phone before expanding it.
-
-Also ask the setup assistant to configure backups using the [operations guide](/docs/server/). Backups are opt-in; a running database volume alone is not a backup. Verify restoration on a scratch stack before relying on the archive.
-
-You now have a repeatable path from Apple Health to something you can build and inspect. Keep the prompts with your project, record the API version and assumptions, and add the next feature only after the first one agrees with its source data.
+Finish with the page or report, its source revision, and one checked value. Confirm backup status too: backups are opt-in, and a running database volume is not a backup. The [operations guide](/docs/server/) explains how to restore a copy on a scratch stack before relying on it.

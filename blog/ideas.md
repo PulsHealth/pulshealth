@@ -1,51 +1,52 @@
 # Blog library and follow-up ideas
 
-The starter collection covers getting Apple Health data out, understanding its
-measurements, and using it in spreadsheets, Python, dashboards, and AI tools.
-The new guides use an editorial date sequence from June 8 to October 8, 2026;
-October revisions identify when instructions, sources, and analysis were checked.
-Existing posts retain their original dates and permanent URLs.
+The library covers getting Apple Health data out, understanding its measurements,
+and using it in spreadsheets, Python, dashboards, and AI tools.
 
-| Reader question | Article |
+## October 25 editorial review
+
+All 18 articles are included in the October 25 site release. At the maintainer's
+request, displayed publication dates follow a two-week editorial sequence from
+March 1 through October 25; this is not a future release schedule or a record of
+first deployment. Research, extraction, and experiment dates remain explicit in
+the articles. The October 25 revision date records this library-wide review.
+Permanent URLs are retained.
+
+| Editorial date | Article |
 |---|---|
-| How do I get a usable spreadsheet? | [Export to CSV and Excel](articles/export-apple-health-to-csv-excel.mdx) |
-| How can I see my data on a larger screen? | [View on Mac or PC](articles/view-apple-health-on-mac-pc.mdx) |
-| Why do the totals disagree? | [Step counts that do not match](articles/apple-health-step-counts-dont-match.mdx) |
-| How can an assistant answer from my records? | [ChatGPT and Claude](articles/apple-health-chatgpt-claude.mdx) |
-| What does the sleep chart actually measure? | [Sleep stages](articles/apple-watch-sleep-stages.mdx) |
-| Why is my cardio fitness estimate low? | [Cardio fitness](articles/apple-watch-cardio-fitness-low.mdx) |
-| How do I keep my history when changing phones? | [Backups and transfers](articles/back-up-apple-health-data.mdx) |
-| How do I make useful charts myself? | [Python analysis](articles/analyze-apple-health-with-python.mdx) |
-| How do I build a dashboard I control? | [Grafana dashboard](articles/apple-health-grafana-dashboard.mdx) |
-| Where did the data stop moving? | [Sync troubleshooting](articles/apple-health-not-syncing.mdx) |
-| What do individual HRV readings mean? | [Revised HRV guide](articles/apple-watch-hrv-complete-guide.mdx) |
-| What is open and what can I run? | [Revised open-source introduction](articles/pulshealth-is-open-source.mdx) |
-| How can AI help me set up the database and build on it? | [AI-assisted setup and projects](articles/set-up-pulshealth-with-ai.mdx) |
+| 2026-03-01 | [Apple Watch HRV: What SDNN Means and How to Read Your Data](articles/apple-watch-hrv-complete-guide.mdx) |
+| 2026-03-15 | [How to Export Apple Health Data to CSV and Excel](articles/export-apple-health-to-csv-excel.mdx) |
+| 2026-03-29 | [How to View Apple Health Data on Your Mac or PC](articles/view-apple-health-on-mac-pc.mdx) |
+| 2026-04-12 | [Why Your Apple Health Step Counts Don't Match](articles/apple-health-step-counts-dont-match.mdx) |
+| 2026-04-26 | [Using Apple Health with ChatGPT or Claude: A Practical Guide](articles/apple-health-chatgpt-claude.mdx) |
+| 2026-05-10 | [Apple Watch Sleep Stages: What the Chart Can Tell You](articles/apple-watch-sleep-stages.mdx) |
+| 2026-05-24 | [Why Apple Watch Says Your Cardio Fitness Is Low](articles/apple-watch-cardio-fitness-low.mdx) |
+| 2026-06-07 | [How to Back Up Apple Health Data Before Switching iPhones](articles/back-up-apple-health-data.mdx) |
+| 2026-06-21 | [Analyze Apple Health Data with Python: Your First Three Charts](articles/analyze-apple-health-with-python.mdx) |
+| 2026-07-05 | [PulsHealth Is Open Source: Explore, Export, and Use Your Apple Health Data](articles/pulshealth-is-open-source.mdx) |
+| 2026-07-19 | [Build an Apple Health Dashboard with Grafana](articles/apple-health-grafana-dashboard.mdx) |
+| 2026-08-02 | [Why Apple Health Isn't Syncing to Your Other Apps](articles/apple-health-not-syncing.mdx) |
+| 2026-08-16 | [Use AI to Set Up a Self-Hosted PulsHealth Database](articles/set-up-pulshealth-with-ai.mdx) |
+| 2026-08-30 | [Why Your Apple Watch Says You Climbed Stairs When You Didn't](articles/apple-watch-flights-climbed-wrong.mdx) |
+| 2026-09-13 | [Apple Watch Active vs. Total Calories: Follow One Day's Numbers](articles/apple-watch-active-vs-total-calories.mdx) |
+| 2026-09-27 | [What My Apple Watch Recorded During Marathon Training](articles/apple-watch-marathon-training-data.mdx) |
+| 2026-10-11 | [I Asked AI to Summarize My Apple Health Week. Then I Checked Its Work.](articles/apple-health-ai-weekly-review.mdx) |
+| 2026-10-25 | [What Your iPhone's Headphone Audio Levels Actually Tell You](articles/iphone-headphone-audio-levels.mdx) |
+
+The review retained every article because each answers a distinct reader
+question. It corrected export date-picker semantics, tightened the AI setup
+scope, clarified completed-day reporting, hardened the Python example, updated
+Grafana validation, and separated measurement definitions from interpretations.
+Primary sources support factual claims near the relevant text. Personal examples
+publish selected aggregates; raw extracts and account identifiers stay outside
+the repository. Schematics and illustrative inputs are labeled.
 
 ## Follow-up research
 
-- Compare a daily average with the underlying sampling schedule: how much
-  changes when a device records more often during workouts?
-- Explain a sleep episode spanning midnight, a time-zone change, and a missing
-  night with a reproducible example.
-- Build a personal weekly report that reports coverage alongside every trend.
+- Compare a daily average with the underlying sampling schedule and coverage.
+- Work through a sleep episode crossing a time-zone change with a reproducible example.
+- Compare recurring reports over several weeks, checking per-record freshness.
 
-Before writing a follow-up, check whether it belongs as an improvement to one
-of the existing guides. Keep device behavior tied to official documentation,
-health claims tied to primary research, and personal examples explicitly scoped
-to one dataset. Private extracts never belong in this public repository.
-
-## October 25 additions
-
-| Reader question | Article | Original evidence |
-|---|---|---|
-| Why does my Watch count stairs I did not climb? | [Flights climbed](articles/apple-watch-flights-climbed-wrong.mdx) | Sensor schematic and contrasting record patterns |
-| Which calorie totals can I add together? | [Active vs. total calories](articles/apple-watch-active-vs-total-calories.mdx) | One recorded day, original figures, interactive accounting example |
-| What did my marathon build actually look like? | [Marathon training history](articles/apple-watch-marathon-training-data.mdx) | Sixteen weeks of selected author aggregates; race kept separate |
-| Can I check an AI weekly summary? | [Weekly AI audit](articles/apple-health-ai-weekly-review.mdx) | One preserved response, independent arithmetic, source-freshness check |
-| What does headphone exposure mean? | [Headphone audio levels](articles/iphone-headphone-audio-levels.mdx) | WHO reference-duration comparisons and Apple device distinctions |
-
-Each article links primary sources near its claims. Personal examples publish
-selected aggregates only; raw extracts and account identifiers remain outside
-the repository. Diagrams and illustrative inputs are labeled separately from
-measured records.
+Before adding a follow-up, check whether it belongs in an existing guide. Keep
+content useful on its own rather than repeating setup steps from the canonical
+documentation.

@@ -1,7 +1,7 @@
 ---
 title: "Apple Watch Sleep Stages: What the Chart Can Tell You"
-date: "2026-07-28"
-updated: "2026-10-08"
+date: "2026-05-10"
+updated: "2026-10-25"
 author: "Sean Wade"
 draft: false
 tags: ["apple-watch", "sleep", "apple-health", "health-data"]
@@ -12,7 +12,7 @@ A sleep chart can make a complicated night look exact. You see a narrow strip of
 
 A better first question is: **what did the watch estimate, and how complete is the recording?** That tells you how much weight to give the chart before you start explaining it.
 
-*Updated October 8, 2026: device instructions and sources checked; the data example was analyzed for this revision.*
+*Updated October 25, 2026: added the distinction between Sleep Score and sleep stages, and clarified overnight date boundaries. The personal-data example remains the September snapshot analyzed on October 8.*
 
 ## What Core, Deep, and REM mean
 
@@ -31,17 +31,17 @@ That distinction matters when you export the data. The result is a series of **c
 
 ## How accurate are Apple Watch sleep stages?
 
-Accuracy has more than one meaning. Detecting that someone is asleep is an easier question than choosing the correct sleep stage throughout the night. A headline percentage about sleep detection cannot establish the accuracy of every Deep or REM interval.
+Detecting sleep and choosing the correct stage are different tests. A headline percentage about sleep detection does not establish the accuracy of each Deep or REM interval.
 
 Apple's validation paper reports that its most common stage error was assigning true Deep sleep to Core. That gives a concrete reason to avoid interpreting a short Deep segment as a precise physiological deficit. The paper describes a specific validated algorithm; it does not establish that every future software version performs identically. [Apple's validation results](https://images.apple.com/co/healthcare/docs/site/Estimating_Sleep_Stages_from_Apple_Watch_Sept_2023.pdf)
 
 An independent 2025 study compared six wearables, including Apple Watch Series 8, with polysomnography during a laboratory night. Across the devices, identifying sleep was more successful than identifying wakefulness, and agreement on multiple sleep states remained imperfect. Participants wore two to four devices, so the full study's 62 participants were not necessarily all in each device comparison. These results concern the tested hardware, software, and study population. [Schyvens and colleagues, *Sleep Advances*](https://pubmed.ncbi.nlm.nih.gov/40303381/)
 
-My practical interpretation is to use the chart to frame questions: “Was this recording much shorter than my others?” or “Have my sleep times become more irregular?” A single stage percentage is a weak foundation for deciding what your body needs.
+Use the chart for comparisons you can inspect: “Was this recording much shorter?” or “Have my recorded sleep times become more irregular?”
 
 ## Read the whole night before the percentages
 
-Open **Health → Browse → Sleep** and inspect the daily chart, then switch to a longer view. Apple's sleep interface offers stage details and sleep-duration views. For missing recordings, its current instructions emphasize enabling Track Sleep with Apple Watch, wearing the watch overnight, keeping it charged, and ensuring a comfortable fit. [Apple's sleep guide](https://support.apple.com/en-us/108906)
+Open **Health → Browse → Sleep** and inspect the daily chart, then switch to a longer view. For missing recordings, check that Track Sleep with Apple Watch is enabled. Apple's current guide calls for at least 30% charge before bed and at least one hour of wear. Those are recording requirements, not evidence that an entire night was captured. [Apple's sleep guide](https://support.apple.com/en-us/108906)
 
 Use this order when reviewing a night:
 
@@ -51,6 +51,12 @@ Use this order when reviewing a night:
 4. **Add your own context.** Record whether you remember being awake, removed the watch, or traveled. Keep observations separate from explanations.
 
 For example, 60 minutes is 20% of five hours but only 12.5% of eight hours. A lower percentage does not necessarily mean fewer minutes. That arithmetic alone can make two seemingly contradictory charts agree.
+
+## Sleep Score is a different summary
+
+Apple's current Sleep Score allocates up to **50 points to duration, 30 to bedtime consistency, and 20 to interruptions**. It is not a percentage of Deep or REM sleep. Bedtime consistency also uses earlier nights, so its inputs extend beyond the stage chart for one night. [How Apple describes Sleep Score](https://support.apple.com/en-us/108906)
+
+A high score alongside a short-looking Deep segment is therefore not an arithmetic contradiction. Open the score's breakdown to see which component changed; open the stage chart to see how intervals were classified. They answer different questions about the recording.
 
 ## Why an export can contain more sleep than the night had
 
@@ -66,7 +72,7 @@ For analysis, I would first select one source, inspect overlapping intervals, an
 
 ## What my own sleep export actually contained
 
-For this revision, I inspected my synced sleep records with a read-only database query. The selection included intervals starting from September 1, 2026 at midnight through, but not including, October 1 at midnight in America/Los_Angeles time.
+In the October 8 analysis, I inspected my synced sleep records with a read-only query. It selected intervals starting from September 1, 2026 at midnight up to October 1 at midnight in America/Los_Angeles time. This describes records starting within the month, not a set of complete nights.
 
 That returned **886 intervals**: 404 Core, 205 Awake, 160 REM, and 117 Deep. Those are record counts. A long interval and a short one each contribute one row, so the bars cannot tell you the proportion of the month spent in each stage.
 
@@ -78,11 +84,11 @@ That returned **886 intervals**: 404 Core, 205 Awake, 160 REM, and 117 Deep. Tho
   height="880"
 />
 
-The records included three source revisions and overlapping intervals. A source revision is not necessarily a separate device. Those findings are why this figure stops at counts: a trustworthy nightly duration needs source and overlap handling first. My archive illustrates a data-model issue; it does not establish normal sleep patterns or validate the watch against a sleep study.
+The records included three source revisions and overlapping intervals. A revision is not necessarily a separate device. This figure stops at counts because nightly durations would require resolving those overlaps first.
 
 ## Build a useful view of several weeks
 
-A small analysis table can tell you more than a dramatic dashboard:
+For a comparison across nights, keep these fields:
 
 | Field | Why keep it |
 | --- | --- |
@@ -93,16 +99,16 @@ A small analysis table can tell you more than a dramatic dashboard:
 | Coverage or conflict note | Stops an incomplete record looking complete |
 | Personal note | Separates your recollection from a device estimate |
 
-Choose an explicit rule for assigning sessions to dates. Using the date you woke up is understandable, but it is an analysis choice, not something to infer by grouping every interval's start timestamp. A session crossing midnight otherwise becomes two apparently short nights. Use local time and document how naps or multiple sessions are handled.
+Choose a rule for assigning sessions to dates. For example, a session from 11 p.m. Monday to 7 a.m. Tuesday can belong to Tuesday, its wake date. Grouping each stage by its own start date would split that session across Monday and Tuesday instead. For nightly analysis, retrieve the full session across the boundary first, then assign its date. Document how you handle naps and multiple sessions.
 
 When summarizing a week, show how many nights contributed. “Average across four recorded nights” is more honest than presenting it as a complete seven-night average. Leave unrecorded nights missing. Entering zero would claim you did not sleep.
 
-If you compare sleep with [Apple Watch HRV](/blog/apple-watch-hrv-complete-guide/), retain those same coverage checks for both series. Two charts moving together can suggest a question worth examining. They do not isolate a cause.
+For a comparison with [HRV](/blog/apple-watch-hrv-complete-guide/), keep the observation counts for both series. Missing nights should remain visible in the comparison.
 
 ## What to do with a worrying chart
 
-Start by checking the record rather than chasing a target percentage. Save a few representative nights, note what you experienced, and look for repeated issues in recording or timing.
+Save a few representative nights and note what you experienced.
 
 A stage chart cannot settle whether you have a sleep disorder. Clinical sleep studies collect additional signals and are used to investigate sleep-related problems; a clinician determines which testing is appropriate. If sleep problems are persistent or affect daily life, bring the history and your observations to that conversation. [NHLBI's explanation of sleep studies](https://www.nhlbi.nih.gov/health/sleep-studies)
 
-The useful outcome is a history you can explain: which nights were recorded, how their duration and timing compare, and where uncertainty remains. The colored stages add detail to that history. They should not obscure it.
+For your next comparison, save the whole-night view and its recorded duration alongside the stage percentages. That gives you a way to tell a shorter recording from a different stage mix.
