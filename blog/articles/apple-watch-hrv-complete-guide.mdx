@@ -1,18 +1,18 @@
 ---
 title: "Apple Watch HRV: What SDNN Means and How to Read Your Data"
-date: "2026-02-03"
-updated: "2026-10-08"
+date: "2026-03-01"
+updated: "2026-10-25"
 draft: false
 author: "Sean Wade"
 tags: ["hrv", "apple-watch", "health-metrics", "apple-health"]
 excerpt: "Understand Apple Watch HRV, why SDNN values depend on measurement context, and how to examine your own trend without turning one reading into a diagnosis."
 ---
 
-An Apple Watch HRV reading is a measurement of variation between heartbeats. It is not a recovery score, a diagnosis, or a target you need to beat tomorrow. Before interpreting it, establish which HRV metric you are looking at, when it was recorded, and how much data sits behind the chart.
+An HRV value of 45 ms can look oddly precise for a number that changes so much. What varies is the spacing between heartbeats. Before comparing that value with yesterday or with someone else, check which calculation produced it and when it was recorded.
 
 This guide focuses on **SDNN**, the Apple Health data type called `HKQuantityTypeIdentifierHeartRateVariabilitySDNN`. That distinction matters: Apple's current documentation also describes **Recovery HRV** on newer watches. Don't assume every number labeled HRV uses the same calculation or collection method. [Apple's SDNN definition](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/heartratevariabilitysdnn), [current Apple Watch heart measurements](https://support.apple.com/en-us/120277).
 
-*Rewritten October 8, 2026: this revision replaces the earlier article's numerical “normal” ranges and illness-prediction claims with measurement guidance, primary sources, and an analysis of my own records.*
+*Updated October 25, 2026: clarified what the validation studies measured and added an example of how sampling changes a summary. The personal-data example remains the September snapshot analyzed for the October 8 revision.*
 
 ## What SDNN actually measures
 
@@ -40,13 +40,13 @@ Accuracy depends on the metric, comparison device, and testing conditions. It is
 
 A 2018 study compared Apple Watch interval recordings with a Polar H7 in 20 healthy participants during relaxation and mental stress. Its findings supported the feasibility of some HRV measurements under that protocol, while documenting gaps in the recorded intervals. It did not establish that every unattended daily reading predicts illness or recovery. [Hernando and colleagues, 2018](https://pubmed.ncbi.nlm.nih.gov/30103376/).
 
-A later study compared Apple Watch Series 6 with laboratory ECG in 78 healthy adults across several controlled conditions. Agreement was strongest at rest; the authors also cautioned that laboratory results might not generalize to everyday life. Strong agreement for heart rate or beat intervals should not be casually restated as equally strong agreement for every derived HRV metric. [Bonneval and colleagues, 2025](https://pubmed.ncbi.nlm.nih.gov/40285070/).
+A 2025 study of 78 healthy adults compared Series 6 with laboratory ECG during several activities. Its strongest agreement was at rest, especially for average beat intervals and heart rate. The researchers extracted interval data and calculated their own measures; this was not simply a comparison of the SDNN number displayed in Health with an ECG SDNN result. That distinction gets lost when the findings become a general claim that “Apple Watch HRV is accurate.” [Bonneval and colleagues, methods and results](https://pmc.ncbi.nlm.nih.gov/articles/PMC12031371/).
 
 These studies are reasons to take measurement conditions seriously. Neither validates a rule such as “below this number, skip your workout” for an individual reader.
 
 ## What a month of my records looks like
 
-For this revision, I examined my synced SDNN records from **September 1 through September 30, 2026**, using local calendar days in `America/Los_Angeles`. This is one person's observational example, not a reference population.
+For the October 8 analysis, I examined my synced SDNN records from **September 1 through September 30, 2026**, using local calendar days in `America/Los_Angeles`. This is one person's observational example, not a reference population.
 
 There were **402 observations across all 30 days**. The daily count ranged from **11 to 15**, with a median of **14 observations per day**. Daily sample medians ranged from **40.78 to 78.17 ms**.
 
@@ -58,11 +58,25 @@ There were **402 observations across all 30 days**. The daily count ranged from 
   height="1040"
 />
 
-The counts are as useful as the line above them. They show that a daily summary comes from a small collection of observations, not continuous measurement of every heartbeat throughout the day. Observations occurred in every hour-of-day bin somewhere across the month; that does not mean every hour was represented on every day.
-
-A daily median gives each day's recorded values a simple summary. It does not reconstruct the unobserved hours. Nor does the chart establish why a day was higher or lower. There is no controlled comparison here, and the figure does not label changes as stress, sickness, or fitness improvement.
+Each daily point summarizes a small collection of observations. It leaves the hours between them unmeasured. The chart shows variation, but there is no controlled comparison that would explain it as stress, sickness, or improved fitness.
 
 **Method:** select this account's SDNN quantity samples with start times at or after September 1 and before October 1 in the stated zone; group by local start date; count observations and calculate the median of stored millisecond values. These are medians of individual SDNN samples, not an Apple Health daily average or an SDNN calculated from a continuous day of beat intervals.
+
+## Why two summaries of the same records can disagree
+
+Consider one SDNN reading of 20 ms on Monday, followed by nine readings of 60 ms on Tuesday. These are invented values to make the arithmetic visible.
+
+<BlogImage
+  src="/blog/apple-watch-hrv-complete-guide/same-readings-two-means.webp"
+  alt="Ten hypothetical readings: one at 20 milliseconds on Monday and nine at 60 milliseconds on Tuesday. Their pooled mean is 56 milliseconds; averaging the two daily means gives 40 milliseconds."
+  caption="The same observations support two different summaries. Weighting every sample equally gives the densely recorded day more influence; weighting each daily mean equally gives each recorded day one vote."
+  width="1600"
+  height="1000"
+/>
+
+The mean of all ten observations is **56 ms**. The mean of the two daily means is **40 ms**. Neither is an arithmetic error: the first gives Tuesday nine times Monday's weight; the second weights the two recorded days equally.
+
+This does not reproduce Apple's chart calculation. It shows why an export needs a named method. If you change from averaging raw samples to averaging daily summaries, you can change the result without changing a single measurement. Neither approach fills the unobserved parts of either day.
 
 ## How to examine your own trend
 
@@ -74,7 +88,7 @@ Start in Apple Health by searching for **Heart Rate Variability** and inspecting
 4. **Use a declared summary.** Label a mean, median, or rolling average accurately. A smoother line hides variation; it does not add measurements.
 5. **Write down the question before the explanation.** “Did recorded SDNN change this month?” can be answered descriptively. “Did my new routine cause it?” requires stronger evidence.
 
-You can inspect sampling and value distributions in PulsHealth's Explore tab, or export selected records to examine them yourself. The [export documentation](/docs/export/) explains the file formats and what they retain.
+If you export the records, retain timestamps and source information alongside the millisecond values. The [export guide](/blog/export-apple-health-to-csv-excel/) explains how to get those records into a spreadsheet.
 
 ## What to do with a surprising number
 

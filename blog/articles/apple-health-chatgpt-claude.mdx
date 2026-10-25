@@ -1,18 +1,18 @@
 ---
 title: "Using Apple Health with ChatGPT or Claude: A Practical Guide"
-date: "2026-07-16"
-updated: "2026-10-24"
+date: "2026-04-26"
+updated: "2026-10-25"
 excerpt: "Compare native Apple Health connections, selected file uploads, and PulsHealth MCP, then ask questions you can check against the underlying records."
 tags: ["apple-health", "ai", "privacy", "guides"]
 author: "Sean Wade"
 draft: false
 ---
 
-You can use ChatGPT or Claude to explore Apple Health data without building a database. Both providers now offer native Apple Health connections. A selected file upload is another option, and a PulsHealth connection makes sense when you already sync your data and want repeatable queries over that collection.
+ChatGPT and Claude offer native Apple Health connections for eligible accounts. You can also upload a selected file, or connect PulsHealth when you already sync your records and want recurring queries over that collection.
 
-The more important decision comes after connecting: what should you ask, and how will you know the answer is right? A useful first conversation compares two periods, names the records it used, and shows the arithmetic. It should leave you with something you can check.
+Start with one question you can check. Comparing two weeks of recorded sleep, for example, should produce a table of nights and an understandable calculation, not just a confident paragraph about your health.
 
-*Revised October 24, 2026: rechecked provider connection guides and updated PulsHealth export formats.*
+*Checked October 25, 2026: provider availability and controls below follow the current help pages. Menus and eligibility can change.*
 
 ## Choose how the assistant gets your data
 
@@ -22,15 +22,11 @@ The more important decision comes after connecting: what should you ask, and how
 | Selected CSV or summary upload | You want one bounded analysis | Dates, units, included identifiers, and the destination chat's data policy |
 | PulsHealth MCP connection | You already sync records and want recurring questions | Sync coverage, account access scope, and which tools serve the requested data |
 
-These are different ways to supply evidence. None guarantees that the assistant will choose the right calculation.
-
 ### Native ChatGPT and Claude connections
 
-OpenAI announced ChatGPT Health on January 7, 2026, with an Apple Health connection. Its July 23 update expanded the launch to U.S. adults on web and iOS. The original announcement is useful history, but its initial waitlist and interface descriptions should not be treated as today's setup instructions. [OpenAI's announcement and update](https://openai.com/index/introducing-chatgpt-health/)
+**ChatGPT:** OpenAI currently lists Health for eligible U.S. Free, Go, Plus, and Pro accounts, with account-dependent rollout. Connecting Apple Health requires the iPhone app. Open **Health**, follow the connection flow, and select the categories to share. If Health is absent, check eligibility and app version before changing phone permissions. [Current ChatGPT Health instructions](https://help.openai.com/en/articles/20001036-health-in-chatgpt).
 
-As checked on October 24, OpenAI's help page still describes an account-dependent rollout. On the current iOS app, start in **Health**, follow the connection flow, and choose the categories you want to share. Later, the Health menu provides Apple Health settings. If Health is absent, consult that page rather than assuming a broken phone permission. [Current ChatGPT Health instructions](https://help.openai.com/en/articles/20001036-health-in-chatgpt)
-
-Anthropic announced its Apple Health beta in January 2026. Its current iOS guide explains the supported health integration and permissions; follow those instructions in the Claude iPhone app. As checked on October 24, health features are in beta for Pro and Max plans in the United States. Availability can change, so the current guide is the authority for your account. [Anthropic's launch announcement](https://www.anthropic.com/news/healthcare-life-sciences), [Claude's iOS guide](https://support.claude.com/en/articles/11869619-use-claude-with-ios-apps)
+**Claude:** Health access is currently a U.S. beta for Pro and Max plans. In the iPhone app, ask a question about your health data, then review the permission request. Claude can read Apple Health records but cannot modify them. [Claude's iOS guide](https://support.claude.com/en/articles/11869619-use-claude-with-ios-apps).
 
 Start with one category you recognize. Ask for yesterday's recorded activity or a particular workout and compare the answer with your phone before requesting a long-term interpretation.
 
@@ -68,7 +64,7 @@ This gives access to the data stored under your account, including the uploaded 
 
 ## Three questions worth asking first
 
-The following are prompt templates, not transcripts or claimed results. Replace the dates with periods you have recorded. Run one, examine its table, and only then ask for interpretation.
+These are prompt templates, not transcripts. Replace the dates with periods you have recorded, and examine the supporting table before requesting an interpretation.
 
 ### 1. Did my recorded sleep duration change?
 
@@ -84,7 +80,7 @@ A difference in medians answers a narrow question about the recorded nights. It 
 
 The distinct-day count matters: two workouts on Saturday represent one training day, not two days of consistency. In PulsHealth, begin with `list_workouts`, then use `get_workout` if a session needs inspection. Verify that all result pages were retrieved before accepting monthly totals.
 
-Keep comparisons like-for-like. A strength session and a run can both count toward recorded workout days, while pace comparisons need a narrower set of workouts.
+A strength session and a run can both count toward workout days. Comparing pace requires a narrower set of workouts.
 
 ### 3. How did my daily activity differ between periods?
 
@@ -117,8 +113,10 @@ You can independently reproduce the table with [check_sleep.py](/downloads/apple
 
 Read-only describes what a connection can change. It does not mean analysis remains on your phone or server. When a cloud assistant requests PulsHealth records, its provider receives the returned information. Self-hosting the database does not change that part of the path.
 
-OpenAI's current policy says connected Health information and conversations using it are excluded from foundation-model training and advertising targeting. That statement should not be extended automatically to an ordinary file upload or a different connector. Anthropic also makes specific commitments for its native health integrations; check the terms for the actual route you choose. [OpenAI Health controls](https://help.openai.com/en/articles/20001036-health-in-chatgpt), [Anthropic health commitments](https://www.anthropic.com/news/healthcare-life-sciences)
+OpenAI excludes connected Health data and conversations using it from foundation-model training and ad targeting. That does not automatically cover an ordinary file upload or another connector. Health conversations can also create memories when memory is enabled; review those controls separately. Anthropic says it does not train models on data from its health integrations. Check the policy for your actual connection. [OpenAI Health controls](https://help.openai.com/en/articles/20001036-health-in-chatgpt), [Anthropic health commitments](https://www.anthropic.com/news/healthcare-life-sciences).
 
 For hosted PulsHealth, revoking a connection stops renewal; existing access expires within 30 minutes. Revocation does not erase information already received by the assistant's provider. Review chat retention and deletion there separately. [PulsHealth's access and privacy details](/privacy/)
 
-A good final answer has dates, units, coverage, and a calculation you can reproduce. Save that table alongside the prose. It is much easier to revisit a clear observation than a confident paragraph whose evidence has disappeared.
+For a worked example with my own records, see [the weekly-summary audit](/blog/apple-health-ai-weekly-review/). It follows one AI response through arithmetic and source checks.
+
+Save the supporting table with the answer. Dates, units, missing rows, and arithmetic make the result possible to check again when your records or the assistant change.
