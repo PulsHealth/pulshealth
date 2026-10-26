@@ -43,6 +43,7 @@ struct ExploreView: View {
                 searchResults
             }
         }
+        .listStyle(.insetGrouped)
         .scrollDismissesKeyboard(.immediately)
         .navigationTitle("Explore")
         .toolbar {
@@ -148,10 +149,13 @@ struct ExploreView: View {
 
     // MARK: - Catalog
 
-    private static let groups = HealthTypeDescriptor.Group.allCases
+    // Keep workouts beside activity in Explore; the shared catalog order stays unchanged.
+    private static let groups: [HealthTypeDescriptor.Group] = [.activity, .workouts]
+        + HealthTypeDescriptor.Group.allCases.filter { $0 != .activity && $0 != .workouts }
 
     @ViewBuilder private var catalog: some View {
-        if Self.groups.allSatisfy({ visibleTypes(in: $0).isEmpty }) {
+        let visibleGroups = Self.groups.filter { !visibleTypes(in: $0).isEmpty }
+        if visibleGroups.isEmpty {
             // Only reachable with Hide Types Without Data on.
             ContentUnavailableView {
                 Label("No Health Data", systemImage: "heart.text.square")
@@ -161,10 +165,13 @@ struct ExploreView: View {
                 Button("Show All Types") { hidesEmptyTypes = false }
             }
         } else {
-            Section("Health Categories") {
-                ForEach(Self.groups, id: \.self) { group in
+            ForEach(visibleGroups, id: \.self) { group in
+                Section {
                     categoryRows(group, types: visibleTypes(in: group))
+                } header: {
+                    if group == visibleGroups.first { Text("Health Categories") }
                 }
+                .listSectionSpacing(12)
             }
             let hidden = hiddenCount
             if hidden > 0 {
@@ -224,16 +231,7 @@ struct ExploreView: View {
             if expanded {
                 ForEach(types) { descriptor in
                     typeRow(descriptor, showsCategory: false)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 46, bottom: 8, trailing: 20))
-                        .listRowBackground(
-                            Color(.secondarySystemGroupedBackground)
-                                .overlay(alignment: .leading) {
-                                    Rectangle()
-                                        .fill(group.color.opacity(0.45))
-                                        .frame(width: 2)
-                                        .padding(.leading, 32)
-                                        .accessibilityHidden(true)
-                                })
+                        .listRowInsets(EdgeInsets(top: 8, leading: 28, bottom: 8, trailing: 20))
                 }
             }
         }
@@ -393,6 +391,7 @@ private struct ExploreTypeRow: View {
             TypeIcon(descriptor, size: showsCategory ? .regular : .small)
             VStack(alignment: .leading, spacing: 1) {
                 Text(descriptor.displayName)
+                    .font(showsCategory ? .body : .callout)
                 Text(detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
