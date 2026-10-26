@@ -62,36 +62,13 @@ final class ExportModel {
     /// What the next export covers. Lives for the session: leaving the tab
     /// keeps it, a launch starts over.
     var draft = ExportDraft()
-    /// The draft as it was created, to tell an untouched one from an edited
-    /// one (`seedFromApplied`).
-    @ObservationIgnored private let pristineDraft: ExportDraft
     private(set) var state: State = .idle
     var showsDraft = true
     private(set) var notice: Notice?
 
     @ObservationIgnored private var task: Task<Void, Never>?
 
-    init() {
-        let initial = ExportDraft()
-        draft = initial
-        pristineDraft = initial
-    }
-
     // MARK: - The draft
-
-    /// The applied sync selection becomes the draft's starting point, once,
-    /// when `AppModel` has loaded it, and only if nothing has been changed yet:
-    /// an edit made before the configuration landed is not thrown away, and
-    /// an empty applied selection (no sync set up) leaves the common set.
-    func seedFromApplied(_ configuration: SyncConfiguration) {
-        guard draft == pristineDraft else { return }
-        let applied = ExportSelection(configuration: configuration)
-        guard !applied.types.isEmpty || !applied.aggregates.isEmpty else { return }
-        draft.types = applied.types
-        draft.aggregates = applied.aggregates
-        draft.includeWorkoutRoutes = applied.includeWorkoutRoutes
-        draft.includeWorkoutEnhancedData = applied.includeWorkoutEnhancedData
-    }
 
     /// Add a type to the draft ("Export This Type" on a type's page).
     func include(type id: String) {
@@ -320,13 +297,11 @@ private final class BackgroundWatch {
 }
 
 /// What the Export tab is about to export, built on the tab and handed to
-/// `ExportRequest` as a whole when Export is tapped. Its own thing: it starts
-/// from the applied sync selection (`ExportModel.seedFromApplied`) and nothing
-/// changed here reaches the configuration the app syncs with.
+/// `ExportRequest` as a whole when Create Export is tapped. Its selection
+/// starts empty each launch and nothing changed here reaches the sync configuration.
 struct ExportDraft: Equatable {
-    /// HealthKit type identifiers (`HealthTypeCatalog`). The common set until
-    /// the applied selection is known.
-    var types: Set<String> = TypePresets.common
+    /// HealthKit type identifiers explicitly selected for this export.
+    var types: Set<String> = []
     /// Aggregates, edited through the same picker and type pages as Sync's
     /// (`AggregateScope.export`), independent of the sync config's.
     var aggregates: [AggregateConfig] = []

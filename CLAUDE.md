@@ -129,8 +129,9 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   (`ExportZipTests` fails if iOS renames them); `ExportModel` clears it when
   another export starts, on Delete Export, and on the share sheet's
   `completed` — hence `UIActivityViewController`, not `ShareLink` (no
-  completion callback). The tab exports its own `ExportDraft` (seeded once
-  from `appliedConfig`) and requests Health access itself
+  completion callback). The tab exports its own `ExportDraft` (types and
+  aggregates start empty each launch, independent of `appliedConfig`) and
+  requests Health access itself
   (`requestHealthAccessForExport`: skips undeterminable types, never the
   medication picker). Change any of that and `docs/privacy-policy.md`
   § Exports, `SECURITY.md`, the site's `/privacy` card and `docs/appstore/`

@@ -43,10 +43,12 @@ system bars. See [Duo acceptance and store assets](../docs/appstore/iphone-duo.m
 Explore gives each category its own card. Space between cards makes each
 group’s boundary clear; parent and child rows use the same background, alignment
 and icon size. Search results show each type’s category. Workouts has its own
-card directly below Activity.
+card between Sleep and Vitals.
 
 The type page’s **+** menu connects Explore to the other tabs. **Add to Export**
-selects the type in the current multi-type draft without creating files. Its
+selects the type in the current multi-type draft without creating files.
+Export starts with no types or aggregates selected each launch; Sync never
+preselects its export data. Its
 confirmation can be dismissed or used to open Export; the tab badge counts
 selected types. Export’s Clear Selection removes draft choices, Cancel Export
 stops a running export, and an earlier completed file remains available until
@@ -250,9 +252,8 @@ Sources/
 │                           touches the sync selection.
 ├── ExportModel.swift     @MainActor @Observable, owned by AppModel: the draft
 │                         (types, aggregates, workout switches, range, format,
-│                         zip — seeded once from the applied sync selection,
-│                         then the export's own), the run in flight (progress,
-│                         cancel, idle-timer and background-task assertion),
+│                         zip — with an initially empty selection), the run
+│                         in flight (progress, cancel, idle-timer and background-task assertion),
 │                         the finished export, and the lifetime of its staged
 │                         files. A run outlives the screen that started it.
 ├── SyncView.swift        The Sync tab. No database applied: the first-time
@@ -515,8 +516,9 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 - **The Export tab** writes a selection of its own — `ExportDraft`: types,
   aggregates, workout switches, a preset or custom range, the format
   and whether to zip it —
-  seeded once from the applied sync selection and edited on the tab, never
-  written back to it (an aggregate added here is the export's alone). It goes to
+  with no types or aggregates preselected each launch. Selections are added
+  explicitly on the tab or from Explore, never written back to Sync (an
+  aggregate added here is the export's alone). It goes to
   CSV, JSON or JSONL through the package's `HealthExporter`, which runs on a
   throwaway engine and never touches the app's sync state (root `CLAUDE.md`,
   "Export never shares sync state"). Before a run the app requests Health

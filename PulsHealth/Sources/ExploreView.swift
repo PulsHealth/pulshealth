@@ -149,9 +149,9 @@ struct ExploreView: View {
 
     // MARK: - Catalog
 
-    // Keep workouts beside activity in Explore; the shared catalog order stays unchanged.
-    private static let groups: [HealthTypeDescriptor.Group] = [.activity, .workouts]
-        + HealthTypeDescriptor.Group.allCases.filter { $0 != .activity && $0 != .workouts }
+    private static let groups: [HealthTypeDescriptor.Group] = [
+        .activity, .body, .heart, .respiratory, .sleep, .workouts, .vitals, .nutrition, .other,
+    ]
 
     @ViewBuilder private var catalog: some View {
         let visibleGroups = Self.groups.filter { !visibleTypes(in: $0).isEmpty }

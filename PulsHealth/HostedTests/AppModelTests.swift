@@ -211,6 +211,31 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(h.model.showsPro)
     }
 
+    func testExportStartsEmptyEvenWithConfiguredRawAndAggregateSync() async throws {
+        let aggregate = try XCTUnwrap(AggregateConfig.dailyDefault(for: heartRate))
+        let saved = SyncConfiguration(enabledTypes: [steps], serverURL: mine, aggregates: [aggregate])
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: saved)
+        XCTAssertTrue(h.model.exportSelection.isEmpty)
+        await h.model.start()
+        XCTAssertTrue(h.model.exportSelection.isEmpty)
+        XCTAssertEqual(h.model.export.draft.selectedTypeCount, 0)
+        XCTAssertEqual(h.model.appliedConfig.enabledTypes, [steps])
+        XCTAssertEqual(h.model.appliedConfig.aggregates, [aggregate])
+        h.model.startExport()
+        XCTAssertFalse(h.model.export.isRunning)
+    }
+
+    func testLoadingSyncNeverAddsToAnEarlyExplicitExportSelection() async throws {
+        let aggregate = try XCTUnwrap(AggregateConfig.dailyDefault(for: heartRate))
+        let saved = SyncConfiguration(enabledTypes: [steps], serverURL: mine, aggregates: [aggregate])
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: saved)
+        h.model.export.include(type: heartRate)
+        await h.model.start()
+        XCTAssertEqual(h.model.export.draft.types, [heartRate])
+        XCTAssertTrue(h.model.export.draft.aggregates.isEmpty)
+        XCTAssertFalse(h.model.export.isRunning)
+    }
+
     func testExportTypeAdditionsAndClearNeverChangeSyncOrStartAnExport() async throws {
         let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
         await h.model.start()
@@ -397,6 +422,7 @@ final class AppModelTests: XCTestCase {
     func testFreeHistoricalExportPromptsBeforeHealthAccess() async throws {
         let harness = try await makeModel(pro: false)
         await harness.model.start()
+        harness.model.export.include(type: steps)
         harness.model.export.draft.range = .allTime
         harness.model.startExport()
         let prompted = await eventually { harness.model.showsPro }
