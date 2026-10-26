@@ -1,13 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays, Check, Share2, Sparkles, Activity, Bike, Dumbbell, Footprints } from "lucide-react";
+import { CalendarDays, Share2, Sparkles, Activity, Bike, Dumbbell, Footprints } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import styles from "./workouts.module.css";
 
 const description = "Create running, cycling, strength, swimming, and interval workouts on iPhone. Save, share, and schedule structured workouts for Apple’s Workout app on Apple Watch.";
 const socialImage = { url: "/watch-workout-pro/workout-library.jpg", width: 396, height: 860, alt: "Watch Workout Pro workout library on iPhone" };
 export const metadata = {
-  title: "Watch Workout Pro — Your workout. Your Apple Watch.", description,
+  title: "Watch Workout Pro — Your Custom Workouts on your Apple Watch", description,
   alternates: { canonical: "/watch-workout-pro/" },
   openGraph: { title: "Watch Workout Pro", description, url: "/watch-workout-pro/", images: [socialImage] },
   twitter: { card: "summary_large_image", title: "Watch Workout Pro", description, images: [socialImage.url] },
@@ -30,14 +30,12 @@ export default function WatchWorkoutProPage() {
       <div className={`container mx-auto max-w-7xl px-5 ${styles.hero}`}>
         <div>
           <h1 className={styles.name}>Watch Workout Pro</h1>
-          <p className={styles.headline}>Your workout.<br />Your Apple Watch.</p>
+          <p className={styles.headline}>Your Custom Workouts on your Apple Watch</p>
           <p className="mt-7 max-w-lg text-xl leading-relaxed text-muted-foreground">Build a workout on your iPhone. Save the ones you love. Have your next session ready in Apple’s Workout app on your watch.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg"><a href="#workouts">Explore the app</a></Button>
             <Button asChild size="lg" variant="outline"><Link href="/watch-workout-pro/support/">Get support</Link></Button>
           </div>
-          <p className="mt-5 text-sm text-muted-foreground">Coming to the App Store. Free to start, with optional Pro.</p>
-          <p className="mt-6 text-sm text-muted-foreground">Powered by Puls</p>
         </div>
         <div className={styles.heroVisual}>
           <Phone name="workout-library" alt="Watch Workout Pro library with saved running, strength, and swimming workouts" priority />
@@ -61,14 +59,7 @@ export default function WatchWorkoutProPage() {
         </div> : <Phone name={name} alt={alt} />}</div>
       </section>)}
 
-      <section className="border-y py-12 md:py-16" aria-labelledby="free-pro">
-        <h2 id="free-pro" className={styles.sectionTitle}>Start free. Keep going with Pro.</h2>
-        <div className="mt-10 grid gap-10 md:grid-cols-2 md:gap-20">
-          <div><h3 className="text-2xl font-semibold">A little room to try it.</h3><ul className="mt-5 space-y-4">{["3 workout creations in total", "2 AI workout creations in total", "1 scheduled session in total", "Keep editing and sharing your saved workouts"].map(item => <li key={item} className="flex items-start gap-3"><Check className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />{item}</li>)}</ul><p className="mt-5 text-sm leading-relaxed text-muted-foreground">Free allowances are lifetime totals. Deleting a workout, completing a session, or starting a new month does not reset them. AI drafts can still be generated and reviewed.</p></div>
-          <div><h3 className="text-2xl font-semibold">More room for your routine.</h3><p className="mt-5 text-lg leading-relaxed text-muted-foreground">Pro removes the app’s workout-creation, AI-creation, and scheduling limits, and adds weekly repeats.</p><p className="mt-5 text-sm leading-relaxed text-muted-foreground">Optional auto-renewing monthly subscription. See your localized price and purchase terms in the app before subscribing. Apple’s device requirements and scheduling capacity still apply.</p><a className="mt-5 inline-block font-medium text-brand hover:underline" href="https://apps.apple.com/account/subscriptions">Manage an Apple subscription</a></div>
-        </div>
-      </section>
-      <section className="max-w-3xl"><h2 className={styles.sectionTitle}>Made for your iPhone.<br />Ready for your watch.</h2><p className="mt-6 text-lg leading-relaxed text-muted-foreground">Manual workout creation requires iOS 18 or later. Scheduling requires a compatible paired Apple Watch and your permission. Activities and goals depend on device support. Strength rep cues are instructions you advance manually.</p><p className="mt-4 text-base leading-relaxed text-muted-foreground">Watch Workout Pro is a separate native app associated with PulsHealth. It does not automatically connect to your PulsHealth account or health database. The workout editor lives on iPhone; shared links can be previewed in a browser.</p><div className="mt-8 flex flex-wrap gap-x-8 gap-y-4 font-medium text-brand"><Link href="/watch-workout-pro/privacy/" className="hover:underline">Read the privacy policy</Link><a href="mailto:support@pulshealth.com?subject=Watch%20Workout%20Pro%20support" className="hover:underline">support@pulshealth.com</a></div></section>
+
     </div>
   </main>;
 }
