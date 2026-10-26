@@ -238,6 +238,45 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.4 (32) submitted for App Review (2026-10-26)
+
+App Store Connect accepted submission
+`13ee1efb-7f52-4557-85f7-a1ee13aeca0f` on 2026-10-26 at 10:58 AM Pacific.
+The verified status is **Waiting for Review**, with build **2.4 (32)** and
+automatic release after approval. Approval, public release, and the live
+**Made for iPhone Duo** badge remain unverified.
+
+PR [#386](https://github.com/PulsHealth/pulshealth/pull/386) merged as
+`bba42b51a8d264f99b2868614c8c20949f3a6469` after all required checks passed,
+including Xcode 26.5 and 27.0. The clean archive source
+`32a04c29d235a22f4b25a420181d4ef293b2d461` is contained in that merge, with
+matching app/package inputs. The archive uses Xcode 27.1 and the iOS 27.1 SDK.
+The exported IPA, matching dSYMs, checksums, and acceptance receipts are
+retained privately. Its distribution signature retains HealthKit and
+background-delivery entitlements and disables debugging.
+
+Explore now adapts between a catalog/detail split and compact navigation,
+preserving selection across folding. Onboarding clips adjacent pages to its
+safe viewport. Explore stats stack at accessibility sizes, category labels
+have the full sidebar width, captions wrap, and bounded chart axes remain
+legible while surrounding text retains the requested size.
+
+All 109 signed app tests passed on a dedicated Duo simulator with iOS 27.1.
+Native checks covered both displays, compact Back/reopening, selection and
+export/database draft retention, vertical bars, onboarding clipping, maximum
+text-size statistics and chart axes, plus ordinary iPhone/iPad layout smoke
+checks. System Health permission completion/share-sheet completion, a connected
+pending-Apply bar, and nested sync-detail resizing were not visually exercised.
+Physical-device HealthKit/background acceptance for this artifact is unverified.
+
+Four native JPEG screenshots with synthetic data are attached to the version:
+outer-display Heart Rate and Export at 1398 × 2034, and inner-display Heart Rate
+and charts at 2853 × 2007. They are submitted through the app version, not as
+separate Asset Library review items. The existing iPhone/iPad assets and
+privacy declarations remain in place. Build 31 was uploaded during preparation
+and superseded; it is not selected for this submission.
+
+
 ### 2.3 (30) replacement submitted for App Review (2026-10-22)
 
 Build **2.3 (30)** replaces build 29 in App Review. Apple accepted the
