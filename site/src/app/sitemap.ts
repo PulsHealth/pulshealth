@@ -13,6 +13,7 @@ const withSlash = (href: string) => (href.endsWith("/") ? href : `${href}/`);
 function staticSources(href: string): string[] {
   const route = href.replace(/^\/|\/$/g, "");
   const sources = [`site/src/app/${route ? `${route}/` : ""}page.tsx`];
+  if (route === "friend-flex/privacy") sources.push("site/content/friend-flex/privacy-policy.md");
   if (route === "privacy") sources.push("docs/privacy-policy.md");
   if (/^watch-workout-pro\/(support|privacy)$/.test(route)) sources.push(`site/content/watchworkoutpro/${route.endsWith("/privacy") ? "privacy-policy" : "support"}.md`);
   return sources;

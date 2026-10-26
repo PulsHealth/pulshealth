@@ -71,11 +71,13 @@ page and stays outside the sitemap. Search Console can retain old exclusions
 until Google recrawls; passing these checks makes pages eligible, but does not
 guarantee Google will index them.
 
-Two of those pages are not PulsHealth: `/fun100/` and `/fun100/privacy/` are
-the App Store support and privacy-policy URLs for Fun100, a separate app by
-the same developer. They are unlisted (not in the navigation, search or
-sitemap); the policy is `content/fun100/privacy-policy.md`, rendered the same
-way as `/privacy`.
+Friend Flex is a separate app by the same developer. Its support page is
+`/friend-flex/` and its privacy policy is `/friend-flex/privacy/`, rendered from
+`content/friend-flex/privacy-policy.md`. The footer, search and sitemap use
+these canonical URLs. Legacy `/fun100/` URLs redirect to the new pages.
+
+The footer groups links under PulsHealth, Resources, Developers and More apps,
+with legal links in a separate bottom row. Pricing links to the Free/Pro comparison.
 
 Watch Workout Pro is a separate native iPhone app with its own public landing
 page at `/watch-workout-pro/`, support at `/watch-workout-pro/support/`, and

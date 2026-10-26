@@ -7,17 +7,17 @@ import { PageHero } from "@/components/page-hero";
 const SUPPORT_EMAIL = "support@pulshealth.com";
 
 const description =
-  "Help with Fun100, a fitness challenge app for small groups of friends: how it works, common questions, and how to reach support. Fun100 is a separate app from PulsHealth, by the same developer.";
+  "Help with Friend Flex, a fitness challenge app for small groups of friends: how it works, common questions, and how to reach support. Friend Flex is a separate app from PulsHealth, by the same developer.";
 
 export const metadata = {
-  title: "Fun100 Support",
+  title: "Friend Flex Support",
   description,
   alternates: {
-    canonical: "/fun100/",
+    canonical: "/friend-flex/",
   },
   // Not PulsHealth: don't inherit the site's PulsHealth share card.
-  openGraph: { title: "Fun100 Support", description, url: "/fun100/" },
-  twitter: { card: "summary", title: "Fun100 Support", description },
+  openGraph: { title: "Friend Flex Support", description, url: "/friend-flex/" },
+  twitter: { card: "summary", title: "Friend Flex Support", description },
 };
 
 const link = "text-brand underline-offset-4 hover:underline";
@@ -27,7 +27,7 @@ const faq: { q: string; a: ReactNode }[] = [
     q: "Do I need an account?",
     a: (
       <>
-        No separate account. Fun100 stores challenges and results in Apple&apos;s iCloud, so you
+        No separate account. Friend Flex stores challenges and results in Apple&apos;s iCloud, so you
         need to be signed into iCloud on your iPhone. You just pick a display name and an emoji.
       </>
     ),
@@ -36,7 +36,7 @@ const faq: { q: string; a: ReactNode }[] = [
     q: "How do I join a challenge?",
     a: (
       <>
-        Ask the person who created it for its 6-character code. In Fun100, go to the Challenges
+        Ask the person who created it for its 6-character code. In Friend Flex, go to the Challenges
         list, tap <strong>+</strong>, choose <strong>Join with Code</strong> and enter the code.
       </>
     ),
@@ -45,10 +45,10 @@ const faq: { q: string; a: ReactNode }[] = [
     q: "Do I have to connect Apple Health?",
     a: (
       <>
-        No, it&apos;s optional. If you connect it, Fun100 uses it to show stats on your own Fitness
-        page and to offer one-tap logging of a new weigh-in or a fast run or ride. Health data stays
+        No, it&apos;s optional. If you connect it, Friend Flex uses it to show stats on your own Fitness
+        page and to offer one-tap logging of a new weigh-in, body measurement or a fast run or ride. Health data stays
         on your iPhone. Nothing from Apple Health is uploaded unless you tap to log a specific
-        result, and then only that result is saved. Fun100 never writes to Apple Health.
+        result, and then only that result is saved. Friend Flex never writes to Apple Health.
       </>
     ),
   },
@@ -82,20 +82,19 @@ const faq: { q: string; a: ReactNode }[] = [
 ];
 
 /**
- * Support page for Fun100, a separate iPhone app by the same developer that
- * uses this page as its App Store Support URL. Unlisted on purpose (not in
- * the navigation, search or sitemap).
+ * Support page for Friend Flex, a separate iPhone app by the same developer that
+ * uses this page as its App Store Support URL. Linked from the footer, search and sitemap.
  */
-export default function Fun100SupportPage() {
+export default function FriendFlexSupportPage() {
   return (
     <main className="flex flex-1 flex-col">
       <PageHero
         size="compact"
-        title="Fun100 Support"
-        lede="Fun100 is an iPhone app for running a fitness challenge with a small group of friends."
+        title="Friend Flex Support"
+        lede="Friend Flex is an iPhone app for running a fitness challenge with a small group of friends."
         note={
           <>
-            Fun100 is not part of PulsHealth. It is a separate app by the same developer, and its
+            Friend Flex is not part of PulsHealth. It is a separate app by the same developer, and its
             support page lives on this site for that reason.
           </>
         }
@@ -107,16 +106,15 @@ export default function Fun100SupportPage() {
           </a>
         </Button>
         <Button asChild size="lg" variant="outline">
-          <Link href="/fun100/privacy/">Privacy Policy</Link>
+          <Link href="/friend-flex/privacy/">Privacy Policy</Link>
         </Button>
       </PageHero>
 
       <section className="container mx-auto max-w-3xl px-4 py-16">
-        <h2 className="text-2xl font-bold tracking-tight mb-4">What Fun100 is</h2>
+        <h2 className="text-2xl font-bold tracking-tight mb-4">What Friend Flex is</h2>
         <div className="space-y-4 text-muted-foreground text-pretty">
           <p>
-            A fitness challenge for small groups of friends. Everyone logs the same four things:
-            weigh-ins, a 1-mile run, a 20-minute ride and max push-ups.
+            A fitness challenge for small groups of friends. Choose from 20 fitness and body-measurement categories, or add a custom category.
           </p>
           <p>
             Everyone is scored on their percentage improvement from their own start, so it&apos;s
@@ -124,7 +122,7 @@ export default function Fun100SupportPage() {
             in each category.
           </p>
           <p>
-            There is also a Fun100 iMessage app, for logging a result and checking the leaderboard
+            There is also a Friend Flex iMessage app, for logging a result and checking the leaderboard
             without leaving the group chat.
           </p>
         </div>
@@ -150,9 +148,9 @@ export default function Fun100SupportPage() {
         </dl>
 
         <p className="mt-8 text-sm text-muted-foreground">
-          What Fun100 stores, who can see it and how to delete it:{" "}
-          <Link href="/fun100/privacy/" className={link}>
-            Fun100 Privacy Policy
+          What Friend Flex stores, who can see it and how to delete it:{" "}
+          <Link href="/friend-flex/privacy/" className={link}>
+            Friend Flex Privacy Policy
           </Link>
           .
         </p>
