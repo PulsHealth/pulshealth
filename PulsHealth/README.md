@@ -40,6 +40,10 @@ Build release candidates with
 Xcode 27.1 or later and verify folded/unfolded Duo layouts, including vertical
 system bars. See [Duo acceptance and store assets](../docs/appstore/iphone-duo.md).
 
+Explore keeps expanded data types indented beneath their category, with smaller
+icons, a category-colored guide line and a subtle tint on the expanded header.
+Search results stay flat and show each type's category.
+
 ## Free and Pro access
 
 The subscription implementation is prepared in source; product creation and
