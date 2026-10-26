@@ -378,7 +378,8 @@ private enum Fixture {
             // Header lines are the only ones with a batchID: the split rule.
             #expect(body.allSatisfy { $0["batchID"] == nil })
             #expect(body.filter { $0["uuid"] != nil }.count == counts[0])
-            #expect(body.filter { $0["deleted"] != nil }.count == counts[1])
+            #expect(counts[1] == 0)
+            #expect(body.allSatisfy { $0["deleted"] == nil })
             #expect(body.filter { $0["route"] != nil }.count == counts[2])
             #expect(body.filter { $0["aggregate"] != nil }.count == counts[4])
             #expect(body.filter { $0["activitySummary"] != nil }.count == counts[5])
@@ -395,7 +396,7 @@ private enum Fixture {
         let tally = await transport.tally
         #expect(tally.batches == 5)
         #expect(tally.rows == [
-            .samples: 3, .deletions: 1, .workouts: 1, .workoutRoutes: 2, .aggregates: 1, .activity: 1,
+            .samples: 3, .workouts: 1, .workoutRoutes: 2, .aggregates: 1, .activity: 1,
         ])
         #expect(tally.notRepresented(in: .jsonl).isEmpty)
         #expect(tally.bytes == files[0].bytes)
@@ -411,8 +412,7 @@ private enum Fixture {
         }
     }
 
-    /// CSV has no file for an ECG trace, a heartbeat series or a tombstone.
-    /// They are counted, never dropped without a word.
+    /// CSV reports unsupported health data; deletion records are silently ignored.
     @Test func csvCountsWhatItCannotRepresent() async throws {
         let dir = try Fixture.tempDirectory()
         let transport = ExportFileTransport(format: .csv, directory: dir, baseName: "t")
@@ -433,7 +433,7 @@ private enum Fixture {
         #expect(try Fixture.lines(of: files[0].url).count == 2)
         let tally = await transport.tally
         #expect(tally.written(in: .csv) == [.samples: 1])
-        #expect(tally.notRepresented(in: .csv) == [.ecg: 2, .heartbeatSeries: 1, .deletions: 1])
+        #expect(tally.notRepresented(in: .csv) == [.ecg: 2, .heartbeatSeries: 1])
     }
 
     @Test func progressReportsWrittenRowsPhaseAndType() async throws {
@@ -1156,6 +1156,7 @@ private enum ZipReader {
         for var batch in batches {
             _ = try await transport.upload(batch)
             batch.deviceID = "real-device"
+            batch.deletions = []
             let lines = try String(decoding: BatchSerializer.ndjson(for: batch), as: UTF8.self).split(separator: "\n")
             expected += try lines.map { try Fixture.object(String($0)) as NSDictionary }
         }
@@ -1170,7 +1171,7 @@ private enum ZipReader {
         let tally = await transport.tally
         #expect(tally.notRepresented(in: .json).isEmpty)
         #expect(tally.written(in: .json) == tally.rows)
-        #expect(tally.rows[.ecg] == 1 && tally.rows[.heartbeatSeries] == 1 && tally.rows[.deletions] == 1)
+        #expect(tally.rows[.ecg] == 1 && tally.rows[.heartbeatSeries] == 1 && tally.rows[.deletions] == nil)
     }
 
     @Test func noBatchesCreateNoFileAndAbortRemovesAnUnfinishedDocument() throws {

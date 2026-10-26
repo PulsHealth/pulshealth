@@ -45,14 +45,15 @@ struct ExportView: View {
                 }
             }
         }
-        .confirmationDialog("Clear the export selection?", isPresented: $confirmClearSelection, titleVisibility: .visible) {
+        .alert("Clear export selection?", isPresented: $confirmClearSelection) {
             Button("Clear Selection", role: .destructive) { model.export.clearSelection() }
-            Button("Keep Selection", role: .cancel) {}
+            Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Removes selected raw types and aggregates from this export draft. Your Sync configuration is unchanged.")
+            Text("Remove all selected data types and aggregates from this export?")
         }
         .deleteExportAlert(isPresented: $confirmDelete, export: model.export)
-        .reviewRequestOpportunity(.export, blocked: sharing || confirmDelete || confirmClearSelection || model.export.showsDraft)
+        .reviewRequestOpportunity(.export, blocked: sharing || confirmDelete || confirmClearSelection
+            || (model.export.showsDraft && !model.exportSelection.isEmpty))
     }
 
     // MARK: - Idle
@@ -363,7 +364,8 @@ struct ExportView: View {
                 title: progress.phase.label,
                 subtitle: progress.currentType.map {
                     HealthTypeCatalog.descriptor(for: $0)?.displayName ?? $0
-                },
+                } ?? "Reading selected health data",
+                reservesSubtitleSpace: true,
                 fraction: nil,
                 onCancel: { model.export.cancel() })
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -555,8 +557,6 @@ struct ExportView: View {
             Section {
                 Button("Delete Export", role: .destructive) { confirmDelete = true }
                     .frame(maxWidth: .infinity)
-            } footer: {
-                Text("The files are in temporary storage on this iPhone, outside any backup. They are deleted once you have shared them, when you start another export, and the next time PulsHealth launches. They are not encrypted: once saved or sent, a file is only as private as the place you put it.")
             }
         }
     }

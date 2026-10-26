@@ -146,10 +146,10 @@ final class ExportModel {
     /// The share sheet closed. Only `completed` deletes: a sheet the user
     /// swiped away handed the files to nobody, and they may open it again.
     func shareFinished(completed: Bool) {
-        guard completed, case .finished(var finished) = state, !finished.filesRemoved else { return }
+        guard completed, case .finished(let finished) = state, !finished.filesRemoved else { return }
         HealthExporter.remove(finished.result)
-        finished.filesRemoved = true
-        state = .finished(finished)
+        state = .idle
+        clearSelection()
     }
 
     // MARK: - The run
@@ -202,6 +202,9 @@ final class ExportModel {
             for await progress in updates {
                 guard let self, self.isRunning else { continue }
                 self.state = .running(progress)
+                // Batch completions arrive in bursts from concurrent types.
+                // Keep the display readable while buffering the newest update.
+                try? await Task.sleep(for: .milliseconds(200))
             }
         }
 

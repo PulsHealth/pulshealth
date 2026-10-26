@@ -237,7 +237,7 @@ and JSONL. The detailed formats and CSV are not symmetrical:
 (`puls-export-<yyyyMMdd-HHmmss>.jsonl`) is a concatenation of
 [Puls Sync Protocol](protocol/README.md) batches exactly as they would have
 gone over the wire, uncompressed: each batch's header line, then its sample,
-deletion, route, series, aggregate and activity-summary lines. Nothing about it
+route, series, aggregate and activity-summary lines. Nothing about it
 is export-specific — it is the format `docs/protocol/schema/` specifies and the
 fixture corpus tests — so every field of every kind is there, and a file can be
 fed to a server later: split it before each header line (the only lines whose
@@ -251,8 +251,8 @@ know:
 - There is no `{"profile":…}` line. The name, e-mail, date of birth and sex on
   that line are the app's settings rather than HealthKit data, and an export
   leaves them out of a file that is about to be shared.
-- Deletion lines are kept. HealthKit can return the tombstones it still holds
-  even to a first query, and a replay should apply them.
+- HealthKit deletion records are silently ignored in every export format.
+  Exports contain health data snapshots, rather than deletion history.
 
 [`tools/protocol-check`](../tools/protocol-check) validates one batch per file,
 so split an export the same way before checking it.
@@ -261,7 +261,7 @@ so split an export the same way before checking it.
 `puls-export-<yyyyMMdd-HHmmss>.json` is an array containing the exact JSONL
 objects in the same order: batch header, records, next batch header, records.
 It includes raw samples, aggregates, routes, streams, ECG traces, heartbeat
-series, deletion tombstones and time-zone/source/metadata fields when available.
+series and time-zone/source/metadata fields when available.
 It omits the configured identity profile, like JSONL. The exporter writes it
 incrementally and closes the array only after the data is written; failed or
 cancelled exports are removed. The whole export is not buffered in memory.
@@ -376,7 +376,7 @@ per bucket, GPS fix, stream datapoint or dose. How the two sides differ:
 - **What CSV leaves out.** Unless enabled under More options, metadata,
   device, source bundle and version. Per-sample time-zone context and a
   workout's statistics, events and sub-activities have no column. ECG voltage traces, beat-to-beat heartbeat
-  series and deletion tombstones have no file at all; the result the package
+  series have no file at all; the result the package
   returns counts them so the app can say so and suggest JSON or JSONL.
 
 All three formats come with `puls-export-<yyyyMMdd-HHmmss>-manifest.json`: the user

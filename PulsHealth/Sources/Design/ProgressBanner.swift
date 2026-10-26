@@ -7,6 +7,7 @@ import SwiftUI
 struct ProgressBanner: View {
     let title: String
     var subtitle: String?
+    var reservesSubtitleSpace = false
     /// 0…1 for a determinate bar; nil for an indeterminate one.
     var fraction: Double?
     var onCancel: (() -> Void)?
@@ -17,9 +18,15 @@ struct ProgressBanner: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.subheadline.weight(.semibold))
                     if let subtitle {
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Group {
+                            if reservesSubtitleSpace {
+                                Text(subtitle).lineLimit(2, reservesSpace: true)
+                            } else {
+                                Text(subtitle)
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     }
                 }
                 Spacer(minLength: 8)
