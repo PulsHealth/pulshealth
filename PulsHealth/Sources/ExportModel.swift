@@ -66,6 +66,7 @@ final class ExportModel {
     /// one (`seedFromApplied`).
     @ObservationIgnored private let pristineDraft: ExportDraft
     private(set) var state: State = .idle
+    var showsDraft = true
     private(set) var notice: Notice?
 
     @ObservationIgnored private var task: Task<Void, Never>?
@@ -94,7 +95,25 @@ final class ExportModel {
 
     /// Add a type to the draft ("Export This Type" on a type's page).
     func include(type id: String) {
+        guard !isRunning else { return }
+        prepareDraft()
         draft.types.insert(id)
+    }
+
+    /// A new selection returns to the builder; an active run is never touched.
+    func prepareDraft() {
+        guard !isRunning else { return }
+        showsDraft = true
+        notice = nil
+    }
+
+    func clearSelection() {
+        guard !isRunning else { return }
+        prepareDraft()
+        draft.types = []
+        draft.aggregates = []
+        draft.includeWorkoutRoutes = false
+        draft.includeWorkoutEnhancedData = false
     }
 
     var isRunning: Bool {
@@ -123,6 +142,7 @@ final class ExportModel {
         // under a run that was.
         HealthExporter.removeAllExports()
         notice = nil
+        showsDraft = false
         state = .running(ExportProgress(phase: .preparing))
         let draft = draft
         task = Task { [weak self] in
@@ -143,6 +163,7 @@ final class ExportModel {
         guard case .finished(let finished) = state else { return }
         if !finished.filesRemoved { HealthExporter.remove(finished.result) }
         state = .idle
+        showsDraft = true
     }
 
     /// The share sheet closed. Only `completed` deletes: a sheet the user
@@ -330,6 +351,8 @@ struct ExportDraft: Equatable {
         customStart = calendar.date(byAdding: .year, value: -1, to: today) ?? today
         customEnd = now
     }
+
+    var selectedTypeCount: Int { types.union(aggregates.map(\.typeIdentifier)).count }
 
     func selection() -> ExportSelection {
         ExportSelection(

@@ -13,21 +13,46 @@ struct ExportView: View {
     @Environment(AppModel.self) private var model
     @State private var sharing = false
     @State private var confirmDelete = false
+    @State private var confirmClearSelection = false
 
     var body: some View {
         List {
-            switch model.export.state {
-            case .idle:
+            if model.export.showsDraft && !model.export.isRunning {
                 idleSections
-            case .running(let progress):
-                runningSections(progress)
-            case .finished(let finished):
-                finishedSections(finished)
+            } else {
+                switch model.export.state {
+                case .idle: idleSections
+                case .running(let progress): runningSections(progress)
+                case .finished(let finished): finishedSections(finished)
+                }
             }
         }
         .navigationTitle("Export")
+        .toolbar {
+            if case .finished = model.export.state {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if model.export.showsDraft {
+                        Button("Previous Export", systemImage: "doc.zipper") { model.export.showsDraft = false }
+                    } else {
+                        Button("Edit Export Draft", systemImage: "square.and.pencil") { model.export.prepareDraft() }
+                    }
+                }
+            }
+            if !model.export.isRunning {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Clear Selection", systemImage: "xmark.circle") { confirmClearSelection = true }
+                        .disabled(model.exportSelection.isEmpty)
+                }
+            }
+        }
+        .confirmationDialog("Clear the export selection?", isPresented: $confirmClearSelection, titleVisibility: .visible) {
+            Button("Clear Selection", role: .destructive) { model.export.clearSelection() }
+            Button("Keep Selection", role: .cancel) {}
+        } message: {
+            Text("Removes selected raw types and aggregates from this export draft. Your Sync configuration is unchanged.")
+        }
         .deleteExportAlert(isPresented: $confirmDelete, export: model.export)
-        .reviewRequestOpportunity(.export, blocked: sharing || confirmDelete)
+        .reviewRequestOpportunity(.export, blocked: sharing || confirmDelete || confirmClearSelection || model.export.showsDraft)
     }
 
     // MARK: - Idle
@@ -58,6 +83,22 @@ struct ExportView: View {
                     Text(count == 0 ? "None" : "\(count) type\(count == 1 ? "" : "s")")
                         .foregroundStyle(.secondary)
                 }
+            }
+            ForEach(HealthTypeCatalog.all.filter { export.draft.types.contains($0.identifier) }.prefix(5)) { type in
+                HStack {
+                    Text(type.displayName).font(.subheadline)
+                    Spacer()
+                    Button("Remove \(type.displayName)", systemImage: "xmark.circle") {
+                        export.draft.types.remove(type.identifier)
+                    }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.secondary)
+                }
+            }
+            if count > 5 {
+                Text("+\(count - 5) more · edit Data types to see all")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             if workouts {
                 Toggle(isOn: $export.draft.includeWorkoutRoutes) {
@@ -198,7 +239,7 @@ struct ExportView: View {
             Button {
                 model.startExport()
             } label: {
-                Text("Export").frame(maxWidth: .infinity)
+                Text("Create Export").frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
@@ -330,6 +371,7 @@ struct ExportView: View {
                          ? "Records processed" : "Rows written", value: progress.rowsWritten.formatted())
                 StatTile(label: "Size so far", value: Int(progress.bytesWritten).byteString)
             }
+            Button("Cancel Export", role: .destructive) { model.export.cancel() }
             Text("Keep PulsHealth open and the iPhone unlocked until this finishes. Health data is unreadable while the iPhone is locked, so an export that runs into a lock comes out incomplete. The screen stays awake while it runs. Cancelling keeps nothing.")
                 .font(.caption)
                 .foregroundStyle(.secondary)

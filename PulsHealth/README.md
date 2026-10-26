@@ -44,6 +44,21 @@ Explore keeps expanded data types indented beneath their category, with smaller
 icons, a category-colored guide line and a subtle tint on the expanded header.
 Search results stay flat and show each type's category.
 
+The type page’s **+** menu connects Explore to the other tabs. **Add to Export**
+selects the type in the current multi-type draft without creating files. Its
+confirmation can be dismissed or used to open Export; the tab badge counts
+selected types. Export’s Clear Selection removes draft choices, Cancel Export
+stops a running export, and an earlier completed file remains available until
+it is shared, deleted or replaced by a new export.
+
+**Add to Sync** opens a local sheet for raw readings, aggregates, or both.
+Aggregate function, interval and device choices stay with their series. Cancel
+leaves the shared draft unchanged. Add stages the selection; **Review** on Sync
+shows the destination and all pending edits before Apply. Undo one type’s edits
+or Discard All Changes to return to the applied configuration. A missing database
+is configured on Sync before applying. The new actions never start exports or
+uploads themselves.
+
 ## Free and Pro access
 
 The subscription implementation is prepared in source; product creation and

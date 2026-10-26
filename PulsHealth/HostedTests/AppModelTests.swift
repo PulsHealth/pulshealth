@@ -147,6 +147,186 @@ final class AppModelTests: XCTestCase {
         return Harness(model: model, engine: engine, defaults: defaults, access: access)
     }
 
+    func testTypeSyncSheetDraftIsLocalAndStagesAtomically() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
+        await h.model.start()
+        let original = h.model.config
+        var sheet = TypeSyncDraft(identifier: heartRate, configuration: original)
+        sheet.raw = false
+        sheet.includesAggregates = true
+        sheet.aggregates = [try XCTUnwrap(AggregateConfig.dailyDefault(for: heartRate)).with(interval: (1, .hour), deviceFilter: .watch)]
+        XCTAssertEqual(h.model.config, original, "editing or cancelling the sheet must not change the shared draft")
+        XCTAssertTrue(h.model.stageTypeSync(sheet))
+        XCTAssertEqual(h.model.config.enabledTypes, [steps])
+        XCTAssertEqual(h.model.config.aggregates, sheet.aggregates)
+        XCTAssertEqual(h.model.appliedConfig, original, "staging never applies or uploads")
+        let stored = await h.engine.store.configuration
+        XCTAssertEqual(stored, original)
+    }
+
+    func testUndoOneTypeKeepsOtherPendingChangesAndExistingSeriesOptions() async throws {
+        var old = AggregateConfig(typeIdentifier: heartRate, function: .average, intervalValue: 5, intervalUnit: .minute, deviceFilter: .watch)
+        old.startDate = Date(timeIntervalSince1970: 1_600_000_000)
+        old.settleDelay = 900
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine, aggregates: [old]))
+        await h.model.start()
+        h.model.config.batchSize = 500
+        var sheet = TypeSyncDraft(identifier: heartRate, configuration: h.model.config)
+        XCTAssertEqual(sheet.aggregates, [old])
+        sheet.raw = true
+        sheet.aggregates.append(try XCTUnwrap(AggregateConfig.dailyDefault(for: heartRate)))
+        XCTAssertTrue(h.model.stageTypeSync(sheet))
+        h.model.setSyncRawTypes(h.model.config.enabledTypes.union(["HKQuantityTypeIdentifierBodyMass"]))
+        h.model.discardTypeSyncChanges(heartRate)
+        XCTAssertEqual(h.model.config.aggregates, [old])
+        XCTAssertFalse(h.model.config.enabledTypes.contains(heartRate))
+        XCTAssertTrue(h.model.config.enabledTypes.contains("HKQuantityTypeIdentifierBodyMass"))
+        XCTAssertEqual(h.model.config.batchSize, 500)
+        h.model.discardChanges()
+        XCTAssertEqual(h.model.config, h.model.appliedConfig)
+    }
+
+    func testUndoTypeRestoresAggregateOrderingWithoutPhantomChanges() async throws {
+        let a = try XCTUnwrap(AggregateConfig.dailyDefault(for: heartRate))
+        let b = try XCTUnwrap(AggregateConfig.dailyDefault(for: steps))
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(serverURL: mine, aggregates: [a, b]))
+        await h.model.start()
+        var sheet = TypeSyncDraft(identifier: heartRate, configuration: h.model.config)
+        sheet.aggregates = [a.with(interval: (1, .hour))]
+        XCTAssertTrue(h.model.stageTypeSync(sheet))
+        h.model.discardTypeSyncChanges(heartRate)
+        XCTAssertEqual(h.model.config.aggregates, [a, b])
+        XCTAssertFalse(h.model.hasPendingChanges)
+    }
+
+    func testTypeSyncFreeLimitRejectsWholeAddition() async throws {
+        let chosen = Set(HealthTypeCatalog.all.prefix(5).map(\.identifier))
+        let id = try XCTUnwrap(HealthTypeCatalog.all.first { !chosen.contains($0.identifier) }).identifier
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: chosen, serverURL: mine), pro: false)
+        await h.model.start()
+        let original = h.model.config
+        let sheet = TypeSyncDraft(identifier: id, configuration: original)
+        XCTAssertFalse(h.model.stageTypeSync(sheet))
+        XCTAssertEqual(h.model.config, original)
+        XCTAssertTrue(h.model.showsPro)
+    }
+
+    func testExportTypeAdditionsAndClearNeverChangeSyncOrStartAnExport() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
+        await h.model.start()
+        let sync = h.model.config
+        h.model.export.draft.types = [steps]
+        h.model.export.include(type: heartRate)
+        h.model.export.include(type: heartRate)
+        h.model.export.draft.aggregates = [try XCTUnwrap(AggregateConfig.dailyDefault(for: heartRate))]
+        XCTAssertEqual(h.model.export.draft.types, [steps, heartRate])
+        XCTAssertEqual(h.model.export.draft.selectedTypeCount, 2)
+        XCTAssertFalse(h.model.export.isRunning)
+        let actions = TypeActions()
+        actions.addedToExport("Heart Rate", count: 2)
+        actions.notice = nil
+        XCTAssertEqual(h.model.export.draft.types, [steps, heartRate], "dismissal is not removal")
+        h.model.export.clearSelection()
+        XCTAssertTrue(h.model.exportSelection.isEmpty)
+        XCTAssertEqual(h.model.config, sync)
+        XCTAssertEqual(h.model.appliedConfig, sync)
+    }
+
+    func testActiveExportRejectsDraftChangesAndCancelsCleanly() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.start()
+        h.model.export.draft.types = [steps]
+        let before = h.model.export.draft
+        h.model.export.start(configuration: h.model.appliedConfig, engine: h.engine) {
+            try? await Task.sleep(for: .seconds(10))
+        }
+        h.model.export.include(type: heartRate)
+        h.model.export.clearSelection()
+        XCTAssertEqual(h.model.export.draft, before)
+        h.model.export.cancel()
+        let stopped = await eventually { !h.model.export.isRunning }
+        XCTAssertTrue(stopped)
+        XCTAssertEqual(h.model.export.notice, .cancelled)
+    }
+
+    func testSyncReviewDescribesOtherSettingsWithoutCredentials() {
+        let old = SyncConfiguration(authToken: "old-private-test-token")
+        var new = old
+        new.authToken = "new-private-test-token"
+        new.batchSize = 500
+        new.includeWorkoutRoutes = !old.includeWorkoutRoutes
+        let copy = SyncSettingsChanges(from: old, to: new).lines.joined(separator: " ")
+        XCTAssertTrue(copy.contains("Batch size"))
+        XCTAssertTrue(copy.contains("Workout routes"))
+        XCTAssertTrue(copy.contains("credentials updated"))
+        XCTAssertFalse(copy.contains("private-test-token"))
+    }
+
+    func testTypeActionsVisualsAndLocalCancellationAtLargeText() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
+        await h.model.start()
+        let config = h.model.config
+        h.model.config.aggregates = [try XCTUnwrap(AggregateConfig.dailyDefault(for: heartRate))]
+        let descriptor = try XCTUnwrap(HealthTypeCatalog.descriptor(for: heartRate))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let actions = TypeActions()
+        for size in [DynamicTypeSize.large, .accessibility3] {
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: 402, height: 874)
+            let controller = UIHostingController(rootView: TypeSyncSheet(descriptor: descriptor, configuration: h.model.config)
+                .environment(h.model).environment(actions).dynamicTypeSize(size).preferredColorScheme(.dark))
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.frame = window.bounds
+            window.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(200))
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image { controller.view.layer.render(in: $0.cgContext) }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "Type sync choices \(size)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            window.isHidden = true
+        }
+        XCTAssertEqual(h.model.appliedConfig, config)
+        XCTAssertFalse(h.model.config.enabledTypes.contains(heartRate))
+    }
+
+    func testConnectedTypeFlowScreenshots() async throws {
+        let defaults = UserDefaults.standard
+        let keys = ["PulsInitialType", "PulsInitialTab", "PulsFixtureProfiles"]
+        let old = keys.map { defaults.object(forKey: $0) }
+        defer { for (key, value) in zip(keys, old) { defaults.set(value, forKey: key) } }
+        defaults.set(heartRate, forKey: "PulsInitialType")
+        defaults.set(true, forKey: "PulsFixtureProfiles")
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
+        await h.model.start()
+        h.model.export.include(type: heartRate)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        for tab in ["explore", "export", "sync"] {
+            defaults.set(tab, forKey: "PulsInitialTab")
+            let actions = TypeActions()
+            if tab == "explore" { actions.addedToExport("Heart Rate", count: h.model.export.draft.selectedTypeCount) }
+            if tab == "sync" {
+                h.model.config.aggregates = [try XCTUnwrap(AggregateConfig.dailyDefault(for: heartRate))]
+            }
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: 402, height: 874)
+            let controller = UIHostingController(rootView: RootView(typeActions: actions).environment(h.model).preferredColorScheme(.dark))
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.frame = window.bounds
+            window.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(400))
+            let attachment = XCTAttachment(image: UIGraphicsImageRenderer(size: window.bounds.size).image {
+                controller.view.layer.render(in: $0.cgContext)
+            })
+            attachment.name = "Connected type flow \(tab)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            window.isHidden = true
+        }
+    }
+
     func testComplimentaryPlanRendersOnPhoneAndAtLargeText() async throws {
         let gift = EarlyUserProGift(storage: InMemoryTokenStore(), eligibilityReader: { true })
         let subscriptions = SubscriptionStore(entitlementReader: { false }, earlyUserGift: gift, productReader: { [] })

@@ -278,6 +278,8 @@ struct PendingChangesBar: View {
     @Environment(AppModel.self) private var model
     @State private var applying = false
     @State private var confirmsFirstSync = false
+    @State private var showsReview = false
+    @State private var appliesAfterReview = false
 
     var body: some View {
         Group {
@@ -298,16 +300,12 @@ struct PendingChangesBar: View {
                     .buttonStyle(.bordered)
                     .disabled(applying)
                     Button {
-                        if model.isSettingUpInitialSync {
-                            confirmsFirstSync = true
-                        } else {
-                            apply()
-                        }
+                        showsReview = true
                     } label: {
                         if applying {
                             ProgressView().frame(minWidth: 44)
                         } else {
-                            Text("Apply").frame(minWidth: 44)
+                            Text("Review").frame(minWidth: 44)
                         }
                     }
                     .buttonStyle(.borderedProminent)
@@ -321,6 +319,17 @@ struct PendingChangesBar: View {
             }
         }
         .animation(.snappy, value: model.hasPendingChanges || model.isSettingUpInitialSync)
+        .sheet(isPresented: $showsReview, onDismiss: {
+            guard appliesAfterReview else { return }
+            appliesAfterReview = false
+            if model.isSettingUpInitialSync { confirmsFirstSync = true }
+            else { apply() }
+        }) {
+            SyncChangesReviewView {
+                appliesAfterReview = true
+                showsReview = false
+            }
+        }
         .alert("Ready for your first sync?", isPresented: $confirmsFirstSync) {
             Button("Apply & Start Sync") { apply() }
             Button("Not Yet", role: .cancel) {}
