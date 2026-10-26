@@ -1,160 +1,83 @@
-import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { Mail } from "lucide-react";
+import { Dumbbell, Heart, MessageCircle, Trophy, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageHero } from "@/components/page-hero";
+import styles from "./friend-flex.module.css";
 
-const SUPPORT_EMAIL = "support@pulshealth.com";
-
-const description =
-  "Help with Friend Flex, a fitness challenge app for small groups of friends: how it works, common questions, and how to reach support. Friend Flex is a separate app from PulsHealth, by the same developer.";
-
+const description = "Create a fitness challenge with friends. Choose your categories, log results, compete on personal improvement, and keep the group chat moving with Friend Flex for iPhone and iMessage.";
+const socialImage = { url: "/friend-flex/challenge.jpg", width: 460, height: 1000, alt: "Friend Flex challenge standings and fitness categories on iPhone" };
 export const metadata = {
-  title: "Friend Flex Support",
+  title: "Friend Flex — Bring your friends. Beat your best.",
   description,
-  alternates: {
-    canonical: "/friend-flex/",
-  },
-  // Not PulsHealth: don't inherit the site's PulsHealth share card.
-  openGraph: { title: "Friend Flex Support", description, url: "/friend-flex/" },
-  twitter: { card: "summary", title: "Friend Flex Support", description },
+  alternates: { canonical: "/friend-flex/" },
+  openGraph: { title: "Friend Flex", description, url: "/friend-flex/", images: [socialImage] },
+  twitter: { card: "summary_large_image", title: "Friend Flex", description, images: [socialImage.url] },
 };
 
-const link = "text-brand underline-offset-4 hover:underline";
+function Phone({ name, alt, priority = false }: { name: string; alt: string; priority?: boolean }) {
+  return <div className={styles.phone}><Image src={`/friend-flex/${name}.jpg`} alt={alt} width={460} height={1000} priority={priority} sizes="(max-width: 640px) 65vw, 300px" /></div>;
+}
 
-const faq: { q: string; a: ReactNode }[] = [
-  {
-    q: "Do I need an account?",
-    a: (
-      <>
-        No separate account. Friend Flex stores challenges and results in Apple&apos;s iCloud, so you
-        need to be signed into iCloud on your iPhone. You just pick a display name and an emoji.
-      </>
-    ),
-  },
-  {
-    q: "How do I join a challenge?",
-    a: (
-      <>
-        Ask the person who created it for its 6-character code. In Friend Flex, go to the Challenges
-        list, tap <strong>+</strong>, choose <strong>Join with Code</strong> and enter the code.
-      </>
-    ),
-  },
-  {
-    q: "Do I have to connect Apple Health?",
-    a: (
-      <>
-        No, it&apos;s optional. If you connect it, Friend Flex uses it to show stats on your own Fitness
-        page and to offer one-tap logging of a new weigh-in, body measurement or a fast run or ride. Health data stays
-        on your iPhone. Nothing from Apple Health is uploaded unless you tap to log a specific
-        result, and then only that result is saved. Friend Flex never writes to Apple Health.
-      </>
-    ),
-  },
-  {
-    q: "How do I delete my data?",
-    a: (
-      <>
-        In the app, go to <strong>Settings → Delete My Data</strong>. That deletes your profile,
-        your logged results and your fitness summary, and removes you from all challenges.
-        Challenges you created stay for their other members; email{" "}
-        <a href={`mailto:${SUPPORT_EMAIL}`} className={link}>
-          {SUPPORT_EMAIL}
-        </a>{" "}
-        if you want one removed.
-      </>
-    ),
-  },
-  {
-    q: "How do I report someone or a problem?",
-    a: (
-      <>
-        Open the person&apos;s page, or the challenge&apos;s <strong>⋯</strong> menu, and choose{" "}
-        <strong>Report</strong>. Or email{" "}
-        <a href={`mailto:${SUPPORT_EMAIL}`} className={link}>
-          {SUPPORT_EMAIL}
-        </a>
-        .
-      </>
-    ),
-  },
+const features = [
+  { id: "challenge", icon: Dumbbell, title: "Your friends. Your challenge.", text: "Pick a challenge length from 7 to 365 days. Choose from 20 categories, including running, cycling, push-ups, strength, holds, and body measurements. Or create a category of your own. Set your house rules, choose how categories count toward the overall score, and share the invite code.", image: "pushups", alt: "Friend Flex push-ups category with standings and logged results", color: "gold" },
+  { id: "progress", icon: TrendingUp, title: "A little progress. A little friendly rivalry.", text: "Category standings compare percentage improvement from each person’s own starting point. Follow your progress on a chart, see the latest results, and cheer on your friends. Each category has a winner, with an overall leaderboard for the group.", image: "progress", alt: "Mile run progress chart and improvement standings in Friend Flex", color: "blue" },
+  { id: "messages", icon: MessageCircle, title: "Keep the group chat moving.", text: "Log a result, send an invite, or share a leaderboard card right in Messages. Check the standings without leaving the conversation, and give your friends another reason to show up for the next one.", image: "imessage", alt: "Friend Flex iMessage app with group leaderboard, result logging, and invite controls", color: "lilac" },
+  { id: "health", icon: Heart, title: "Apple Health. When you want it.", text: "Connect Apple Health to see your personal fitness summary and get suggestions for a new body measurement or a run or ride that beats your best. You choose whether to log each result. Your additional Health summary stays on your iPhone, and nothing is automatically posted to a challenge.", image: "fitness", alt: "Friend Flex personal Fitness page with running bests, cardio fitness, and activity stats", color: "mint" },
 ];
 
-/**
- * Support page for Friend Flex, a separate iPhone app by the same developer that
- * uses this page as its App Store Support URL. Linked from the footer, search and sitemap.
- */
-export default function FriendFlexSupportPage() {
-  return (
-    <main className="flex flex-1 flex-col">
-      <PageHero
-        size="compact"
-        title="Friend Flex Support"
-        lede="Friend Flex is an iPhone app for running a fitness challenge with a small group of friends."
-        note={
-          <>
-            Friend Flex is not part of PulsHealth. It is a separate app by the same developer, and its
-            support page lives on this site for that reason.
-          </>
-        }
-      >
-        <Button asChild size="lg">
-          <a href={`mailto:${SUPPORT_EMAIL}`}>
-            <Mail className="h-4 w-4" />
-            Email {SUPPORT_EMAIL}
-          </a>
-        </Button>
-        <Button asChild size="lg" variant="outline">
-          <Link href="/friend-flex/privacy/">Privacy Policy</Link>
-        </Button>
-      </PageHero>
-
-      <section className="container mx-auto max-w-3xl px-4 py-16">
-        <h2 className="text-2xl font-bold tracking-tight mb-4">What Friend Flex is</h2>
-        <div className="space-y-4 text-muted-foreground text-pretty">
-          <p>
-            A fitness challenge for small groups of friends. Choose from 20 fitness and body-measurement categories, or add a custom category.
-          </p>
-          <p>
-            Everyone is scored on their percentage improvement from their own start, so it&apos;s
-            fair whatever shape you&apos;re in on day one. There is an overall winner and a winner
-            in each category.
-          </p>
-          <p>
-            There is also a Friend Flex iMessage app, for logging a result and checking the leaderboard
-            without leaving the group chat.
-          </p>
+export default function FriendFlexPage() {
+  return <main className={styles.product}>
+    <section className="border-b">
+      <div className={`container mx-auto max-w-7xl px-5 ${styles.hero}`}>
+        <div>
+          <h1 className={styles.name}>Friend Flex</h1>
+          <p className={styles.headline}>Bring your friends.<br />Beat your best.</p>
+          <p className="mt-7 max-w-lg text-xl leading-relaxed text-muted-foreground">Turn getting fitter into a challenge you share with friends. Pick what to measure, log your results, and compete on getting better from your own starting point.</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button asChild size="lg"><a href="#challenge">Explore the app</a></Button>
+            <Button asChild size="lg" variant="outline"><Link href="/friend-flex/support/">Get support</Link></Button>
+          </div>
+          <p className="mt-5 text-sm text-muted-foreground">Free, with no ads or subscription. iPhone and iCloud required.</p>
         </div>
+        <div className={styles.heroVisual}>
+          <Phone name="challenge" alt="Friend Flex overall leaderboard for the Friends in Motion demo challenge" priority />
+          <div className={styles.challengeNote}><Trophy aria-hidden /><p>A reason to keep going.</p><span>Different starting points. Something to work toward together.</span></div>
+        </div>
+      </div>
+      <nav aria-label="Friend Flex features" className="container mx-auto flex max-w-7xl flex-wrap justify-between gap-4 border-t px-5 py-6 text-sm font-medium md:text-base">
+        <a href="#challenge">Create a challenge</a><a href="#progress">See your progress</a><a href="#messages">Share in iMessage</a><a href="#health">Connect Apple Health</a>
+      </nav>
+    </section>
 
-        <h2 className="text-2xl font-bold tracking-tight mt-12 mb-4">Getting help</h2>
-        <p className="text-muted-foreground text-pretty">
-          Email{" "}
-          <a href={`mailto:${SUPPORT_EMAIL}`} className={link}>
-            {SUPPORT_EMAIL}
-          </a>{" "}
-          with your question or problem. If it&apos;s about a specific challenge, including its
-          name or code helps.
-        </p>
-
-        <h2 className="text-2xl font-bold tracking-tight mt-12 mb-6">Frequently asked</h2>
-        <dl className="divide-y rounded-lg border bg-card">
-          {faq.map((item) => (
-            <div key={item.q} className="px-5 py-5">
-              <dt className="font-semibold text-foreground">{item.q}</dt>
-              <dd className="mt-2 text-muted-foreground text-pretty">{item.a}</dd>
-            </div>
-          ))}
-        </dl>
-
-        <p className="mt-8 text-sm text-muted-foreground">
-          What Friend Flex stores, who can see it and how to delete it:{" "}
-          <Link href="/friend-flex/privacy/" className={link}>
-            Friend Flex Privacy Policy
-          </Link>
-          .
-        </p>
+    <div className="container mx-auto max-w-6xl space-y-24 px-5 py-20 md:space-y-32 md:py-28">
+      <section>
+        <h2 className={styles.sectionTitle}>A shared goal.<br />Your own starting line.</h2>
+        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">You don’t have to be the fastest runner or do the most push-ups to make progress. Friend Flex scores improvement from where you began, so everyone has something to aim for.</p>
+        <ol className={styles.steps}>
+          <li><h3>1. Make it yours</h3><p>Choose your categories, dates, and rules.</p></li>
+          <li><h3>2. Bring your friends</h3><p>Share a six-character code to join with iCloud. No separate app account.</p></li>
+          <li><h3>3. Keep improving</h3><p>Log results and follow the group’s standings.</p></li>
+        </ol>
       </section>
-    </main>
-  );
+      {features.map(({ id, icon: Icon, title, text, image, alt, color }, i) => <section key={id} id={id} className={styles.feature}>
+        <div className={i % 2 === 0 ? styles.copyAfter : undefined}>
+          <Icon className="mb-5 h-8 w-8 text-brand" aria-hidden /><h2 className={styles.sectionTitle}>{title}</h2>
+          <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">{text}</p>
+          {id === "health" && <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground">Apple Health and Apple Watch are optional. Friend Flex never writes to Health. Results you choose to log are saved in iCloud like manually entered results.</p>}
+        </div>
+        <div className={`${styles.featureVisual} ${styles[color]}`}><Phone name={image} alt={alt} /></div>
+      </section>)}
+
+      <section className="border-t pt-12">
+        <h2 className="text-2xl font-semibold tracking-tight">Ready for a little friendly competition?</h2>
+        <p className="mt-4 max-w-2xl leading-relaxed text-muted-foreground">Friend Flex is a separate iPhone app by the developer of PulsHealth. Previously called Fun 100, it keeps your existing challenges, results, and invite codes.</p>
+        <div className="mt-6 flex flex-wrap gap-x-8 gap-y-4 font-medium text-brand">
+          <Link href="/friend-flex/support/" className="hover:underline">Get help with Friend Flex</Link>
+          <Link href="/friend-flex/privacy/" className="hover:underline">Read the privacy policy</Link>
+          <a href="mailto:support@pulshealth.com?subject=Friend%20Flex%20support" className="hover:underline">Email support</a>
+        </div>
+        <p className="mt-6 max-w-2xl text-sm leading-relaxed text-muted-foreground">Logged results are visible to your challenge members and stored in a public iCloud database. Other Friend Flex users could technically access these records; only log information you’re comfortable sharing.</p>
+      </section>
+    </div>
+  </main>;
 }

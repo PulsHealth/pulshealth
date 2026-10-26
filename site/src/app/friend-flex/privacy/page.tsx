@@ -41,7 +41,7 @@ export default function FriendFlexPrivacyPage() {
         <div className="prose prose-zinc dark:prose-invert max-w-none prose-a:text-brand prose-a:no-underline hover:prose-a:underline">
           <RepoMarkdown source={content} docRepoPath={POLICY_PATH} />
           <p>
-            Need help with the app? See <Link href="/friend-flex/">Friend Flex support</Link>.
+            Need help with the app? See <Link href="/friend-flex/support/">Friend Flex support</Link>.
           </p>
         </div>
       </div>
