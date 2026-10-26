@@ -4,6 +4,7 @@ import SwiftUI
 /// label in a caption, the value large and tabular so a grid of them lines up
 /// as digits change, an optional unit beside it and a footnote under it.
 struct StatTile: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let label: String
     let value: String
     var unit: String?
@@ -27,7 +28,8 @@ struct StatTile: View {
                 Text(footnote)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -103,6 +103,9 @@ struct OnboardingView: View {
                 Task { @MainActor in reader.scrollTo(current, anchor: .leading) }
             }
         }
+        // Duo's vertical status area is outside the safe viewport. Keep
+        // neighboring pages from drawing into it while the scroll view pages.
+        .clipped()
     }
 
     @ViewBuilder private func pageView(_ page: Page) -> some View {

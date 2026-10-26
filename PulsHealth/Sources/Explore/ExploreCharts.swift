@@ -4,6 +4,8 @@ import SwiftUI
 
 // The Explore tab's charts. One series each, in the type's category colour;
 // grey for reference bands; readouts through `ChartCard`, never on the plot.
+// Bounded plots cap axis text at xxxLarge. Card titles and textual readouts
+// keep the requested Dynamic Type size, and Charts retains its data semantics.
 
 /// A number in a type's unit, with as many decimals as its size warrants.
 func formatValue(_ value: Double) -> String {
@@ -128,6 +130,7 @@ struct HistogramChart: View {
         }
         .chartXAxisLabel(unit ?? "", alignment: .trailing)
         .chartYAxisLabel("Samples")
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .frame(height: 200)
         .accessibilityLabel(accessibilityText)
     }
@@ -404,6 +407,7 @@ struct DailyCountsChart: View {
         }
         // No "Samples" axis title: a scrolling chart does not keep it in
         // view, and the card's title says it.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .frame(height: 200)
         .modifier(WindowScroll(window: window, domain: domain, position: $scrollPosition))
         .accessibilityLabel(accessibilityText)
@@ -514,6 +518,7 @@ struct AggregatePreviewChart: View {
             }
         }
         .chartYAxisLabel(unit ?? "")
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .frame(height: 200)
         .accessibilityLabel(accessibilityText)
     }

@@ -12,6 +12,7 @@ struct TypePageView: View {
     let identifier: String
     @Environment(AppModel.self) private var model
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var descriptor: HealthTypeDescriptor? { HealthTypeCatalog.descriptor(for: identifier) }
     private var knowledge: TypeKnowledge? { TypeKnowledge.article(for: identifier) }
@@ -223,7 +224,9 @@ struct TypePageView: View {
     // MARK: - Stat tiles
 
     private var gridColumns: [GridItem] {
-        Array(repeating: GridItem(.flexible(), alignment: .top), count: sizeClass == .compact ? 2 : 4)
+        let count = dynamicTypeSize.isAccessibilitySize ? 1
+            : (dynamicTypeSize >= .xxxLarge || sizeClass == .compact ? 2 : 4)
+        return Array(repeating: GridItem(.flexible(), alignment: .top), count: count)
     }
 
     private func statTiles(_ profile: TypeProfile) -> some View {
