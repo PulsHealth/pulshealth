@@ -36,11 +36,11 @@ struct RootView: View {
     }()
     /// Debug builds accept `-PulsInitialType <identifier>` alongside
     /// `-PulsInitialTab explore`, so a scripted run can screenshot a Type page.
-    @State private var explorePath: [ExploreRoute] = {
+    @State private var exploredType: ExploreRoute? = {
         #if DEBUG
-        if let id = UserDefaults.standard.string(forKey: "PulsInitialType") { return [.type(id)] }
+        if let id = UserDefaults.standard.string(forKey: "PulsInitialType") { return .type(id) }
         #endif
-        return []
+        return nil
     }()
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
@@ -69,9 +69,25 @@ struct RootView: View {
                 .background(.regularMaterial)
             }
             TabView(selection: $selection) {
-                NavigationStack(path: $explorePath) {
-                    ExploreView().reviewRequestOpportunity(.explore, blocked: !explorePath.isEmpty)
+                NavigationSplitView {
+                    ExploreView(selection: $exploredType)
+                        .reviewRequestOpportunity(.explore, blocked: exploredType != nil)
+                        .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 400)
+                } detail: {
+                    NavigationStack {
+                        if case .type(let id) = exploredType {
+                            TypePageView(identifier: id)
+                        } else {
+                            ContentUnavailableView(
+                                "Choose a Health Type", systemImage: "heart.text.square",
+                                description: Text("Select a type to explore its readings and trends."))
+                        }
+                    }
+                    // A different type starts at its own detail root; resizing
+                    // keeps this identity and any pushed analysis unchanged.
+                    .id(exploredType)
                 }
+                .navigationSplitViewStyle(.balanced)
                     .tabItem { Label("Explore", systemImage: "heart.text.square") }
                     .tag(Tab.explore)
                 NavigationStack { ExportView() }
@@ -116,12 +132,12 @@ struct RootView: View {
         }
         .onChange(of: selection) { _, _ in model.reviews.cancelPending() }
         .onChange(of: syncPath) { _, _ in model.reviews.cancelPending() }
-        .onChange(of: explorePath) { old, new in
+        .onChange(of: exploredType) { old, new in
             model.reviews.cancelPending()
             // Returning from a complete populated analysis is a natural pause;
             // opening a chart, or returning from an empty/failed read, isn't.
-            guard selection == .explore, new.isEmpty,
-                  case .type(let id) = old.last,
+            guard selection == .explore, new == nil,
+                  case .type(let id) = old,
                   let profile = model.explore.profiles[id], profile.isComplete,
                   profile.sampleCount > 0 else { return }
             model.reviews.offer(.explore)

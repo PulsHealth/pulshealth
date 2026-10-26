@@ -22,6 +22,7 @@ enum ExploreRoute: Hashable {
 /// order inside a category. All three are view preferences in UserDefaults —
 /// category names and a sort, never health data.
 struct ExploreView: View {
+    @Binding var selection: ExploreRoute?
     @Environment(AppModel.self) private var model
     @State private var searchText = ""
     @FocusState private var searchFocused: Bool
@@ -32,7 +33,7 @@ struct ExploreView: View {
     @AppStorage("explore.sort") private var sort = ExploreSort.dataFirst
 
     var body: some View {
-        List {
+        List(selection: $selection) {
             searchField
             if searchText.isEmpty {
                 accessCards
@@ -45,12 +46,6 @@ struct ExploreView: View {
         .navigationTitle("Explore")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { optionsMenu }
-        }
-        .navigationDestination(for: ExploreRoute.self) { route in
-            switch route {
-            case .type(let id):
-                TypePageView(identifier: id)
-            }
         }
         .task {
             await model.explore.load()

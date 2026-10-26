@@ -26,6 +26,16 @@ Published as
 Store (free). The listing material and the record of what shipped are in
 [`docs/appstore/`](../docs/appstore/README.md).
 
+## Adaptive layouts
+
+Explore uses one selection-driven `NavigationSplitView`: the type catalog and
+selected analysis appear together when space allows, and collapse into normal
+push navigation in a compact window. The selected type survives resizing;
+choosing another type resets its nested detail navigation. Layout decisions
+use available space rather than device model. Build release candidates with
+Xcode 27.1 or later and verify folded/unfolded Duo layouts, including vertical
+system bars. See [Duo acceptance and store assets](../docs/appstore/iphone-duo.md).
+
 ## Free and Pro access
 
 The subscription implementation is prepared in source; product creation and
