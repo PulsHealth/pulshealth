@@ -1,12 +1,14 @@
 # iPhone Duo
 
-The 2.4 (31) source candidate uses adaptive Explore navigation. This document
+The 2.4 (32) source candidate uses adaptive Explore navigation. This document
 is preparation, not proof of upload, submission, approval, or a live badge.
 
 Build the release with Xcode 27.1 or later. Explore keeps its selected type
 while the split view adapts between catalog/detail columns and compact
 navigation. Changing types resets pushed detail pages. Onboarding clips adjacent
-pages to the safe viewport, including beside a vertical status bar.
+pages to the safe viewport, including beside a vertical status bar. At
+accessibility text sizes, stats use one column and category labels take the
+full sidebar width, with wrapping supporting captions.
 
 ## Acceptance
 

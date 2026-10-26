@@ -34,6 +34,8 @@ push navigation in a compact window. The selected type survives resizing;
 choosing another type resets its nested detail navigation. Layout decisions
 use available space rather than device model. Onboarding clips adjacent pages
 to the safe viewport so they cannot appear under Duo’s vertical status area.
+At accessibility text sizes, stats stack into one column and category labels
+use the full sidebar width; supporting captions wrap instead of truncating.
 Build release candidates with
 Xcode 27.1 or later and verify folded/unfolded Duo layouts, including vertical
 system bars. See [Duo acceptance and store assets](../docs/appstore/iphone-duo.md).

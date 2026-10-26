@@ -24,6 +24,7 @@ enum ExploreRoute: Hashable {
 struct ExploreView: View {
     @Binding var selection: ExploreRoute?
     @Environment(AppModel.self) private var model
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var searchText = ""
     @FocusState private var searchFocused: Bool
     /// Collapsed categories, by raw name, comma-joined.
@@ -182,20 +183,34 @@ struct ExploreView: View {
         if !types.isEmpty {
             let expanded = !collapsed.contains(group.rawValue)
             Button { toggle(group) } label: {
-                HStack(spacing: 12) {
-                    TypeIcon(group)
-                    Text(group.rawValue)
-                        .fontWeight(.semibold)
-                    Spacer()
-                    Text("\(types.count)")
-                        .font(.subheadline)
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                    Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
-                        .accessibilityHidden(true)
+                Group {
+                    if dynamicTypeSize.isAccessibilitySize {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(group.rawValue)
+                                .fontWeight(.semibold)
+                                .fixedSize(horizontal: false, vertical: true)
+                            HStack(spacing: 12) {
+                                TypeIcon(group)
+                                Text("Types: \(types.count)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                categoryDisclosure(expanded: expanded)
+                            }
+                        }
+                    } else {
+                        HStack(spacing: 12) {
+                            TypeIcon(group)
+                            Text(group.rawValue)
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("\(types.count)")
+                                .font(.subheadline)
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                            categoryDisclosure(expanded: expanded)
+                        }
+                    }
                 }
                 .padding(.vertical, 2)
                 .contentShape(Rectangle())
@@ -209,6 +224,14 @@ struct ExploreView: View {
                 }
             }
         }
+    }
+
+    private func categoryDisclosure(expanded: Bool) -> some View {
+        Image(systemName: "chevron.right")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.tertiary)
+            .rotationEffect(.degrees(expanded ? 90 : 0))
+            .accessibilityHidden(true)
     }
 
     private var optionsMenu: some View {
@@ -335,6 +358,7 @@ enum ExploreSort: String, CaseIterable, Identifiable {
 }
 
 private struct ExploreTypeRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let descriptor: HealthTypeDescriptor
     let profile: TypeProfile?
     let facts: TypeQuickFacts?
@@ -359,7 +383,8 @@ private struct ExploreTypeRow: View {
                 Text(detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
             if isRunning {
