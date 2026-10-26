@@ -13,6 +13,7 @@ struct TypePageView: View {
     @Environment(AppModel.self) private var model
     @Environment(TypeActions.self) private var typeActions
     @State private var showsSyncChoices = false
+    @State private var showsExportChoices = false
     @State private var showsSyncDetails = false
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -70,7 +71,12 @@ struct TypePageView: View {
             if let status = model.statuses.first(where: { $0.id == identifier }) { TypeDetailView(status: status) }
         }
         .sheet(isPresented: $showsSyncChoices) {
-            TypeSyncSheet(descriptor: descriptor, configuration: model.config)
+            TypeDataSelectionSheet(descriptor: descriptor, configuration: model.config)
+        }
+        .sheet(isPresented: $showsExportChoices) {
+            TypeDataSelectionSheet(descriptor: descriptor,
+                configuration: SyncConfiguration(enabledTypes: model.export.draft.types, aggregates: model.export.draft.aggregates),
+                scope: .export)
         }
         .task {
             // The facts decide whether the profile is current; cheap enough
@@ -334,16 +340,17 @@ struct TypePageView: View {
         Menu {
             if model.export.isRunning {
                 Button("View Export in Progress", systemImage: "square.and.arrow.up") { typeActions.open(.export) }
-            } else if model.export.draft.types.contains(identifier) {
-                Button("Open Export", systemImage: "checkmark.circle") {
-                    model.export.prepareDraft()
-                    typeActions.open(.export)
-                }
-                Text("Selected in the export draft")
             } else {
-                Button("Add to Export", systemImage: "square.and.arrow.up") {
-                    model.export.include(type: identifier)
-                    typeActions.addedToExport(descriptor.displayName, count: model.export.draft.selectedTypeCount)
+                let selected = model.export.draft.types.contains(identifier)
+                    || model.export.draft.aggregates.contains { $0.typeIdentifier == identifier }
+                Button(selected ? "Edit Export Selection" : "Add to Export", systemImage: "square.and.arrow.up") {
+                    showsExportChoices = true
+                }
+                if selected {
+                    Button("Open Export", systemImage: "arrow.right") {
+                        model.export.prepareDraft()
+                        typeActions.open(.export)
+                    }
                 }
             }
             Section {

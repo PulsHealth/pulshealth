@@ -19,8 +19,9 @@ final class TypeActions {
         self.destination = destination
     }
 
-    func addedToExport(_ name: String, count: Int) {
-        notice = Notice(title: "\(name) added", detail: "\(count) types selected · export hasn’t started", destination: .export)
+    func addedToExport(_ name: String, count: Int, updated: Bool = false) {
+        notice = Notice(title: updated ? "Export selection updated" : "\(name) added",
+                        detail: "\(count) types selected · export hasn’t started", destination: .export)
     }
 
     func addedToSync() {
@@ -87,6 +88,12 @@ struct TypeSyncDraft {
         return proposed
     }
 
+    func apply(to export: inout ExportDraft) {
+        let proposed = merging(into: SyncConfiguration(enabledTypes: export.types, aggregates: export.aggregates))
+        export.types = proposed.enabledTypes
+        export.aggregates = proposed.aggregates
+    }
+
     var hasDuplicates: Bool {
         Set(aggregates.map(\.seriesIdentity)).count != aggregates.count
     }
@@ -127,7 +134,8 @@ extension AppModel {
     }
 }
 
-struct TypeSyncSheet: View {
+struct TypeDataSelectionSheet: View {
+    let scope: AggregateScope
     let descriptor: HealthTypeDescriptor
     @Environment(AppModel.self) private var model
     @Environment(TypeActions.self) private var actions
@@ -136,27 +144,33 @@ struct TypeSyncSheet: View {
     @State private var confirmsChanges = false
     @State private var showsUpgrade = false
 
-    init(descriptor: HealthTypeDescriptor, configuration: SyncConfiguration) {
+    init(descriptor: HealthTypeDescriptor, configuration: SyncConfiguration, scope: AggregateScope = .sync) {
+        self.scope = scope
         self.descriptor = descriptor
         _draft = State(initialValue: TypeSyncDraft(identifier: descriptor.identifier, configuration: configuration))
     }
 
     private var functions: [AggregateFunction] { AggregateFunction.choices(for: descriptor.identifier) }
-    private var wasSelected: Bool { model.config.observedTypeIdentifiers.contains(descriptor.identifier) }
+    private var wasSelected: Bool {
+        scope == .export ? model.export.draft.types.contains(descriptor.identifier) || model.export.draft.aggregates.contains { $0.typeIdentifier == descriptor.identifier }
+            : model.config.observedTypeIdentifiers.contains(descriptor.identifier)
+    }
     private var canSave: Bool {
         (draft.raw || (draft.includesAggregates && !draft.aggregates.isEmpty) || wasSelected)
-            && !draft.hasDuplicates && !model.stateFileUnreadable
+            && !draft.hasDuplicates && (scope == .export ? !model.export.isRunning : !model.stateFileUnreadable)
     }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    LabeledContent("Database", value: DatabaseSetup.databaseLabel(model.config.serverURL) ?? "Not connected")
-                } footer: {
-                    Text(model.config.serverURL == nil
-                         ? "Choose your data now. Connect a database on Sync before applying."
-                         : "Uses this database’s current history settings.")
+                if scope == .sync {
+                    Section {
+                        LabeledContent("Database", value: DatabaseSetup.databaseLabel(model.config.serverURL) ?? "Not connected")
+                    } footer: {
+                        Text(model.config.serverURL == nil
+                             ? "Choose your data now. Connect a database on Sync before applying."
+                             : "Uses this database’s current history settings.")
+                    }
                 }
                 Section {
                     Toggle(isOn: $draft.raw) {
@@ -202,7 +216,7 @@ struct TypeSyncSheet: View {
                             Picker("Devices", selection: $aggregate.deviceFilter) {
                                 ForEach(AggregateDeviceFilter.allCases) { Text($0.choiceName).tag($0) }
                             }
-                            if !aggregate.enabled { Text("This aggregate is off.").font(.caption).foregroundStyle(.secondary) }
+                            if scope == .sync && !aggregate.enabled { Text("This aggregate is off.").font(.caption).foregroundStyle(.secondary) }
                             Button("Remove Aggregate", role: .destructive) {
                                 draft.aggregates.removeAll { $0.id == aggregate.id }
                             }
@@ -220,7 +234,9 @@ struct TypeSyncSheet: View {
             }
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 8) {
-                    Button(wasSelected ? "Stage Changes" : "Add to Sync") {
+                    Button(scope == .export ? (wasSelected ? "Update Export Selection" : "Add to Export")
+                           : (wasSelected ? "Stage Changes" : "Add to Sync")) {
+                        if scope == .export { save(); return }
                         let existing = model.appliedConfig.aggregates.filter { $0.typeIdentifier == descriptor.identifier }
                         let next = draft.includesAggregates ? draft.aggregates : []
                         if !existing.isEmpty && existing != next { confirmsChanges = true }
@@ -229,8 +245,9 @@ struct TypeSyncSheet: View {
                     .frame(maxWidth: .infinity)
                     .buttonStyle(.borderedProminent)
                     .disabled(!canSave)
-                    .accessibilityIdentifier("typeActions.stageSync")
-                    Text("Nothing is uploaded until you review and apply on Sync.")
+                    .accessibilityIdentifier(scope == .export ? "typeActions.selectExport" : "typeActions.stageSync")
+                    Text(scope == .export ? "Adds to your selection. Start the export when you’re ready on Export."
+                         : "Nothing is uploaded until you review and apply on Sync.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .padding()
@@ -257,6 +274,15 @@ struct TypeSyncSheet: View {
     }
 
     private func save() {
+        if scope == .export {
+            guard !model.export.isRunning, !draft.hasDuplicates else { return }
+            let updated = wasSelected
+            model.export.prepareDraft()
+            draft.apply(to: &model.export.draft)
+            actions.addedToExport(descriptor.displayName, count: model.export.draft.selectedTypeCount, updated: updated)
+            dismiss()
+            return
+        }
         let proposed = draft.merging(into: model.config)
         guard model.subscriptions.hasPro || SyncAccessPolicy.free.allows(proposed)
                 || proposed.observedTypeIdentifiers.isSubset(of: model.config.observedTypeIdentifiers) else {

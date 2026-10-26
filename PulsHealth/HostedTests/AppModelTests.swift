@@ -298,7 +298,7 @@ final class AppModelTests: XCTestCase {
         for size in [DynamicTypeSize.large, .accessibility3] {
             let window = UIWindow(windowScene: scene)
             window.frame = CGRect(x: 0, y: 0, width: 402, height: 874)
-            let controller = UIHostingController(rootView: TypeSyncSheet(descriptor: descriptor, configuration: h.model.config)
+            let controller = UIHostingController(rootView: TypeDataSelectionSheet(descriptor: descriptor, configuration: h.model.config)
                 .environment(h.model).environment(actions).dynamicTypeSize(size).preferredColorScheme(.dark))
             window.rootViewController = controller
             window.makeKeyAndVisible()

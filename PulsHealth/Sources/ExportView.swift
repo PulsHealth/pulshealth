@@ -355,28 +355,53 @@ struct ExportView: View {
     // MARK: - Running
 
     @ViewBuilder private func runningSections(_ progress: ExportProgress) -> some View {
-        CardSection("Exporting") {
-            // Up to `maxConcurrentTypes` types are read at once; the subtitle
-            // is whichever wrote last, which is enough to show life. No
-            // fraction: HealthKit does not say how many samples a type holds
-            // before they have been read, so any percentage would be made up.
+        Section {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Creating your export", systemImage: "doc.badge.arrow.up")
+                    .font(.title3.weight(.semibold))
+                Text("\(model.export.draft.format.title)\(model.export.draft.zipped ? " · ZIP" : "") · \(model.export.draft.rangeLabel())")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Text("\(model.exportSelection.typeCount) raw types · \(model.exportSelection.aggregateCount) aggregates")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 6)
+        }
+        CardSection("Progress") {
             ProgressBanner(
                 title: progress.phase.label,
                 subtitle: progress.currentType.map {
                     HealthTypeCatalog.descriptor(for: $0)?.displayName ?? $0
-                } ?? "Reading selected health data",
+                } ?? "Working on your selected health data",
                 reservesSubtitleSpace: true,
-                fraction: nil,
-                onCancel: { model.export.cancel() })
+                fraction: nil)
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 StatTile(label: model.export.draft.format == .csv && model.export.draft.csvOptions.layout == .dailySummary
                          ? "Records processed" : "Rows written", value: progress.rowsWritten.formatted())
-                StatTile(label: "Size so far", value: Int(progress.bytesWritten).byteString)
+                StatTile(label: "File size", value: Int(progress.bytesWritten).byteString)
             }
+            Text(progressContext(progress.phase))
+                .font(.caption).foregroundStyle(.secondary)
+                .lineLimit(3, reservesSpace: true)
+        }
+        Section {
+            Label("Your screen stays awake during export", systemImage: "iphone")
+                .font(.footnote).foregroundStyle(.secondary)
             Button("Cancel Export", role: .destructive) { model.export.cancel() }
-            Text("Keep PulsHealth open and the iPhone unlocked until this finishes. Health data is unreadable while the iPhone is locked, so an export that runs into a lock comes out incomplete. The screen stays awake while it runs. Cancelling keeps nothing.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        } footer: {
+            Text("Keep PulsHealth open. Your files will be ready to share or save when this finishes.")
+        }
+    }
+
+    private func progressContext(_ phase: ExportProgress.Phase) -> String {
+        switch phase {
+        case .preparing: "Preparing your selection and files on this iPhone."
+        case .activity: "Reading daily Move, Exercise, and Stand rings from Apple Health."
+        case .samples: "Reading your selected data from Apple Health. Several types can be processed together."
+        case .aggregates: "Computing summaries using your chosen functions, intervals, and devices."
+        case .workoutRoutes: "Adding location points for your selected workouts."
+        case .workoutStreams: "Adding detailed measurements recorded during workouts."
+        case .finishing: "Finishing the data files and export summary."
+        case .archiving: "Packing your files into a ZIP for sharing."
         }
     }
 
