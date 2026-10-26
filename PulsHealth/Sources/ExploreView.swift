@@ -223,15 +223,11 @@ struct ExploreView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .listRowBackground(
-                Color(.secondarySystemGroupedBackground)
-                    .overlay(group.color.opacity(expanded ? 0.08 : 0)))
             .accessibilityValue(expanded ? "Expanded" : "Collapsed")
             .accessibilityHint(expanded ? "Hides this category's types" : "Shows this category's types")
             if expanded {
                 ForEach(types) { descriptor in
                     typeRow(descriptor, showsCategory: false)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 28, bottom: 8, trailing: 20))
                 }
             }
         }
@@ -388,10 +384,9 @@ private struct ExploreTypeRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            TypeIcon(descriptor, size: showsCategory ? .regular : .small)
+            TypeIcon(descriptor)
             VStack(alignment: .leading, spacing: 1) {
                 Text(descriptor.displayName)
-                    .font(showsCategory ? .body : .callout)
                 Text(detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)

@@ -40,10 +40,10 @@ Build release candidates with
 Xcode 27.1 or later and verify folded/unfolded Duo layouts, including vertical
 system bars. See [Duo acceptance and store assets](../docs/appstore/iphone-duo.md).
 
-Explore gives each category its own card. Expanded data types stay inside that
-card with smaller icons and a subtle tint on the parent header; space between
-cards makes each group’s boundary clear. Search results stay flat and show each
-type’s category. Workouts has its own card directly below Activity.
+Explore gives each category its own card. Space between cards makes each
+group’s boundary clear; parent and child rows use the same background, alignment
+and icon size. Search results show each type’s category. Workouts has its own
+card directly below Activity.
 
 The type page’s **+** menu connects Explore to the other tabs. **Add to Export**
 selects the type in the current multi-type draft without creating files. Its
