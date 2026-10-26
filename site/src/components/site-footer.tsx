@@ -7,49 +7,50 @@ type FooterLink = { title: string; href: string; external?: boolean }
 
 const columns: { heading: string; links: FooterLink[] }[] = [
   {
-    heading: "Project",
+    heading: "PulsHealth",
     links: [
-      { title: "Get the App", href: APP_STORE_URL, external: true },
+      { title: "Get the app", href: APP_STORE_URL, external: true },
       { title: "App features", href: "/features/" },
-      { title: "PulsHealth Database", href: "https://app.pulshealth.com/signup", external: true },
-      { title: "Self-hosting", href: "/server" },
-      { title: "PulsHealth Pro", href: "/pro" },
-      { title: "App pricing", href: "/pricing" },
-      { title: "Documentation", href: "/docs" },
-      { title: "Sync Protocol", href: "/docs/protocol" },
-      { title: "Use It With AI", href: "/docs/ai" },
-      { title: "About", href: "/about" },
-      { title: "Watch Workout Pro", href: "/watch-workout-pro/" },
+      { title: "Pro & pricing", href: "/pricing/" },
+      { title: "Dashboard", href: "https://app.pulshealth.com", external: true },
+      { title: "Self-hosting", href: "/server/" },
     ],
   },
   {
     heading: "Resources",
     links: [
-      { title: "Knowledge Base", href: "/knowledge-base" },
-      { title: "Blog", href: "/blog" },
-      { title: "Support & FAQ", href: "/support" },
-      { title: "Changelog", href: "/docs/changelog" },
-      { title: "Roadmap", href: "/docs/roadmap" },
+      { title: "Documentation", href: "/docs/" },
+      { title: "Knowledge base", href: "/knowledge-base/" },
+      { title: "Blog", href: "/blog/" },
+      { title: "Support & FAQ", href: "/support/" },
+      { title: "About", href: "/about/" },
+      { title: "Consulting", href: "/consulting/" },
     ],
   },
   {
-    heading: "Community",
+    heading: "Developers",
     links: [
-      { title: "Source on GitHub", href: GITHUB_URL, external: true },
-      { title: "Issues", href: `${GITHUB_URL}/issues`, external: true },
+      { title: "GitHub", href: GITHUB_URL, external: true },
+      { title: "Sync protocol", href: "/docs/protocol/" },
+      { title: "Use with AI", href: "/docs/ai/" },
+      { title: "Changelog", href: "/docs/changelog/" },
+      { title: "Roadmap", href: "/docs/roadmap/" },
       { title: "Discussions", href: `${GITHUB_URL}/discussions`, external: true },
-      { title: "Releases", href: `${GITHUB_URL}/releases`, external: true },
-      { title: "Consulting", href: "/consulting" },
     ],
   },
   {
-    heading: "Legal",
+    heading: "More apps",
     links: [
-      { title: "Privacy Policy", href: "/privacy" },
-      { title: "License (Apache-2.0)", href: `${GITHUB_URL}/blob/main/LICENSE`, external: true },
-      { title: "Security Policy", href: "/docs/security" },
+      { title: "Friend Flex", href: "/friend-flex/" },
+      { title: "Watch Workout Pro", href: "/watch-workout-pro/" },
     ],
   },
+]
+
+const legalLinks: FooterLink[] = [
+  { title: "Privacy", href: "/privacy/" },
+  { title: "Security", href: "/docs/security/" },
+  { title: "Apache-2.0 license", href: `${GITHUB_URL}/blob/main/LICENSE`, external: true },
 ]
 
 function FooterLinkItem({ link }: { link: FooterLink }) {
@@ -75,13 +76,13 @@ export function SiteFooter() {
   return (
     <footer className="site-footer border-t">
       <div className="container mx-auto max-w-7xl px-4 py-12">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-6 lg:grid-cols-5">
-          <div className="col-span-2 lg:col-span-1">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-4 lg:grid-cols-[1.4fr_repeat(4,1fr)]">
+          <div className="col-span-2 md:col-span-4 lg:col-span-1">
             <Link href="/" className="flex items-center space-x-1.5">
               <Image src="/logo.svg" alt="" width={28} height={28} />
               <span className="font-semibold">PulsHealth</span>
             </Link>
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
               Sync, export, and control your Apple Health data. Your database. Your AI tools. Your choice.
             </p>
           </div>
@@ -99,7 +100,9 @@ export function SiteFooter() {
             </div>
           ))}
         </div>
-
+        <nav aria-label="Legal" className="mt-10 flex flex-wrap gap-x-6 gap-y-3 border-t pt-6">
+          {legalLinks.map((link) => <FooterLinkItem key={link.title} link={link} />)}
+        </nav>
       </div>
     </footer>
   )

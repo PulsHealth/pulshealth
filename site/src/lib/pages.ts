@@ -1,6 +1,8 @@
 import { SearchItem } from './types';
 
 export const STATIC_PAGES: SearchItem[] = [
+  { id: 'page-friend-flex', type: 'page', title: 'Friend Flex', description: 'Fitness challenges for friends. Learn how to join, log results, share progress in iMessage, and get support.', href: '/friend-flex/', icon: 'Activity' },
+  { id: 'page-friend-flex-privacy', type: 'page', title: 'Friend Flex Privacy Policy', description: 'What Friend Flex stores, who can see it, and how to delete your data.', href: '/friend-flex/privacy/', icon: 'Shield' },
   { id: 'page-features', type: 'page', title: 'PulsHealth App Features', description: 'Explore Apple Health on iPhone, export CSV and JSON, create custom summaries, and sync your database.', href: '/features/', icon: 'Smartphone' },
   { id: 'page-pro', type: 'page', title: 'PulsHealth Pro', description: 'Optional app subscription for full available Apple Health history and sync of all supported types. Open source, with your own database.', href: '/pro/', icon: 'Heart' },
   { id: 'page-pricing', type: 'page', title: 'PulsHealth App Pricing', description: 'Compare Free and Pro: recent exports and five sync types free, or full history and all sync types with the app subscription. Hosting is separate.', href: '/pricing/', icon: 'Info' },
