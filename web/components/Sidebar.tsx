@@ -139,7 +139,6 @@ export function Sidebar({
             <Link href="/" aria-current="location">Dashboard</Link>
             <a href="https://pulshealth.com/knowledge-base/">Knowledge Base</a>
             <a href="https://pulshealth.com/docs/">Docs</a>
-            <a href="https://pulshealth.com/blog/">Blog</a>
             <a href="https://pulshealth.com/consulting/">Consulting</a>
             <div className="site-menu-heading">More</div>
             <a href="https://pulshealth.com/server/">Self-hosting</a>

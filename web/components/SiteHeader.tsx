@@ -11,7 +11,6 @@ const links = [
   { label: "Dashboard", href: "/" },
   { label: "Knowledge Base", href: "https://pulshealth.com/knowledge-base/" },
   { label: "Docs", href: "https://pulshealth.com/docs/" },
-  { label: "Blog", href: "https://pulshealth.com/blog/" },
   { label: "Consulting", href: "https://pulshealth.com/consulting/" },
 ];
 

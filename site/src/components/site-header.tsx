@@ -13,7 +13,6 @@ const primary = [
   { title: "Dashboard", href: "https://app.pulshealth.com/" },
   { title: "Knowledge Base", href: "/knowledge-base/" },
   { title: "Docs", href: "/docs/" },
-  { title: "Blog", href: "/blog/" },
   { title: "Consulting", href: "/consulting/" },
 ]
 const secondary = [
