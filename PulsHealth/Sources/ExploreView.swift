@@ -43,6 +43,7 @@ struct ExploreView: View {
                 searchResults
             }
         }
+        .listStyle(.insetGrouped)
         .scrollDismissesKeyboard(.immediately)
         .navigationTitle("Explore")
         .toolbar {
@@ -148,10 +149,13 @@ struct ExploreView: View {
 
     // MARK: - Catalog
 
-    private static let groups = HealthTypeDescriptor.Group.allCases
+    private static let groups: [HealthTypeDescriptor.Group] = [
+        .activity, .body, .heart, .respiratory, .sleep, .workouts, .vitals, .nutrition, .other,
+    ]
 
     @ViewBuilder private var catalog: some View {
-        if Self.groups.allSatisfy({ visibleTypes(in: $0).isEmpty }) {
+        let visibleGroups = Self.groups.filter { !visibleTypes(in: $0).isEmpty }
+        if visibleGroups.isEmpty {
             // Only reachable with Hide Types Without Data on.
             ContentUnavailableView {
                 Label("No Health Data", systemImage: "heart.text.square")
@@ -161,10 +165,13 @@ struct ExploreView: View {
                 Button("Show All Types") { hidesEmptyTypes = false }
             }
         } else {
-            Section("Health Categories") {
-                ForEach(Self.groups, id: \.self) { group in
+            ForEach(visibleGroups, id: \.self) { group in
+                Section {
                     categoryRows(group, types: visibleTypes(in: group))
+                } header: {
+                    if group == visibleGroups.first { Text("Health Categories") }
                 }
+                .listSectionSpacing(12)
             }
             let hidden = hiddenCount
             if hidden > 0 {
@@ -216,24 +223,11 @@ struct ExploreView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .listRowBackground(
-                Color(.secondarySystemGroupedBackground)
-                    .overlay(group.color.opacity(expanded ? 0.08 : 0)))
             .accessibilityValue(expanded ? "Expanded" : "Collapsed")
             .accessibilityHint(expanded ? "Hides this category's types" : "Shows this category's types")
             if expanded {
                 ForEach(types) { descriptor in
                     typeRow(descriptor, showsCategory: false)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 46, bottom: 8, trailing: 20))
-                        .listRowBackground(
-                            Color(.secondarySystemGroupedBackground)
-                                .overlay(alignment: .leading) {
-                                    Rectangle()
-                                        .fill(group.color.opacity(0.45))
-                                        .frame(width: 2)
-                                        .padding(.leading, 32)
-                                        .accessibilityHidden(true)
-                                })
                 }
             }
         }
@@ -390,7 +384,7 @@ private struct ExploreTypeRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            TypeIcon(descriptor, size: showsCategory ? .regular : .small)
+            TypeIcon(descriptor)
             VStack(alignment: .leading, spacing: 1) {
                 Text(descriptor.displayName)
                 Text(detail)

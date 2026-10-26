@@ -13,21 +13,47 @@ struct ExportView: View {
     @Environment(AppModel.self) private var model
     @State private var sharing = false
     @State private var confirmDelete = false
+    @State private var confirmClearSelection = false
 
     var body: some View {
         List {
-            switch model.export.state {
-            case .idle:
+            if model.export.showsDraft && !model.export.isRunning {
                 idleSections
-            case .running(let progress):
-                runningSections(progress)
-            case .finished(let finished):
-                finishedSections(finished)
+            } else {
+                switch model.export.state {
+                case .idle: idleSections
+                case .running(let progress): runningSections(progress)
+                case .finished(let finished): finishedSections(finished)
+                }
             }
         }
         .navigationTitle("Export")
+        .toolbar {
+            if case .finished = model.export.state {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if model.export.showsDraft {
+                        Button("Previous Export", systemImage: "doc.zipper") { model.export.showsDraft = false }
+                    } else {
+                        Button("Edit Export Draft", systemImage: "square.and.pencil") { model.export.prepareDraft() }
+                    }
+                }
+            }
+            if !model.export.isRunning {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Clear Selection", systemImage: "xmark.circle") { confirmClearSelection = true }
+                        .disabled(model.exportSelection.isEmpty)
+                }
+            }
+        }
+        .alert("Clear export selection?", isPresented: $confirmClearSelection) {
+            Button("Clear Selection", role: .destructive) { model.export.clearSelection() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Remove all selected data types and aggregates from this export?")
+        }
         .deleteExportAlert(isPresented: $confirmDelete, export: model.export)
-        .reviewRequestOpportunity(.export, blocked: sharing || confirmDelete)
+        .reviewRequestOpportunity(.export, blocked: sharing || confirmDelete || confirmClearSelection
+            || (model.export.showsDraft && !model.exportSelection.isEmpty))
     }
 
     // MARK: - Idle
@@ -58,6 +84,22 @@ struct ExportView: View {
                     Text(count == 0 ? "None" : "\(count) type\(count == 1 ? "" : "s")")
                         .foregroundStyle(.secondary)
                 }
+            }
+            ForEach(HealthTypeCatalog.all.filter { export.draft.types.contains($0.identifier) }.prefix(5)) { type in
+                HStack {
+                    Text(type.displayName).font(.subheadline)
+                    Spacer()
+                    Button("Remove \(type.displayName)", systemImage: "xmark.circle") {
+                        export.draft.types.remove(type.identifier)
+                    }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.secondary)
+                }
+            }
+            if count > 5 {
+                Text("+\(count - 5) more · edit Data types to see all")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             if workouts {
                 Toggle(isOn: $export.draft.includeWorkoutRoutes) {
@@ -198,7 +240,7 @@ struct ExportView: View {
             Button {
                 model.startExport()
             } label: {
-                Text("Export").frame(maxWidth: .infinity)
+                Text("Create Export").frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
@@ -313,26 +355,53 @@ struct ExportView: View {
     // MARK: - Running
 
     @ViewBuilder private func runningSections(_ progress: ExportProgress) -> some View {
-        CardSection("Exporting") {
-            // Up to `maxConcurrentTypes` types are read at once; the subtitle
-            // is whichever wrote last, which is enough to show life. No
-            // fraction: HealthKit does not say how many samples a type holds
-            // before they have been read, so any percentage would be made up.
+        Section {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Creating your export", systemImage: "doc.badge.arrow.up")
+                    .font(.title3.weight(.semibold))
+                Text("\(model.export.draft.format.title)\(model.export.draft.zipped ? " · ZIP" : "") · \(model.export.draft.rangeLabel())")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                Text("\(model.exportSelection.typeCount) raw types · \(model.exportSelection.aggregateCount) aggregates")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 6)
+        }
+        CardSection("Progress") {
             ProgressBanner(
                 title: progress.phase.label,
                 subtitle: progress.currentType.map {
                     HealthTypeCatalog.descriptor(for: $0)?.displayName ?? $0
-                },
-                fraction: nil,
-                onCancel: { model.export.cancel() })
+                } ?? "Working on your selected health data",
+                reservesSubtitleSpace: true,
+                fraction: nil)
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 StatTile(label: model.export.draft.format == .csv && model.export.draft.csvOptions.layout == .dailySummary
                          ? "Records processed" : "Rows written", value: progress.rowsWritten.formatted())
-                StatTile(label: "Size so far", value: Int(progress.bytesWritten).byteString)
+                StatTile(label: "File size", value: Int(progress.bytesWritten).byteString)
             }
-            Text("Keep PulsHealth open and the iPhone unlocked until this finishes. Health data is unreadable while the iPhone is locked, so an export that runs into a lock comes out incomplete. The screen stays awake while it runs. Cancelling keeps nothing.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(progressContext(progress.phase))
+                .font(.caption).foregroundStyle(.secondary)
+                .lineLimit(3, reservesSpace: true)
+        }
+        Section {
+            Label("Your screen stays awake during export", systemImage: "iphone")
+                .font(.footnote).foregroundStyle(.secondary)
+            Button("Cancel Export", role: .destructive) { model.export.cancel() }
+        } footer: {
+            Text("Keep PulsHealth open. Your files will be ready to share or save when this finishes.")
+        }
+    }
+
+    private func progressContext(_ phase: ExportProgress.Phase) -> String {
+        switch phase {
+        case .preparing: "Preparing your selection and files on this iPhone."
+        case .activity: "Reading daily Move, Exercise, and Stand rings from Apple Health."
+        case .samples: "Reading your selected data from Apple Health. Several types can be processed together."
+        case .aggregates: "Computing summaries using your chosen functions, intervals, and devices."
+        case .workoutRoutes: "Adding location points for your selected workouts."
+        case .workoutStreams: "Adding detailed measurements recorded during workouts."
+        case .finishing: "Finishing the data files and export summary."
+        case .archiving: "Packing your files into a ZIP for sharing."
         }
     }
 
@@ -513,8 +582,6 @@ struct ExportView: View {
             Section {
                 Button("Delete Export", role: .destructive) { confirmDelete = true }
                     .frame(maxWidth: .infinity)
-            } footer: {
-                Text("The files are in temporary storage on this iPhone, outside any backup. They are deleted once you have shared them, when you start another export, and the next time PulsHealth launches. They are not encrypted: once saved or sent, a file is only as private as the place you put it.")
             }
         }
     }

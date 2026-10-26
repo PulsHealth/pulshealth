@@ -18,6 +18,8 @@ struct RootView: View {
         }
     }
     @State private var selection: Tab = Tab.initial
+    @State private var typeActions = TypeActions()
+    @State private var exportNavigationID = UUID()
     /// Owned here rather than by SyncView so an accepted pairing link can pop
     /// whatever the Sync tab had pushed and land on its Database screen.
     @State private var syncPath: [SyncRoute] = {
@@ -42,6 +44,10 @@ struct RootView: View {
         #endif
         return nil
     }()
+    init(typeActions: TypeActions = TypeActions()) {
+        _typeActions = State(initialValue: typeActions)
+    }
+
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
 
@@ -88,10 +94,13 @@ struct RootView: View {
                     .id(exploredType)
                 }
                 .navigationSplitViewStyle(.balanced)
-                    .tabItem { Label("Explore", systemImage: "heart.text.square") }
+                    .safeAreaInset(edge: .bottom) { TypeActionNoticeView() }
+                    .tabItem { Label("Explore", systemImage: "heart.fill") }
                     .tag(Tab.explore)
                 NavigationStack { ExportView() }
+                    .id(exportNavigationID)
                     .tabItem { Label("Export", systemImage: "square.and.arrow.up") }
+                    .badge(model.export.draft.selectedTypeCount)
                     .tag(Tab.export)
                 NavigationStack(path: $syncPath) { SyncView(path: $syncPath) }
                     // The Raw Samples and Aggregates pickers are pushed on this
@@ -99,11 +108,25 @@ struct RootView: View {
                     // to a screen that could be popped with edits still staged.
                     .safeAreaInset(edge: .bottom) { PendingChangesBar() }
                     .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
+                    .badge(model.hasPendingChanges ? "•" : nil)
                     .tag(Tab.sync)
                 NavigationStack { SettingsView() }
-                    .tabItem { Label("Settings", systemImage: "gearshape") }
+                    .tabItem { Label("Settings", systemImage: "gearshape.fill") }
                     .tag(Tab.settings)
             }
+        }
+        .environment(typeActions)
+        .onChange(of: typeActions.destination) { _, destination in
+            guard let destination else { return }
+            switch destination {
+            case .export:
+                exportNavigationID = UUID()
+                selection = .export
+            case .sync:
+                syncPath = []
+                selection = .sync
+            }
+            typeActions.destination = nil
         }
         .sheet(isPresented: $model.showsPro) {
             NavigationStack { ProView(context: model.proContext) }.environment(model)
@@ -130,7 +153,10 @@ struct RootView: View {
             if phase == .active { model.reviews.beginSession() }
             else if phase == .background { model.reviews.endSession() }
         }
-        .onChange(of: selection) { _, _ in model.reviews.cancelPending() }
+        .onChange(of: selection) { _, _ in
+            model.reviews.cancelPending()
+            typeActions.notice = nil
+        }
         .onChange(of: syncPath) { _, _ in model.reviews.cancelPending() }
         .onChange(of: exploredType) { old, new in
             model.reviews.cancelPending()

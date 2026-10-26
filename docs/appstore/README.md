@@ -238,13 +238,19 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
-### 2.4 (32) submitted for App Review (2026-10-26)
+### 2.4 (32) withdrawn from App Review (2026-10-26)
 
-App Store Connect accepted submission
-`13ee1efb-7f52-4557-85f7-a1ee13aeca0f` on 2026-10-26 at 10:58 AM Pacific.
-The verified status is **Waiting for Review**, with build **2.4 (32)** and
-automatic release after approval. Approval, public release, and the live
-**Made for iPhone Duo** badge remain unverified.
+The maintainer canceled submission
+`13ee1efb-7f52-4557-85f7-a1ee13aeca0f` on 2026-10-26 while continuing app
+changes and phone testing. App Store Connect was rechecked and reports
+**Developer Rejected** for **2.4 (32)**. The submission is no longer awaiting
+review; resubmission requires an explicit release decision.
+
+The submission was originally accepted on 2026-10-26 at 10:58 AM Pacific,
+with **Waiting for Review** status and automatic release after approval.
+Approval, public release, and the live **Made for iPhone Duo** badge were not
+verified before withdrawal. The existing 2.3 version remains **Ready for
+Distribution**.
 
 PR [#386](https://github.com/PulsHealth/pulshealth/pull/386) merged as
 `bba42b51a8d264f99b2868614c8c20949f3a6469` after all required checks passed,

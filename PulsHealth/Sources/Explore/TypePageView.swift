@@ -11,6 +11,10 @@ import SwiftUI
 struct TypePageView: View {
     let identifier: String
     @Environment(AppModel.self) private var model
+    @Environment(TypeActions.self) private var typeActions
+    @State private var showsSyncChoices = false
+    @State private var showsExportChoices = false
+    @State private var showsSyncDetails = false
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -59,10 +63,21 @@ struct TypePageView: View {
                !HealthTypeCatalog.allowedAggregateFunctions(for: identifier).isEmpty {
                 AggregatePreviewSection(descriptor: descriptor)
             }
-            actions
         }
         .navigationTitle(descriptor.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { actions(descriptor) } }
+        .navigationDestination(isPresented: $showsSyncDetails) {
+            if let status = model.statuses.first(where: { $0.id == identifier }) { TypeDetailView(status: status) }
+        }
+        .sheet(isPresented: $showsSyncChoices) {
+            TypeDataSelectionSheet(descriptor: descriptor, configuration: model.config)
+        }
+        .sheet(isPresented: $showsExportChoices) {
+            TypeDataSelectionSheet(descriptor: descriptor,
+                configuration: SyncConfiguration(enabledTypes: model.export.draft.types, aggregates: model.export.draft.aggregates),
+                scope: .export)
+        }
         .task {
             // The facts decide whether the profile is current; cheap enough
             // to refresh on every visit. Opening a type that has never been
@@ -321,33 +336,50 @@ struct TypePageView: View {
 
     // MARK: - Actions
 
-    @ViewBuilder private var actions: some View {
-        let status = model.statuses.first { $0.id == identifier }
-        Section {
-            // Adds the type to the Export tab's draft; the export itself is
-            // started there, where the range and format are chosen.
-            let inExport = model.export.draft.types.contains(identifier)
-            Button {
-                model.export.include(type: identifier)
-            } label: {
-                Label(inExport ? "In the Export draft" : "Export This Type", systemImage: "square.and.arrow.up")
-            }
-            .disabled(inExport || model.export.isRunning)
-            if let status {
-                NavigationLink {
-                    TypeDetailView(status: status)
-                } label: {
-                    Label("Sync details", systemImage: "arrow.triangle.2.circlepath")
+    private func actions(_ descriptor: HealthTypeDescriptor) -> some View {
+        Menu {
+            if model.export.isRunning {
+                Button("View Export in Progress", systemImage: "square.and.arrow.up") { typeActions.open(.export) }
+            } else {
+                let selected = model.export.draft.types.contains(identifier)
+                    || model.export.draft.aggregates.contains { $0.typeIdentifier == identifier }
+                Button(selected ? "Edit Export Selection" : "Add to Export", systemImage: "square.and.arrow.up") {
+                    showsExportChoices = true
+                }
+                if selected {
+                    Button("Open Export", systemImage: "arrow.right") {
+                        model.export.prepareDraft()
+                        typeActions.open(.export)
+                    }
                 }
             }
-        } footer: {
-            if inExportFooter {
-                Text("Choose the range and format on the Export tab.")
+            Section {
+                Button(syncActionTitle, systemImage: "arrow.triangle.2.circlepath") { showsSyncChoices = true }
+                    .disabled(model.stateFileUnreadable)
+                if model.hasPendingTypeChanges(identifier) {
+                    Button("Undo Sync Changes for This Type", systemImage: "arrow.uturn.backward") {
+                        model.discardTypeSyncChanges(identifier)
+                        typeActions.notice = nil
+                    }
+                }
+                if model.statuses.contains(where: { $0.id == identifier }), model.appliedConfig.serverURL != nil {
+                    Button("Sync Details", systemImage: "info.circle") { showsSyncDetails = true }
+                }
             }
+        } label: {
+            Label("Use This Type", systemImage: "plus")
         }
+        .accessibilityIdentifier("typeActions.menu")
     }
 
-    private var inExportFooter: Bool { model.export.draft.types.contains(identifier) }
+    private var syncActionTitle: String {
+        if model.hasPendingTypeChanges(identifier) { return "Edit Sync Draft…" }
+        if model.appliedConfig.serverURL != nil, model.appliedConfig.observedTypeIdentifiers.contains(identifier) {
+            return "Manage Sync…"
+        }
+        return "Add to Sync…"
+    }
+
 }
 
 // MARK: - Helpers
@@ -659,6 +691,7 @@ private struct SourcesSection: View {
 /// with the controls to try others and the buttons that add the one shown to
 /// Sync or to the export.
 private struct AggregatePreviewSection: View {
+    @Environment(TypeActions.self) private var typeActions
     let descriptor: HealthTypeDescriptor
     @Environment(AppModel.self) private var model
     @State private var function: AggregateFunction?
@@ -762,15 +795,18 @@ private struct AggregatePreviewSection: View {
             let inSync = model.aggregateList(.sync).duplicates(config)
             HStack(spacing: 12) {
                 Button(inExport ? "In Export" : "Add to Export") {
+                    model.export.prepareDraft()
                     model.editAggregates(.export) { $0.add(config) }
+                    typeActions.addedToExport(descriptor.displayName, count: model.export.draft.selectedTypeCount)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .disabled(inExport)
+                .disabled(inExport || model.export.isRunning)
                 if model.appliedConfig.serverURL != nil {
                     Button(inSync ? "In Sync" : "Add to Sync") {
                         model.editAggregates(.sync) { $0.add(config) }
                         added = true
+                        if model.aggregateList(.sync).configs.contains(config) { typeActions.addedToSync() }
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)

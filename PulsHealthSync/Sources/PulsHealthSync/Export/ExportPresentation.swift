@@ -216,8 +216,8 @@ public struct ExportFailureCopy: Sendable, Equatable {
 
 public extension ExportResult {
     /// Rows that are actually in `files`, per dataset. `rowCounts` counts what
-    /// HealthKit returned — for a CSV export that includes the ECG, heartbeat
-    /// and deletion rows the format has no file for, which `notRepresented`
+    /// HealthKit returned — for a CSV export that includes the ECG and heartbeat
+    /// rows the format has no file for, which `notRepresented`
     /// lists separately. A screen that says "what's in it" wants this one, or
     /// it lists three heartbeat series as exported and then, a section later,
     /// as left out.

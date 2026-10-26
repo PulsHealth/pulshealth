@@ -279,9 +279,6 @@ final class AppModel {
         await subscriptions.start()
         config = await engine.store.configuration
         appliedConfig = config
-        // The Export tab's draft starts from the applied selection, if the
-        // user has not already started editing it.
-        export.seedFromApplied(config)
         if !subscriptions.hasPro { export.draft.range = .last30Days }
         authorizationRequested = defaults.bool(forKey: "authorizationRequested")
         // Don't trust the one-shot flag alone: types added to the catalog after
@@ -536,7 +533,7 @@ final class AppModel {
     // MARK: - Export to files
 
     /// What the Export tab exports: its own draft (`ExportModel.draft`),
-    /// seeded from the applied selection and edited on the tab. It is not the
+    /// initially empty and edited on the tab or from Explore. It is not the
     /// Sync tab's draft: what is chosen there counts only after Apply, and
     /// what is chosen here never reaches the sync at all.
     var exportSelection: ExportSelectionSummary {
