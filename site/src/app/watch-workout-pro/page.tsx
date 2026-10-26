@@ -7,7 +7,7 @@ import styles from "./workouts.module.css";
 const description = "Create running, cycling, strength, swimming, and interval workouts on iPhone. Save, share, and schedule structured workouts for Apple’s Workout app on Apple Watch.";
 const socialImage = { url: "/watch-workout-pro/workout-library.jpg", width: 396, height: 860, alt: "Watch Workout Pro workout library on iPhone" };
 export const metadata = {
-  title: "Watch Workout Pro — Your Custom Workouts on your Apple Watch", description,
+  title: "Watch Workout Pro — Create custom workouts. Use them on your Apple Watch.", description,
   alternates: { canonical: "/watch-workout-pro/" },
   openGraph: { title: "Watch Workout Pro", description, url: "/watch-workout-pro/", images: [socialImage] },
   twitter: { card: "summary_large_image", title: "Watch Workout Pro", description, images: [socialImage.url] },
@@ -30,7 +30,7 @@ export default function WatchWorkoutProPage() {
       <div className={`container mx-auto max-w-7xl px-5 ${styles.hero}`}>
         <div>
           <h1 className={styles.name}>Watch Workout Pro</h1>
-          <p className={styles.headline}>Your Custom Workouts on your Apple Watch</p>
+          <p className={styles.headline}>Create custom workouts. Use them on your Apple Watch.</p>
           <p className="mt-7 max-w-lg text-xl leading-relaxed text-muted-foreground">Build a workout on your iPhone. Save the ones you love. Have your next session ready in Apple’s Workout app on your watch.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg"><a href="#workouts">Explore the app</a></Button>
