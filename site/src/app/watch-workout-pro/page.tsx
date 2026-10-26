@@ -59,7 +59,10 @@ export default function WatchWorkoutProPage() {
         </div> : <Phone name={name} alt={alt} />}</div>
       </section>)}
 
-
+      <div className="flex flex-wrap gap-x-8 gap-y-4 font-medium text-brand">
+        <Link href="/watch-workout-pro/privacy/" className="hover:underline">Read the privacy policy</Link>
+        <a href="mailto:support@pulshealth.com?subject=Watch%20Workout%20Pro%20support" className="hover:underline">support@pulshealth.com</a>
+      </div>
     </div>
   </main>;
 }
