@@ -71,8 +71,10 @@ page and stays outside the sitemap. Search Console can retain old exclusions
 until Google recrawls; passing these checks makes pages eligible, but does not
 guarantee Google will index them.
 
-Friend Flex is a separate app by the same developer. Its support page is
-`/friend-flex/` and its privacy policy is `/friend-flex/privacy/`, rendered from
+Friend Flex is a separate app by the same developer. Its product page at
+`/friend-flex/` uses genuine demo screenshots to explain challenges, improvement
+scoring, iMessage and optional Apple Health. Help lives at `/friend-flex/support/`
+and its privacy policy is `/friend-flex/privacy/`, rendered from
 `content/friend-flex/privacy-policy.md`. The footer, search and sitemap use
 these canonical URLs. Legacy `/fun100/` URLs redirect to the new pages.
 
