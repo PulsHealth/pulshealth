@@ -85,7 +85,6 @@ export default async function Dashboard() {
     <>
       <PageHeader
         title={greetingAt(now, timeZone)}
-        subtitle="Your health data, synced from Apple Health to your own server — and finally easy to look at."
       />
 
       <div className="dashboard-summary">
