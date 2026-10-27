@@ -266,6 +266,7 @@ uploaded server data or revoke credentials on the server.
   onboarding and background-scheduling flags, Explore display preferences,
   and the counters used to space App Store review requests: active days,
   foreground visits, successful-upload days, the latest counted upload date,
+  the date syncing first succeeded on three distinct days,
   and request-attempt dates, versions, sources (Explore, Export or Sync) and
   count. These contain no health values, type identifiers or account details,
   and are not sent to the developer or an analytics service. A request attempt

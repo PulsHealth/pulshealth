@@ -145,13 +145,10 @@ struct RootView: View {
         .task {
             presentDataRequest()
             if scenePhase == .active {
-                model.reviews.beginSession()
+                await model.start()
                 await model.subscriptions.beginForegroundVisit()
+                offerSyncReviewOnReturn()
             }
-        }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { model.reviews.beginSession() }
-            else if phase == .background { model.reviews.endSession() }
         }
         .onChange(of: selection) { _, _ in
             model.reviews.cancelPending()
@@ -168,23 +165,16 @@ struct RootView: View {
                   profile.sampleCount > 0 else { return }
             model.reviews.offer(.explore)
         }
-        .onChange(of: model.wakeRecords) { old, new in
-            let successes = new.filter { $0.outcome == .completed && $0.batches > 0 && $0.bytes > 0 }
-            model.reviews.recordSuccessfulSyncs(at: successes.compactMap(\.endedAt))
-            let previousCompleted = Set(old.filter { $0.outcome == .completed }.map(\.id))
-            // History may include background uploads. Only a newly completed
-            // foreground/manual upload visible on Sync can offer the prompt.
-            guard scenePhase == .active, selection == .sync, syncPath.isEmpty,
-                  let started = model.reviews.sessionStartedAt,
-                  successes.contains(where: { wake in
-                      !wake.trigger.isBackground && (wake.endedAt ?? .distantPast) >= started
-                          && !previousCompleted.contains(wake.id)
-                  }) else { return }
-            model.reviews.offer(.sync)
+        .onChange(of: model.wakeRecords) { _, _ in offerSyncReviewOnReturn() }
+        .onChange(of: model.reviews.syncReturnReady) { _, ready in
+            if ready { offerSyncReviewOnReturn() }
         }
         .onChange(of: model.reviewRequestsBlocked) { _, blocked in
             if blocked { model.reviews.cancelPending() }
+            else { offerSyncReviewOnReturn() }
         }
+        // Sync users can return to any tab after days of background uploads.
+        .reviewRequestOpportunity(.sync, blocked: model.appliedConfig.serverURL == nil || model.syncPausedByPlan)
         // An incoming `puls://` link asks before it fills anything. While the
         // first-run flow covers this view the prompt is OnboardingView's; and
         // it waits its turn behind the server-change prompt, which can be up
@@ -211,6 +201,12 @@ struct RootView: View {
             OnboardingView().environment(model)
         }
     }
+    private func offerSyncReviewOnReturn() {
+        guard scenePhase == .active, !model.reviewRequestsBlocked,
+              model.appliedConfig.serverURL != nil, !model.syncPausedByPlan else { return }
+        model.reviews.offerSyncOnReturn()
+    }
+
     private func presentDataRequest() {
         if !model.showsOnboarding, model.dataRequests.pending != nil {
             model.reviews.cancelPending()

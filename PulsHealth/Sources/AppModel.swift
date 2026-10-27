@@ -377,6 +377,11 @@ final class AppModel {
         aggregateStates = Dictionary(uniqueKeysWithValues: rawStates.compactMap { key, value in
             UUID(uuidString: key).map { ($0, value) }
         })
+        // Record use even on a background launch with no connected scene.
+        // Only RootView can offer a review request on a later foreground visit.
+        reviews.recordSuccessfulSyncs(at: wakes.filter {
+            $0.outcome == .completed && $0.batches > 0 && $0.bytes > 0
+        }.compactMap(\.endedAt))
         wakeRecords = wakes
         backgroundScheduleStatus = scheduler.scheduleStatus()
         settleContinuedBackfillPending(launchTimedOut: false)
