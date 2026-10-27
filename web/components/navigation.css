@@ -1,14 +1,14 @@
 :root { --site-header-height: 72px; }
-/* Shared visual language with the public site; desktop geometry follows the viewer shell. */
+/* Navbar geometry must match site/src/components/navigation.css and web/components/navigation.css. */
 .site-header { position: sticky; top: 0; z-index: 40; width: 100%; color: #f2f6fc; background: #0b1018f5; border-bottom: 1px solid #94b2d129; backdrop-filter: blur(12px); color-scheme: dark; font-size: 16px; line-height: 24px; }
 @supports (backdrop-filter: blur(12px)) { .site-header { background: #0b1018ed; } }
-.site-header-inner { display: flex; align-items: center; gap: 8px; height: var(--site-header-height); padding-inline: var(--content-gutter); }
+.site-header-inner { display: flex; align-items: center; gap: 8px; height: var(--site-header-height); max-width: 1280px; margin: auto; padding-inline: 32px; }
 .site-brand { display: inline-flex; align-items: center; flex-shrink: 0; gap: 6px; margin-right: 16px; font-size: 18px; line-height: 24px; font-weight: 600; }
 .site-brand > svg, .site-brand > img { width: 28px; height: 28px; flex: none; }
-.site-primary { margin-left: 0; display: flex; align-items: center; gap: 4px; }
+.site-primary { margin-left: auto; display: flex; align-items: center; gap: 4px; }
 .site-nav-link { display: inline-flex; padding: 8px 12px; border-radius: 6px; color: #a5b6ca; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap; }
 .site-nav-link:hover, .site-nav-link[aria-current] { background: #adc9e50b; color: #f2f6fc; }
-.site-header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.site-header-actions { display: flex; align-items: center; gap: 8px; margin-left: 26px; }
 .site-action { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: #f2f6fc; font-size: 14px; line-height: 20px; font-weight: 500; cursor: pointer; white-space: nowrap; }
 .site-action:hover { background: #ffffff14; }
 .site-action svg { width: 16px; height: 16px; flex: none; }
@@ -40,8 +40,3 @@
 @media (max-width: 359px) { .site-header-inner { padding-inline: 20px; } .site-brand { margin-right: 8px; } }
 
 @media (max-width: 767px) { :root { --site-header-height: 64px; } }
-
-@media (min-width: 1024px) {
-  .site-header-inner { padding-left: 26px; }
-  .site-brand { width: calc(var(--sidebar-width) - 26px + var(--content-gutter) - 8px); margin-right: 0; }
-}

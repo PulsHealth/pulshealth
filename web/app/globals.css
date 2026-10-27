@@ -727,3 +727,11 @@ button {
   .dashboard-browse { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-browse .card { padding: 16px !important; }
 }
+
+/* The shared header skin stays in navigation.css; viewer alignment follows its shell. */
+@media (min-width: 1024px) {
+  .site-header .site-header-inner { max-width: none; margin: 0; padding-inline: 26px var(--content-gutter); }
+  .site-header .site-brand { width: calc(var(--sidebar-width) - 26px + var(--content-gutter) - 8px); margin-right: 0; }
+  .site-header .site-primary { margin-left: 0; }
+  .site-header .site-header-actions { margin-left: auto; }
+}
