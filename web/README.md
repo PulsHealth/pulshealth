@@ -639,9 +639,12 @@ navigation, including categories, account controls and website resources. Choosi
 or pressing Escape closes it; Escape returns focus to the header menu button.
 The shared demo keeps a visible **Demo** badge even with the menu closed.
 The mobile menu puts health navigation above the same public resource links used
-on pulshealth.com. Both headers use centered 1280 px content rows, 72 px high on desktop and 64 px on phones,
-32 px desktop / 24 px mobile edge padding (20 px on narrow phones),
-and the same 1024 px desktop breakpoint.
+on pulshealth.com. The viewer header aligns its brand with the sidebar and its desktop links with
+the content edge. It is 72 px high on desktop and 64 px on phones, with the
+same 1024 px desktop breakpoint as the public site. Dashboard content fills
+the available width; on wide desktops the activity overview and highlights
+share a row. Selected sidebar links use a filled background, with an outline
+reserved for keyboard focus.
 
 Page headers begin with the title and description, without a page label above
 them. Demo and live data indicators remain visible in the navigation.

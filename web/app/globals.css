@@ -6,6 +6,8 @@
    ─────────────────────────────────────────────────────────────────────── */
 
 :root {
+  --sidebar-width: 248px;
+  --content-gutter: clamp(24px, 2.5vw, 48px);
   --bg: #0b1018;
   --bg-elevated: #111b28;
   --panel: #111b28;
@@ -215,7 +217,7 @@ a.card:hover {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   min-height: calc(100vh - var(--site-header-height) - 1px);
 }
 @media (max-width: 1023px) {
@@ -226,8 +228,7 @@ a.card:hover {
 }
 .content {
   min-width: 0;
-  padding: 40px clamp(20px, 5vw, 64px) 96px;
-  max-width: 1180px;
+  padding: 40px var(--content-gutter) 72px;
 }
 
 /* link reset */
@@ -377,7 +378,6 @@ button {
 .nav-link.active {
   background: var(--panel-strong);
   color: var(--accent);
-  box-shadow: inset 2px 0 var(--accent);
 }
 .nav-link.active .nav-icon {
   color: var(--accent);
@@ -700,4 +700,30 @@ button {
   .data-row-name { white-space: normal; overflow-wrap: anywhere; }
   .data-row-meta { display: flex; grid-column: 2; grid-row: 2; justify-content: space-between; flex-wrap: wrap; gap: 6px 14px; }
   .data-list-row > svg:last-child { grid-column: 3; grid-row: 1 / 3; }
+}
+
+/* Reflow the overview on wide desktops instead of leaving unused canvas. */
+.dashboard-summary { display: grid; gap: 28px; }
+.dashboard-summary > * { min-width: 0; }
+.dashboard-summary .dashboard-overview { margin-bottom: 0; }
+.dashboard-highlights { display: grid; grid-template-rows: auto 1fr; }
+.dashboard-highlight-grid > div, .dashboard-highlight-grid .card { height: 100%; }
+.dashboard-highlights h2 { margin: 0 0 14px; }
+.dashboard-highlight-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.dashboard-workouts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.dashboard-browse { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+@media (min-width: 1280px) {
+  .dashboard-highlight-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 1800px) {
+  .dashboard-summary { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: stretch; }
+  .dashboard-overview { display: grid; align-content: center; }
+  .overview-layout { justify-content: center; }
+  .overview-metrics { flex-basis: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  :root { --content-gutter: 20px; }
+  .dashboard-highlight-grid, .dashboard-workouts { grid-template-columns: minmax(0, 1fr); }
+  .dashboard-browse { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-browse .card { padding: 16px !important; }
 }
