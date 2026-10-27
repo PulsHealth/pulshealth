@@ -1,9 +1,11 @@
 # Security policy
 
 PulsHealth moves personal health data from an iPhone to a server the user
-runs. Security problems in it matter more than in most hobby projects, so
-please report them privately and give the maintainer a chance to fix them
-before anything is public.
+chooses. Report vulnerabilities privately using the channel below.
+
+For installation, use [Server setup](docs/setup.md); for deployment controls,
+see [server operations](server/README.md). This policy explains reporting,
+credential boundaries and the assumptions those instructions rely on.
 
 ## Supported versions
 
@@ -52,8 +54,8 @@ This is a volunteer-maintained project.
 
 Everything in this repository is in scope, in particular:
 
-- **Ingest server** (`server/ingest`): the only component designed to face the
-  network. Authentication bypass, parsing crashes, decompression or memory
+- **Ingest server** (`server/ingest`): the phone-facing upload endpoint.
+  Authentication bypass, parsing crashes, decompression or memory
   exhaustion, SQL injection, and anything that lets one bearer token read or
   modify data outside its intended reach.
 - **Product API** (`server/api`) and **MCP server** (`server/mcp`): token
@@ -85,9 +87,11 @@ Everything in this repository is in scope, in particular:
   way to get an account, a user or a sync token without an administrator's
   approval, to mint or revoke a sync token for anyone but the signed-in
   person, to reach `/admin` or its database functions without an
-  administrator's session, or — even with SQL run as `web_app` — to give a
-  sync token to, revoke the tokens of, or delete the data of a user that no
-  approved request created. With OAuth on (the viewer as the MCP server's
+  administrator's session, or to erase a user outside the self-service and
+  operator-allowlisted personal-user boundary described below. Invited
+  personal accounts and administrators may pair their own phones; approval
+  of a sign-up request is not required for that path. With OAuth on (the viewer
+  as the MCP server's
   authorization server): an authorization code or access token for an
   account other than the one that approved it; getting a code without the
   consent screen's Allow, or by cross-site request; a redirect to an address
@@ -208,6 +212,14 @@ for judging what is.
   Keychain write fails the app parks the token in that protected state file
   instead of dropping it — losing it would stall syncing until the user
   re-entered it — and removes it once the Keychain accepts it.
+- **Medication aliases are installation-local.** The protected, backup-excluded
+  `medication-identities.json` stores secure archives of opaque HealthKit concept
+  identifiers and random UUID aliases, without names or dose events. Equality of
+  decoded identifiers resolves an alias; archive bytes, object descriptions and
+  display names never define identity. Only UUID aliases leave the device. Sync
+  and throwaway exports share this registry, never sync progress. A corrupt,
+  unreadable or unwritable registry fails the page/export rather than minting
+  replacement IDs. Unpair/reset retains it; uninstall or file loss starts new IDs.
 - **App Store financial alerts are independent of health records.** Optional
   accounts-mode V2 webhooks verify Apple signatures, bundle/app identifiers and
   environment using Apple's server library and public trust roots. They do not
@@ -238,8 +250,10 @@ for judging what is.
   beyond iOS file protection, and after the share sheet hands them to Files,
   AirDrop or another app, where they rest is outside the app's control.
 - **TLS is yours to provide.** Every service binds to loopback by default. The
-  phone must reach the ingest port over HTTPS through a TLS-terminating
-  reverse proxy or a VPN; the token is only a second layer.
+  phone normally reaches ingest over HTTPS through a TLS-terminating
+  proxy, optionally over a VPN. The explicit `--lan` setup permits plain HTTP
+  to local-network hosts on a trusted LAN; it does not encrypt the token or
+  health data. A bearer token is not a substitute for transport encryption.
 - **The web viewer has three modes** (`web/README.md`, "Access control").
   Open, with no login, for loopback only; basic, one shared
   `WEB_AUTH_PASSWORD` over HTTP Basic, behind which everyone sees every user —

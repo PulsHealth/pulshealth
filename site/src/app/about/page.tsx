@@ -45,8 +45,8 @@ const comparison: { name: string; href?: string; cells: Cell[] }[] = [
 const comparisonColumns = ["Open-source app", "Open-source backend", "License", "Where data lives", "Wire format specified", "AI assistant access", "Price"];
 
 function CellValue({ value }: { value: Cell }) {
-  if (value === true) return <Check className="mx-auto h-4 w-4 text-brand" aria-label="Yes" />;
-  if (value === false) return <Minus className="mx-auto h-4 w-4 text-muted-foreground/60" aria-label="No" />;
+  if (value === true) return <span className="inline-flex items-center gap-1"><Check className="h-4 w-4 text-brand" aria-hidden />Yes</span>;
+  if (value === false) return <span className="inline-flex items-center gap-1"><Minus className="h-4 w-4 text-muted-foreground" aria-hidden />No</span>;
   return <span className="text-muted-foreground">{value}</span>;
 }
 

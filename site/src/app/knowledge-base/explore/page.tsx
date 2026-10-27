@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "All Apple Health Data Types - HealthKit Knowledge Base",
   description: "Every HealthKit data type, grouped by category, with its unit and a one-line description.",
-  robots: "index, follow, noai, noimageai",
+  robots: "index, follow, max-image-preview:large",
   alternates: {
     canonical: '/knowledge-base/explore/',
   },
@@ -32,7 +32,7 @@ export default async function ExplorePage() {
       />
 
       {/* Jump to a category; sticks under the site header. */}
-      <nav aria-label="Categories" className="sticky top-14 z-10 border-b bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
+      <nav aria-label="Categories" className="sticky top-[calc(var(--site-header-height)+1px)] z-10 border-b bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
         <ul className="container mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none]">
           {categories.map((category) => (
             <li key={category} className="shrink-0">

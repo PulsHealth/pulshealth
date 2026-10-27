@@ -63,8 +63,12 @@ struct SyncView: View {
             }
             // Keyed on the *applied* server — where data goes today — so a URL
             // half-typed on the Database screen does not hide it.
-            if model.appliedConfig.serverURL == nil {
+            if model.appliedConfig.serverURL == nil && !model.isSettingUpInitialSync {
                 SyncIntro { path.append(.server(scan: false, choice: $0)) }
+            } else if model.isSettingUpInitialSync {
+                initialSyncSection
+                rawSamplesSection
+                aggregatesSection
             } else {
                 if model.syncPausedByPlan {
                     planLimitCard
@@ -80,7 +84,6 @@ struct SyncView: View {
             linksSection
         }
         .navigationTitle("Sync")
-        .reviewRequestOpportunity(.sync, blocked: !path.isEmpty)
         .navigationDestination(for: SyncRoute.self) { route in
             switch route {
             case .server(let scan, let choice): ServerSettingsView(scanOnArrival: scan, preferred: choice)
@@ -108,6 +111,27 @@ struct SyncView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(model.lastErrorMessage ?? "")
+        }
+    }
+
+    /// First connection is staged on the normal Sync screen. The existing
+    /// pickers and Apply bar are shared with later edits; no setup-only page.
+    private var initialSyncSection: some View {
+        CardSection("Ready for your first sync", subtitle: "Review your types and history, then tap Apply to start.") {
+            Image(systemName: "checklist").foregroundStyle(.tint)
+        } content: {
+            LabeledContent("Database", value: DatabaseSetup.databaseLabel(model.config.serverURL) ?? "Database")
+            DatePicker("Sync data from", selection: Binding {
+                model.subscriptions.hasPro ? model.config.startDate
+                    : max(model.config.startDate, SyncAccessPolicy.free.earliestDate() ?? model.config.startDate)
+            } set: { model.setSyncStartDate($0) }, in: ...Date(), displayedComponents: .date)
+                .accessibilityIdentifier("initialSync.startDate")
+            Text(model.subscriptions.hasPro
+                 ? "A shorter history makes the first sync quicker. You can choose an earlier date later in Settings. Health access may limit available history."
+                 : "Free sync includes 5 types and the most recent 30 days. Pro unlocks more types and earlier history.")
+                .font(.footnote).foregroundStyle(.secondary)
+            Text("Nothing is uploaded to this database until you apply.")
+                .font(.footnote).foregroundStyle(.secondary)
         }
     }
 
@@ -146,7 +170,11 @@ struct SyncView: View {
                 StatTile(label: "Samples sent", value: model.totalSamples.compactString)
                 StatTile(label: "Uploaded", value: model.totalBytes.byteString, footnote: "gzip")
             }
-            if model.typesBackfilling > 0 {
+            if model.isUpdatingConnection {
+                ProgressBanner(title: "Preparing sync", subtitle: "Checking Health access and preparing your selected history")
+            } else if model.continuedBackfillPending {
+                ProgressBanner(title: "Starting backfill", subtitle: "iOS is preparing the task. Keep PulsHealth open for the best progress.")
+            } else if model.typesBackfilling > 0 {
                 ProgressBanner(
                     title: "Backfilling \(model.typesBackfilling) type\(model.typesBackfilling == 1 ? "" : "s")",
                     subtitle: model.backfillRemaining.map { "About \($0.shortDuration) left" }
@@ -296,19 +324,37 @@ struct SyncView: View {
     /// first, the first few until Show All.
     private var rawSamplesSection: some View {
         let sorted = sortedStatuses
+        let draft = HealthTypeCatalog.all.filter { model.config.enabledTypes.contains($0.identifier) }
+            .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
         let shown = showsAllRaw ? sorted : Array(sorted.prefix(Self.collapsedRows))
+        let draftShown = showsAllRaw ? draft : Array(draft.prefix(Self.collapsedRows))
         return Section {
-            if sorted.isEmpty {
-                Text("No raw samples are sent. Tap Edit to choose types.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            ForEach(shown) { status in
-                NavigationLink(value: SyncRoute.type(status.id)) {
-                    TypeRow(status: status)
+            if model.isSettingUpInitialSync {
+                if draft.isEmpty {
+                    Text("No raw samples selected. Tap Edit to choose types.")
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
+                ForEach(draftShown) { descriptor in
+                    HStack(spacing: 12) { TypeIcon(descriptor); Text(descriptor.displayName) }
+                }
+                if model.config.enabledTypes.contains(HealthTypeCatalog.workoutIdentifier) {
+                    LabeledContent("Workout Routes", value: model.config.includeWorkoutRoutes ? "On" : "Off")
+                    LabeledContent("Enhanced Workout Data", value: model.config.includeWorkoutEnhancedData ? "On" : "Off")
+                }
+                showAllButton(count: draft.count, expanded: $showsAllRaw)
+            } else {
+                if sorted.isEmpty {
+                    Text("No raw samples are sent. Tap Edit to choose types.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(shown) { status in
+                    NavigationLink(value: SyncRoute.type(status.id)) {
+                        TypeRow(status: status)
+                    }
+                }
+                showAllButton(count: sorted.count, expanded: $showsAllRaw)
             }
-            showAllButton(count: sorted.count, expanded: $showsAllRaw)
         } header: {
             sectionHeader("Raw Samples", route: .rawSamples)
         }
@@ -325,14 +371,25 @@ struct SyncView: View {
             }
             ForEach(shown, id: \.identifier) { descriptor in
                 NavigationLink(value: SyncRoute.aggregateType(descriptor.identifier)) {
-                    AggregatedTypeRow(descriptor: descriptor)
+                    if model.isSettingUpInitialSync {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(descriptor.displayName)
+                            ForEach(model.config.aggregates.filter { $0.enabled && $0.typeIdentifier == descriptor.identifier }) { aggregate in
+                                Text(aggregate.summaryLabel).font(.caption).foregroundStyle(.secondary)
+                                if let date = aggregate.startDate {
+                                    Text("From \(date.formatted(date: .abbreviated, time: .omitted))")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    } else {
+                        AggregatedTypeRow(descriptor: descriptor)
+                    }
                 }
             }
             showAllButton(count: types.count, expanded: $showsAllAggregates)
         } header: {
             sectionHeader("Aggregates", route: .aggregates)
-        } footer: {
-            Text("Daily totals and averages feed your database’s daily charts and AI assistants.")
         }
     }
 
@@ -359,7 +416,7 @@ struct SyncView: View {
 
     /// The applied aggregates' types, by name.
     private var aggregatedTypes: [HealthTypeDescriptor] {
-        Set(model.appliedConfig.aggregates.map(\.typeIdentifier))
+        Set((model.isSettingUpInitialSync ? model.config.aggregates.filter(\.enabled) : model.appliedConfig.aggregates).map(\.typeIdentifier))
             .compactMap(HealthTypeCatalog.descriptor(for:))
             .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
     }

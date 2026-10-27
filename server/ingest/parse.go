@@ -150,6 +150,7 @@ type StateOfMind struct {
 
 // MedicationDose carries dose-event fields for kind=medicationDose samples.
 type MedicationDose struct {
+	MedicationID       *string          `json:"medicationID"`
 	Medication         *string          `json:"medication"`
 	Status             string           `json:"status"`
 	ScheduledAt        *float64         `json:"scheduledAt"` // epoch ms
@@ -812,6 +813,9 @@ func validateSample(s *Sample) error {
 	case "medicationDose":
 		if s.MedicationDose == nil {
 			return fmt.Errorf("medicationDose sample missing medicationDose payload")
+		}
+		if id := s.MedicationDose.MedicationID; id != nil && !isUUID(*id) {
+			return fmt.Errorf("medicationDose medicationID is not a UUID")
 		}
 		if at := s.MedicationDose.ScheduledAt; at != nil && !validWireMS(*at) {
 			return fmt.Errorf("medicationDose scheduledAt out of range")

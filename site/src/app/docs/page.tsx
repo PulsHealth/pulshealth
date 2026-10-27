@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -14,6 +13,7 @@ import {
   Wind,
 } from "lucide-react";
 
+import { AiSetupPrompt } from "@/components/ai-setup-prompt";
 import { PageHero } from "@/components/page-hero";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCatalog, getCatalogByGroup } from "@/lib/catalog";
@@ -31,8 +31,8 @@ export const metadata = {
 };
 
 const groupLedes: Record<string, string> = {
-  "Getting started": "Get the app, choose where your data lives, and connect your AI.",
-  Reference: "The wire format, the database, the APIs and the pieces around them.",
+  "Getting started": "Set up a server, connect an assistant to synced data, or use the app on its own.",
+  Reference: "Configuration, data formats and interfaces when you need the details.",
   Project: "How the project is run: reporting problems, what shipped, what is next.",
 };
 
@@ -141,37 +141,38 @@ export default function DocsPage() {
     <main className="flex min-h-screen flex-col">
       <PageHero
         size="compact"
-        title="The manuals"
-        lede="Everything is written next to the code it describes and rendered here from the same files, so the page you read is the file in the repository."
+        title="Documentation"
+        lede="Start with server setup, then explore your data through the dashboard, API or an AI assistant. Each guide links to the details you need along the way."
       />
       <section className="container mx-auto max-w-5xl px-4 py-16">
+        <div className="mb-12">
+          <AiSetupPrompt />
+          <p className="mt-3 text-sm text-muted-foreground">
+            For AI tools: <a href="/llms.txt" className={textLink}>documentation index</a>
+            {" · "}<a href="/docs/setup.md" className={textLink}>setup guide as Markdown</a>
+          </p>
+        </div>
         {getDocLinksByGroup().map(({ group, links }) => (
-          <Fragment key={group}>
-            <div className="mb-14">
-              <h2 className="text-2xl font-bold tracking-tight">{group}</h2>
-              {groupLedes[group] && <p className="mt-1 mb-6 text-muted-foreground">{groupLedes[group]}</p>}
-              <div className="grid gap-6 sm:grid-cols-2">
-                {links.map((link) => (
-                  <Link key={link.key} href={link.href} className="group">
-                    <Card className="h-full transition-colors hover:border-brand/40">
-                      <CardHeader>
-                        <CardTitle className="transition-colors group-hover:text-brand">{link.title}</CardTitle>
-                        <CardDescription className="text-base">{link.description}</CardDescription>
-                        {link.repoPath ? (
-                          <p className="pt-1 font-mono text-xs text-muted-foreground">{link.repoPath}</p>
-                        ) : (
-                          <p className="pt-1 text-xs font-medium text-brand">{link.label}</p>
-                        )}
-                      </CardHeader>
-                    </Card>
-                  </Link>
-                ))}
+          <div key={group} className="mb-14">
+            <h2 className="text-2xl font-bold tracking-tight">{group}</h2>
+            {groupLedes[group] && <p className="mt-1 mb-6 text-muted-foreground">{groupLedes[group]}</p>}
+            <div className="grid gap-6 sm:grid-cols-2">
+              {links.map((link) => (
+                <Link key={link.key} href={link.href} className="group">
+                  <Card className="h-full transition-colors hover:border-brand/40">
+                    <CardHeader>
+                      <CardTitle className="transition-colors group-hover:text-brand">{link.title}</CardTitle>
+                      <CardDescription className="text-base">{link.description}</CardDescription>
+                      <p className="pt-1 text-xs font-medium text-brand">{link.label ?? "Read the guide"}</p>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              ))}
               </div>
             </div>
-            {group === "Getting started" && <WhatTheAppSyncs />}
-          </Fragment>
         ))}
 
+        <WhatTheAppSyncs />
         <p className="border-t pt-8 text-sm text-muted-foreground">
           Looking for something not listed here? Every other document, the schemas and the code itself are in the
           repository.{" "}

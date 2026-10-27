@@ -3,6 +3,7 @@
 
 import argparse
 import hashlib
+import fcntl
 import os
 import json
 import subprocess
@@ -11,19 +12,25 @@ import tempfile
 from pathlib import Path
 from urllib.request import Request, urlopen
 
+from site_indexnow import KEY_FILE, notify
+
 from dev_evidence import fingerprint, git, sha256, state_dir, timestamp, write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 # All Markdown sources are conservative: docs.ts can add another input without
 # silently escaping provenance. Generated public assets are gitignored.
-INPUTS = ["site", "blog", "knowledge-base", "server/api/openapi.json", "*.md",
+INPUTS = ["site", "llms.txt", "blog", "knowledge-base", "server/api/openapi.json", "*.md",
           "**/*.md", "scripts/site-artifact.py", "scripts/dev_evidence.py",
-          "scripts/deploy-site.sh"]
+          "scripts/deploy-site.sh", "scripts/site_indexnow.py"]
 MANIFEST = ".puls-build.json"
 
 
 def site_fingerprint(root):
     digest = hashlib.sha256(fingerprint(root, INPUTS).encode())
+    # Sitemap lastmod depends on commit history, not only source bytes.
+    for args in (("rev-parse", "HEAD"), ("rev-parse", "--is-shallow-repository"),
+                 ("status", "--porcelain", "--", *INPUTS)):
+        digest.update(git(root, *args).encode() + b"\0")
     for name in (".env", ".env.local", ".env.production", ".env.production.local"):
         path = root / "site" / name
         digest.update(name.encode() + b"\0")
@@ -67,6 +74,45 @@ def validate(root):
     return record
 
 
+REVALIDATE = "public,max-age=0,must-revalidate"
+IMMUTABLE = "public,max-age=31536000,immutable"
+MEDIA_CACHE = "public,max-age=86400,must-revalidate"
+MEDIA_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".avif", ".svg", ".ico", ".woff", ".woff2")
+
+
+def cache_policy(name):
+    if name.startswith("_next/static/"):
+        return IMMUTABLE
+    if Path(name).suffix.lower() in MEDIA_SUFFIXES:
+        return MEDIA_CACHE
+    return REVALIDATE
+
+
+def upload_commands(snapshot):
+    # cp deliberately refreshes metadata even when file bytes have not changed.
+    # Mutually exclusive groups upload each object once. The final sync prunes
+    # retired mutable objects; size-only skips everything copied successfully.
+    # Assets go first, and old hashed chunks stay available for open browser tabs.
+    source, destination = str(snapshot) + "/", "s3://pulshealth.com/"
+    common = ["aws", "s3", "cp", source, destination, "--recursive", "--only-show-errors"]
+    documents = common + ["--exclude", "_next/static/*"]
+    media = common + ["--exclude", "*"]
+    for suffix in MEDIA_SUFFIXES:
+        documents += ["--exclude", "*" + suffix, "--exclude", "*" + suffix.upper()]
+        media += ["--include", "*" + suffix, "--include", "*" + suffix.upper()]
+    commands = []
+    if (snapshot / "_next/static").is_dir():
+        commands.append(["aws", "s3", "cp", str(snapshot / "_next/static") + "/",
+                         destination + "_next/static/", "--recursive", "--only-show-errors",
+                         "--cache-control", IMMUTABLE])
+    commands.append(media + ["--exclude", "_next/static/*", "--cache-control", MEDIA_CACHE])
+    commands.append(documents + ["--cache-control", REVALIDATE])
+    commands.append(["aws", "s3", "sync", source, destination, "--delete", "--size-only",
+                     "--exclude", "_next/static/*",
+                     "--only-show-errors", "--cache-control", REVALIDATE])
+    return commands
+
+
 def verify_live(out, base_url, paths):
     import hashlib
     checked = []
@@ -81,6 +127,8 @@ def verify_live(out, base_url, paths):
             body = response.read()
             if response.status != 200 or hashlib.sha256(body).hexdigest() != sha256(path):
                 raise RuntimeError(f"Live artifact differs from tested build: {name}")
+            if response.headers.get("Cache-Control", "").replace(" ", "") != cache_policy(name):
+                raise RuntimeError(f"Live cache policy differs from release policy: {name}")
         checked.append(name)
     return checked
 
@@ -97,25 +145,31 @@ def deploy(root, args):
         shutil.copytree(root / "site/out", snapshot)
         if inventory(snapshot) != record["files"] or site_fingerprint(root) != record["inputs_sha256"]:
             raise RuntimeError("Build changed while staging deployment")
-        deploy_snapshot(root, args, record, snapshot)
+        lock_path = state_dir(root) / "site-publish.lock"
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        with lock_path.open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            deploy_snapshot(root, args, record, snapshot)
 
 
 def deploy_snapshot(root, args, record, snapshot):
-    command = ["aws", "s3", "sync", str(snapshot) + "/",
-               "s3://pulshealth.com", "--delete"]
+    commands = upload_commands(snapshot)
     if args.dry_run:
-        subprocess.run(command + ["--dryrun"], check=True)
+        for command in commands:
+            subprocess.run(command + ["--dryrun"], check=True)
         print("Dry run complete: no upload or invalidation")
         return
     receipt = {"schema": 1, "source_sha": git(root, "rev-parse", "HEAD"),
                "built_from_sha": record["source_sha"],
                "build_source_dirty": record.get("source_dirty", False),
                "inputs_sha256": record["inputs_sha256"], "started_at": timestamp(),
-               "status": "uploading", "verified_files": []}
+               "status": "uploading", "verified_files": [],
+               "indexnow": {"status": "not-submitted"}}
     receipt_path = state_dir(root) / "deployments" / (receipt["started_at"].replace(":", "-") + ".json")
     write_json(receipt_path, receipt)
     try:
-        subprocess.run(command, check=True)
+        for command in commands:
+            subprocess.run(command, check=True)
         if args.no_invalidation:
             receipt["status"] = "uploaded-unverified"
             print("Uploaded; CDN invalidation and live verification are still required")
@@ -128,7 +182,7 @@ def deploy_snapshot(root, args, record, snapshot):
             write_json(receipt_path, receipt)
             subprocess.run(["aws", "cloudfront", "wait", "invalidation-completed",
                             "--distribution-id", "E2B9BMUXL8SCC8", "--id", receipt["invalidation_id"]], check=True)
-            paths = ["index.html", "privacy/index.html", "sitemap.xml", "robots.txt"]
+            paths = ["index.html", "privacy/index.html", "sitemap.xml", "robots.txt", "screenshots/app-explore.webp", KEY_FILE]
             for suffix in (".js", ".css"):
                 asset = next((p for p in record["files"] if p.startswith("_next/") and p.endswith(suffix)), None)
                 if asset:
@@ -137,6 +191,11 @@ def deploy_snapshot(root, args, record, snapshot):
             receipt["verified_files"] = verify_live(snapshot, "https://pulshealth.com", sorted(set(paths)))
             receipt["status"] = "verified"
             print("Deployment verified: CDN complete and live artifacts match the build")
+            write_json(receipt_path, receipt)
+            receipt["indexnow"] = notify(snapshot, state_dir(root) / "indexnow/state.json",
+                                         bootstrap=getattr(args, "indexnow_bootstrap", False))
+            outcome = receipt["indexnow"]
+            print(f"IndexNow: {outcome['status']} ({len(outcome.get('urls', []))} URLs); acceptance is not indexing")
     except Exception as error:
         receipt["status"] = "failed"
         receipt["error"] = type(error).__name__
@@ -153,6 +212,7 @@ def main():
     parser.add_argument("--skip-build", action="store_true")
     parser.add_argument("--no-invalidation", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--indexnow-bootstrap", action="store_true", help="Explicit first submission for a newly launched or recently changed site; otherwise initialize a baseline only")
     parser.add_argument("--verify-path", action="append", default=[], help="Additional exported file, e.g. blog/my-post/index.html")
     args = parser.parse_args()
     try:

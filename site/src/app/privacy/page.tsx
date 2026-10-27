@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { AnalyticsControls } from "@/components/analytics-controls";
 import { GitHubIcon } from "@/components/brand-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RepoMarkdown, readRepoFile, stripLeadingH1 } from "@/lib/markdown";
@@ -34,7 +35,7 @@ const claims = [
 export const metadata = {
   title: "Privacy Policy - PulsHealth",
   description:
-    "Where your health data goes and where it does not. Sync goes to your configured database. One-time exports go through the share sheet or to a request destination you approve. The public website uses cookie-free, self-hosted analytics.",
+    "Where your health data goes and where it does not. Sync goes to your configured database. One-time exports go through the share sheet or to a request destination you approve. The public website uses anonymous daily totals without visitor tracking.",
   alternates: {
     canonical: "/privacy/",
   },
@@ -59,6 +60,7 @@ export default function PrivacyPage() {
         <h1 className="text-4xl font-bold tracking-tight mb-4">Privacy Policy</h1>
         {updated && <p className="text-muted-foreground mb-8">Last updated: {updated}</p>}
 
+        <AnalyticsControls />
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Privacy at a glance</CardTitle>
@@ -74,7 +76,8 @@ export default function PrivacyPage() {
               <li>The existing-user Pro gift checks Apple’s verified original app build and stores only fixed gift dates and a welcome acknowledgement in a separate device-only Keychain item. These are not sent to PulsHealth. The gift does not start a subscription or charge automatically.</li>
               <li>No analytics, advertising, tracking or third-party SDKs in the app. Apple processes optional monthly/yearly Pro subscriptions and one-time Lifetime Pro purchases through StoreKit. All include current and future app features; PulsHealth server, hosting and other services are separate. Buying Lifetime does not cancel an existing subscription.</li>
               <li>Each saved database’s bearer token normally lives in its own iOS Keychain item. Only the active database receives sync uploads. Unpairing removes its local connection and progress; data already uploaded remains on the server. The app does not retain synced health samples: an export you ask for is staged in temporary storage until you share it or confirm request delivery, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
-              <li>This public website uses cookie-free, self-hosted analytics for pageviews, fixed action counts and browser performance. Form contents and health data are excluded.</li>
+              <li>Medication exports and sync include random aliases that stay consistent within this app installation. A protected, backup-excluded registry stores opaque Apple concept identifiers and their aliases without dose events or names; Apple archives stay on the phone. Removing the app creates new aliases.</li>
+              <li>This website counts anonymous daily page, action and performance totals without visitor IDs or analytics cookies. Referral clicks and Apple reports stay separate. You can exclude this browser using the control above; no health data enters website statistics.</li>
             </ul>
           </CardContent>
         </Card>

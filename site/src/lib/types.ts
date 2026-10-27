@@ -41,6 +41,7 @@ export interface HealthKitType {
     required?: boolean;
   }> | null;
   seo_title?: string;
+  seo_description?: string;
   data_research?: {
     status: "complete";
     review_basis?: "data_analysis" | "coverage_and_sources";

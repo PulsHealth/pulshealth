@@ -37,6 +37,8 @@ final class AppModel {
     /// The Export tab: the server-less way out. A model of its own so a run
     /// outlives the screen that started it (`ExportModel`).
     let subscriptions: SubscriptionStore
+    /// Add Database stages a new destination on Sync; only Apply saves it.
+    var isSettingUpInitialSync = false
     var showsPro = false
     var proContext: ProContext = .plan
     let export = ExportModel()
@@ -250,7 +252,7 @@ final class AppModel {
     }
 
     var reviewRequestsBlocked: Bool {
-        subscriptions.showsGiftWelcome || showsPro || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
+        subscriptions.showsGiftWelcome || showsPro || isSettingUpInitialSync || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
             || pairingAwaitsSyncTab || lastErrorMessage != nil || stateFileUnreadable
             || needsAuthorization || isSyncingAll || backfillActive || export.isRunning
             || statuses.contains(where: { $0.activity == .syncing })
@@ -277,9 +279,6 @@ final class AppModel {
         await subscriptions.start()
         config = await engine.store.configuration
         appliedConfig = config
-        // The Export tab's draft starts from the applied selection, if the
-        // user has not already started editing it.
-        export.seedFromApplied(config)
         if !subscriptions.hasPro { export.draft.range = .last30Days }
         authorizationRequested = defaults.bool(forKey: "authorizationRequested")
         // Don't trust the one-shot flag alone: types added to the catalog after
@@ -378,6 +377,11 @@ final class AppModel {
         aggregateStates = Dictionary(uniqueKeysWithValues: rawStates.compactMap { key, value in
             UUID(uuidString: key).map { ($0, value) }
         })
+        // Record use even on a background launch with no connected scene.
+        // Only RootView can offer a review request on a later foreground visit.
+        reviews.recordSuccessfulSyncs(at: wakes.filter {
+            $0.outcome == .completed && $0.batches > 0 && $0.bytes > 0
+        }.compactMap(\.endedAt))
         wakeRecords = wakes
         backgroundScheduleStatus = scheduler.scheduleStatus()
         settleContinuedBackfillPending(launchTimedOut: false)
@@ -475,6 +479,13 @@ final class AppModel {
     /// The first-run flag is written first so a failure here cannot trap the
     /// user in the flow.
     func finishOnboarding() async {
+        // A replay can outlive the screen that opened it. Its broad Apply
+        // must never commit a database still waiting for Sync's review.
+        if isSettingUpInitialSync {
+            completeOnboarding()
+            lastErrorMessage = "Finish setting up your database on the Sync tab and tap Apply to start its first sync."
+            return
+        }
         defaults.set(true, forKey: Self.onboardingCompletedKey)
         await applyConfiguration(syncNewTypes: true, wholeHistory: true)
         showsOnboarding = false
@@ -484,6 +495,7 @@ final class AppModel {
     /// Settings → About: replay the flow on a configured install. Nothing
     /// is reset — the existing selection and server stay in the draft.
     func restartOnboarding() {
+        guard !isSettingUpInitialSync else { return }
         onboardingIsRerun = true
         preselectCommonTypesIfUnset()
         showsOnboarding = true
@@ -526,7 +538,7 @@ final class AppModel {
     // MARK: - Export to files
 
     /// What the Export tab exports: its own draft (`ExportModel.draft`),
-    /// seeded from the applied selection and edited on the tab. It is not the
+    /// initially empty and edited on the tab or from Explore. It is not the
     /// Sync tab's draft: what is chosen there counts only after Apply, and
     /// what is chosen here never reaches the sync at all.
     var exportSelection: ExportSelectionSummary {
@@ -836,6 +848,12 @@ final class AppModel {
         syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false,
         clearAuthToken: Bool = false
     ) async -> Bool {
+        // Other screens share this draft. Their plain Save must not silently
+        // commit a new database without the Sync screen's first-backfill Apply.
+        guard !isSettingUpInitialSync || wholeHistory else {
+            lastErrorMessage = "Finish setting up your database on the Sync tab and tap Apply to start its first sync."
+            return false
+        }
         guard connectionEditCanStart() else { return false }
         let submitted = config
         if submitted.serverURL != nil {
@@ -877,6 +895,7 @@ final class AppModel {
         }
         appliedConfig = await engine.store.configuration
         config = appliedConfig
+        isSettingUpInitialSync = false
         lastErrorMessage = nil
         await engine.eventLog.log(.info, "Database configuration applied")
         Task { await refreshServerCapabilities() }
@@ -998,7 +1017,7 @@ final class AppModel {
     /// with continued processing on supported iOS versions.
     @discardableResult
     func applyDatabaseConfiguration() async -> Bool {
-        let firstConnection = appliedConfig.serverURL == nil && config.serverURL != nil
+        let firstConnection = isSettingUpInitialSync || (appliedConfig.serverURL == nil && config.serverURL != nil)
         return await applyConfiguration(
             syncNewTypes: firstConnection, wholeHistory: firstConnection, clearAuthToken: config.authToken == nil)
     }
@@ -1081,6 +1100,7 @@ final class AppModel {
     }
 
     private func reloadDestination() async {
+        isSettingUpInitialSync = false
         config = await engine.store.configuration
         appliedConfig = config
         pendingServerChange = nil
@@ -1293,6 +1313,7 @@ final class AppModel {
 
     /// Reverts the staged draft back to what's currently applied.
     func discardChanges() {
+        isSettingUpInitialSync = false
         config = appliedConfig
     }
 

@@ -15,7 +15,6 @@ struct ExportTally: Sendable, Equatable {
             guard let dataset = Self.dataset(for: sample.kind) else { continue }
             rows[dataset, default: 0] += 1
         }
-        add(batch.deletions.count, to: .deletions)
         add(batch.routes.reduce(0) { $0 + $1.points.count }, to: .workoutRoutes)
         add(batch.series.reduce(0) { $0 + $1.points.count }, to: .workoutSeries)
         add(batch.aggregates.count, to: .aggregates)
@@ -110,6 +109,9 @@ actor ExportFileTransport: SyncTransport {
 
         let start = ContinuousClock.now
         var batch = batch
+        // An export is a snapshot of health data, not a sync history.
+        // Ignore HealthKit tombstones in every format and in export reporting.
+        batch.deletions = []
         if let deviceID { batch.deviceID = deviceID }
         let written: Int
         do {

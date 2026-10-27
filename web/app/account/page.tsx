@@ -245,7 +245,7 @@ function DemoAccount({ error }: { error: string | null }) {
             <a href="/login?next=%2Fconnect%2Fiphone" className="btn btn-primary">Sign in to your account</a>
             {signupsOpen() && (
               <a href="/signup" className="btn btn-primary">
-                Create your account
+                Create account
               </a>
             )}
             <form method="post" action="/api/auth/logout">

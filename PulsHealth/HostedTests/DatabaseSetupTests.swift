@@ -171,6 +171,42 @@ final class DatabaseSetupTests: XCTestCase {
         XCTAssertFalse(PulsHealthDatabase.isSignedIn(legacy))
         XCTAssertEqual(DatabaseSetup(applied: legacy).destination, .own)
     }
+    func testReopeningStagedManagedDestinationRestoresItsPairing() {
+        let config = hostedConfiguration()
+        let staged = DatabaseSetup(applied: config, isStaged: true)
+        XCTAssertEqual(staged.destination, .pulsHealth)
+        XCTAssertEqual(staged.signedIn?.validatedURL, config.serverURL)
+        XCTAssertEqual(staged.signedIn?.token, config.authToken)
+        XCTAssertNotNil(staged.fieldsForChoice, "reopening must not request another browser pairing")
+    }
+
+    func testNewConnectionsReviewBeforeCommittingPairingFields() {
+        let applied = SyncConfiguration()
+        var setup = DatabaseSetup(applied: applied)
+        setup.receivePairing(signInPayload())
+        XCTAssertTrue(setup.needsInitialSyncReview(applied: applied, saved: []))
+        XCTAssertNotNil(setup.own.pairedUserID, "preview must not consume the pairing")
+        XCTAssertNil(applied.serverURL)
+
+        var hosted = DatabaseSetup(applied: applied)
+        hosted.receiveSignIn(signInPayload())
+        XCTAssertTrue(hosted.needsInitialSyncReview(applied: applied, saved: []))
+        XCTAssertNotNil(hosted.signedIn?.pairedUserID)
+
+        var edited = DatabaseSetup(applied: ownConfiguration())
+        XCTAssertFalse(edited.needsInitialSyncReview(applied: ownConfiguration(), saved: []))
+        edited.own.tokenText = "replacement-token"
+        XCTAssertFalse(edited.needsInitialSyncReview(applied: ownConfiguration(), saved: []), "token rotation resumes the same destination")
+        var newUser = ownConfiguration()
+        newUser.userID = user
+        XCTAssertTrue(edited.needsInitialSyncReview(applied: ownConfiguration(), draft: newUser, saved: []),
+                      "a staged User ID is the identity Apply will actually use")
+        edited.receivePairing(signInPayload())
+        XCTAssertTrue(edited.needsInitialSyncReview(applied: ownConfiguration(), saved: []), "a new destination also reviews")
+        edited.own.urlText = ""
+        XCTAssertFalse(edited.needsInitialSyncReview(applied: ownConfiguration(), saved: []), "disconnect never starts a first sync")
+    }
+
     func testEditingConnectionFieldsRejectsAnInflightResultEvenAfterReverting() {
         let original = ServerFieldsDraft(urlText: mine.absoluteString, tokenText: "old-token")
         var state = DatabaseConnectionTest()

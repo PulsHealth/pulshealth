@@ -88,7 +88,7 @@ These additions use invented data, independently of the private-record charts:
   spacing and overnight overlap figures with matplotlib and Pillow. Four
   intervals illustrate sample SD, not the Apple Watch algorithm. The sleep
   timeline illustrates overlap, not a typical watch trace.
-- `grafana-fixture.sql` creates minimal tables, a UTC function, and a read-only
+- `grafana-fixture.sql` creates minimal tables, an account-zone function (UTC and a Los Angeles sentinel), and a read-only
   role. Run only in an empty disposable PostgreSQL 17 database. Connect Grafana
   13.2.3 with datasource UID `puls-tsdb`, provision the downloadable dashboard
   JSON unchanged, and select September 1–14, 2026 in UTC. The all-zero UUID

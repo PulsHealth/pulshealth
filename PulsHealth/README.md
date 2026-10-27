@@ -12,15 +12,55 @@ Selecting managed hosting immediately shows its checkmark and opens the browser
 connection page. Sign in there and tap Connect this iPhone to return a pairing
 code directly to the app. An existing browser session is reused. This flow does
 not depend on the newer native account/profile endpoints being deployed.
-The app tests the connection and presents Save & Apply; only that action enables
-sync. Closing the browser without pairing explains that this iPhone is not yet
-connected. Create Account explains that hosting is currently full and opens the
+The app tests the connection. Add Database returns to the main Sync screen for a
+new database/user, with the staged types, existing edit pickers and a backfill
+start date. Nothing is uploaded until Apply. Discard cancels the setup. Apply
+shows brief guidance about longer backfills, keeping the app open and the phone
+unlocked and plugged in; Apply & Start Sync then saves and starts syncing.
+Existing saved destinations retain Save & Apply and their saved progress.
+Closing the browser without pairing explains that this iPhone is not yet connected. Create Account explains that hosting is currently full and opens the
 signup waitlist; users are notified by email after approval.
 
 Published as
 [PulsHealth](https://apps.apple.com/us/app/pulshealth/id6757657354) on the App
 Store (free). The listing material and the record of what shipped are in
 [`docs/appstore/`](../docs/appstore/README.md).
+
+## Adaptive layouts
+
+Explore uses one selection-driven `NavigationSplitView`: the type catalog and
+selected analysis appear together when space allows, and collapse into normal
+push navigation in a compact window. The selected type survives resizing;
+choosing another type resets its nested detail navigation. Layout decisions
+use available space rather than device model. Onboarding clips adjacent pages
+to the safe viewport so they cannot appear under Duo’s vertical status area.
+At accessibility text sizes, stats stack into one column and category labels
+use the full sidebar width; supporting captions wrap instead of truncating.
+Build release candidates with
+Xcode 27.1 or later and verify folded/unfolded Duo layouts, including vertical
+system bars. See [Duo acceptance and store assets](../docs/appstore/iphone-duo.md).
+
+Explore gives each category its own card. Space between cards makes each
+group’s boundary clear; parent and child rows use the same background, alignment
+and icon size. Search results show each type’s category. Workouts has its own
+card between Sleep and Vitals.
+
+The type page’s **+** menu connects Explore to the other tabs. **Add to Export**
+selects the type in the current multi-type draft without creating files.
+Export starts with no types or aggregates selected each launch; Sync never
+preselects its export data. Its
+confirmation can be dismissed or used to open Export; the tab badge counts
+selected types. Export’s Clear Selection removes draft choices, Cancel Export
+stops a running export, and an earlier completed file remains available until
+it is shared, deleted or replaced by a new export.
+
+**Add to Sync** opens a local sheet for raw readings, aggregates, or both.
+Aggregate function, interval and device choices stay with their series. Cancel
+leaves the shared draft unchanged. Add stages the selection; **Review** on Sync
+shows the destination and all pending edits before Apply. Undo one type’s edits
+or Discard All Changes to return to the applied configuration. A missing database
+is configured on Sync before applying. The new actions never start exports or
+uploads themselves.
 
 ## Free and Pro access
 
@@ -124,6 +164,10 @@ Key settings (`project.yml`, `Info.plist`, `PulsHealth.entitlements`):
 
 ## Source map
 
+Explore categories start collapsed and use full category rows matching the Export
+data-type selector. Tap a category to expand it; View Options can expand or
+collapse all categories. Category choices are remembered, and search covers all types.
+
 Four tabs, each its own `NavigationStack`: **Explore** (the catalog, with the
 Health-access cards), **Export** (files, no server needed), **Sync** (the
 database — the PulsHealth database or your own — status, Raw Samples and
@@ -208,9 +252,8 @@ Sources/
 │                           touches the sync selection.
 ├── ExportModel.swift     @MainActor @Observable, owned by AppModel: the draft
 │                         (types, aggregates, workout switches, range, format,
-│                         zip — seeded once from the applied sync selection,
-│                         then the export's own), the run in flight (progress,
-│                         cancel, idle-timer and background-task assertion),
+│                         zip — with an initially empty selection), the run
+│                         in flight (progress, cancel, idle-timer and background-task assertion),
 │                         the finished export, and the lifetime of its staged
 │                         files. A run outlives the screen that started it.
 ├── SyncView.swift        The Sync tab. No database applied: the first-time
@@ -473,8 +516,9 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 - **The Export tab** writes a selection of its own — `ExportDraft`: types,
   aggregates, workout switches, a preset or custom range, the format
   and whether to zip it —
-  seeded once from the applied sync selection and edited on the tab, never
-  written back to it (an aggregate added here is the export's alone). It goes to
+  with no types or aggregates preselected each launch. Selections are added
+  explicitly on the tab or from Explore, never written back to Sync (an
+  aggregate added here is the export's alone). It goes to
   CSV, JSON or JSONL through the package's `HealthExporter`, which runs on a
   throwaway engine and never touches the app's sync state (root `CLAUDE.md`,
   "Export never shares sync state"). Before a run the app requests Health
@@ -573,13 +617,16 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 
 Settings → About → Write a Review permanently opens Apple's review page.
 Automatic requests use Apple's native StoreKit prompt, with no custom prompt
-or satisfaction question. A request is offered only at a completed task:
+or satisfaction question. Requests are offered at these pauses:
 
 - A complete, nonempty export has been successfully shared or saved, and the
   person used the app in a previous foreground session.
-- A foreground/manual upload finishes while Sync is visible, after three
-  active days and acknowledged uploads on at least two days. The first
-  30 seconds of a visit never offer a sync review request.
+- On the next foreground visit after acknowledged uploads on three distinct
+  days, including background uploads. No extra foreground-use days or new
+  upload is required, and any tab can present the request once startup and
+  sync work settle. A third successful day reached during the current visit
+  waits for another visit. A cancelled return opportunity is not reoffered
+  during the same visit.
 - The person returns to Explore from a complete, populated analysis, after
   three active days.
 
@@ -593,8 +640,9 @@ consume no cooldown. Apple controls whether its prompt appears; an API call
 records an **attempt**, never a submitted rating or review. TestFlight does
 not show the native prompt.
 
-Only day/session counters, the latest recorded successful-upload date, and
-request-attempt metadata persist in the app's own UserDefaults. No health
+Only day/session counters, the latest recorded successful-upload date, the
+date of the third successful sync day, and request-attempt metadata persist
+in the app's own UserDefaults. No health
 values or type identifiers are stored there, and nothing is sent to analytics.
 
 ## Data Requests

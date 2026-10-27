@@ -22,16 +22,19 @@ enum ExploreRoute: Hashable {
 /// order inside a category. All three are view preferences in UserDefaults —
 /// category names and a sort, never health data.
 struct ExploreView: View {
+    @Binding var selection: ExploreRoute?
     @Environment(AppModel.self) private var model
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var searchText = ""
     @FocusState private var searchFocused: Bool
     /// Collapsed categories, by raw name, comma-joined.
-    @AppStorage("explore.collapsedGroups") private var collapsedGroups = ""
+    @AppStorage("explore.collapsedGroups") private var collapsedGroups =
+        HealthTypeDescriptor.Group.allCases.map(\.rawValue).sorted().joined(separator: ",")
     @AppStorage("explore.hidesEmptyTypes") private var hidesEmptyTypes = false
     @AppStorage("explore.sort") private var sort = ExploreSort.dataFirst
 
     var body: some View {
-        List {
+        List(selection: $selection) {
             searchField
             if searchText.isEmpty {
                 accessCards
@@ -40,16 +43,11 @@ struct ExploreView: View {
                 searchResults
             }
         }
+        .listStyle(.insetGrouped)
         .scrollDismissesKeyboard(.immediately)
         .navigationTitle("Explore")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { optionsMenu }
-        }
-        .navigationDestination(for: ExploreRoute.self) { route in
-            switch route {
-            case .type(let id):
-                TypePageView(identifier: id)
-            }
         }
         .task {
             await model.explore.load()
@@ -99,32 +97,23 @@ struct ExploreView: View {
     // MARK: - Cards
 
     @ViewBuilder private var accessCards: some View {
-        if model.needsAuthorization || !model.authorizationRequested {
-            if model.authorizationRequested {
-                CardSection(
-                    "Health access incomplete",
-                    subtitle: "Some enabled data types haven't been authorized yet, so their syncs will fail."
-                ) {
-                    // The Sync tab's Apply bar only appears while
-                    // changes are staged, so in this exact situation (types
-                    // added to the catalog after the first grant, or an
-                    // interrupted permission sheet) there was no button to
-                    // tap. Request access directly; the request is idempotent
-                    // and skips determined types.
-                    Button("Grant Health Access") {
-                        Task { await model.requestAccessForEnabledTypesIfNeeded() }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    authorizationHint
+        if model.needsAuthorization && model.authorizationRequested {
+            CardSection(
+                "Health access incomplete",
+                subtitle: "Some enabled data types haven't been authorized yet, so their syncs will fail."
+            ) {
+                // The Sync tab's Apply bar only appears while
+                // changes are staged, so in this exact situation (types
+                // added to the catalog after the first grant, or an
+                // interrupted permission sheet) there was no button to
+                // tap. Request access directly; the request is idempotent
+                // and skips determined types.
+                Button("Grant Health Access") {
+                    Task { await model.requestAccessForEnabledTypesIfNeeded() }
                 }
-            } else {
-                CardSection(
-                    "Health access not requested yet",
-                    subtitle: "Opening a type asks for Health access to it, and nothing is read until you allow it."
-                ) {
-                    authorizationHint
-                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                authorizationHint
             }
         }
 
@@ -160,10 +149,13 @@ struct ExploreView: View {
 
     // MARK: - Catalog
 
-    private static let groups = HealthTypeDescriptor.Group.allCases
+    private static let groups: [HealthTypeDescriptor.Group] = [
+        .activity, .body, .heart, .respiratory, .sleep, .workouts, .vitals, .nutrition, .other,
+    ]
 
     @ViewBuilder private var catalog: some View {
-        if Self.groups.allSatisfy({ visibleTypes(in: $0).isEmpty }) {
+        let visibleGroups = Self.groups.filter { !visibleTypes(in: $0).isEmpty }
+        if visibleGroups.isEmpty {
             // Only reachable with Hide Types Without Data on.
             ContentUnavailableView {
                 Label("No Health Data", systemImage: "heart.text.square")
@@ -173,8 +165,13 @@ struct ExploreView: View {
                 Button("Show All Types") { hidesEmptyTypes = false }
             }
         } else {
-            ForEach(Self.groups, id: \.self) { group in
-                categorySection(group, types: visibleTypes(in: group))
+            ForEach(visibleGroups, id: \.self) { group in
+                Section {
+                    categoryRows(group, types: visibleTypes(in: group))
+                } header: {
+                    if group == visibleGroups.first { Text("Health Categories") }
+                }
+                .listSectionSpacing(12)
             }
             let hidden = hiddenCount
             if hidden > 0 {
@@ -187,35 +184,61 @@ struct ExploreView: View {
         }
     }
 
-    @ViewBuilder private func categorySection(
+    @ViewBuilder private func categoryRows(
         _ group: HealthTypeDescriptor.Group, types: [HealthTypeDescriptor]
     ) -> some View {
         if !types.isEmpty {
             let expanded = !collapsed.contains(group.rawValue)
-            Section {
-                if expanded {
-                    ForEach(types) { descriptor in
-                        typeRow(descriptor, showsCategory: false)
+            Button { toggle(group) } label: {
+                Group {
+                    if dynamicTypeSize.isAccessibilitySize {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(group.rawValue)
+                                .fontWeight(.semibold)
+                                .fixedSize(horizontal: false, vertical: true)
+                            HStack(spacing: 12) {
+                                TypeIcon(group)
+                                Text("Types: \(types.count)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                categoryDisclosure(expanded: expanded)
+                            }
+                        }
+                    } else {
+                        HStack(spacing: 12) {
+                            TypeIcon(group)
+                            Text(group.rawValue)
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("\(types.count)")
+                                .font(.subheadline)
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                            categoryDisclosure(expanded: expanded)
+                        }
                     }
                 }
-            } header: {
-                Button { toggle(group) } label: {
-                    HStack(spacing: 8) {
-                        TypeIcon(group, size: .small)
-                        Text(group.rawValue)
-                        Spacer()
-                        Text("\(types.count)").monospacedDigit()
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .rotationEffect(.degrees(expanded ? 90 : 0))
-                    }
-                    .contentShape(Rectangle())
+                .padding(.vertical, 2)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(expanded ? "Expanded" : "Collapsed")
+            .accessibilityHint(expanded ? "Hides this category's types" : "Shows this category's types")
+            if expanded {
+                ForEach(types) { descriptor in
+                    typeRow(descriptor, showsCategory: false)
                 }
-                .buttonStyle(.plain)
-                .accessibilityValue(expanded ? "Expanded" : "Collapsed")
-                .accessibilityHint(expanded ? "Hides this category's types" : "Shows this category's types")
             }
         }
+    }
+
+    private func categoryDisclosure(expanded: Bool) -> some View {
+        Image(systemName: "chevron.right")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.tertiary)
+            .rotationEffect(.degrees(expanded ? 90 : 0))
+            .accessibilityHidden(true)
     }
 
     private var optionsMenu: some View {
@@ -342,6 +365,7 @@ enum ExploreSort: String, CaseIterable, Identifiable {
 }
 
 private struct ExploreTypeRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let descriptor: HealthTypeDescriptor
     let profile: TypeProfile?
     let facts: TypeQuickFacts?
@@ -366,7 +390,8 @@ private struct ExploreTypeRow: View {
                 Text(detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
             if isRunning {

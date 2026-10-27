@@ -25,6 +25,7 @@ final class ReviewRequests {
         var successfulSyncDays = 0
         var lastSuccessfulSyncDay: String?
         var syncRecordedThrough: Date?
+        var syncQualifiedAt: Date?
         var attemptedVersions: Set<String> = []
         var lastAttemptAt: Date?
         var lastAttemptSource: Source?
@@ -41,6 +42,9 @@ final class ReviewRequests {
     private(set) var pending: Opportunity?
     private(set) var sessionStartedAt: Date?
     private var hadPreviousSession = false
+    private var offeredSyncThisSession = false
+    @ObservationIgnored private var foregroundSyncs: Set<UUID> = []
+    private(set) var syncReturnReady = false
 
     init(defaults: UserDefaults = .standard, version: String? = nil, calendar: Calendar = .current) {
         self.defaults = defaults
@@ -57,6 +61,7 @@ final class ReviewRequests {
     func beginSession(now: Date = Date()) {
         guard sessionStartedAt == nil else { return }
         sessionStartedAt = now
+        offeredSyncThisSession = false
         hadPreviousSession = history.sessions > 0
         history.sessions = min(2, history.sessions + 1)
         recordActiveDay(now)
@@ -65,7 +70,23 @@ final class ReviewRequests {
 
     func endSession() {
         sessionStartedAt = nil
+        foregroundSyncs.removeAll()
+        syncReturnReady = false
         cancelPending()
+    }
+
+    /// Track all foreground catch-ups, including overlapping activations when
+    /// a permission sheet makes the scene inactive and active in one visit.
+    func beginForegroundSync() -> UUID {
+        let id = UUID()
+        foregroundSyncs.insert(id)
+        syncReturnReady = false
+        return id
+    }
+
+    func finishForegroundSync(_ id: UUID) {
+        guard foregroundSyncs.remove(id) != nil, sessionStartedAt != nil else { return }
+        syncReturnReady = foregroundSyncs.isEmpty
     }
 
     /// Dates of acknowledged uploads from the existing wake log, oldest first.
@@ -76,8 +97,11 @@ final class ReviewRequests {
             guard history.syncRecordedThrough.map({ date > $0 }) ?? true else { continue }
             let day = dayKey(date)
             if history.lastSuccessfulSyncDay != day {
-                history.successfulSyncDays = min(2, history.successfulSyncDays + 1)
+                history.successfulSyncDays = min(3, history.successfulSyncDays + 1)
                 history.lastSuccessfulSyncDay = day
+                if history.successfulSyncDays == 3, history.syncQualifiedAt == nil {
+                    history.syncQualifiedAt = date
+                }
             }
             history.syncRecordedThrough = date
         }
@@ -90,6 +114,15 @@ final class ReviewRequests {
         persist()
         guard isEligible(source, now: now) else { return }
         pending = Opportunity(source: source)
+    }
+
+    /// Called only by the foreground UI once startup/sync work has settled.
+    /// A cancelled return opportunity waits for another visit, rather than
+    /// reappearing after each interaction or dismissed sheet in this visit.
+    func offerSyncOnReturn(now: Date = Date()) {
+        guard !offeredSyncThisSession, pending == nil, isEligible(.sync, now: now) else { return }
+        offeredSyncThisSession = true
+        offer(.sync, now: now)
     }
 
     func cancelPending() {
@@ -107,9 +140,10 @@ final class ReviewRequests {
         case .explore:
             return history.activeDays >= 3
         case .sync:
-            // Never prompt immediately after launch's automatic sync.
-            return history.activeDays >= 3 && history.successfulSyncDays >= 2
-                && now.timeIntervalSince(started) >= 30
+            // Background uploads count as use. Qualification must predate
+            // this visit, even when the wake log loads after the view appears.
+            return syncReturnReady && history.successfulSyncDays >= 3
+                && history.syncQualifiedAt.map({ $0 < started }) == true
         }
     }
 

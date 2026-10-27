@@ -269,22 +269,26 @@ private struct WorkoutEnhancedDataToggleRow: View {
 }
 
 /// Floating Apply/Discard bar shown on the Sync tab while the staged
-/// configuration draft differs from what's applied to the engine. Nothing
+/// configuration draft differs from what's applied to the engine, or while a
+/// newly added database awaits its first Apply. Nothing
 /// chosen in the Raw Samples or Aggregates pickers, or on a type's aggregate
 /// page — raw types, aggregates, workout routes — reaches the sync engine or
 /// starts backfilling until they tap Apply.
 struct PendingChangesBar: View {
     @Environment(AppModel.self) private var model
     @State private var applying = false
+    @State private var confirmsFirstSync = false
+    @State private var showsReview = false
+    @State private var appliesAfterReview = false
 
     var body: some View {
         Group {
-            if model.hasPendingChanges {
+            if model.hasPendingChanges || model.isSettingUpInitialSync {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("Unapplied changes")
+                        Text(model.isSettingUpInitialSync ? "First sync" : "Unapplied changes")
                             .font(.subheadline.weight(.semibold))
-                        Text(model.pendingChangesSummary)
+                        Text(model.isSettingUpInitialSync ? "\(model.config.observedTypeIdentifiers.count) types selected" : model.pendingChangesSummary)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -296,20 +300,16 @@ struct PendingChangesBar: View {
                     .buttonStyle(.bordered)
                     .disabled(applying)
                     Button {
-                        applying = true
-                        Task {
-                            await model.applyChanges()
-                            applying = false
-                        }
+                        showsReview = true
                     } label: {
                         if applying {
                             ProgressView().frame(minWidth: 44)
                         } else {
-                            Text("Apply").frame(minWidth: 44)
+                            Text("Review").frame(minWidth: 44)
                         }
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(applying)
+                    .disabled(applying || (model.isSettingUpInitialSync && model.config.observedTypeIdentifiers.isEmpty))
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 10)
@@ -318,6 +318,35 @@ struct PendingChangesBar: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .animation(.snappy, value: model.hasPendingChanges)
+        .animation(.snappy, value: model.hasPendingChanges || model.isSettingUpInitialSync)
+        .sheet(isPresented: $showsReview, onDismiss: {
+            guard appliesAfterReview else { return }
+            appliesAfterReview = false
+            if model.isSettingUpInitialSync { confirmsFirstSync = true }
+            else { apply() }
+        }) {
+            SyncChangesReviewView {
+                appliesAfterReview = true
+                showsReview = false
+            }
+        }
+        .alert("Ready for your first sync?", isPresented: $confirmsFirstSync) {
+            Button("Apply & Start Sync") { apply() }
+            Button("Not Yet", role: .cancel) {}
+        } message: {
+            Text("A large backfill can take a while. Keep PulsHealth open and your iPhone unlocked and plugged in for the best progress. If interrupted, syncing resumes from saved progress. Follow progress on the Sync tab.")
+        }
+    }
+
+    private func apply() {
+        applying = true
+        Task {
+            if model.isSettingUpInitialSync {
+                await model.applyDatabaseConfiguration()
+            } else {
+                await model.applyChanges()
+            }
+            applying = false
+        }
     }
 }

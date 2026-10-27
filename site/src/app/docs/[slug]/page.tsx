@@ -1,3 +1,4 @@
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -63,6 +64,7 @@ function tableOfContents(markdown: string): TocEntry[] {
 function DocHeader({ doc }: { doc: DocEntry }) {
   return (
     <header className="mb-8">
+      <Breadcrumbs items={[{ name: "Docs", href: "/docs/" }, { name: doc.title, href: `/docs/${doc.slug}/` }]} />
       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand">{doc.group}</p>
       <h1 className="text-4xl font-bold tracking-tight text-balance">{doc.title}</h1>
       <p className="mt-3 text-sm text-muted-foreground">
@@ -85,6 +87,14 @@ function DocHeader({ doc }: { doc: DocEntry }) {
         >
           edit this page
         </a>
+        {doc.format !== "openapi" && (
+          <>
+            {" "}·{" "}
+            <a href={`/docs/${doc.slug}.md`} className="hover:text-brand">
+              Plain Markdown
+            </a>
+          </>
+        )}
       </p>
     </header>
   );

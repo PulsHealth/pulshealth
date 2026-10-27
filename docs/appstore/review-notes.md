@@ -93,6 +93,7 @@ HEALTHKIT (Guideline 5.1.3)
 - Read-only. The app never calls a HealthKit write API.
 - Health data is not used for advertising, marketing or data mining, and is not sold. It leaves the app as sync to the configured database, exports the user shares, or one-time request delivery explicitly approved by the user.
 - Health samples are staged only for requested exports, in temporary storage excluded from backup. Analysis summaries stay on-device and are also backup-excluded.
+- Medication sync/exports use installation-local random UUID aliases. A protected, backup-excluded registry keeps opaque Apple concept identifiers and aliases without dose events or names. Only aliases leave the device; deleting the app creates new aliases.
 
 CAMERA
 
@@ -231,9 +232,11 @@ requests"). If the review instance was stood up, take it down
 ### Native App Store review requests (next submission)
 
 Settings → About → Write a Review permanently opens the App Store review
-page. Automatic requests use Apple's native prompt directly after a complete
-shared export, a visible successful upload or a return from a populated
-analysis, once the local usage thresholds are met. Navigation, backgrounding,
+page. Automatic requests use Apple's native prompt after a complete shared
+export, a return from a populated analysis, or the next foreground visit
+after successful uploads on three distinct days (including background sync),
+once the local usage thresholds are met and app work settles. Sync requests
+do not require three foreground-use days or opening the Sync tab. Navigation, backgrounding,
 modals and unfinished work suppress requests. Attempts are spaced at least
 120 days apart and occur at most once per app version; Apple controls whether
 a prompt is shown. There is no satisfaction pre-prompt, reward or filtering by

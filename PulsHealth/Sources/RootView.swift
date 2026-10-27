@@ -18,6 +18,8 @@ struct RootView: View {
         }
     }
     @State private var selection: Tab = Tab.initial
+    @State private var typeActions = TypeActions()
+    @State private var exportNavigationID = UUID()
     /// Owned here rather than by SyncView so an accepted pairing link can pop
     /// whatever the Sync tab had pushed and land on its Database screen.
     @State private var syncPath: [SyncRoute] = {
@@ -36,12 +38,16 @@ struct RootView: View {
     }()
     /// Debug builds accept `-PulsInitialType <identifier>` alongside
     /// `-PulsInitialTab explore`, so a scripted run can screenshot a Type page.
-    @State private var explorePath: [ExploreRoute] = {
+    @State private var exploredType: ExploreRoute? = {
         #if DEBUG
-        if let id = UserDefaults.standard.string(forKey: "PulsInitialType") { return [.type(id)] }
+        if let id = UserDefaults.standard.string(forKey: "PulsInitialType") { return .type(id) }
         #endif
-        return []
+        return nil
     }()
+    init(typeActions: TypeActions = TypeActions()) {
+        _typeActions = State(initialValue: typeActions)
+    }
+
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
 
@@ -69,13 +75,32 @@ struct RootView: View {
                 .background(.regularMaterial)
             }
             TabView(selection: $selection) {
-                NavigationStack(path: $explorePath) {
-                    ExploreView().reviewRequestOpportunity(.explore, blocked: !explorePath.isEmpty)
+                NavigationSplitView {
+                    ExploreView(selection: $exploredType)
+                        .reviewRequestOpportunity(.explore, blocked: exploredType != nil)
+                        .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 400)
+                } detail: {
+                    NavigationStack {
+                        if case .type(let id) = exploredType {
+                            TypePageView(identifier: id)
+                        } else {
+                            ContentUnavailableView(
+                                "Choose a Health Type", systemImage: "heart.text.square",
+                                description: Text("Select a type to explore its readings and trends."))
+                        }
+                    }
+                    // A different type starts at its own detail root; resizing
+                    // keeps this identity and any pushed analysis unchanged.
+                    .id(exploredType)
                 }
-                    .tabItem { Label("Explore", systemImage: "heart.text.square") }
+                .navigationSplitViewStyle(.balanced)
+                    .safeAreaInset(edge: .bottom) { TypeActionNoticeView() }
+                    .tabItem { Label("Explore", systemImage: "heart.fill") }
                     .tag(Tab.explore)
                 NavigationStack { ExportView() }
+                    .id(exportNavigationID)
                     .tabItem { Label("Export", systemImage: "square.and.arrow.up") }
+                    .badge(model.export.draft.selectedTypeCount)
                     .tag(Tab.export)
                 NavigationStack(path: $syncPath) { SyncView(path: $syncPath) }
                     // The Raw Samples and Aggregates pickers are pushed on this
@@ -83,11 +108,25 @@ struct RootView: View {
                     // to a screen that could be popped with edits still staged.
                     .safeAreaInset(edge: .bottom) { PendingChangesBar() }
                     .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
+                    .badge(model.hasPendingChanges ? "•" : nil)
                     .tag(Tab.sync)
                 NavigationStack { SettingsView() }
-                    .tabItem { Label("Settings", systemImage: "gearshape") }
+                    .tabItem { Label("Settings", systemImage: "gearshape.fill") }
                     .tag(Tab.settings)
             }
+        }
+        .environment(typeActions)
+        .onChange(of: typeActions.destination) { _, destination in
+            guard let destination else { return }
+            switch destination {
+            case .export:
+                exportNavigationID = UUID()
+                selection = .export
+            case .sync:
+                syncPath = []
+                selection = .sync
+            }
+            typeActions.destination = nil
         }
         .sheet(isPresented: $model.showsPro) {
             NavigationStack { ProView(context: model.proContext) }.environment(model)
@@ -106,43 +145,36 @@ struct RootView: View {
         .task {
             presentDataRequest()
             if scenePhase == .active {
-                model.reviews.beginSession()
+                await model.start()
                 await model.subscriptions.beginForegroundVisit()
+                offerSyncReviewOnReturn()
             }
         }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { model.reviews.beginSession() }
-            else if phase == .background { model.reviews.endSession() }
+        .onChange(of: selection) { _, _ in
+            model.reviews.cancelPending()
+            typeActions.notice = nil
         }
-        .onChange(of: selection) { _, _ in model.reviews.cancelPending() }
         .onChange(of: syncPath) { _, _ in model.reviews.cancelPending() }
-        .onChange(of: explorePath) { old, new in
+        .onChange(of: exploredType) { old, new in
             model.reviews.cancelPending()
             // Returning from a complete populated analysis is a natural pause;
             // opening a chart, or returning from an empty/failed read, isn't.
-            guard selection == .explore, new.isEmpty,
-                  case .type(let id) = old.last,
+            guard selection == .explore, new == nil,
+                  case .type(let id) = old,
                   let profile = model.explore.profiles[id], profile.isComplete,
                   profile.sampleCount > 0 else { return }
             model.reviews.offer(.explore)
         }
-        .onChange(of: model.wakeRecords) { old, new in
-            let successes = new.filter { $0.outcome == .completed && $0.batches > 0 && $0.bytes > 0 }
-            model.reviews.recordSuccessfulSyncs(at: successes.compactMap(\.endedAt))
-            let previousCompleted = Set(old.filter { $0.outcome == .completed }.map(\.id))
-            // History may include background uploads. Only a newly completed
-            // foreground/manual upload visible on Sync can offer the prompt.
-            guard scenePhase == .active, selection == .sync, syncPath.isEmpty,
-                  let started = model.reviews.sessionStartedAt,
-                  successes.contains(where: { wake in
-                      !wake.trigger.isBackground && (wake.endedAt ?? .distantPast) >= started
-                          && !previousCompleted.contains(wake.id)
-                  }) else { return }
-            model.reviews.offer(.sync)
+        .onChange(of: model.wakeRecords) { _, _ in offerSyncReviewOnReturn() }
+        .onChange(of: model.reviews.syncReturnReady) { _, ready in
+            if ready { offerSyncReviewOnReturn() }
         }
         .onChange(of: model.reviewRequestsBlocked) { _, blocked in
             if blocked { model.reviews.cancelPending() }
+            else { offerSyncReviewOnReturn() }
         }
+        // Sync users can return to any tab after days of background uploads.
+        .reviewRequestOpportunity(.sync, blocked: model.appliedConfig.serverURL == nil || model.syncPausedByPlan)
         // An incoming `puls://` link asks before it fills anything. While the
         // first-run flow covers this view the prompt is OnboardingView's; and
         // it waits its turn behind the server-change prompt, which can be up
@@ -169,6 +201,12 @@ struct RootView: View {
             OnboardingView().environment(model)
         }
     }
+    private func offerSyncReviewOnReturn() {
+        guard scenePhase == .active, !model.reviewRequestsBlocked,
+              model.appliedConfig.serverURL != nil, !model.syncPausedByPlan else { return }
+        model.reviews.offerSyncOnReturn()
+    }
+
     private func presentDataRequest() {
         if !model.showsOnboarding, model.dataRequests.pending != nil {
             model.reviews.cancelPending()

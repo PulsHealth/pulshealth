@@ -23,11 +23,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#08080a",
+  themeColor: "#0b1018",
 };
-
-// Set the theme before paint to avoid a flash.
-const themeScript = `(()=>{try{var t=localStorage.getItem('puls-theme')||'dark';document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // The data pages are force-dynamic, but the static /_not-found route still
@@ -42,15 +39,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   const session = await currentSession().catch(() => null);
   const timeZone = session ? await reportingTimeZone(session.userId) : configuredTimeZone();
-  const runtimeScript = `window.__PULS_TIME_ZONE__=${JSON.stringify(timeZone).replace(/</g, "\\u003c")};${themeScript}`;
+  const runtimeScript = `window.__PULS_TIME_ZONE__=${JSON.stringify(timeZone).replace(/</g, "\\u003c")};`;
   return (
-    <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="en" data-theme="dark" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: runtimeScript }} />
       </head>
       <body>
         <div className="app-bg" />
-        <div className="grain" />
         <TimeZoneProvider timeZone={timeZone}><UnitsProvider>{await shell(children, requestHeaders.get(PATH_HEADER))}</UnitsProvider></TimeZoneProvider>
       </body>
     </html>

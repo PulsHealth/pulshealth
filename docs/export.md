@@ -1,4 +1,16 @@
-# Bulk export
+# Export your health data
+
+Choose the source first:
+
+| You want to export | Use |
+|---|---|
+| Data directly from your iPhone, without a server | [The app's Export tab](#on-device-export-no-server) |
+| Data already synced to your database | [The server API](#parameters) or [puls-export CLI](#the-puls-export-cli) |
+| A selection someone has asked you to share once | [Data Requests](requests.md) |
+
+For spreadsheets, start with CSV. Use JSON or JSONL on the phone when you
+need full record details. Server exports support CSV and JSONL. A server
+export contains only data already uploaded; it cannot read more from HealthKit.
 
 `GET /v1/export` on the product API returns a whole range of one dataset as a
 **file** — CSV for a spreadsheet, JSONL for a notebook or a chat attachment —
@@ -7,7 +19,20 @@ go out as they are read, so an export of a busy type is bounded by the disk it
 lands on rather than by the server's memory.
 
 `tools/puls-export` is a small client for it. Everything below works equally
-with `curl`.
+with `curl`. Install the [CLI](#the-puls-export-cli), then load your trusted
+local `server/.env` from the repository root. Keep tokens out of chats:
+
+```bash
+set -a
+. server/.env
+set +a
+export PULS_API_URL=http://127.0.0.1:8081
+```
+
+Run on the server or use a reachable HTTPS API URL. The examples below use
+fixed illustrative dates; choose a range where you have synced data. CLI date
+bounds use `$PULS_TIME_ZONE` (UTC if unset); set `--time-zone` to the account
+reporting zone when it differs.
 
 ```bash
 # a year of sleep, as a spreadsheet
@@ -79,8 +104,9 @@ path.
 | `state_of_mind` | `/v1/state-of-mind` | `uuid`, `date`, `timestamp`, `kind`, `valence`, `valenceClassification`, `labels`, `associations` |
 
 Values follow the same rules as the JSON endpoints — epoch milliseconds for
-instants, `YYYY-MM-DD` local calendar days (in the server's `PULS_TIME_ZONE`)
-for days, canonical units — with two format-specific conventions:
+instants, `YYYY-MM-DD` calendar days in the selected account's reporting
+zone for raw-day grouping, preserved phone dates for rings and daily phone
+aggregates, and canonical units — with two format-specific conventions:
 
 - **A null is an empty CSV cell** and an explicit `null` in JSONL, never a
   zero and never a missing key. Every line of a dataset has the same shape.
@@ -93,8 +119,7 @@ Use `daily_metrics` for totals.
 
 One thing to know before double-clicking a CSV: cells are written verbatim, so
 a value that begins with `=`, `+`, `-` or `@` is a formula to a spreadsheet.
-Every column here is a number, a date, a UUID or a HealthKit identifier except
-`source`, which is the display name of whatever app wrote the sample. Import
+Text fields such as source names and labels may come from other apps. Import
 the file as text — or use JSONL — if you do not trust every app that has ever
 written to your Health store.
 
@@ -123,12 +148,18 @@ The response is an attachment named
 
 ## The `puls-export` CLI
 
+Build from the same checkout as your server. From the repository root,
+with Go 1.26 or newer:
+
 ```bash
-go install github.com/PulsHealth/pulshealth/tools/puls-export@latest
-# or, from a checkout — it is its own Go module, so build it from its own
-# directory; there is no module at the repository root
-cd tools/puls-export && go build -o puls-export .
+mkdir -p "$HOME/.local/bin"
+(cd tools/puls-export && go build -o "$HOME/.local/bin/puls-export" .)
+export PATH="$HOME/.local/bin:$PATH"
+puls-export --version
 ```
+
+The subshell keeps your terminal at the repository root. Add that bin directory
+to your shell's PATH for later sessions, or invoke the binary by its full path.
 
 It is a thin client: it builds the query, sends the bearer token, and copies
 the response through. Everything the server can reject is left to the server
@@ -157,14 +188,10 @@ A `403` is explained the way a `401` is: the server only exports its
 
 ## On-device export (no server)
 
-Everything above needs a server the phone has synced to. The app can also
-write files **straight from HealthKit**, with no server involved:
-`HealthExporter` in the `PulsHealthSync` package
-([`PulsHealthSync/README.md`](../PulsHealthSync/README.md), "On-device export")
-runs the ordinary sync sweep — the same queries, the same canonical-unit
-conversion, the same aggregate math — against a throwaway engine whose
-transport appends to files instead of POSTing. The files are staged in the
-app's temporary directory for the share sheet.
+Open **Export** in the app to create files directly from HealthKit. No
+server or account is required. Available history depends on your app access
+and Health permissions; see [Free and Pro](https://pulshealth.com/pricing/).
+Export uses isolated state and never advances your database sync.
 
 **In the app it is the Export tab**, a builder. Pick the data types (raw
 samples), the aggregated types — the same Aggregates picker and type pages as
@@ -176,11 +203,17 @@ the same raw types, aggregates and workout route/stream switches. What you chang
 this export's alone, never the sync's, and the sync start date in Settings
 plays no part.
 
-An end date is exclusive: samples that start before it, activity-ring days
-before its local day, and routes and streams of workouts that started before
-it. An aggregate bucket that straddles the end date is left out rather than
-written as a partial value, so a daily series ends on the last whole day
-before it.
+The app’s custom **End** picker is the **last included local day**. To export
+all of September, select September 1 through September 30. The app converts
+that last day into the start of the following day internally: October 1 at
+local midnight. A selection reaching today exports through now.
+
+When set, the manifest’s `endDate` and the engine’s boundary are **exclusive**, as are
+server API `end` and CLI `--end` (so the CLI uses September 1 through October
+1 for the same month). Records are selected by start time before the boundary;
+activity-ring dates must precede its local day. Routes and streams follow the
+selected workouts. An aggregate bucket crossing the boundary is omitted
+rather than written as a partial value.
 
 When it finishes, **Share or Save to Files** opens the iOS share sheet with
 every file of the export, manifest included. With **Zip into one file** on,
@@ -194,11 +227,8 @@ before moving on.
 
 Keep the app open and the phone unlocked while it runs: HealthKit cannot be
 read on a locked phone, and an export that runs into a lock finishes
-**incomplete** and says which types it could not read. For scale: 340,000
-samples came to 41 MB as CSV and 212 MB as JSONL (the wire format carries
-each sample's time-zone context and source), written in 5–7 seconds on a
-simulator. A phone is slower, and years of Apple Watch heart rate run to
-millions of samples.
+**incomplete** and says which types it could not read. Large histories can
+contain millions of records; start with a short range before exporting years.
 
 The app offers CSV, JSON and JSONL. The server API above still offers CSV
 and JSONL. The detailed formats and CSV are not symmetrical:
@@ -207,7 +237,7 @@ and JSONL. The detailed formats and CSV are not symmetrical:
 (`puls-export-<yyyyMMdd-HHmmss>.jsonl`) is a concatenation of
 [Puls Sync Protocol](protocol/README.md) batches exactly as they would have
 gone over the wire, uncompressed: each batch's header line, then its sample,
-deletion, route, series, aggregate and activity-summary lines. Nothing about it
+route, series, aggregate and activity-summary lines. Nothing about it
 is export-specific — it is the format `docs/protocol/schema/` specifies and the
 fixture corpus tests — so every field of every kind is there, and a file can be
 fed to a server later: split it before each header line (the only lines whose
@@ -221,8 +251,8 @@ know:
 - There is no `{"profile":…}` line. The name, e-mail, date of birth and sex on
   that line are the app's settings rather than HealthKit data, and an export
   leaves them out of a file that is about to be shared.
-- Deletion lines are kept. HealthKit can return the tombstones it still holds
-  even to a first query, and a replay should apply them.
+- HealthKit deletion records are silently ignored in every export format.
+  Exports contain health data snapshots, rather than deletion history.
 
 [`tools/protocol-check`](../tools/protocol-check) validates one batch per file,
 so split an export the same way before checking it.
@@ -231,7 +261,7 @@ so split an export the same way before checking it.
 `puls-export-<yyyyMMdd-HHmmss>.json` is an array containing the exact JSONL
 objects in the same order: batch header, records, next batch header, records.
 It includes raw samples, aggregates, routes, streams, ECG traces, heartbeat
-series, deletion tombstones and time-zone/source/metadata fields when available.
+series and time-zone/source/metadata fields when available.
 It omits the configured identity profile, like JSONL. The exporter writes it
 incrementally and closes the array only after the data is written; failed or
 cancelled exports are removed. The whole export is not buffered in memory.
@@ -270,7 +300,7 @@ spreadsheet-formula caveat, because cells are written verbatim here too.
 | `aggregates` | no — device only | `type`, `func`, `intervalValue`, `intervalUnit`, `deviceFilter`, `bucketStart`, `bucketEnd`, `value`, `unit` |
 | `workout_routes` | no — device only | `workoutUUID`, `t`, `lat`, `lon`, `alt`, `hAcc`, `vAcc`, `speed`, `course` |
 | `workout_series` | no — device only | `workoutUUID`, `type`, `unit`, `t`, `value` |
-| `medication_doses` | no — device only | `uuid`, `start`, `end`, `medication`, `status`, `scheduledAt`, `doseQuantity`, `doseUnit`, `source` |
+| `medication_doses` | no — device only | `uuid`, `start`, `end`, `medication`, `medicationID`, `status`, `scheduledAt`, `doseQuantity`, `doseUnit`, `source` |
 
 ### CSV layouts and optional details
 
@@ -346,7 +376,7 @@ per bucket, GPS fix, stream datapoint or dose. How the two sides differ:
 - **What CSV leaves out.** Unless enabled under More options, metadata,
   device, source bundle and version. Per-sample time-zone context and a
   workout's statistics, events and sub-activities have no column. ECG voltage traces, beat-to-beat heartbeat
-  series and deletion tombstones have no file at all; the result the package
+  series have no file at all; the result the package
   returns counts them so the app can say so and suggest JSON or JSONL.
 
 All three formats come with `puls-export-<yyyyMMdd-HHmmss>-manifest.json`: the user
@@ -362,10 +392,11 @@ for ordinary exports as well as requests. `complete` describes extraction; check
 `notRepresented` for CSV omissions and `warnings` for missing optional details,
 even when extraction completed. Its main job is `"complete": false`
 with a `failures` list whenever a selected type could not be read to the end
-(access never granted for it, the phone locked part-way through) or a sample
+(for example, the phone locked part-way through) or a sample
 could not be converted to its canonical unit. A file that stops short looks
 exactly like the file of someone with less data; the manifest tells them
-apart.
+apart. HealthKit can return no records when read access is denied, so
+`complete: true` does not prove that every expected record was accessible.
 
 On iOS 27, Health access can be limited to recent history (the permission
 sheet's "Past 30 Days and Future Data", or Limited Access under Settings →
@@ -417,7 +448,15 @@ fresh export after installing the corrected app, within its Health permissions
 and export-history allowance. That address cannot recover medication identity.
 Existing self-hosted raw rows are insert-only: resetting anchors and syncing
 again does **not** update them. Preserve a backup and use a separately reviewed,
-user-scoped repair keyed on the event UUIDs from a corrected export; this fix
-performs no automatic database rewrite or deletion. Stable exported identifiers,
-clinical coding/strength metadata and an automatic recovery tool remain tracked
-in [#291](https://github.com/PulsHealth/pulshealth/issues/291).
+user-scoped repair keyed on exact event UUIDs and timestamps from a corrected
+export using [the historical repair tool](../tools/repair-medications/README.md).
+It defaults to a private reviewable plan and applies only that plan with explicit
+opt-in and original-value checks; there is no automatic rewrite or deletion.
+
+`medicationID` is a random UUID alias for the opaque concept, persisted within
+this app installation and shared across sync and exports (including Data Requests).
+It groups equal concepts independently of names. It survives ordinary sync resets
+and receiver changes, but is not stable across devices, reinstalls or loss of the
+local registry. Clinical coding/strength metadata and cross-device identity remain
+outside this field's guarantee. Apple's public concept identifier has no exposed
+raw string, and `count` alone cannot establish a mass conversion.

@@ -9,9 +9,10 @@ import PulsHealthSync
 ///
 /// Either way the values are held in a `ServerFieldsDraft` — including the
 /// user ID a pairing code brings with it — and tested, and nothing reaches the
-/// configuration until Save & Apply (which still raises the server/user-change
-/// prompt if the target moved). What the screen starts from and what Save &
-/// Apply commits is `DatabaseSetup`'s to decide.
+/// configuration until Add Database stages a new destination on the main Sync
+/// screen, or Save & Apply updates an existing one. The main screen's Apply
+/// starts the first sync and still confirms a server/user change when needed.
+/// `DatabaseSetup` decides which fields to stage and whether review is needed.
 struct ServerSettingsView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -40,7 +41,14 @@ struct ServerSettingsView: View {
     @State private var connectionTest = DatabaseConnectionTest()
     @State private var showScanner = false
 
+    private var needsInitialSyncReview: Bool {
+        setup.needsInitialSyncReview(applied: model.appliedConfig, draft: model.config, saved: model.savedDestinations)
+    }
+
+    private var applyTitle: String { needsInitialSyncReview ? "Add Database" : "Save & Apply" }
+
     var body: some View {
+        @Bindable var model = model
         Form {
             savedDestinationsSection
             if let message = model.lastErrorMessage {
@@ -68,7 +76,7 @@ struct ServerSettingsView: View {
         .onAppear {
             if !loaded {
                 loaded = true
-                setup = DatabaseSetup(applied: model.appliedConfig, scanOnArrival: scanOnArrival, preferred: preferred)
+                setup = DatabaseSetup(applied: model.isSettingUpInitialSync ? model.config : model.appliedConfig, scanOnArrival: scanOnArrival, preferred: preferred, isStaged: model.isSettingUpInitialSync)
                 showScanner = scanOnArrival
             }
             // This screen is built lazily: an accepted pairing link can be
@@ -260,7 +268,7 @@ struct ServerSettingsView: View {
             // goes first, so it cannot be missed, with where it leads.
             Section {
                 Label {
-                    Text("Your PulsHealth account sent this iPhone its pairing code. Tap Save & Apply to start syncing to the PulsHealth database.")
+                    Text("Your PulsHealth account sent this iPhone its pairing code. Tap \(applyTitle) to continue.")
                 } icon: {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
@@ -280,7 +288,7 @@ struct ServerSettingsView: View {
                 Text("Signed In")
             }
             applySection(disabled: signedIn.validatedURL == nil) {
-                Text("No Health data is uploaded until you tap Save & Apply. Until then PulsHealth has only tested the connection, asking the database what it supports.")
+                Text("No Health data is uploaded until you apply your selection. Testing the connection only asks the database what it supports.")
             }
         } else if model.usesPulsHealthDatabase {
             Section {
@@ -328,7 +336,7 @@ struct ServerSettingsView: View {
                     Text(signInProblem).font(.caption).foregroundStyle(.red)
                 }
             } footer: {
-                Text("Sign in and tap Connect this iPhone in the browser. Then tap Save & Apply here to start syncing.")
+                Text("Sign in and tap Connect this iPhone in the browser. Then add the database and review your selection on the Sync tab.")
             }
         }
     }
@@ -392,7 +400,7 @@ struct ServerSettingsView: View {
                 // say that it is staged too rather than changing it out
                 // of sight.
                 Label {
-                    Text("Filled in from a pairing code, with user ID \(pairedUserID). Nothing changes until you tap Save & Apply.")
+                    Text("Filled in from a pairing code, with user ID \(pairedUserID). Nothing changes until you apply your selection.")
                 } icon: {
                     Image(systemName: "qrcode")
                 }
@@ -406,7 +414,11 @@ struct ServerSettingsView: View {
         }
 
         applySection(disabled: setup.own.urlIssue != nil) {
-            Text("An empty URL disconnects the database; syncing stops and the Export tab keeps working.")
+            if needsInitialSyncReview {
+                Text("Returns to Sync to choose types and a backfill date. No Health data is uploaded to this database until you tap Apply.")
+            } else {
+                Text("An empty URL disconnects the database; syncing stops and the Export tab keeps working.")
+            }
         }
     }
 
@@ -422,14 +434,20 @@ struct ServerSettingsView: View {
                 ConnectionTestResultRow(result: result)
             }
             Button {
-                Task { await apply() }
+                if needsInitialSyncReview {
+                    guard setup.commit(to: &model.config) else { return }
+                    model.isSettingUpInitialSync = true
+                    dismiss()
+                } else {
+                    Task { await apply() }
+                }
             } label: {
-                Text("Save & Apply")
+                Text(applyTitle)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .disabled(disabled)
+            .disabled(disabled || (needsInitialSyncReview && setup.fieldsForChoice?.isTestable != true))
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
             .listRowSeparator(.hidden)

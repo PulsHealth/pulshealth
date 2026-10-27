@@ -1,21 +1,16 @@
 # Puls Web
 
-The self-hosted web viewer for the Puls health store, in the style of Apple
-Health. Built with **Next.js (App Router) + TypeScript**, it reads directly
-from the same **TimescaleDB** that Grafana uses and draws its own SVG charts:
-activity rings, range-banded trend lines and bar series, with per-category
-accent colors.
+The web dashboard for your PulsHealth database: daily metrics, activity rings,
+workouts and trends. It reads TimescaleDB directly. It is separate from the
+public website in `site/`.
 
-Dashboard pages keep the public site's top navigation: PulsHealth, Dashboard,
-Knowledge Base, Docs, and Consulting, with GitHub, public-site search and sign-in controls. Account/settings controls remain in the health navigation.
-The brand and public resource links go to pulshealth.com; Dashboard stays on the
-current viewer. The sidebar contains health-data navigation and viewer controls,
-without a separate return-to-site link. On mobile, one 56 px brand header opens a combined menu: health navigation
-first, then account controls and website resources. It closes on Escape, an
-outside click, or choosing a link. Sign-in, sign-up, invite and password-recovery
-pages always use a standalone, centered card without the site header, sidebar
-or demo banner, including when opened from an active demo session. OAuth and
-phone-pairing pages also retain their focused layouts.
+**Most people should use the included Compose service.** [Server setup](../docs/setup.md)
+starts it, prints its address and login, and explains how to reach it remotely.
+You do not need Node.js or a separate web installation for that path.
+
+This reference covers local development and advanced configuration:
+[connecting data](#connecting-to-real-data), [access control](#access-control),
+[accounts](#accounts-mode), and [AI sign-in](#ai-assistants-oauth).
 
 > **Local demo mode.** Outside production, an unset or unreachable `DATABASE_URL`
 > serves generated demo data. Production never fabricates health data: a page
@@ -24,9 +19,11 @@ phone-pairing pages also retain their focused layouts.
 
 ## Quick start
 
+For local viewer development, run from the repository root:
+
 ```bash
 cd web
-npm install
+npm ci
 cp .env.example .env        # optional — leave DATABASE_URL blank for local demo mode
 npm run dev                 # http://localhost:3000
 ```
@@ -40,7 +37,7 @@ Point `DATABASE_URL` at the Puls Postgres/TimescaleDB instance (the database is
 # Local docker stack (../server): the database plus its schema
 cd ../server && docker compose up -d migrate
 # then in web/.env:
-DATABASE_URL="postgres://postgres:YOUR_PASSWORD@localhost:5432/postgres?sslmode=disable"
+DATABASE_URL="postgres://grafana:YOUR_GRAFANA_DB_PASSWORD@localhost:5432/postgres?sslmode=disable"
 
 # A remote stack whose Postgres port is bound to loopback: open an SSH tunnel
 # and connect through it as the read-only `grafana` role.
@@ -131,6 +128,14 @@ switcher and `/api/user` do not exist, and the list of users is never read.
 
 ## Access control
 
+**Compose commands in this section run from `server/`.** If you installed
+with `--build`, use `docker compose -f docker-compose.yml -f compose.build.yml`
+in place of plain `docker compose` for every operation below. Recreating a
+service with the base file alone can switch it to a published image that does
+not match your checkout. Generate secrets locally and write their resulting
+values into `server/.env`; shell expressions in example comments are not
+literal `.env` values.
+
 The viewer runs in one of three modes, chosen from the environment at every
 request (`lib/mode.ts`) and named in its startup log
 (`docker compose logs web | grep puls-web`):
@@ -139,7 +144,7 @@ request (`lib/mode.ts`) and named in its startup log
 |---|---|---|
 | **open** | neither variable | Anyone who can reach the port sees every user. Fine on loopback only. |
 | **basic** | `WEB_AUTH_PASSWORD` | One shared password; everyone who has it sees every user. |
-| **accounts** | `WEB_ACCOUNTS=true` | Each person signs in with their own email and password and sees only their own records — enforced by the database. Invite-only. Wins if both are set. |
+| **accounts** | `WEB_ACCOUNTS=true` | Each person signs in with their own email and password and sees only their own records — enforced by the database. Invitations or approved sign-ups. Wins if both are set. |
 
 Every mode sends the same hardening headers: a per-request
 Content-Security-Policy with a script nonce (`proxy.ts`,
@@ -155,7 +160,7 @@ it and every route asks for HTTP Basic credentials; leave it empty and the
 viewer has no login at all.
 
 ```bash
-WEB_AUTH_PASSWORD="$(openssl rand -hex 12)"   # in server/.env
+openssl rand -hex 12  # save the output as WEB_AUTH_PASSWORD in server/.env
 docker compose up -d web
 ```
 
@@ -234,7 +239,9 @@ header, but behind Cloudflare (the `tunnel` profile included)
 overwrites, and behind two appending proxies every client would share one
 rate-limit bucket.
 
-**Inviting people.** There is no sign-up. An operator runs, for each person:
+**Inviting people.** Accounts are invite-only unless you enable
+[approved sign-ups](#sign-ups-with-approval-the-waitlist). From the repository
+root, an operator can run:
 
 ```bash
 make issue-device NAME='Ann’s iPhone' ARGS='--user <uuid>'   # the phone's token; creates the user
@@ -245,8 +252,8 @@ The second prints `https://<WEB_PUBLIC_URL>/invite/<token>`, valid once for 48
 hours (`--hours`); add `--send` to email it to the person instead (through
 the SES settings below) so the link never appears in your terminal. Opening it asks for a password (at least 10 characters) and
 signs the person in. An invite for a user who already has an account resets
-its password and signs it out everywhere — that is the way back in after a
-forgotten password, since the viewer sends no email. `--admin` marks the
+its password and signs it out everywhere. Use this as an administrator
+recovery path when [email password recovery](#password-recovery) is unavailable. `--admin` marks the
 account as an administrator, which gives it `/admin` (below). Every signed-in
 personal account can connect its own iPhone from the app or the account page;
 `make issue-device` also remains available to the operator.
@@ -305,7 +312,9 @@ Details:
 
 `WEB_SIGNUPS=true` (accounts mode only) adds `/signup`, where anyone can sign
 up — name, email, an optional note, and a box confirming they read the
-privacy policy — and is told they are on the waitlist. **Nothing exists for them until an administrator
+privacy policy. Entry links and the submit button say **Create account**; after
+submitting, people are told PulsHealth is currently at capacity, they have joined
+the waitlist, and they will receive an email when access is available. **Nothing exists for them until an administrator
 approves**: a request creates no user, no account and no sync token, so no
 phone can send anything. In order:
 
@@ -621,7 +630,7 @@ In accounts mode with `WEB_DEMO_USER` configured, signed-out visitors to `/`
 are redirected through `/demo` into the existing view-only sample account.
 Signed-in visitors keep their own session. Other protected pages and APIs
 still require authentication. A banner above demo pages labels the sample
-data and offers sign-in and, when sign-ups are open, an account request.
+data and offers sign-in and, when sign-ups are open, a Create account link.
 These actions stay visible when the mobile menu is closed.
 
 Desktop shows a persistent sidebar. At widths of 1023 px and below, a compact
@@ -630,8 +639,12 @@ navigation, including categories, account controls and website resources. Choosi
 or pressing Escape closes it; Escape returns focus to the header menu button.
 The shared demo keeps a visible **Demo** badge even with the menu closed.
 The mobile menu puts health navigation above the same public resource links used
-on pulshealth.com. Both headers use full-width 56 px rows, 32 px desktop / 24 px mobile edge padding (20 px on narrow phones),
-and the same 1024 px desktop breakpoint.
+on pulshealth.com. The viewer uses the public site’s header styles in a full-width row, with its
+brand aligned with the sidebar and desktop navigation and actions on the right. It is 72 px high on desktop and 64 px on phones, with the
+same 1024 px desktop breakpoint as the public site. Dashboard content fills
+the available width; on wide desktops the activity overview and highlights
+share a row. Selected sidebar links use a filled background, with an outline
+reserved for keyboard focus.
 
 Page headers begin with the title and description, without a page label above
 them. Demo and live data indicators remain visible in the navigation.
@@ -677,7 +690,10 @@ The workout route map (`lib/mapStyles.ts`) draws its basemap from free public
 tile endpoints that need no API key: Esri's Dark Gray and Light Gray Canvas
 (`server.arcgisonline.com` — the dark and light styles, and so the `auto`
 default), OpenStreetMap (`tile.openstreetmap.org`), Esri World Imagery, and
-OpenTopoMap. The Canvas tiles stop at zoom 16; Leaflet scales those up for the
+OpenTopoMap. The default dark map has a restrained navy tint, with zoom controls and
+attribution styled to match the viewer. Other saved basemap styles retain their
+original colors. Provider credits remain visible.
+The Canvas tiles stop at zoom 16; Leaflet scales those up for the
 three levels past it. CARTO's basemaps used to supply the dark, light and
 Voyager styles, but since September 2026 they answer every keyless request
 with an "API KEY REQUIRED" tile, so they are gone: Voyager had no keyless
@@ -694,10 +710,12 @@ endpoints.
 
 ## Notes
 
-- Read-only by design — this is a viewer; it never writes to the health store.
+- Health readings are read-only. Account, profile, time-zone and connection
+  settings can be changed through their dedicated account controls.
 - Pages render dynamically. Data-source and catalog-stat checks use short in-process
   TTL caches to avoid repeated database work.
-- Theme (dark/light) is set before paint and persisted to `localStorage`.
+- The viewer always uses the shared dark PulsHealth theme. Earlier saved
+  light-mode preferences are ignored; there is no theme selector.
 
 For the developer-hosted database, `WEB_INGEST_URL` must be an HTTPS address
 under `pulshealth.com`. The iOS app checks that domain before naming the

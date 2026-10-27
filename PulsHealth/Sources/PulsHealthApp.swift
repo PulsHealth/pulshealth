@@ -50,13 +50,20 @@ struct PulsHealthApp: App {
                 // only ever turns it into a prompt (`handleIncomingURL`).
                 .onOpenURL { model.handleIncomingURL($0) }
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase, initial: true) { previous, phase in
             switch phase {
             case .active:
+                model.reviews.beginSession()
+                let catchup = model.reviews.beginForegroundSync()
                 // Catch up whenever the user opens the app — the most reliable
-                // sync trigger on iOS.
-                Task { await model.syncNow(trigger: "foreground") }
+                // sync trigger on iOS. Review requests wait for it to settle.
+                Task {
+                    await model.syncNow(trigger: "foreground")
+                    model.reviews.finishForegroundSync(catchup)
+                }
             case .background:
+                model.reviews.endSession()
+                guard previous != phase else { return }
                 Task {
                     await model.ensureBackgroundCatchupScheduled()
                     await model.engine.store.persistNow()

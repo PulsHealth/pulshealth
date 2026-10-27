@@ -208,8 +208,8 @@ public enum ExportDataset: String, Sendable, Codable, CaseIterable, Hashable {
     case ecg
     /// Beat-to-beat series. JSON and JSONL only: the row is a list of beat offsets.
     case heartbeatSeries = "heartbeat_series"
-    /// HealthKit deletion tombstones. JSON and JSONL only: a deletion is an instruction
-    /// to a receiver, not a row of data.
+    /// Retained for compatibility. Current exports silently ignore HealthKit
+    /// deletion tombstones in every format.
     case deletions
 
     /// Whether a CSV export writes this dataset. The three that it does not
@@ -243,7 +243,7 @@ public enum ExportDataset: String, Sendable, Codable, CaseIterable, Hashable {
         case .workoutSeries:
             return ["workoutUUID", "type", "unit", "t", "value"]
         case .medicationDoses:
-            return ["uuid", "start", "end", "medication", "status", "scheduledAt",
+            return ["uuid", "start", "end", "medication", "medicationID", "status", "scheduledAt",
                     "doseQuantity", "doseUnit", "source"]
         case .ecg, .heartbeatSeries, .deletions:
             return nil
@@ -327,7 +327,7 @@ public struct ExportResult: Sendable {
     /// Datasets with no rows are absent.
     public var rowCounts: [ExportDataset: Int]
     /// CSV only: rows HealthKit returned that the format has no file for —
-    /// ECG traces, heartbeat series, deletion tombstones. Always empty for
+    /// ECG traces and heartbeat series. Always empty for
     /// JSON and JSONL, which carries everything. Offer JSONL when this is non-empty.
     public var notRepresented: [ExportDataset: Int]
     /// Samples HealthKit returned that could not be converted to the type's

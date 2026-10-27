@@ -1,30 +1,36 @@
 ---
 title: "PulsHealth Is Open Source: Explore, Export, and Use Your Apple Health Data"
-date: "2026-09-15"
-updated: "2026-10-08"
+date: "2026-07-05"
+updated: "2026-10-25"
 draft: false
 author: "Sean Wade"
 tags: ["announcement", "self-hosting", "apple-health", "open-source"]
 excerpt: "Use Apple Health on your own terms: explore on your iPhone, export files, or sync to a hosted or self-hosted database. The app, server, and protocol are open source."
 ---
 
-Apple Health collects a useful history, but the next step often happens somewhere else: a spreadsheet, a browser dashboard, a Python notebook, or a question you want an assistant to help investigate. PulsHealth gives that history a route out of the phone, with choices about where it goes.
+PulsHealth is open source. You can use the iPhone app to inspect your Apple Health records, export them as files, or keep a database updated. You can also read the code and build your own tools on the same upload protocol.
 
 <BlogImage src="/blog/pulshealth-is-open-source/health-data-illustration.webp" alt="Paper-cut illustration of data flowing from a phone into a notebook and an archive box." caption="Your history can become a file, an analysis, or an ongoing collection. AI-generated editorial illustration; no personal health data is depicted." width="1536" height="1024" />
 
 The iPhone app, Swift sync library, reference server, protocol specification, dashboards, and this website are in [one Apache-2.0 repository](https://github.com/PulsHealth/pulshealth). You can inspect them, run the stack yourself, or build a receiver that accepts the documented format.
 
-*Rewritten October 8, 2026: this post now covers Explore and Export, the hosted database's access-request process, and current AI connections. The original publication date is retained.*
+*Updated October 25, 2026: clarified how the Free app’s history limit differs from database retention and simplified the setup paths. Product limits were checked against the current App Store listing and pricing page.*
 
 ## Start with the data already on your phone
 
-You do not need a server or a PulsHealth account to start. The free [iPhone app](https://apps.apple.com/us/app/pulshealth/id6757657354) has two useful entry points before you connect a database.
+You do not need a server or a PulsHealth account to use Explore or Export in the [iPhone app](https://apps.apple.com/us/app/pulshealth/id6757657354).
 
 **Explore** helps you understand what is in Apple Health. Open a data type to inspect its sample count, sources, value distribution, and how observations arrive over time. That answers a practical first question: do you have the measurements needed for the analysis you had in mind?
 
-**Export** writes selected data to CSV or JSONL files. Choose the types and date range for that export, then save or share the result. This works on demand without configuring sync. CSV is useful for a spreadsheet; JSONL retains the richer structured representation. Their differences are documented in the [export guide](/docs/export/).
+**Export** writes selected data to CSV, JSON, or JSONL files. Choose the types and date range for that export, then save or share the result. This works on demand without configuring sync. CSV is useful for a spreadsheet; JSONL retains the richer structured representation. Their differences are documented in the [export guide](/docs/export/).
 
-The distinction matters when you have a single task. If you want to make one chart from last month's measurements, a file may be all you need. A continuously updated database becomes useful when you want that chart to stay current, query a longer history repeatedly, or connect other tools.
+Free includes full Explore, manual exports of all supported types from the last 30 days, and sync of up to five distinct types from the last 30 days. Pro unlocks all available history and unlimited sync types, subject to Health access. Self-hosting does not remove those app limits.
+
+The 30-day limit concerns what the app reads. It does not delete older records already in your database; Free sync can keep adding new data to an existing history. App purchases and hosting are separate. [Current plans](/pricing/)
+
+<BlogImage src="/blog/pulshealth-is-open-source/viewer-today.webp" alt="PulsHealth demo dashboard with activity rings and health trends." caption="The public demo dashboard, captured October 24, 2026. Sample data only; try it without connecting your phone." width="1440" height="1000" />
+
+A file is enough for a one-off spreadsheet or chart. A database is useful when you want to repeat the analysis as new records arrive.
 
 <BlogFlow
   title="One Health history, several useful destinations"
@@ -37,7 +43,7 @@ The distinction matters when you have a single task. If you want to make one cha
   />
   <FlowRow
     label="Export"
-    steps="Selected readable records | CSV or JSONL | Your chosen file destination"
+    steps="Selected readable records | CSV, JSON, or JSONL | Your chosen file destination"
     note="Make an on-demand copy for a spreadsheet or notebook."
   />
   <FlowRow
@@ -57,15 +63,15 @@ PulsHealth can send selected records to a database hosted for you or a database 
 | Hosted PulsHealth database | Request access, connect your phone, choose what to sync | The PulsHealth operator's server |
 | Self-hosted database | Run, secure, update, and back up the stack | Infrastructure you control |
 
-Hosted access currently starts with an [access request](https://app.pulshealth.com/signup). Submitting the form does not immediately create a working account: requests require approval. Once admitted, use your account page's pairing instructions to connect your iPhone. As of this update, the App Store version is **1.6**: use its existing database pairing flow. The newer in-app hosted sign-in flow is in the source repository but is not part of that shipped version. The [release record](https://github.com/PulsHealth/pulshealth/blob/main/docs/appstore/README.md#release-record) tracks the distinction.
+Hosted access starts with an [access request](https://app.pulshealth.com/signup), subject to approval and availability. Once approved, connect from the app’s **Sync** tab, review the destination, then choose the types and history before applying the setup. The [desktop access guide](/blog/view-apple-health-on-mac-pc/) walks through the hosted connection. For your own server, follow the [pairing guide](/docs/setup/#4-pair-the-app-and-choose-what-to-sync). The [current App Store listing](https://apps.apple.com/us/app/pulshealth/id6757657354) describes both connection options.
 
-For self-hosting, the [server guide](/docs/server/) covers the Docker Compose stack and phone connection. It includes PostgreSQL with TimescaleDB, ingestion, a read API, a web viewer, Grafana, and the MCP integration. Use the maintained guide for commands and current requirements rather than copying an old installation recipe from an announcement.
+For self-hosting, start with the [setup guide](/docs/setup/). The stack includes PostgreSQL with TimescaleDB, ingestion, a read API, a web viewer, Grafana, and the MCP integration. Installation commands and current requirements live in that guide.
 
-## What sync does—and what it cannot promise
+## What happens after you connect a database
 
 You choose the data types and the history you want to send. The app reads available records and keeps track of acknowledged uploads so interrupted work can resume. It also handles newly available records and supported deletions as syncing continues.
 
-There are different shapes of data. Individual measurements, sleep categories, workouts, daily activity summaries, and aggregate series are not interchangeable rows. PulsHealth preserves those distinctions so that an analysis can ask for the appropriate representation. The [database guide](/docs/database/) explains how to query them without silently double-counting overlapping sources or confusing summaries with raw records.
+The database keeps individual measurements, sleep intervals, workouts, activity rings, and aggregate series distinct. The [database guide](/docs/database/) explains which to query, including how to avoid counting overlapping phone and Watch records twice.
 
 Sync also depends on the phone. Health access, Watch-to-iPhone delivery, connectivity, and the execution time iOS grants all affect when a record arrives. A database makes data easier to use after it gets there; it does not make background delivery instantaneous. The app's status and activity views help you see progress and diagnose interruptions.
 
@@ -73,7 +79,7 @@ For self-hosting, backups require attention: the project provides an opt-in back
 
 ## Connect tools without replacing your data store
 
-The web viewer is one way to browse your records. SQL, downloadable files, the read API, and Grafana provide other routes. You can change the presentation without asking your phone to collect its history again.
+Once records arrive, you can browse them in the web viewer, query them with SQL, or use the read API and Grafana. Changing the presentation does not require another phone export.
 
 The MCP server lets compatible AI assistants query the product API with read-only tools. It can support questions such as which days have missing records or how recorded workout frequency changed between two periods. Hosted connections use account authorization; self-hosted setups have their own configuration. The [AI connection guide](/docs/ai/) documents supported connection methods and the tested Claude flow.
 
@@ -83,6 +89,6 @@ Read-only access prevents the connector from changing stored records. It does **
 
 You do not have to use the reference database. The [Puls Sync Protocol](/docs/protocol/) defines the upload format, with schemas and example fixtures. The repository includes a small Python receiver that writes to SQLite, showing how an independent implementation can work.
 
-That is an important part of making the source useful. A receiver should be able to follow an explicit contract rather than reverse-engineer whichever server implementation happens to exist today.
+The protocol describes what a receiver must accept independently of the reference server’s implementation.
 
-If you want to try PulsHealth, begin with Explore or a small export. If you need ongoing access, choose a hosted account or follow the self-hosting guide. If something is unclear or broken, bring a reproducible example to [GitHub issues](https://github.com/PulsHealth/pulshealth/issues), with private records and credentials removed. Useful health-data tools begin with understanding what the data actually says.
+Start with Explore or a small export, then connect a database if you need ongoing access. For code, protocol fixtures, and contribution instructions, [visit the repository](https://github.com/PulsHealth/pulshealth). Bug reports are welcome in [GitHub issues](https://github.com/PulsHealth/pulshealth/issues); remove private records and credentials from examples before posting.

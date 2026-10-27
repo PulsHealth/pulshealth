@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1060" viewBox="0 0 1600 1060" role="img" aria-labelledby="title desc">
+<title id="title">Two questions behind every calorie number</title>
+<desc id="desc">Active and total calories describe different energy categories. Workout and day describe different time windows. Workout active energy is included in daily active energy.</desc>
+<rect width="1600" height="1060" rx="28" fill="#f5f8fa"/>
+<g font-family="Arial,Helvetica,sans-serif" fill="#142d40">
+<text x="84" y="104" font-size="52" font-weight="700">Two questions behind every calorie number</text>
+<text x="84" y="163" font-size="28" fill="#526676">Which energy? Over what time?</text>
+<text x="515" y="246" font-size="29" font-weight="700" fill="#087f78">ACTIVE ENERGY</text>
+<text x="1080" y="246" font-size="29" font-weight="700" fill="#365ea8">TOTAL ENERGY</text>
+<rect x="350" y="280" width="535" height="232" rx="22" fill="#e0f1ed"/>
+<rect x="920" y="280" width="590" height="232" rx="22" fill="#e5edf8"/>
+<rect x="350" y="552" width="535" height="232" rx="22" fill="#e0f1ed"/>
+<rect x="920" y="552" width="590" height="232" rx="22" fill="#e5edf8"/>
+<text x="84" y="369" font-size="32" font-weight="700">ONE WORKOUT</text>
+<text x="84" y="415" font-size="25" fill="#526676">A bounded interval</text>
+<text x="84" y="640" font-size="32" font-weight="700">ONE DAY</text>
+<text x="84" y="686" font-size="25" fill="#526676">A calendar day</text>
+<text x="390" y="361" font-size="32" font-weight="700">Activity above rest</text>
+<text x="390" y="408" font-size="28">during the workout</text>
+<text x="960" y="361" font-size="32" font-weight="700">Workout active + resting</text>
+<text x="960" y="408" font-size="28">over that same interval</text>
+<text x="390" y="633" font-size="32" font-weight="700">All-day active energy</text>
+<text x="390" y="680" font-size="28">Includes workout activity</text>
+<text x="960" y="633" font-size="32" font-weight="700">Daily active + resting</text>
+<text x="960" y="680" font-size="28">over that same day</text>
+<path d="M617 465 V588" stroke="#087f78" stroke-width="4" fill="none"/>
+<path d="M608 575 L617 589 L626 575" stroke="#087f78" stroke-width="4" fill="none"/>
+<rect x="84" y="841" width="1426" height="117" rx="18" fill="#142d40"/>
+<text x="124" y="891" font-size="31" fill="white" font-weight="700">A workout is part of the day.</text>
+<text x="124" y="932" font-size="28" fill="#d9e5ef">Adding its calories to a daily total counts that energy again.</text>
+<text x="84" y="1011" font-size="23" fill="#526676">Conceptual accounting diagram. Matching periods and consistent source handling are required.</text>
+</g></svg>

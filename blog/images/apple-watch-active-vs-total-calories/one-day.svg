@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+<title id="title">One day, two time windows</title>
+<desc id="desc">October 13, 2026. Daily energy is 2,245.1 resting plus 1,465.7 active, calculated as 3,710.8 kcal. A running workout is 629.6 active plus 101.5 resting, calculated as 731.1 kcal. The workout is already part of the day.</desc>
+<rect width="1600" height="1000" fill="#f5f8fa"/>
+<g font-family="Arial,Helvetica,sans-serif" fill="#142d40">
+<text x="84" y="100" font-size="52" font-weight="700">One day, two time windows</text>
+<text x="84" y="157" font-size="28" fill="#526676">My records · October 13, 2026 · America/Los_Angeles</text>
+<text x="84" y="255" font-size="30" font-weight="700">DAILY ENERGY</text>
+<text x="1515" y="255" font-size="38" font-weight="700" text-anchor="end">3,710.8 kcal</text>
+<rect x="84" y="295" width="865.78" height="148" fill="#365ea8"/>
+<rect x="949.78" y="295" width="565.22" height="148" fill="#087f78"/>
+<text x="124" y="354" font-size="28" fill="white">Resting energy</text>
+<text x="124" y="405" font-size="38" font-weight="700" fill="white">2,245.1 kcal</text>
+<text x="990" y="354" font-size="28" fill="white">Active energy</text>
+<text x="990" y="405" font-size="38" font-weight="700" fill="white">1,465.7 kcal</text>
+<text x="84" y="492" font-size="25" fill="#526676">Canonical daily aggregates. Segment widths show each share of the calculated total.</text>
+<text x="84" y="603" font-size="30" font-weight="700">RUNNING WORKOUT</text>
+<text x="1515" y="603" font-size="27" fill="#526676" text-anchor="end">About 45 minutes within that day</text>
+<rect x="84" y="639" width="430" height="137" rx="17" fill="#e0f1ed"/>
+<rect x="584" y="639" width="430" height="137" rx="17" fill="#e5edf8"/>
+<rect x="1084" y="639" width="431" height="137" rx="17" fill="#142d40"/>
+<text x="119" y="688" font-size="27" fill="#087f78">Active</text>
+<text x="119" y="743" font-size="40" font-weight="700">629.6 kcal</text>
+<text x="619" y="688" font-size="27" fill="#365ea8">Resting</text>
+<text x="619" y="743" font-size="40" font-weight="700">101.5 kcal</text>
+<text x="1119" y="688" font-size="27" fill="#d9e5ef">Calculated total</text>
+<text x="1119" y="743" font-size="40" font-weight="700" fill="white">731.1 kcal</text>
+<text x="549" y="727" font-size="42" font-weight="700" text-anchor="middle">+</text>
+<text x="1049" y="727" font-size="42" font-weight="700" text-anchor="middle">=</text>
+<text x="84" y="853" font-size="31" font-weight="700">This workout is already part of the daily energy.</text>
+<text x="84" y="903" font-size="25" fill="#526676">Do not add 731.1 kcal to 3,710.8 kcal. The workout equation uses a different interval.</text>
+<text x="84" y="952" font-size="23" fill="#526676">Selected records, retrieved October 25, 2026. Device estimates; not a Fitness screen comparison.</text>
+</g></svg>

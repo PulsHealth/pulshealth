@@ -51,13 +51,13 @@ export function AppNavigation({ children, ...sidebar }: Props) {
           {sidebar.account?.demo && (
             <section className="demo-banner" aria-label="Demo dashboard">
               <div>
-                <span className="demo-banner-label">DEMO DASHBOARD</span>
+                <span className="demo-banner-label">Demo dashboard</span>
                 <p>Explore what your health data can look like.</p>
                 <span className="demo-banner-detail">You’re viewing sample data. Sign in to see your own.</span>
               </div>
               <div className="demo-banner-actions">
                 <a href="/login" className="btn">Sign in</a>
-                {sidebar.signupsOpen && <a href="/signup" className="demo-banner-request">Request an account <span aria-hidden="true">→</span></a>}
+                {sidebar.signupsOpen && <a href="/signup" className="demo-banner-request">Create account <span aria-hidden="true">→</span></a>}
               </div>
             </section>
           )}

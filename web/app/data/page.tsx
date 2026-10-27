@@ -56,27 +56,25 @@ export default async function DataPage() {
                       key={type.identifier}
                       href={typeHref(type) ?? "/data"}
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 14,
-                        padding: "13px 18px",
                         borderTop: i === 0 ? "none" : "1px solid var(--border)",
                         transition: "background 0.15s ease",
                       }}
-                      className="data-row"
+                      className="data-row data-list-row"
                     >
                       <span className="dot" style={{ background: rows > 0 ? color : "var(--faint)" }} />
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 14, color: "var(--fg-soft)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <div className="data-row-name">
                           {type.name}
                           {type.unit && <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: 8 }}>{type.unit}</span>}
                         </div>
                       </div>
-                      <div className="mono tabular" style={{ fontSize: 12.5, color: "var(--fg-soft)", minWidth: 86, textAlign: "right" }}>
+                      <div className="data-row-meta">
+                      <div className="mono tabular data-row-count">
                         {rows > 0 ? formatCompact(rows) : "—"}
                       </div>
-                      <div className="mono" style={{ fontSize: 11.5, color: "var(--faint)", minWidth: 96, textAlign: "right" }} title={st?.latest ? formatFull(st.latest, timeZone) : ""}>
+                      <div className="mono data-row-time" title={st?.latest ? formatFull(st.latest, timeZone) : ""}>
                         {st?.latest ? relativeTime(st.latest) : "no data"}
+                      </div>
                       </div>
                       <ChevronRight size={15} style={{ color: "var(--faint)" }} />
                     </Link>

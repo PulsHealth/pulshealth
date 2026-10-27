@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation"
 import { Menu } from "lucide-react"
 import { GitHubIcon } from "@/components/brand-icons"
 import { SearchTrigger } from "@/components/search-trigger"
-import { ModeToggle } from "@/components/mode-toggle"
 import "./navigation.css"
 
 const primary = [
@@ -65,7 +64,6 @@ export function SiteHeader() {
       <div className="site-header-actions">
         <SearchTrigger />
         <a href="https://github.com/PulsHealth/pulshealth" className="site-action site-outline site-github" target="_blank" rel="noopener noreferrer" aria-label="PulsHealth on GitHub"><GitHubIcon /><span>GitHub</span></a>
-        <ModeToggle />
         <button ref={toggle} type="button" className="site-action site-menu-toggle" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} aria-controls="site-mobile-navigation" onClick={() => setMenu({ pathname, open: !open })}><Menu aria-hidden /></button>
       </div>
     </div>

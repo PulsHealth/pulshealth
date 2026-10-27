@@ -99,12 +99,10 @@ targets:
         # previous version supported (QA1623) — "1" alone fails the upload.
         TARGETED_DEVICE_FAMILY: "1,2"
         CODE_SIGN_STYLE: Automatic
-        # Must exceed what is on the store — App Store Connect rejects an
-        # upload whose build number it has already accepted. The store holds
-        # 2.0 (21) was accepted; this is the next 2.1 source candidate. See the release record and bump
-        # both here before every archive.
-        CURRENT_PROJECT_VERSION: 28
-        MARKETING_VERSION: 2.2
+        # Use a new build number for every App Store Connect upload.
+        # Preserve the marketing version when replacing a withdrawn build.
+        CURRENT_PROJECT_VERSION: 33
+        MARKETING_VERSION: 2.4
         # The tint every control takes (Assets.xcassets/AccentColor): the blue
         # of the logo's pulse line, a shade lighter in dark mode.
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

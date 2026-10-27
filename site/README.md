@@ -8,25 +8,31 @@ reads your own Postgres.
 The desktop and mobile navigation list Dashboard (the hosted viewer at
 app.pulshealth.com), Knowledge Base, Docs, and Consulting in that order.
 Sign-in lives in the dashboard demo banner rather than the public navigation.
-Blog remains linked from the footer. The navbar spans the viewport with a 56 px
-row and 32 px desktop / 24 px mobile edge padding (20 px on narrow phones), matching the dashboard. Both switch to a dropdown
+Blog remains linked from the footer. The navbar uses a centered 1280 px content row, 72 px high on desktop and
+64 px on phones, with 32 px desktop / 24 px mobile edge padding (20 px on narrow phones), matching the dashboard. Both switch to a dropdown
 below 1024 px; the dashboard adds its health/account options above the public links.
 
 Page heroes begin with the title and description, without a page-label pill.
 
+The homepage sync section includes self-hosted setup guidance and a copyable
+starting prompt linking to `/llms.txt`, so visitors can follow the Docker setup
+guide themselves or ask a coding assistant for help. Setup is described as
+assistance rather than a guaranteed one-prompt deployment. The hero links to
+the guide for connecting a compatible AI assistant through the database.
+
 The homepage leads with “Unlock your health data” and explains the promise as
-“Sync, export, and control your Apple Health data.” Its feature sequence is
-the web app, sync, export, data types/custom summaries, AI, then control.
-The web app has a prominent demo action and an accessible screenshot switcher
-for the Today dashboard and workout history. Keep this vocabulary
-consistent with the App Store copy in `docs/appstore/2.1-copy.md`, the About page,
+“Sync, export, and control your Apple Health data.” An animated diagram separates
+background sync to your database (and its dashboard/API/AI tools) from direct CSV
+and JSON exports. Motion pauses offscreen and respects reduced motion. Mobile uses a separate
+vertical flow layout without overlapping artwork. The hero centers a real app screenshot between a CSV preview and a database illustration, with animated data streams.
+The web section uses an interactive, simplified dashboard and an API example,
+with a short iPhone-to-database-to-browser animation, followed by
+“Control your own health data” and the copyable AI setup prompt. Detailed export,
+exploration, aggregation, and sync information lives at `/features/`.
+Keep the headline vocabulary consistent with the App Store copy, About page,
 footer, and search metadata. Local exploration and exports need no account;
-database sync needs a compatible destination; AI tools connect through the
-database. Hosted account calls to action say “Request” because access requires
-approval. The pale blue, mint, and lilac product illustrations echo the approved
-Style A campaign while preserving the site's dark shell. Regenerate the tracked
-social sharing card with `cd site && bun scripts/gen-social-card.tsx` when that
-message changes.
+database sync needs a compatible destination; AI tools connect through the database.
+Hosted account calls to action say “Request” because access requires approval.
 
 Subscription details stay out of the primary navigation; the footer links to
 Pro and `/pricing/`. These two compact
@@ -35,10 +41,9 @@ limits. Prices follow `docs/appstore/subscriptions.md`; the app displays Apple�
 localized price. Hosting is separate, and the database remains open source and
 free to run yourself. Keep the shared home/support FAQ aligned with these plans.
 
-The main site is always dark and has no theme selector. Blog articles retain
-a light/dark toggle, default to dark, and save their choice separately in
-`pulshealth-blog-theme`; neither follows the system theme. The app's theme
-controls are independent.
+The entire site, including blog articles, is always dark with no theme selector.
+It shares the homepage's navy surfaces, blue accents and Geist typography with
+the web viewer. Earlier saved light-mode preferences do not change the theme.
 
 It reads content from the **repository around it**, by relative path, so
 `site/` and the things it reads must stay where they are:
@@ -47,8 +52,8 @@ It reads content from the **repository around it**, by relative path, so
 |---|---|---|
 | [`../knowledge-base/`](../knowledge-base/README.md) | `src/lib/api.ts` | `path.join(process.cwd(), "..", "knowledge-base")` — 178 YAML type files become `/knowledge-base/types/<slug>/` |
 | [`../blog/`](../blog/BLOG_SYSTEM.md) | `src/lib/blog.ts`, `package.json` | published `../blog/articles/*.{md,mdx}` become `/blog/<slug>/`; image sync recreates `public/blog/` from published posts, and preview watches drafts and images |
-| [`../llms.txt`](../llms.txt) | `scripts/gen-llms-txt.ts`, `package.json` | `gen-llms-txt` renders it to `public/llms.txt` before every dev run and build, so the site serves it at `/llms.txt`. Its repo-relative Markdown links are rewritten the way links inside a rendered document are: to `https://pulshealth.com/docs/<slug>/` for a file in the docs manifest below, otherwise to the file on GitHub; absolute URLs pass through. The output is gitignored; the repository file is the only source |
-| Thirteen Markdown documents: `docs/recording-behavior.md`, `server/README.md`, `docs/protocol/README.md`, `docs/database-guide.md`, `docs/api.md`, `docs/export.md`, `docs/ai.md`, `server/mcp/README.md`, `web/README.md`, `PulsHealthSync/README.md`, `SECURITY.md`, `CHANGELOG.md`, `docs/roadmap.md` (and `docs/privacy-policy.md` for `/privacy`) | `src/lib/docs.ts` (the registry), `src/lib/markdown.tsx` (the renderer) | Each becomes `/docs/<slug>/`, rendered at build time from the file itself. Relative links inside a document resolve to the other rendered documents where there is one, otherwise to the file on GitHub |
+| [`../llms.txt`](../llms.txt) | `scripts/gen-llms-txt.ts`, `package.json` | `gen-llms-txt` renders it to `public/llms.txt` before every dev run and build, so the site serves it at `/llms.txt`. Its repo-relative Markdown links are rewritten the way links inside a rendered document are: to `https://pulshealth.com/docs/<slug>/` for a file in the docs manifest below, otherwise to the file on GitHub; absolute URLs pass through. The same generator publishes each Markdown doc at `/docs/<slug>.md` and combines them in `/llms-full.txt`, from the docs manifest. Outputs are gitignored; edit the repository sources. The export checker verifies every copy against its source |
+| The Markdown documents registered in `src/lib/docs.ts`, starting with [`../docs/setup.md`](../docs/setup.md); `docs/privacy-policy.md` is rendered separately at `/privacy` | `src/lib/docs.ts` (the registry), `src/lib/markdown.tsx` (the renderer) | Each registered document becomes `/docs/<slug>/`, rendered at build time from its source. Relative links resolve to other rendered documents where available, otherwise to GitHub |
 | [`../server/api/openapi.json`](../server/api/openapi.json) | `src/lib/openapi.ts`, `src/components/api-reference.tsx`, `scripts/gen-openapi.ts` | The product API's OpenAPI document, the same file the Go service embeds. Its manifest entry carries `format: "openapi"`, so `/docs/api-reference/` renders it as an endpoint reference rather than as Markdown. `gen-openapi` also copies it to `public/openapi.json` (gitignored) before every dev run and build, with the server URL set to the API's default local address, for the reference's download link |
 
 `site/` must stay beside its content sources. Missing or malformed blog
@@ -56,8 +61,8 @@ content fails with its filename. The shared `scripts/check-export.ts` runs
 after every build, in CI, and before deployment (even with `--skip-build`).
 It checks exact published blog/knowledge-base/docs pages, draft exclusion,
 RSS/search/sitemap entries, article links/images and required generated assets.
-A full build currently exports **226** static pages, 178 of them under
-`knowledge-base/types/` and 13 under `docs/`; published posts add pages.
+Expected page counts come from the knowledge-base sources, published posts and
+`DOCS` registry, so adding a guide updates the checks without a hand-maintained total.
 
 The export gate also checks every public sitemap entry for a matching canonical,
 unique title, indexable HTML, an incoming internal link and working local links.
@@ -66,11 +71,15 @@ page and stays outside the sitemap. Search Console can retain old exclusions
 until Google recrawls; passing these checks makes pages eligible, but does not
 guarantee Google will index them.
 
-Two of those pages are not PulsHealth: `/fun100/` and `/fun100/privacy/` are
-the App Store support and privacy-policy URLs for Fun100, a separate app by
-the same developer. They are unlisted (not in the navigation, search or
-sitemap); the policy is `content/fun100/privacy-policy.md`, rendered the same
-way as `/privacy`.
+Friend Flex is a separate app by the same developer. Its product page at
+`/friend-flex/` uses genuine demo screenshots to explain challenges, improvement
+scoring, iMessage and optional Apple Health. Help lives at `/friend-flex/support/`
+and its privacy policy is `/friend-flex/privacy/`, rendered from
+`content/friend-flex/privacy-policy.md`. The footer, search and sitemap use
+these canonical URLs. Legacy `/fun100/` URLs redirect to the new pages.
+
+The footer groups links under PulsHealth, Resources, Developers and More apps,
+with legal links in a separate bottom row. Pricing links to the Free/Pro comparison.
 
 Watch Workout Pro is a separate native iPhone app with its own public landing
 page at `/watch-workout-pro/`, support at `/watch-workout-pro/support/`, and
@@ -82,6 +91,20 @@ Product policy content lives in `content/watchworkoutpro/`. Marketing screenshot
 are resized from the app's approved dark source captures. App Store availability
 must be verified before replacing the launch notice with a download action.
 
+## Sharing preview
+
+The default sharing card uses the website's navy card color (`#111b28`), the
+PulsHealth logo/name, and “Export and sync your health data” on one line.
+Homepage Open Graph and X titles use the same wording. The card has no domain
+or trailing period. Blog featured images and other products keep their own previews.
+
+Regenerate `public/og-pulshealth-navy.png` and its legacy image copies with
+`bun scripts/gen-social-card.tsx` from `site/`. The generator uses macOS-supplied
+Arial; on other systems, set `SOCIAL_CARD_FONT_DIR` to a licensed installation
+containing `Arial.ttf` and `Arial Bold.ttf`. Fonts are not redistributed.
+The new image URL allows sharing services to fetch the selected artwork;
+existing Messages or social cards can remain cached by their apps.
+
 ## Develop
 
 ```bash
@@ -92,11 +115,18 @@ bun run dev        # localhost:3000
 
 ## Build and lint
 
+Styles remain separately cacheable assets, and both text fonts are preloaded.
+Global CSS inlining was measured against the production export: it increased
+compressed homepage HTML from about 18 KB to 91 KB for only a small mobile
+LCP change (3.2 s to 3.0 s). The experiment, which also deferred the monospace
+font, showed layout shifts. Reconsider these choices only with measurements across both landing
+pages and documentation, including transfer size and layout stability.
+
 Build verification requires `python3` (3.9 or later) and Git as well as Bun.
 Build from a Git checkout so the export can be tied to its source inputs.
 
 ```bash
-bun run build      # static export to site/out/ (226 pages)
+bun run build      # static export to site/out/; checks counts against source
 bun run lint       # ESLint, no warnings or errors
 bun run test       # blog regression tests
 bun run blog:check # lint, tests, build and export checks
@@ -129,16 +159,18 @@ Related metrics on a type page link only to types with a knowledge-base
 page; other related concepts remain visible as text cards.
 
 `.env.production` carries public build-time values for the form endpoint and
-optional self-hosted Umami collector URL/site ID. They are tracked because
+optional self-hosted aggregate collector URL/site ID. They are tracked because
 the static export publishes them; never put analytics API keys here.
 `.env.example` documents local configuration. Unset both analytics values
 to disable collection. The tracker runs only on the production marketing
 hostname, respects Do Not Track/Global Privacy Control, excludes URL query
 strings/fragments, referrer paths, titles, form values and identity data,
-and collects pageviews, fixed conversion-action names and browser Web Vitals.
+and sends only fixed page groups, source categories, action names, App Store button placements and Web Vitals rating buckets. No visitor/session IDs or raw URLs/timing values are sent or stored. Counters are UTC daily sums in Observatory, not Umami event records.
 `form-dialog` distinguishes attempts, success and errors without sending
 the contents. App Store clicks indicate intent, not installations. No
 analytics cookies, replay, heatmaps or health-viewer tracking are enabled.
+Optional audience requests abort after five seconds and are never retried:
+an unknown delivery outcome must not create a duplicate counter increment.
 Keep this aligned with the website section of `docs/privacy-policy.md` and
 the `/privacy` summary. The native app's analytics-free claims still apply.
 
@@ -177,25 +209,117 @@ coverage, weighting and the limits of example user data. Raw exports, executed
 notebooks and private HTML reports stay outside the site and public repository;
 see `../notebooks/healthkit-research/README.md` for the reproducible workflow.
 
-## Acquisition campaign pages
+## Ad destinations and legacy campaign redirects
+
+All new ads should link directly to **https://pulshealth.com/**. Visitors see
+the normal homepage and its normal App Store links. There are no separate ad
+landing pages or campaign-specific changes to the homepage.
 
 `content/campaigns.json` is a public snapshot exported from the private
-Observatory campaign registry. It contains only public copy, landing paths,
-app ID and Apple's public provider/campaign tokens. Do not add spend, private
-experiment notes, API keys or personal data. Refresh it with Observatory's
-`scripts/export-campaigns.mjs`, passing this file as the destination.
+Observatory campaign registry. Keep its historical IDs and paths so existing
+links continue to resolve; its old copy is not rendered. Refresh the snapshot
+with Observatory's `scripts/export-campaigns.mjs`, never private experiment
+data, spend or keys.
 
-`/go/[campaign]/` statically exports registered variants. These pages are
-noindex and omitted from the sitemap. App Store buttons use the same campaign
-token as the landing path; header/footer badges are updated while that page
-is mounted. No campaign is persisted across navigation, in storage or in the
-iPhone app. The existing production tracker measures fixed action counts by
-page path, respecting DNT/GPC. Tracking query parameters remain discarded.
-An ad click, website visit, App Store click, Apple download and Apple purchase
-are separate events. Observatory owns spend imports, detailed Apple campaign
-reports, scenarios, strategy and private reporting; no app release is needed.
+`/go/[campaign]/` retains registered old links as immediate homepage redirects,
+with a homepage canonical and noindex. No campaign is persisted or carried
+to the App Store.
 
-The export checker validates campaign routes, Apple link tokens, noindex and
-local assets. New variants require a reviewed deployment before using their
-landing URL. Retire links only after campaigns stop; do not change an existing
-token's copy mid-test.
+Homepage statistics count page groups, broad source categories and fixed actions,
+respecting DNT/GPC. Query parameters remain discarded. Overall homepage traffic
+cannot be assigned to individual ads or creative variants. Ad-platform clicks,
+website visits, App Store clicks, Apple downloads and Apple purchases remain
+separate measures; historical campaign reports must not be presented as
+attribution for these untagged homepage visits. Observatory owns spend imports,
+historical Apple campaign reports, scenarios and private reporting; no app
+release is needed.
+
+The export checker validates every legacy redirect, homepage canonical,
+noindex, and removal of campaign content and Apple campaign tags. Future
+registry exports must preserve existing redirect IDs rather than reintroduce
+landing pages.
+
+### Search discovery and cache policy
+
+Search crawlers and user-directed AI retrieval can read all public pages. Separate
+training/reuse agents retain their knowledge-base restriction in `robots.ts`.
+`llms.txt` is a convenience index, not a substitute for crawlable HTML, internal
+links, or search-engine indexing. Product pages share the `#app` entity; do not
+add invented ratings to qualify for a software-app rich result.
+
+The sitemap uses authored revision dates for blog/knowledge pages and Git content
+history for static/documentation pages. Dirty or shallow sources omit Git-derived
+dates. Production builds therefore need complete history and a clean commit;
+the artifact fingerprint includes Git state as well as content.
+
+Deployment uploads hashed assets first, mutable media second, and documents last.
+It refreshes Cache-Control even for unchanged bytes: one year immutable for
+`_next/static`, one day for replaceable images/fonts, and revalidation for HTML
+and discovery documents. Old hashed assets remain available for open tabs; any
+separate bucket cleanup must retain assets referenced by still-served releases.
+Live release verification checks both bytes and cache headers.
+
+### Edge redirects
+
+The build generates `out/_edge/router.js` from the actual exported routes and
+legacy meta-refresh pages. It combines host, legacy-path and trailing-slash
+redirects into one HTTP 301, preserves query parameters, and leaves unknown
+paths alone. The HTML stubs remain useful when previewing without CloudFront.
+The generated function must stay below CloudFront's 10 KB limit; the build fails
+if it grows too large.
+
+Publishing an export to S3 does **not** publish a CloudFront Function. When
+releasing a route change, also publish this exact generated artifact to the
+existing viewer-request function associated with the site's default behavior:
+
+1. Read the live distribution/function configuration. Preserve other behaviors
+   (including `/r/*`), runtime and associations. Back up LIVE and DEVELOPMENT
+   code/configuration outside the repository. Stop if DEVELOPMENT contains an
+   unrelated unpublished change.
+2. Update DEVELOPMENT with `aws cloudfront update-function --name <function>
+   --if-match <current-etag> --function-config file://<saved-config>
+   --function-code fileb://<export>/_edge/router.js`.
+3. Use `aws cloudfront test-function` against DEVELOPMENT before publishing.
+   Check a legacy path, a slashless document, www plus a legacy path, repeated
+   query parameters, and a nonexistent path. `site/tests/edge-router.test.ts`
+   provides the expected behavior. A function error is a release failure.
+4. Publish using `aws cloudfront publish-function --name <function> --if-match
+   <updated-etag>`. Read LIVE back and compare its bytes with the tested artifact.
+5. Verify actual HTTP responses after propagation: `/app/` → `/`, `/sync/` →
+   `/server/`, `/docs/database` → `/docs/database/`, no extra hop from www, and a
+   unique nonexistent URL still returns 404. Save the source SHA, function ETag,
+   test results and HTTP evidence with the private deployment receipt.
+
+Review Search Console and Bing after a release. A successful live URL test,
+sitemap fetch or indexing request is not proof of indexing or AI recommendation.
+
+## IndexNow publication notifications
+
+After CDN completion and live-byte verification, `scripts/deploy-site.sh`
+notifies [IndexNow](https://www.indexnow.org/documentation) of added, changed
+and removed canonical sitemap URLs. The public `indexnow-key.txt` file proves
+domain control; it is deliberately public, not a private API credential.
+Only public URLs are sent from the deployment machine. Visitors make no
+additional requests and no visitor data is collected.
+
+Change detection hashes main-page text, links, image references, search metadata
+and JSON-LD. It ignores CSS, JavaScript build identifiers, animation SVGs and
+repeated header/footer chrome, so rebuilding identical content does not notify
+all pages again. Removing a URL from the sitemap also sends that old URL.
+
+The publishing clone stores fingerprints under Git's private
+`pulshealth/indexnow/state.json`, shared across its worktrees. Preserve this file
+when moving the publishing clone. The first deployment without state only
+initializes a baseline. Use `--indexnow-bootstrap` once for a new launch or
+recent site-wide content update to explicitly submit the current public URLs;
+never use it to backfill old unchanged content. A per-clone publication lock
+prevents overlapping uploads and notification-state writes. Publish from one
+clone; this is not a cross-machine deployment lock.
+
+Dry runs, failed verification and `--no-invalidation` never notify IndexNow.
+Each deployment receipt records notification status separately from site
+verification. HTTP 200 means accepted; 202 means received pending verification;
+neither proves indexing or an AI recommendation. Failed submissions preserve
+previous fingerprints and retry after the next verified deployment (including
+an unchanged republish); no tight automatic retry loop is used. Each accepted batch is checkpointed; a later deployment retries unacknowledged
+changes. A failed state write may repeat a previously accepted batch.

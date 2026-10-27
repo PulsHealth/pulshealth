@@ -18,7 +18,7 @@ private actor OverlappingEntitlements {
 
 @MainActor
 final class SubscriptionStoreTests: XCTestCase {
-    private func session() throws -> SKTestSession {
+    private func session() async throws -> SKTestSession {
         let os = ProcessInfo.processInfo.operatingSystemVersion
         if os.majorVersion == 26 && os.minorVersion == 5 {
             // FB22237318: this runtime cannot save StoreKitTest configuration,
@@ -32,12 +32,23 @@ final class SubscriptionStoreTests: XCTestCase {
         session.resetToDefaultState()
         session.disableDialogs = true
         session.clearTransactions()
+        // SKTestSession mutates its fixture synchronously, but StoreKit 2 can
+        // still expose the previous test's verified transactions. Synchronize
+        // that boundary before constructing a store or asserting app behavior.
+        try await Self.synchronizeFixture("cleared transactions") {
+            for await result in Transaction.currentEntitlements {
+                if case .verified(let transaction) = result,
+                   SubscriptionStore.productIDs.contains(transaction.productID) { return false }
+            }
+            return true
+        }
         return session
     }
 
     private func makeStore(session: SKTestSession, gift: EarlyUserProGift? = nil) -> SubscriptionStore {
         SubscriptionStore(earlyUserGift: gift, purchaseAction: { product in
-            _ = try await session.buyProduct(identifier: product.id)
+            let purchased = try await session.buyProduct(identifier: product.id)
+            try await Self.waitForPurchase(purchased)
             guard let verified = await Transaction.latest(for: product.id) else {
                 throw NSError(domain: "StoreKitFixture", code: 1)
             }
@@ -46,6 +57,57 @@ final class SubscriptionStoreTests: XCTestCase {
             }
             return .success(verified)
         })
+    }
+
+
+    private enum FixtureError: Error {
+        case propagationTimedOut(String)
+    }
+
+    /// Wait for Apple's verified APIs, never infer an entitlement from the
+    /// fixture's allTransactions() list or manufacture a verified result.
+    private static func synchronizeFixture(_ operation: String,
+        ready: () async -> Bool) async throws {
+        try await AppStore.sync()
+        for _ in 0..<40 {
+            if await ready() { return }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw FixtureError.propagationTimedOut(operation)
+    }
+
+    private static func waitForPurchase(_ purchased: Transaction) async throws {
+        try await synchronizeFixture("purchase \(purchased.productID) transaction \(purchased.id)") {
+            guard case .verified(let latest)? = await Transaction.latest(for: purchased.productID),
+                  latest.id == purchased.id, latest.revocationDate == nil else { return false }
+            for await result in Transaction.currentEntitlements {
+                if case .verified(let current) = result,
+                   current.id == purchased.id, current.revocationDate == nil { return true }
+            }
+            return false
+        }
+    }
+
+    private static func waitForRemoval(productID: String, transactionID: UInt64?, refunded: Bool) async throws {
+        try await synchronizeFixture("\(refunded ? "refund" : "expiry") \(productID)") {
+            guard case .verified(let latest)? = await Transaction.latest(for: productID),
+                  transactionID == nil || latest.id == transactionID else { return false }
+            if refunded {
+                guard latest.revocationDate != nil else { return false }
+            } else {
+                guard let expiry = latest.expirationDate, expiry <= Date() else { return false }
+            }
+            for await result in Transaction.currentEntitlements {
+                if case .verified(let current) = result, current.productID == productID { return false }
+            }
+            return true
+        }
+    }
+
+    private func buy(_ productID: String, session: SKTestSession) async throws -> Transaction {
+        let purchased = try await session.buyProduct(identifier: productID)
+        try await Self.waitForPurchase(purchased)
+        return purchased
     }
 
     private func assertAccess(_ expected: Bool, store: SubscriptionStore, file: StaticString = #filePath, line: UInt = #line) async {
@@ -117,7 +179,7 @@ final class SubscriptionStoreTests: XCTestCase {
     }
 
     func testPricesPurchaseCancelRenewalRestoreAndExpiry() async throws {
-        let session = try session()
+        let session = try await session()
         defer { session.clearTransactions() }
         let store = makeStore(session: session)
         await store.start()
@@ -148,13 +210,14 @@ final class SubscriptionStoreTests: XCTestCase {
         await restored.restore()
         await assertAccess(true, store: restored)
         try session.expireSubscription(productIdentifier: SubscriptionStore.monthlyID)
+        try await Self.waitForRemoval(productID: SubscriptionStore.monthlyID, transactionID: nil, refunded: false)
         await store.restore()
         await assertAccess(false, store: store)
         XCTAssertNil(store.plan)
     }
 
     func testGiftAllowsProductLoadingAndPurchaseWithoutChangingItsDeadline() async throws {
-        let session = try session()
+        let session = try await session()
         defer { session.clearTransactions() }
         let gift = EarlyUserProGift(storage: InMemoryTokenStore(), eligibilityReader: { true })
         let store = makeStore(session: session, gift: gift)
@@ -179,6 +242,7 @@ final class SubscriptionStoreTests: XCTestCase {
         let transaction = try XCTUnwrap(session.allTransactions().first)
         try session.disableAutoRenewForTransaction(identifier: transaction.identifier)
         try session.expireSubscription(productIdentifier: SubscriptionStore.annualID)
+        try await Self.waitForRemoval(productID: SubscriptionStore.annualID, transactionID: nil, refunded: false)
         // StoreKit's status stream can lag the fixture's expiry operation.
         for _ in 0..<40 {
             await store.refreshEntitlements()
@@ -190,7 +254,7 @@ final class SubscriptionStoreTests: XCTestCase {
     }
 
     func testLifetimePurchaseRestoreCoexistsWithSubscriptionExpiryAndRefund() async throws {
-        let session = try session()
+        let session = try await session()
         defer { session.clearTransactions() }
         let store = makeStore(session: session)
         await store.start()
@@ -200,7 +264,7 @@ final class SubscriptionStoreTests: XCTestCase {
         XCTAssertEqual(lifetime.type, .nonConsumable)
         XCTAssertEqual(lifetime.price, Decimal(string: "20.00"))
         // An expired subscription must not mask a permanent purchase.
-        _ = try await session.buyProduct(identifier: SubscriptionStore.monthlyID)
+        _ = try await buy(SubscriptionStore.monthlyID, session: session)
         await store.purchase(lifetime)
         await assertAccess(true, store: store)
         try await assertPlan(SubscriptionStore.lifetimeID, store: store)
@@ -208,6 +272,7 @@ final class SubscriptionStoreTests: XCTestCase {
         XCTAssertEqual(store.plan?.status, "Lifetime Pro")
         XCTAssertNil(store.plan?.date)
         try session.expireSubscription(productIdentifier: SubscriptionStore.monthlyID)
+        try await Self.waitForRemoval(productID: SubscriptionStore.monthlyID, transactionID: nil, refunded: false)
         await assertAccess(true, store: store)
         try await assertPlan(SubscriptionStore.lifetimeID, store: store)
         XCTAssertEqual(store.plan?.isLifetime, true)
@@ -220,26 +285,28 @@ final class SubscriptionStoreTests: XCTestCase {
             $0.productIdentifier == SubscriptionStore.lifetimeID
         })
         try session.refundTransaction(identifier: purchase.identifier)
+        try await Self.waitForRemoval(productID: purchase.productIdentifier, transactionID: UInt64(purchase.identifier), refunded: true)
         await assertAccess(false, store: store)
         XCTAssertNil(store.plan)
     }
 
     func testLifetimeRefundFallsBackToActiveSubscription() async throws {
-        let session = try session()
+        let session = try await session()
         defer { session.clearTransactions() }
         let store = makeStore(session: session)
-        _ = try await session.buyProduct(identifier: SubscriptionStore.annualID)
-        let lifetime = try await session.buyProduct(identifier: SubscriptionStore.lifetimeID)
+        _ = try await buy(SubscriptionStore.annualID, session: session)
+        let lifetime = try await buy(SubscriptionStore.lifetimeID, session: session)
         await assertAccess(true, store: store)
         try await assertPlan(SubscriptionStore.lifetimeID, store: store)
         XCTAssertEqual(store.plan?.isLifetime, true)
         try session.refundTransaction(identifier: UInt(lifetime.id))
+        try await Self.waitForRemoval(productID: lifetime.productID, transactionID: lifetime.id, refunded: true)
         await assertAccess(true, store: store)
         try await assertPlan(SubscriptionStore.annualID, store: store)
     }
 
     func testPendingLifetimeDoesNotGrantAccess() async throws {
-        let session = try session()
+        let session = try await session()
         defer { session.clearTransactions() }
         let store = SubscriptionStore(purchaseAction: { _ in .pending }, restoreAction: {})
         await store.loadProducts()
@@ -247,14 +314,14 @@ final class SubscriptionStoreTests: XCTestCase {
         await store.purchase(lifetime)
         await assertAccess(false, store: store)
         XCTAssertTrue(store.message?.contains("pending") == true)
-        _ = try await session.buyProduct(identifier: SubscriptionStore.lifetimeID)
+        _ = try await buy(SubscriptionStore.lifetimeID, session: session)
         await assertAccess(true, store: store)
         try await assertPlan(SubscriptionStore.lifetimeID, store: store)
         XCTAssertEqual(store.plan?.isLifetime, true)
     }
 
     func testPendingWaitsForVerifiedPurchaseAndRefundRemovesAccess() async throws {
-        let session = try session()
+        let session = try await session()
         defer { session.clearTransactions() }
         let store = SubscriptionStore(purchaseAction: { _ in .pending }, restoreAction: {})
         await store.start()
@@ -266,15 +333,16 @@ final class SubscriptionStoreTests: XCTestCase {
         XCTAssertTrue(store.message?.contains("pending") == true)
         // Simulate the later externally completed purchase. The pending
         // app result itself never grants access; verified StoreKit does.
-        let confirmed = try await session.buyProduct(identifier: product.id)
+        let confirmed = try await buy(product.id, session: session)
         await assertAccess(true, store: store)
         XCTAssertNil(store.message, "Approval must clear the pending-purchase message")
         try session.refundTransaction(identifier: UInt(confirmed.id))
+        try await Self.waitForRemoval(productID: confirmed.productID, transactionID: confirmed.id, refunded: true)
         await assertAccess(false, store: store)
     }
 
     func testCanceledPurchaseLeavesFreeAccess() async throws {
-        let session = try session()
+        let session = try await session()
         defer { session.clearTransactions() }
         let store = SubscriptionStore(purchaseAction: { _ in .userCancelled }, restoreAction: {})
         await store.loadProducts()
@@ -285,12 +353,12 @@ final class SubscriptionStoreTests: XCTestCase {
     }
 
     func testBillingGraceKeepsProAccess() async throws {
-        let session = try session()
+        let session = try await session()
         defer { session.clearTransactions() }
         session.shouldEnterBillingRetryOnRenewal = true
         session.billingGracePeriodIsEnabled = true
         let store = makeStore(session: session)
-        _ = try await session.buyProduct(identifier: SubscriptionStore.monthlyID)
+        _ = try await buy(SubscriptionStore.monthlyID, session: session)
         try session.forceRenewalOfSubscription(productIdentifier: SubscriptionStore.monthlyID)
         await store.loadProducts()
         let product = try XCTUnwrap(store.products.first { $0.id == SubscriptionStore.monthlyID })

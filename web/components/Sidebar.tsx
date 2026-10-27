@@ -7,7 +7,6 @@ import { GROUPS, GROUP_LABELS } from "@/lib/catalog";
 import { GROUP_COLOR } from "@/lib/colors";
 import type { DataSourceInfo, User } from "@/lib/types";
 import { GridIcon, GroupIcon, HomeIcon, SettingsIcon, SignOutIcon, UserIcon, WorkoutIcon } from "./Icons";
-import { ThemeToggle } from "./ThemeToggle";
 import { UserSwitcher } from "./UserSwitcher";
 
 export function Sidebar({
@@ -24,7 +23,7 @@ export function Sidebar({
   currentUserId: string;
   /** The signed-in account, in accounts mode; null otherwise. `demo`: the shared, view-only demo account. */
   account?: { email: string; isAdmin: boolean; demo?: boolean } | null;
-  /** Whether /signup takes requests (lib/mode.ts signupsOpen), for the demo banner's account request. */
+  /** Whether /signup takes requests (lib/mode.ts signupsOpen), for the demo banner's Create account link. */
   signupsOpen?: boolean;
   menuOpen: boolean;
   sidebarRef: RefObject<HTMLElement | null>;
@@ -115,7 +114,6 @@ export function Sidebar({
             <SettingsIcon className="nav-icon" />
             <span>Settings</span>
           </Link>
-          <ThemeToggle />
           {account && (
             // A form post, not a link: signing out changes state, and works without JavaScript.
             <form method="post" action="/api/auth/logout">

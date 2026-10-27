@@ -1,7 +1,7 @@
 ---
 title: "How to Back Up Apple Health Data Before Switching iPhones"
-date: "2026-08-22"
-updated: "2026-10-08"
+date: "2026-06-07"
+updated: "2026-10-25"
 excerpt: "Protect your Health history with iCloud settings, an encrypted computer backup, and an independent export—and verify the new phone before erasing the old one."
 tags: ["apple-health", "backup", "privacy", "guides"]
 author: "Sean Wade"
@@ -12,7 +12,7 @@ Before switching iPhones, check that Health is enabled in iCloud, or make an **e
 
 An independent Health export adds a useful second kind of protection: a copy you can inspect and analyze outside your phone. But an XML or CSV file is not an Apple device backup, and you should not count on it as a native restore method.
 
-*Revised October 8, 2026: this guide follows current Apple backup and transfer documentation and distinguishes restoration from independent exports.*
+*Updated October 25, 2026: added a concrete transfer checklist and clarified the limits of selected exports.*
 
 <BlogFlow
   title="Two goals, two kinds of protection"
@@ -32,33 +32,33 @@ An independent Health export adds a useful second kind of protection: a copy you
 
 ## Decide what you want to preserve
 
-There are two different goals. One is getting your existing Health history onto a replacement iPhone. The other is keeping a separate copy of measurements for future analysis, even if your software choices change.
-
 | Method | Main purpose | Limitation to remember |
 |---|---|---|
 | Health in iCloud | Keep Health information available across supported devices on your Apple Account | It is a synchronized collection, not a dated export you inspect independently |
 | Encrypted computer backup | Support Apple's device restoration workflow, including Health data | You need a completed backup and its encryption password |
 | Health XML export | Keep an independent copy of available Health data | It is not a one-click restore into the Health app |
-| Selected CSV or JSONL export | Keep usable records for a spreadsheet or analysis | Only the chosen, readable types and dates are included |
+| Selected CSV, JSON, or JSONL export | Keep usable records for a spreadsheet or analysis | Only the chosen, readable types and dates are included |
 | Synced external database | Maintain another usable collection over time | Its coverage and backup arrangements need their own verification |
 
 Apple distinguishes iCloud synchronization from iCloud Backup: information already synchronized to iCloud is handled separately from the device data included in a backup. A recent device-backup timestamp is therefore not, by itself, your whole Health checklist. [What iCloud backs up](https://support.apple.com/en-us/108770)
 
 ## 1. Make a small inventory before the move
 
-Pick several records you would notice losing. Write down dates rather than relying on a general impression of the charts:
+Pick several records you would notice losing and make a small comparison sheet:
 
-- One recent workout and one workout from an earlier year.
-- A week of sleep you recognize.
-- A historical weight or other measurement you care about.
-- A recent day of Activity rings, if you use them.
-- An older period near the beginning of your recorded history.
+| Check | On the old phone | On the new phone |
+|---|---|---|
+| A recent workout | Date, type, duration | Same record present? |
+| An older workout | Date and year | Same record present? |
+| A recognizable sleep week | Dates with records | Same dates present? |
+| An early measurement | Date, type, value | Same value present? |
+| One day of Activity rings | Date and totals | Same day present? |
+
+Choose examples that matter to you; leave out categories you don’t record.
 
 This is a spot check, not proof that every record survived. Its value is making the comparison concrete. An app can show today's steps while a year of older history is still absent.
 
 Also note which apps supplied the records. If an important measurement exists only inside a device maker's app, confirm that it is actually visible in Apple Health. A Health transfer cannot be assumed to preserve information that never reached Health in the first place.
-
-Keep this inventory private. A few dates and descriptions are enough; there is no need to send screenshots of your full medical history to anyone.
 
 ## 2. Check Health in iCloud
 
@@ -76,17 +76,15 @@ Check the completed backup's date and encryption indicator in the backup list. M
 
 Store the password somewhere you can reach even if the old phone is unavailable. A password recorded only in an inaccessible app on the phone you just erased is a poor recovery plan.
 
-For an especially important migration, leave time between making the backup and trading in the phone. That gives you room to discover a failed backup or a missing password while the original still exists.
-
 ## 4. Save an independent Health export
 
 In Health, tap your profile picture and choose **Export All Health Data**. Apple's export uses XML, a structured text format intended for other software to read. Save the resulting archive somewhere you control. [Apple's export instructions](https://support.apple.com/guide/iphone/share-your-health-data-iph5ede58c3d/ios)
 
 Give the saved file a date and leave the original archive intact. Work from a copy when converting it. Open the archive to confirm it can be read, then inspect whether it contains the kinds of records and historical dates you expected. A large file size alone says little about completeness.
 
-For spreadsheet work, PulsHealth can instead export selected types and dates as CSV or JSONL directly on the phone. It requires no database for that operation. Check the export's completion status and accompanying manifest, including any reported history limitations. Those details are described in the [export reference](/docs/export/).
+For spreadsheet work, PulsHealth exports selected types and dates as CSV, JSON, or JSONL directly on the phone, without a database. Free exports cover the most recent 30 days; Pro extends history subject to Health permissions. That makes a free recent export useful for analysis, but not a copy of years of history. Check the manifest’s requested range, `complete`, `warnings`, and `notRepresented`: CSV can omit details even when extraction finishes. See the [export reference](/docs/export/).
 
-An export is sensitive. It can include source names, timestamps, and information that reveals routines. Keep it in protected storage, and do not upload the entire archive to a converter simply because the website accepts a ZIP file.
+Keep the archive in protected storage. Besides measurements, it can contain source names and timestamps that reveal routines; an online converter receives whatever you upload to it.
 
 ### Can you import the export back into Apple Health?
 
@@ -100,7 +98,7 @@ Complete your chosen Apple setup process, then revisit the inventory from step o
 
 If you have an Apple Watch, follow Apple's pairing instructions for the new iPhone. The guide covers the Health settings to check, the old iPhone backup, and the Watch setup sequence. Follow its troubleshooting path if the Watch does not transfer as expected. [Pair an Apple Watch with a new iPhone](https://support.apple.com/en-us/104956)
 
-Give synchronization time, but do not turn waiting into an assumption of success. If old records remain missing, retain the original phone, record exactly what is absent, and check the account, Health sync setting, and backup method before attempting destructive resets.
+If history is still arriving, repeat the comparison later. If particular records remain missing, retain the original phone and check the account, Health sync setting, and backup method before attempting resets.
 
 Once the historical checks look right, confirm that new measurements appear too. Restored history and ongoing collection are separate things worth verifying.
 

@@ -29,16 +29,16 @@ export function PageHero({
   return (
     <section
       className={cn(
-        "w-full border-b bg-gradient-to-b from-background to-muted/40",
-        size === "default" ? "pt-20 pb-24 md:pb-28" : "pt-16 pb-14",
+        "w-full border-b bg-background",
+        size === "default" ? "py-14 md:py-20" : "py-10 md:py-14",
         className,
       )}
     >
-      <div className="container mx-auto flex max-w-7xl flex-col items-center space-y-6 px-4 text-center">
+      <div className="container mx-auto flex max-w-7xl flex-col items-center space-y-6 px-5 text-center">
         <h1
           className={cn(
-            "max-w-4xl font-bold tracking-tight text-foreground text-balance",
-            size === "default" ? "text-4xl md:text-6xl" : "text-4xl md:text-5xl",
+            "max-w-4xl font-[550] tracking-[-0.05em] leading-[1.08] text-foreground text-balance",
+            size === "default" ? "text-[clamp(36px,5vw,64px)]" : "text-[clamp(32px,4vw,48px)]",
           )}
         >
           {title}
@@ -51,7 +51,7 @@ export function PageHero({
         )}
 
         {children && (
-          <div className="flex flex-col items-center gap-4 pt-2 sm:flex-row">
+          <div className="flex w-full max-w-2xl flex-col items-center justify-center gap-4 pt-2 sm:flex-row">
             {children}
           </div>
         )}

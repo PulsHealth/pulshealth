@@ -1,3 +1,4 @@
+import { appJsonLd } from "@/lib/product-schema";
 import Link from "next/link";
 import { AppStoreBadge } from "@/components/app-store-badge";
 import { PageHero } from "@/components/page-hero";
@@ -11,6 +12,7 @@ export const metadata = {
 export default function ProPage() {
   return (
     <main className="flex-1">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
       <PageHero
         size="compact"
         title="More of your health history."
@@ -30,7 +32,7 @@ export default function ProPage() {
           <p className="mt-4"><Link href="/pricing" className="text-brand underline-offset-4 hover:underline">Compare Free and Pro</Link></p>
         </div>
         <div className="space-y-4">
-          <AppStoreBadge />
+          <AppStoreBadge placement="pro" />
           <p className="text-sm text-muted-foreground">Find Pro in the plan row in Settings. Available history depends on Apple Health permissions and what is stored on your phone.</p>
         </div>
       </section>

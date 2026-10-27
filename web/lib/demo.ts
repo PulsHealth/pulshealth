@@ -2,6 +2,7 @@
 // Everything is seeded by identifier + day index, so repeated renders are
 // stable (no hydration flicker) yet each type looks distinct and plausible.
 
+import { recordedDemo, recordedSeries } from "./recordedDemo";
 import { CATALOG, typeByIdentifier } from "./catalog";
 import { DEFAULT_USER_ID } from "./config";
 import { isCumulative, RANGES } from "./metrics";
@@ -118,6 +119,8 @@ function circadian(hour: number): number {
 }
 
 export function demoSeries(identifier: string, range: RangeKey): Series {
+  const recorded = recordedDemo();
+  if (recorded) return recordedSeries(recorded, identifier, range);
   const spec = RANGES[range];
   const b = baselineFor(identifier);
   const cum = isCumulative(identifier);
@@ -177,7 +180,9 @@ export function demoSeries(identifier: string, range: RangeKey): Series {
   return { identifier, unit: t?.unit ?? null, agg: cum ? "sum" : "avg", bucketMs: spec.bucketMs, points };
 }
 
-export function demoLatest(identifier: string): Latest {
+export function demoLatest(identifier: string): Latest | null {
+  const recorded = recordedDemo();
+  if (recorded) return recorded.latest[identifier] ?? null;
   const b = baselineFor(identifier);
   const t = typeByIdentifier(identifier);
   const now = Date.now();
@@ -195,6 +200,8 @@ export function demoLatest(identifier: string): Latest {
 }
 
 export function demoTodaySum(identifier: string): number {
+  const recorded = recordedDemo();
+  if (recorded) return recorded.daily[identifier]?.find(p => p.t === recorded.today)?.value ?? 0;
   const b = baselineFor(identifier);
   const now = Date.now();
   const dayStart = now - (now % DAY);
@@ -208,6 +215,8 @@ export function demoTodaySum(identifier: string): number {
 }
 
 export function demoActivityRings(): ActivityRingsData {
+  const recorded = recordedDemo();
+  if (recorded) return recorded.rings;
   const now = Date.now();
   const hour = new Date(now).getHours();
   const move = demoTodaySum("HKQuantityTypeIdentifierActiveEnergyBurned");
@@ -230,6 +239,8 @@ export function demoActivityRings(): ActivityRingsData {
 }
 
 export function demoStats(): TypeStat[] {
+  const recorded = recordedDemo();
+  if (recorded) return recorded.stats;
   const now = Date.now();
   return CATALOG.map((ty) => {
     const rnd = mulberry32(hash(ty.identifier));
@@ -248,6 +259,8 @@ export function demoStats(): TypeStat[] {
 const ACTIVITIES = ["Running", "Outdoor Walk", "Cycling", "Strength Training", "HIIT", "Yoga", "Pool Swim", "Hiking", "Rowing", "Elliptical"];
 
 export function demoWorkouts(limit = 40): Workout[] {
+  const recorded = recordedDemo();
+  if (recorded) return recorded.workouts.slice(0, limit).map(({ uuid, activityType, start, end, durationS, energyKcal, distanceM }) => ({ uuid, activityType, start, end, durationS, energyKcal, distanceM }));
   const now = Date.now();
   const out: Workout[] = [];
   let cursor = now - 6 * 3600_000;
@@ -393,6 +406,8 @@ function demoActivities(uuid: string, w: Workout, detail: Record<string, Workout
 // Intra-workout streams: an HR curve for everything, plus speed/power/cadence
 // where the activity warrants it. Deterministic in the uuid.
 export function demoWorkoutSeries(uuid: string): WorkoutSeries[] {
+  const recorded = recordedDemo();
+  if (recorded) return recorded.workoutSeries[uuid] ?? [];
   const w = demoWorkouts(600).find((x) => x.uuid === uuid);
   if (!w) return [];
   const rnd = mulberry32(hash(uuid) ^ 0x27d4eb2f);
@@ -437,6 +452,8 @@ export function demoProfile(): Profile {
 }
 
 export function demoWorkoutDetail(uuid: string): WorkoutDetail | null {
+  const recorded = recordedDemo();
+  if (recorded) return recorded.workouts.find(w => w.uuid === uuid) ?? null;
   const w = demoWorkouts(600).find((x) => x.uuid === uuid);
   if (!w) return null;
   const route = ROUTED.has(w.activityType) ? demoRoute(uuid, w) : [];

@@ -1,3 +1,6 @@
+"use client";
+
+import { useChartWidth } from "./useChartWidth";
 // SVG profile of the route plotted against cumulative distance. Values follow
 // the selected workout unit system. No interactivity; the map is the interactive
 // piece. Built on the same chart helpers as TrendChart.
@@ -15,7 +18,6 @@ import {
 } from "@/lib/units";
 
 const PAD = { top: 14, right: 14, bottom: 24, left: 44 };
-const W = 760;
 
 export function RouteProfile({
   points,
@@ -30,6 +32,7 @@ export function RouteProfile({
   system: UnitSystem;
   height?: number;
 }) {
+  const { ref, width: W } = useChartWidth(points.length);
   const xy = points
     .map((p) => {
       const y = metric === "altitude"
@@ -59,7 +62,7 @@ export function RouteProfile({
 
   const grid = ticks.map((t) => ({ y: sy(t.val), label: t.label }));
 
-  const xticks = 5;
+  const xticks = W < 480 ? 3 : 5;
   const xlabels = Array.from({ length: xticks + 1 }, (_, i) => {
     const distance = (xMax * i) / xticks;
     return { x: sx(distance), distance };
@@ -70,6 +73,7 @@ export function RouteProfile({
 
   return (
     <svg
+      ref={ref}
       width="100%"
       height={height}
       viewBox={`0 0 ${W} ${height}`}

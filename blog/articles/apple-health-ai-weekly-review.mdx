@@ -1,0 +1,90 @@
+---
+title: "I Asked AI to Summarize My Apple Health Week. Then I Checked Its Work."
+date: "2026-10-11"
+updated: "2026-10-25"
+author: "Sean Wade"
+draft: false
+tags: ["apple-health", "ai", "data-analysis", "personal-data"]
+excerpt: "A real Apple Health weekly summary, checked against the records: correct arithmetic, twelve workouts on six days, and a stale Move ring that needed a closer look."
+featured_image: "/blog/apple-health-ai-weekly-review/social.webp"
+---
+
+The AI got the arithmetic right. The most interesting part of checking its answer was a number that looked wrong for a different reason.
+
+For October 15, my daily active-energy record showed **777 kcal**. My stored Move ring showed **130 kcal**, against a 700-kcal goal. Same date, same account, very different picture of the day. An assistant that picked whichever number supported a tidy story could have told me I either met or missed my goal.
+
+Here is an actual test on my records, including the prompt, the response, and the checks. The result is useful, but it is a narrower result than “AI understands my health.”
+
+## One week, one response
+
+This experiment used **October 12–18, 2026**, the most recent completed Monday-to-Sunday week when the records were retrieved on October 25. Dates use **America/Los_Angeles**. Choosing the last complete week kept a half-finished Sunday out of the comparison.
+
+The data came from PulsHealth's read-only product API: daily metrics, workout summaries, sleep sessions, and activity summaries. A separate source check confirmed that the daily metrics used HealthKit aggregate buckets, rather than a sum of overlapping phone and Watch samples. The [database guide](/docs/database/) explains that distinction.
+
+For the experiment, a fresh Codex agent received a selected JSON extract and the prompt below. It could use code for calculations, but had no earlier conversation, no browsing, and no access to the independent audit results. It produced one response. The arithmetic and source checks were then performed separately with AI assistance. This was a single case study, not a comparison of models or a test of a native Apple Health connector.
+
+> Summarize my recorded activity and sleep for October 12–18, 2026 in America/Los_Angeles. Report total and mean daily steps, workout count and distinct workout days with durations by activity type, mean recorded time asleep, mean daily resting heart rate, and how many days I met my Move goal. Show coverage and calculations. Keep missing records distinct from zero, distinguish metrics from activity summaries, and do not infer causes or give medical advice.
+
+The input also explained the units and how the records were grouped. This matters: the test gave the assistant a prepared, bounded dataset. It did not ask it to discover every relevant record in an account by itself.
+
+## Twelve workouts were six workout days
+
+The response reported **12 workouts across six distinct days**, totaling **279.05 minutes**. Ten were cycling sessions, totaling 188.19 minutes. Two were runs, totaling 90.86 minutes.
+
+That is a good example of why the word *workouts* needs a definition. Two short rides on one day make two records. They do not make two days of exercise.
+
+<BlogImage src="/blog/apple-health-ai-weekly-review/activity-week.webp" alt="Recorded workouts for October 12–18: two cycling sessions each weekday, a run on Tuesday and Saturday, and no workout record on Sunday. Twelve workouts occur on six distinct dates." caption="My recorded workout summaries, grouped by start date in America/Los_Angeles. An empty date means no workout record in this extract, not proof of inactivity." width="1600" height="1000" />
+
+The assistant also handled an easy counting trap: cycling appeared on five dates and running on two, but Tuesday belonged to both. Five plus two activity-specific day counts still represented only six distinct workout days.
+
+## The arithmetic check
+
+A separate Python calculation reproduced these results from the supplied values:
+
+| Question | Checked answer | Available records |
+| --- | --- | --- |
+| Total steps | About **51,382** | Daily values on 7 of 7 dates |
+| Mean daily steps | About **7,340** | Total divided by 7 |
+| Recorded workouts | **12 on 6 dates** | 10 rides and 2 runs |
+| Workout duration | **279.05 minutes** | Sum of the 12 stored durations |
+| Mean recorded time asleep | **463.49 minutes**, about 7 h 43 min | 7 sessions on 7 wake dates |
+| Mean daily resting heart rate | **53.57 bpm** | Mean of 7 daily values |
+| Move goal | **3 stored summaries at or above goal** | Only 4 of 7 dates had summaries |
+
+The step values arrived with fractional precision on some days. The calculation retained that precision until the final display: 51,381.9297 divided by seven is 7,340.2757. Rounding each day first would be a slightly different calculation. Extra decimal places do not make a device estimate more accurate.
+
+The sleep calculation used time **asleep**, excluding awake and in-bed-only intervals, grouped by wake date. Those distinctions are part of the data model: [HealthKit defines separate sleep states](https://developer.apple.com/documentation/healthkit/hkcategoryvaluesleepanalysis). The resting-heart-rate result was the mean of seven daily summaries, not an average of every heart-rate measurement that week.
+
+The [selected records](/downloads/apple-health-weekly-review/selected-records.json), [unaltered AI response](/downloads/apple-health-weekly-review/ai-response.md), and [calculation script](/downloads/apple-health-weekly-review/check.py) are available to inspect. Save the JSON and script together and run `python3 check.py`. The download contains the fields needed to reproduce the table, with identifiers and unrelated input fields omitted.
+
+## The ring needed a freshness check
+
+The response correctly refused to invent a full-week result:
+
+> “3 confirmed goal days out of 4 recorded summaries; full-week count is unknown.”
+
+It also noticed that October 15's daily active energy disagreed with its activity summary. That was useful. It kept the two records separate instead of silently substituting one for the other.
+
+<BlogImage src="/blog/apple-health-ai-weekly-review/active-energy-vs-rings.webp" alt="Daily active-energy values and stored Move summaries for October 12–18. October 15 shows about 777 versus 130 kcal. Move summaries are unavailable for October 16–18." caption="My actual stored values, rounded for the chart. The October 15 ring was last updated at 11:52 a.m. that day; the final three dates had no stored ring summary. These are distinct reporting records, not independent estimates to add together." width="1600" height="1100" />
+
+The response described the four available ring values as three that met the goal and “one did not.” As a comparison of stored numbers, that was correct. As a conclusion about my finished Thursday, it needed another check.
+
+The database's update timestamp supplied the missing context: **October 15's ring had last been stored at 11:52 a.m. on October 15**. It was an intraday snapshot. The initial API extract given to the assistant did not include that update timestamp. Being below the goal before noon does not establish that I missed it by midnight.
+
+A recent account-wide sync timestamp did not solve this. Other records had arrived more recently, while these ring summaries had not. This is why “last synced today” is weaker evidence than “this particular record was refreshed after the day ended.”
+
+The defensible result was three recorded goal completions, one unfinished-day snapshot, and three absent summaries. I could not establish the full week's ring result from this extract. Nor could I explain every difference between the energy series merely from their timestamps.
+
+## What I would ask differently next time
+
+The original prompt was already specific about dates, units, missing records, and denominators. The extra instruction I would add is:
+
+> For daily goals, check when each day's summary was last refreshed. If freshness is unavailable, say so. Do not treat a below-goal intraday snapshot as a failed completed day. Keep record freshness separate from the account's latest sync time.
+
+This is more useful than asking the assistant to “be accurate.” It identifies a particular failure mode and the evidence needed to avoid it.
+
+I would also keep the scope small. This week can support a description of recorded activity and sleep. It cannot tell me whether I am getting fitter without a comparison period, or whether a run caused a change in sleep or heart rate. A convincing explanation would not create those missing comparisons.
+
+If you want to try the same workflow, the [Apple Health and AI guide](/blog/apple-health-chatgpt-claude/) covers connection and file options. A cloud assistant receives whatever records you supply; read-only access does not mean the analysis stays on your device. For a first test, a small selected export is enough.
+
+The part worth keeping from this experiment is the table and its evidence. The prose made it easier to read. The records made it possible to check.

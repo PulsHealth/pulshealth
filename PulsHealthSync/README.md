@@ -6,242 +6,42 @@ what HealthKit holds. The PulsHealth app is a thin UI over it. The wire format i
 the [Puls Sync Protocol](../docs/protocol/README.md); the invariants are in
 [`CLAUDE.md`](../CLAUDE.md).
 
+If you want to sync your own phone, use the [server setup guide](../docs/setup.md)
+and the App Store app. This reference is for developers working on or embedding
+the Swift package.
+
+- [How a sync runs](#how-a-sync-runs): execution order, retries and background work.
+- [Secrets and state](#secrets-and-state-at-rest): credentials and destination isolation.
+- [On-device export](#on-device-export) and [exploration](#exploring-what-healthkit-holds): APIs that do not advance sync progress.
+- [Testing](#testing): run the package checks.
+
 ## Source map
 
-```
-Sources/PulsHealthSync/
-├── Engine/
-│   ├── HealthSyncEngine.swift       Central actor: authorization (whole-catalog or
-│   │                                scoped via requestAuthorization(for:) /
-│   │                                authorizationNeeded(for:)), parallel backfill,
-│   │                                observer-driven incremental sync, reconciliation.
-│   │                                Owns per-type anchors and activity state.
-│   ├── AggregateSync.swift          On-device aggregate series: per-config watermark +
-│   │                                trailing-lookback recompute, calendar bucket math
-│   │                                (AggregateBucketing), chunked uploads, debug matrix
-│   │                                validation. The query itself is Explore/AggregateQuery.
-│   ├── ActivitySummarySync.swift    Daily activity rings (HKActivitySummaryQuery):
-│   │                                Move/Exercise/Stand + goals, singleton day
-│   │                                watermark + trailing lookback (today re-queried
-│   │                                every run), server upserts by date.
-│   ├── BackgroundSyncScheduler.swift BGProcessingTask catch-up (~4 h cadence) and the
-│   │                                iOS 26 BGContinuedProcessingTask backfill wrapper.
-│   ├── BackgroundExecution.swift    Background-task assertion around app-started and
-│   │                                observer work: iOS's grace period, then cancel
-│   │                                (never freeze) when it runs out.
-│   ├── MergedSync.swift             Incremental sync's merged path: one anchored page
-│   │                                per type, packed into shared batches without ever
-│   │                                splitting a page.
-│   ├── ProtectedData.swift          Whether HealthKit is readable (device unlocked);
-│   │                                background paths ask before querying.
-│   ├── RecentSampleWindow.swift     The last 30 days of a still-backfilling type, sent
-│   │                                ahead of its oldest-first sweep on an anchor of
-│   │                                its own.
-│   ├── SeriesEnricher.swift         Second-pass queries for series data: heartbeat
-│   │                                offsets, ECG voltages, workout GPS routes
-│   │                                (chunked 4,000 pts/line), iOS 18 effort scores.
-│   ├── WorkoutEnrichmentSync.swift  The sweep's last two phases, GPS routes then
-│   │                                intra-workout streams: batches capped by a point
-│   │                                budget, a singleton watermark advanced per fully
-│   │                                acked workout.
-│   ├── ReadableHistory.swift        iOS 27 limited history access, pure: the
-│   │                                widened/narrowed decision, the aggregate,
-│   │                                ring and reconciliation clamps, the one
-│   │                                compile-guarded HealthKit call, the
-│   │                                Don't Allow classification, the notice text.
-│   ├── ReadableHistorySync.swift    The engine side: earliestAuthorizedDates(),
-│   │                                each pass's limit, and refreshReadableHistory
-│   │                                (records the dates, re-sweeps widened types).
-│   └── Reconciliation.swift         Per-UTC-month UUID XOR digests vs GET /v1/digest;
-│                                    re-uploads missing samples, deletes server orphans
-│                                    — never before the earliest readable date, and
-│                                    never from a month HealthKit returned nothing for.
-├── Anchors/
-│   ├── SyncStateStore.swift         Actor persisting config + per-type state (anchor
-│   │                                blob, counters, timestamps, errors) as atomic JSON
-│   │                                in Application Support; 250 ms debounced writes.
-│   │                                Writes the bearer token only while the Keychain
-│   │                                refuses it; records the ServerIdentity its
-│   │                                progress belongs to and reports when a
-│   │                                configuration would move it.
-│   ├── TokenStore.swift             TokenStore protocol; KeychainTokenStore (generic
-│   │                                password, AfterFirstUnlockThisDeviceOnly, service
-│   │                                = bundle ID + ".sync-token") and InMemoryTokenStore.
-│   ├── ServerIdentity.swift         Normalized host+port+path+userID the stored anchors
-│   │                                were earned against; ServerIdentityChange drives
-│   │                                the app's start-fresh vs keep-progress prompt.
-│   └── ProtectedStateFile.swift     Atomic writes with completeUntilFirstUserAuthen-
-│                                    tication protection + backup exclusion for every
-│                                    state file (sync-state, event-log, wake-log).
-├── Transport/
-│   ├── PulsProtocol.swift           Protocol version (`PulsProtocol.version`, the
-│   │                                X-Puls-Protocol header, clientVersion) and
-│   │                                ServerCapabilities (GET /v1/capabilities DTO).
-│   ├── SyncTransport.swift          Transport protocol + HTTPSyncTransport: gzip NDJSON
-│   │                                POST /v1/batches, bearer auth, exponential backoff
-│   │                                (4 retries, jittered; 4xx never retried, except 429),
-│   │                                probe() (header-only batch), and TransportError
-│   │                                incl. `unsupportedProtocol`; its text is scrubbed
-│   │                                (ErrorScrubber) before it is shown or logged.
-│   ├── ServerAPIClient.swift        Read side: GET /v1/capabilities, /v1/stats,
-│   │                                /v1/digest, /v1/uuids.
-│   ├── ConnectionTest.swift         ConnectionTester: capabilities → probe fallback,
-│   │                                classified into ConnectionTestResult (ok, no
-│   │                                capabilities, token rejected, user mismatch,
-│   │                                unsupported protocol, unreachable, server error).
-│   ├── ServerURLValidation.swift    URL rules mirroring ATS: https anywhere, http only
-│   │                                for local-network hosts.
-│   ├── PairingPayload.swift         Parses the puls://pair?url=&token=&user= payload
-│   │                                bootstrap.sh prints — scanned, pasted or opened as
-│   │                                a link; re-validates the URL with
-│   │                                ServerURLValidation and the user as a UUID.
-│   ├── PairingConfirmation.swift    What the app must say before a pairing *link* may
-│   │                                fill anything: the host, whether it replaces a
-│   │                                configured server, whether it is plain http.
-│   ├── ServerFieldsDraft.swift      The server fields as typed (URL, token, paired user
-│   │                                ID): validation, token normalization, and the one
-│   │                                fill(from:) / commit(to:) path for a pairing code
-│   │                                (fill(fromSignIn:) for one an account sign-in
-│   │                                returned, recorded as signedInDatabaseURL).
-│   └── DiagnosticTransports.swift   DryRunTransport (benchmark, discards output) and
-│                                    InstrumentedTransport (per-batch timing capture).
-├── Models/
-│   ├── SyncConfiguration.swift      User settings: types, start date, server URL/token,
-│   │                                concurrency (1–8, default 4), batch size (250–5,000,
-│   │                                default 1,000), aggregate configs.
-│   ├── AggregateConfig.swift        One aggregate series: function/interval/device
-│   │                                filter/start/settle delay. allowedAggregateFunctions
-│   │                                derives the crash-safe function set per type from
-│   │                                HKQuantityType.aggregationStyle.
-│   ├── AggregateChoices.swift       What the app offers when setting up aggregates:
-│   │                                each type's daily default (total or average,
-│   │                                1 day, all devices), plain labels ("Daily
-│   │                                total"), Add Aggregate suggestions, the edits
-│   │                                (AggregateList, incl. Match Raw Samples) and
-│   │                                an aggregate's progress. UI vocabulary only.
-│   ├── SyncModels.swift             Wire DTOs: SyncSample (+ ECG/StateOfMind/Medication
-│   │                                detail structs), SyncDeletion, RoutePayload,
-│   │                                AggregateSampleRow, ActivitySummaryRow, SyncBatch,
-│   │                                SyncReason.
-│   └── HealthTypeCatalog.swift      Registry of 81 HealthKit types: display name, kind,
-│                                    canonical unit, group, est. samples/day (for ETA),
-│                                    minimum iOS. `definitions` is the full list on any
-│                                    runtime; `all` is what this OS exposes. The source
-│                                    of docs/protocol/catalog.json (see catalog.md there).
-├── Serialization/
-│   ├── NDJSONEncoder.swift          Batch → gzip NDJSON (hand-framed gzip over
-│   │                                Compression's raw DEFLATE + CRC32).
-│   ├── SampleMapper.swift           HKSample → wire DTO; canonical-unit conversion,
-│   │                                metadata coercion, workout statistics.
-│   └── CSVField.swift               One CSV cell: quoting, exponent-free floats and
-│                                    whole epoch-ms, matching the product API's
-│                                    encoding/csv output. Shared by the wake-log and
-│                                    health exports; cells are written verbatim.
-├── Export/
-│   ├── HealthExporter.swift         Public entry point: builds a throwaway engine
-│   │                                (own state store, event log, wake log, in-memory
-│   │                                token store), runs the sweep's phases into files,
-│   │                                turns the engine's logged failures back into
-│   │                                reported ones, cleans up on throw/cancel;
-│   │                                removeAllExports(). Also ExportEventCollector.
-│   ├── ExportModels.swift           ExportRequest/Format/Dataset (CSV column lists)/
-│   │                                Progress/Issue/Result, HealthExportError.
-│   ├── ExportPlan.swift             Pure: the export configuration (no server, no
-│   │                                identity), aggregate start alignment to the real
-│   │                                sync's bucket grid, completion check.
-│   ├── ExportFileTransport.swift    Actor SyncTransport that appends batches to
-│   │                                files and tallies rows per dataset.
-│   ├── ExportWriters.swift          JSONL (wire-format batches, concatenated) and
-│   │                                CSV (selectable layouts) writers; ExportFile.
-│   ├── ExportManifest.swift         The …-manifest.json sidecar.
-│   ├── ExportArchive.swift          ExportArchive and ExportZipper: an optional
-│   │                                .zip of the finished files via NSFileCoordinator,
-│   │                                and the sweep of its scratch directories.
-│   └── ExportPresentation.swift     The export screen's pure half: ranges, selection
-│                                    summary, failure copy, display names.
-├── Resources/
-│   └── PrivacyInfo.xcprivacy        The package's privacy manifest: UserDefaults
-│                                    (CA92.1), for background-task schedule status.
-├── Explore/
-│   ├── HealthExplorer.swift         Public read-only façade over its own HKHealthStore:
-│   │                                quickFacts (oldest/newest sample, writers),
-│   │                                profile (one sorted scan → TypeProfile),
-│   │                                aggregatePreview (buckets, uploaded nowhere).
-│   │                                Touches no sync state — see "Exploring what
-│   │                                HealthKit holds".
-│   ├── TypeProfile.swift            TypeProfile (Codable summary of a type: counts,
-│   │                                span, value distribution, labels, cadence, daily
-│   │                                counts, sources, devices — never a sample),
-│   │                                TypeQuickFacts, ProfileProgress, HealthExploreError.
-│   ├── TypeProfileStore.swift       Actor caching profiles as JSON under Application
-│   │                                Support/PulsHealthSync/profiles/ (ProtectedState-
-│   │                                File); isStale decides from quick facts.
-│   ├── AggregateQuery.swift         The HKStatisticsCollectionQuery both the engine
-│   │                                and the preview run, with the missing-data-source
-│   │                                split retry; callers supply what to do per chunk.
-│   ├── SampleScanner.swift          SampleCursor: anchor-free ascending paging with
-│   │                                boundary de-duplication (pure, fetch injected);
-│   │                                SampleScanner: the HealthKit fetch + per-kind
-│   │                                reduction to ScannedSample.
-│   ├── ProfileAccumulator.swift     Pure reducer ScannedSample → TypeProfile.
-│   └── ProfileStatistics.swift      Bounded-memory accumulators: Welford, reservoir
-│                                    quantiles (Algorithm L, seeded), histogram, gaps,
-│                                    daily counts, per-key breakdowns.
-└── Metrics/
-    ├── SyncEventLog.swift           Ring buffer (2,000) + persisted file + os.Logger
-    │                                mirror + AsyncStream for live UI. Messages are
-    │                                scrubbed before they are kept; never sample UUIDs.
-    ├── ErrorScrubber.swift          Redacts bearer/basic credentials, URL queries and
-    │                                known secrets, drops control characters, caps
-    │                                length — for lastError, the event log and
-    │                                TransportError descriptions.
-    └── WakeLog.swift                Durable per-wake telemetry: WakeTrigger,
-                                     WakeContext + WakeScope (@TaskLocal propagated
-                                     to nested syncs and the transport), and one
-                                     WakeRecord per wake (trigger, timing, gap, work
-                                     done, Low Power/thermal, outcome incl. crash-
-                                     recovered `interrupted`). ~10k-record window,
-                                     persisted on begin/finish; CSV/JSON export.
-```
+All paths below are under `Sources/PulsHealthSync/`. Read the section for the
+behavior you are changing; [the invariants](../CLAUDE.md#invariants--do-not-break)
+apply across these modules.
 
-Wake telemetry: each entry point that gives the engine execution time
-(`HealthSyncEngine.beginWake`/`finishWake`) opens a wake and runs its work inside
-`WakeScope.$current.withValue(ctx)`. The task-local context propagates to every
-nested sync task (so uploaded batches are attributed via `WakeLog.record`) and to
-`HTTPSyncTransport` (which stamps `X-Wake-ID`/`X-Wake-Trigger` headers), giving a
-device↔server join key. `finish` is idempotent so a background task's expiration
-handler and its work task can't clobber each other's outcome.
+| Area | Responsibility | Start with |
+|---|---|---|
+| `Engine/` | Authorization, backfill, incremental uploads, aggregates, rings, background execution and reconciliation | `HealthSyncEngine.swift`, `MergedSync.swift`, `AggregateSync.swift` |
+| `Anchors/` | Destination-scoped progress, credential storage and protected state files | `SyncStateStore.swift`, `ServerIdentity.swift`, `TokenStore.swift` |
+| `Transport/` | Gzip HTTP uploads, retries, capabilities, URL validation and pairing | `SyncTransport.swift`, `ConnectionTest.swift`, `PairingPayload.swift` |
+| `Models/` | Configuration, the authoritative type catalog, aggregate choices and wire DTOs | `SyncConfiguration.swift`, `HealthTypeCatalog.swift`, `SyncModels.swift` |
+| `Serialization/` | HealthKit-to-wire conversion, canonical units, metadata and NDJSON encoding | `SampleMapper.swift`, `NDJSONEncoder.swift` |
+| `Export/` | Isolated export engine, CSV/JSON/JSONL writers, manifests and ZIPs | `HealthExporter.swift`, `ExportPlan.swift`, `ExportModels.swift` |
+| `Explore/` | Read-only scans, profiles, aggregate previews and bounded statistical summaries | `HealthExplorer.swift`, `TypeProfile.swift`, `AggregateQuery.swift` |
+| `Metrics/` | Scrubbed event logs and background-wake telemetry | `SyncEventLog.swift`, `ErrorScrubber.swift`, `WakeLog.swift` |
+| `Resources/` | Privacy manifest | `PrivacyInfo.xcprivacy` |
 
-Tests (`Tests/PulsHealthSyncTests/`, Swift Testing) cover everything that runs
-without HealthKit:
+`WakeScope` carries each wake's context through nested tasks and uploads;
+`X-Wake-ID` and `X-Wake-Trigger` join phone diagnostics to server batch logs.
+`finishWake` is idempotent so expiration and completion cannot overwrite each
+other's outcome.
 
-- the catalog (unique identifiers, unit parsing, declarative OS gates, legal
-  aggregate functions, the aggregate choices the app offers —
-  `AggregateChoicesTests`) and the published vocabulary: `CatalogVocabularyTests`
-  renders `docs/protocol/catalog.json` and compares it byte for byte, or
-  rewrites it with `TEST_RUNNER_PULS_WRITE_CATALOG=1` on the xcodebuild
-  command;
-- serialization (NDJSON line structure, gzip framing and CRC, metadata
-  round-trip) and the protocol surface (`ProtocolTests`: version fields,
-  request headers, rejection parsing, capabilities, URL validation, the
-  connection test against an in-process `URLProtocol`);
-- state and pairing: the token store and Keychain hand-off, server-identity
-  changes, scrubbed error text, the recent-window anchor, pairing payloads,
-  the link confirmation and the fields draft;
-- the engine's seams: merged-sync packing, concurrent uploads, sweep claims,
-  enrichment chunking, the wake log;
-- the on-device export (`ExportTests`: the real file transport and both
-  writers, CSV columns against `docs/export.md`, JSONL validity and header
-  counts, what CSV cannot represent, cancellation and cleanup, the plan and its
-  completion check) and its presentation;
-- iOS 27 limited history (`ReadableHistoryTests`: the widen/narrow/same
-  decision, bucket and day clamps across DST, the reconciliation start, Don't
-  Allow, a 1.5 `sync-state.json` decoding, the re-sweep's reset);
-- the explore layer: statistics, the profile reducer, the sample cursor and
-  the profile cache.
-
-Queries against real HealthKit run in the app: the benchmark, the diagnostics
-screens, and the app-hosted aggregate matrix (`PulsHealth/HostedTests`).
+`Tests/PulsHealthSyncTests/` covers serialization, protocol handling, catalog
+consistency, state isolation, exports, pairing, history limits and statistics.
+The app-hosted tests in `PulsHealth/HostedTests/` cover real HealthKit query
+construction, including the aggregate option matrix. See [Testing](#testing).
 
 ## Secrets and state at rest
 
@@ -297,6 +97,17 @@ starts without another receiver's progress; switching back restores its own.
 configuration exclusion as uploads and throw when the transition cannot be
 applied. Unpairing is local only: it does not delete data or revoke tokens on
 the remote server. There is never more than one active destination.
+
+Workout streams retain a SHA-256 content fingerprint per workout and metric in
+that destination's protected sync state, after every chunk of the workout is
+acknowledged. The seven-day lookback still queries HealthKit but skips unchanged
+metrics; new or changed metrics upload normally. A monthly or forced full pass
+clears the fingerprints before starting, allowing recovery of receiver data.
+Resuming an interrupted full pass preserves fingerprints already acknowledged in
+that pass. Resetting sync state clears them too. Routes retain their existing
+upload behavior. These are upload acknowledgments, not a server-edit protocol:
+series points are insert-if-absent, so retransmission adds new timestamps but
+does not overwrite edited values or remove points missing from HealthKit.
 
 The app shows saved receivers in Sync → Database. Normal credentials use
 separate destination-scoped Keychain items. Write-failure fallbacks retain the
@@ -551,7 +362,7 @@ the date; a bucket straddling the date returns part of its value; narrowing
 access reports no deletions to an older anchor; and an anchor taken under the
 limit never returns the older samples once the limit is lifted.
 
-Two consequences, both handled here:
+Four safeguards handle this:
 
 - **Empty must not reach the server.** The passes that overwrite or delete to
   match what they read are clamped (`ReadableHistory`): aggregate passes —
@@ -599,7 +410,8 @@ history stays off the server. Settings → Reset All Anchors re-reads it.
 The API exists only in the iOS 27 SDK, and CI also builds with Xcode 26.5, so
 its one call sits behind `#if compiler(>=6.4)` (Xcode 27.0 ships Swift 6.4;
 Xcode 26.5 ships 6.3.2) as well as `#available(iOS 27.0, *)`. Built with the
-older SDK, there is never a limit.
+older SDK, the package cannot query this API; that does not prove that a phone
+running a newer iOS grants unrestricted history.
 
 Don't Allow on the history page throws `errorAuthorizationDenied` and leaves
 the types undetermined, where Don't Allow on the first page returns normally;
@@ -718,7 +530,7 @@ Workout rows wait in memory because their `hasRoute`/`availableMetrics` columns 
 stream batches that arrive two phases later.
 
 **It never shares sync state — the one rule that must not bend.** Anchors and
-watermarks are keyed per type with no destination dimension, and the engine
+watermarks belong to the active saved destination's types, and the engine
 advances them whenever its transport returns normally. Hand
 `ExportFileTransport` to the app's real engine and every exported sample is
 recorded as delivered: the server never receives it and nothing reports a
@@ -833,8 +645,8 @@ time zone, including when the phone prefers Buddhist or Japanese dates.
 **This layer never touches sync state.** It has no engine, no
 `SyncStateStore`, no event or wake log and no transport, and that is the
 point rather than a limitation: the engine advances a type's anchor whenever
-its transport returns normally, and anchors and watermarks are keyed per type
-with no destination dimension — the reason the on-device export builds a
+its transport returns normally, and that progress belongs to the active saved
+destination — the reason the on-device export builds a
 throwaway engine over its own state. Exploring does not need an engine at
 all. `profile` pages with a date-sorted `HKSampleQueryDescriptor`
 (`SampleCursor`: ascending by start, 5,000 per page, the UUIDs at the last
@@ -876,7 +688,32 @@ scrubbed reason. Cancellation always throws and keeps nothing.
 
 ## Testing
 
+Run from the repository root with full Xcode selected:
+
 ```bash
-xcodebuild test -scheme PulsHealthSync \
-  -destination 'platform=iOS Simulator,name=iPhone 17'
+python3 scripts/test-ios.py --ios 27.0 --suite package
 ```
+
+The runner creates its own simulator and retains logs and a receipt. See
+[CONTRIBUTING.md](../CONTRIBUTING.md) for SDK selection and the older-runtime
+check. A simulator pass does not establish background behavior on a real phone.
+
+### Medication identity
+
+Medication doses (iOS 26+) carry a readable `medication` name when authorized
+and an optional `medicationID` UUID alias. IDs group equal HealthKit medication
+concepts within this app installation, even across launches, exports and saved
+receivers. Identical or changed display names do not determine identity.
+`MedicationIdentityStore` persists secure archives of Apple's opaque identifiers
+with random UUIDs in a protected, backup-excluded registry separate from anchors.
+Exports share only this registry, never sync progress. File loss or reinstall
+creates new IDs; cross-device stability is not promised. A registry failure
+prevents upload acknowledgement/export completion.
+
+The public Apple API exposes concept equality, display text, general form and
+related clinical codes, but no public raw concept string or per-dose conversion
+from `count` into mg/g. An alias is not a clinical code, formulation, strength or
+mass conversion. Never infer those from a name. Previously inserted server rows
+are not overwritten by normal resync; use the explicitly reviewed
+[historical repair tool](../tools/repair-medications/README.md) with a fresh phone
+export to repair exact dose UUIDs.

@@ -1,8 +1,12 @@
 # PulsHealth Server
 
-Self-hosted ingestion stack for Apple HealthKit data exported by the
-PulsHealth iOS app. Four published app images plus Grafana, PostgreSQL and a
-one-shot schema migrator via Docker Compose:
+Configuration and operations for the self-hosted PulsHealth stack.
+**Installing for the first time? Follow [Set up your server](../docs/setup.md)**
+for Docker prerequisites, AI-assisted setup, networking, phone pairing and
+verification. This reference covers the details you may need afterwards.
+
+Four application images, Grafana, PostgreSQL and a one-shot schema migrator run
+through Docker Compose:
 
 | Service | Image | Port | Purpose |
 |---|---|---|---|
@@ -11,7 +15,7 @@ one-shot schema migrator via Docker Compose:
 | `ingest` | `ghcr.io/pulshealth/ingest:${PULS_VERSION:-latest}` (Go, distroless; `ingest/`) | `${INGEST_BIND_ADDR:-127.0.0.1}:8080` | HTTP ingest API the phone syncs to (see "Exposing the server"); connects as the DML-only `ingest` role |
 | `api` | `ghcr.io/pulshealth/api:${PULS_VERSION:-latest}` (Go, distroless; `api/`) | 127.0.0.1:8081 | Product read API for downstream apps |
 | `mcp` | `ghcr.io/pulshealth/mcp:${PULS_VERSION:-latest}` (Go, distroless; `mcp/`) | 127.0.0.1:8082 | Read-only MCP server for AI assistants over the product API (`docs/ai.md`) |
-| `grafana` | `grafana/grafana:13.0.2` (pinned — 13.x provisioning is version-sensitive) | 127.0.0.1:3000 | Dashboards (reach them through a TLS proxy, e.g. Tailscale Serve on `:8443`) |
+| `grafana` | `grafana/grafana:13.2.3` (pinned — 13.x provisioning is version-sensitive) | 127.0.0.1:3000 | Dashboards (reach them through a TLS proxy, e.g. Tailscale Serve on `:8443`) |
 | `web` | `ghcr.io/pulshealth/web:${PULS_VERSION:-latest}` (Next.js standalone; `../web/`) | `${WEB_BIND_ADDR:-127.0.0.1}:3001` | Web health viewer — reads the DB directly as the read-only `grafana` role |
 
 The four app images are pulled from `ghcr.io/pulshealth`; the
@@ -34,39 +38,26 @@ server/
 
 ## Setup
 
-The fast path is the bootstrap script at the repository root: it creates
-`.env` with every secret generated, starts the stack, waits for ingest and
-prints the pairing block for the app (URL, token, user ID and a QR code,
-drawn by `qrencode` if the host has it and by the ingest container
-otherwise). It is safe to re-run; `--print-pairing` (`make pairing`)
-re-prints the block, and `--issue-device <label>` prints one for a
-per-device token (see "Tokens").
+Use the [setup guide](../docs/setup.md) for a new installation. Bootstrap
+creates `server/.env` with generated credentials, starts the stack, runs the
+migrator, checks ingest and prints the pairing details. Re-running it preserves
+existing credentials. `--print-pairing` displays them again locally;
+`--issue-device <label>` issues a separate phone token (see [Tokens](#tokens)).
 
-```bash
-scripts/bootstrap.sh --time-zone Europe/Berlin    # the root README's "Quickstart" has the rest
-```
+Keep application images and migrations from the same revision. The guide builds
+from the checkout with `--build`; published-image installs must use matching
+release files and `PULS_VERSION` (see [Images and versions](#images-and-versions)).
+The `migrate` service applies the schema before application services start.
 
-By hand, it is:
-
-```bash
-cd server
-cp .env.example .env
-# Generate secrets (run once per variable):
-openssl rand -hex 32
-# Edit .env: POSTGRES_PASSWORD, PULS_TOKEN, PULS_API_TOKEN, PULS_MCP_TOKEN,
-# GRAFANA_PASSWORD, GRAFANA_DB_PASSWORD, API_DB_PASSWORD, INGEST_DB_PASSWORD —
-# and PULS_TIME_ZONE (see "Configuration" below).
-
-docker compose up -d                 # pulls the images; db → migrate (schema) → ingest, api, mcp, web, grafana
-docker compose logs migrate          # one line per schema file: applied / skipped / rerun
-curl -s localhost:8080/healthz       # → {"db":true,"ok":true}
-curl -s localhost:8081/healthz       # → {"db":true,"ok":true}
-```
-
-The `migrate` service creates the schema on an empty volume and every app
-service waits for it. The same command upgrades a running install later
-(see "Deploying and upgrading"); `make dev-up` runs the checkout's code
-instead of the published images (see "Images and versions").
+**Command locations:** `scripts/...` and `make ...` commands run from the
+repository root. Plain `docker compose ...` commands in this reference run from
+`server/`, where Compose reads `.env`. **For source-built installs, use
+`docker compose -f docker-compose.yml -f compose.build.yml` in place of
+`docker compose` in commands that start or recreate application services.**
+Without that overlay, those commands select published images. Status/log/exec
+commands do not switch images; the backup-only service uses the same database
+image in both modes. Never paste `.env`, pairing codes or unredacted command
+output into a public issue or AI conversation.
 
 ### Configuration
 
@@ -153,17 +144,29 @@ comments. Beyond the passwords and tokens:
 
 ## Deploying and upgrading
 
-The reference stack is plain Docker Compose; there is no deploy tooling in the
-repo. **Take a backup first** (`make backup` — see "Backup & restore"), then:
+Upgrade using the same installation mode you started with. **Take a backup
+first** (`make backup` from the repository root; see [Backup & restore](#backup-restore)),
+read the release notes, and preserve `server/.env` and the data volumes.
+
+**Source-built installation:** select the tested commit you intend to run, then
+run `scripts/bootstrap.sh --build` or `make dev-up` from the repository root.
+These retain the build overlay. A plain `docker compose up -d` switches to
+published images and can mismatch the checkout's migrations.
+
+**Published-image installation:** check out the selected release and set its
+matching image version. In this example, replace `X.Y.Z` in both places with
+the actual release:
 
 ```bash
-git fetch --tags && git checkout v0.3.0         # the release: its compose file and migrations
+git fetch --tags
+git checkout vX.Y.Z                            # replace with the selected release tag
 cd server
-# in .env: PULS_VERSION=0.3.0 (bootstrap.sh pins it on a release checkout;
-# left at latest, the images can move ahead of this checkout's schema)
+# Set PULS_VERSION=X.Y.Z in .env to match the checked-out release.
+# Bootstrap pins this only when creating a new .env, not on an upgrade.
 docker compose pull && docker compose up -d      # or, at the repository root: make pull up
 docker compose logs migrate                      # what the schema step did
-curl -s localhost:8080/healthz && curl -s localhost:8081/healthz
+curl -fsS http://127.0.0.1:8080/healthz
+curl -fsS http://127.0.0.1:8081/healthz
 ```
 
 `migrate` runs before `ingest`, `api`, `mcp`, `web` and `grafana` start, so
@@ -176,19 +179,19 @@ Go images are distroless (no shell, no curl), so each binary checks itself:
 `ingest healthcheck`, `api healthcheck` and `mcp healthcheck` GET their own
 `/healthz` on loopback and exit 0 on a 200 (`docker compose exec api /api
 healthcheck` runs it by hand); `web` asks `/api/healthz` with `node`.
-Healthy means able to do the job: ingest and the API when their database
-answers, mcp when the API does (it also waits for a healthy `api` to
-start). **Docker does not restart an unhealthy container** —
+Health probes check dependencies, not end-to-end phone sync. Ingest and the
+API report healthy when their database answers; MCP checks the API and waits
+for a healthy `api` before starting. **Docker does not restart an unhealthy container** —
 `restart: unless-stopped` acts only when the process exits — so a wedged
 service stays up and `unhealthy` until something acts on it: point your
 monitoring at `docker compose ps` (or `docker events --filter
 event=health_status`), or restart it yourself. If a migration
 fails, the app services are not started (`dependency failed to start`) and
-the previous containers keep running; fix the cause and `docker compose up
--d` again. Re-applying the schema from scratch means dropping the database
-volume (`docker compose down && docker volume rm pulshealth_db_data &&
-docker compose up -d`), which **destroys all data**; `down -v` would also
-delete the `backups` volume.
+existing service availability depends on what Compose has already recreated.
+Inspect status and logs, fix the cause and rerun the same deployment command.
+Do not drop the database or use `down -v` as a migration repair; that destroys
+data and can remove the backup volume too. Finish by verifying a new phone
+upload and dashboard read-back, as in the [setup guide](../docs/setup.md#5-verify-the-whole-path).
 
 ### Images and versions
 
@@ -292,8 +295,8 @@ the app services do not start. If every file in `db/migrations/` has
 already been applied to it, record that:
 
 ```bash
-git pull
-# add INGEST_DB_PASSWORD=<openssl rand -hex 32> to .env (see "The scoped ingest role")
+# Use the audited checkout matching this legacy database, not an unreviewed pull.
+# Add INGEST_DB_PASSWORD to server/.env (see "The scoped ingest role").
 cd server
 docker compose run --rm migrate baseline     # or `make baseline` at the root
 docker compose up -d
@@ -305,13 +308,11 @@ exists before ingest starts), and prints what it recorded. Re-runnable files
 are recorded without a checksum, so the next `docker compose up -d` applies
 `009_metric_daily.sql`, `010_category_labels.sql` and
 `023_recording_quality.sql` once — safe, since these files use
-`CREATE OR REPLACE`/upsert. If a one-shot file has *not* been applied to
-your database, apply it by hand first, then baseline:
-
-```bash
-docker compose exec -T db psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-  < db/migrations/NNN_name.sql
-```
+`CREATE OR REPLACE`/upsert. If any one-shot migration is missing or its status is unknown, **do not
+baseline**: it would mark work complete without doing it. Audit the existing
+schema and plan its migration on a restored scratch copy before changing the
+live installation. Normal upgrades use the migrate service; do not apply new
+DDL manually or use baseline to dismiss a migration error.
 
 A database created from the old floating `pg17` tag now runs under the
 pinned, possibly newer TimescaleDB binary (the data volume is untouched):
@@ -348,7 +349,7 @@ its internal catalog, so bumping the tag is a deliberate step:
 
 ### The scoped `ingest` role
 
-Ingest is the only internet-facing service, so it does not hold the
+Ingest accepts phone uploads and may be internet-facing, so it does not hold the
 superuser password: Compose connects it as the `ingest` role
 (`INGEST_DB_USER`, default `ingest`; `INGEST_DB_PASSWORD` is required),
 which `099_read_roles.sh` creates on every migrate run with exactly what
@@ -434,8 +435,8 @@ stamped with when it was last used.
 
 Pairing a phone with one is a single command. It prints the same block the
 shared token gets — URL, token, user ID and a QR code, which the app scans
-with Scan Pairing Code on its Database screen (**Sync → Set Up** before a
-database is configured, **Sync → Database** after):
+with **Scan Pairing Code** on its Database screen (**Sync → Connect Your Server**
+before a database is configured, **Sync → Database** after):
 
 ```bash
 scripts/bootstrap.sh --issue-device "My iPhone"                  # the default user
@@ -592,10 +593,15 @@ The phone has to reach ingest's port 8080. There are two supported ways, and
   serve it in plaintext beyond your LAN**: the token is a second layer
   behind TLS, not a substitute for it. `scripts/bootstrap.sh --url
   https://<host>` stores the proxy's URL as `PULS_PUBLIC_URL`, and the
-  pairing block and every device token's QR code carry it.
+  pairing block and every device token's QR code carry it. This flag does not
+  configure the proxy or change an existing bind address. If you previously
+  used `--lan`, reset `INGEST_BIND_ADDR=127.0.0.1` in `.env` before restarting
+  behind a host-local proxy.
 
-Any reverse proxy that terminates TLS works (Caddy, nginx, Traefik, a cloud
-tunnel). The easiest is Tailscale, on the server and the iPhone:
+An HTTPS reverse proxy must preserve the bearer authorization header and allow
+uploads without interactive browser authentication. With Tailscale already
+configured on the host and phone, Serve can expose private HTTPS listeners.
+Expose only the services you need:
 
 ```bash
 tailscale serve --bg --https=443  http://localhost:8080   # ingest — the app's URL
@@ -604,7 +610,8 @@ tailscale serve --bg --https=8444 http://localhost:8081   # product API
 tailscale serve --bg --https=8445 http://localhost:8082   # MCP server
 ```
 
-Point the app at `https://<machine-name>.<tailnet>.ts.net`. `tailscale
+Point the app at `https://<machine-name>.<tailnet>.ts.net` while connected to
+the tailnet. A cloud AI connector cannot reach these private listeners. `tailscale
 funnel` publishes the same listener to the public internet for a phone that
 cannot join the tailnet; the token is then the only gate, so rotate it if it
 leaks. Grafana, the product API and the MCP server stay on loopback and are
@@ -691,7 +698,10 @@ as or read for, defaulting to the seeded default user.
   activity-summary lines and an optional profile line, each counted in the
   header. Sample `kind` is `quantity`, `category`, `workout`,
   `heartbeatSeries`, `ecg`, `stateOfMind` or `medicationDose`, each in its
-  own table. Samples are keyed on UUID and never overwritten, so a retry is
+  own table. Medication doses optionally carry a sender-assigned `medicationID` UUID
+  stored as `medication_id`; it groups concepts within that device identity map,
+  not across devices or reinstalls. Apply migration `031_medication_identity.sql`
+  before deploying ingest with this field. Samples are keyed on UUID and never overwritten, so a retry is
   idempotent. (`quantity_samples`, a hypertable, can only key on `(uuid,
   start_ts)`; before inserting, ingest also drops any quantity sample whose
   UUID is stored with a start within 1 ms, since float epoch milliseconds
@@ -748,7 +758,7 @@ failed-authentication limit, and an unknown id reads as a user with no
 data. `GET /v1/users` lists every user (only the default with the gate off)
 with name, e-mail, `createdAt`, `lastSync`, `batches` and
 `uploadedSamples`, plus `default` and `multiUser` flags and `timeZone`, the
-zone every local day is cut in (`PULS_TIME_ZONE`). **Turning the gate
+user's reporting zone (falling back to `PULS_TIME_ZONE`). **Turning the gate
 on widens what the one `PULS_API_TOKEN` reads from one person to everyone
 on the server** — and to any ChatGPT Action built from `/openapi.json`.
 
@@ -761,101 +771,36 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
 Timestamps are epoch milliseconds, ranges are `[start, end)`, and a valid
 query with no matching rows returns an empty array.
 
-**Daily metrics need an aggregate, not just raw rows.** `metric_daily` — and
-so `/v1/metrics/daily`, Grafana's daily panels and the web viewer's daily
-charts — takes a type's cumulative/discrete semantics from
-`aggregate_series` (`db/migrations/026_account_time_zones.sql`), which only
-aggregate lines write. A type with raw samples and no aggregate configured
-has latest readings and intraday values but no daily row. That is why the
-phone uploads a recent window of aggregates before its raw sweep on a first
-backfill.
+**Daily metrics and raw data.** The API's `/v1/metrics/daily` and Grafana's
+daily panels read `metric_daily`. It learns a type's cumulative/discrete
+semantics from a `sum` or `average` series in `aggregate_series`, then prefers
+valid phone-computed daily aggregates and falls back to raw-data rollups.
+Without that series metadata, a raw type is absent from `metric_daily`.
+The web viewer can additionally chart raw samples for types the view does not
+cover, so an empty API daily result does not imply the raw data is missing.
+Enable daily aggregates in the app for phone-computed summaries; see the
+[database guide](../docs/database-guide.md) for selection and device-merging rules.
 
-The service describes itself at `GET /` (a JSON index), `GET /docs` (a
-browser-readable reference) and `GET /openapi.json` (OpenAPI 3.1, the
-embedded `server/api/openapi.json`). Other
-services should store the base URL as `PULS_API_BASE_URL` and the token as
-`PULS_API_TOKEN`. Every `/v1` route but `/v1/users` takes the optional
-`user` parameter above:
-
-- `GET /v1/users`, `GET /v1/profile`
-- `GET /v1/catalog/types` — every type with data, aggregate-only ones
-  included: `rawRows`, `aggregateRows` and `rows` (their sum). It counts
-  every row the user has, so it is cached per user for five minutes; after
-  that the cached answer is still served (for up to an hour) while one
-  background refresh replaces it, so only a user's first request waits for
-  the count.
-- `GET /v1/metrics/latest?types=...`
-- `GET /v1/metrics/daily?types=...&start=...&end=...&limit=10000&offset=0` —
-  one value per local day per type, paged in **days across the requested
-  types** (`limit` caps at 50000; page with `nextOffset`, a short page is
-  the last). The default page holds a year of 27 types, so a request that
-  names no `limit` gets what it always did; a page boundary can fall inside
-  a metric's days, so the next page may open with the same identifier.
-- `GET /v1/activity/summary?start=...&end=...`
-- `GET /v1/workouts?start=...&end=...&limit=50&offset=0`, `GET /v1/workouts/{uuid}`
-- `GET /v1/workouts/{uuid}/series?types=...&maxPoints=500` — each stream
-  downsampled by bucket-averaging, keeping the true first and last point
-  (`maxPoints` caps at 5000); `totalPoints` is the recorded count.
-- `GET /v1/sleep/daily?start=...&end=...` — one row per sleep session,
-  attributed to the local day it **ends** on (the wake-up day, as Apple
-  Health does it); samples more than three hours apart start a new session,
-  so a nap is its own row. Durations are minutes. Overlapping sources are
-  never summed: `inBedMinutes` is the highest single-source total, and
-  `asleepMinutes` and the `stages` breakdown come from the source that
-  recorded the most sleep (the web viewer's rule too). Stages are decoded
-  through `category_labels`.
-- `GET /v1/samples?type=...&start=...&end=...&limit=1000&offset=0` — the raw
-  records of one quantity or category type, at most 31 days per request
-  (`limit` caps at 5000; page with `nextOffset`). **Not** deduplicated across
-  devices — `/v1/metrics/daily` is. An unknown identifier, a non-sample kind
-  or a longer range is a `400`.
-- `GET /v1/state-of-mind?start=...&end=...` — at most 366 days per request.
-- `GET /v1/summary?range=7d|14d|30d|90d&format=markdown|json` — the last
-  `range` days (default `7d`, ending today in `PULS_TIME_ZONE`) as one
-  **markdown page** of under sixty lines for pasting into a chat without an
-  MCP connection ([`docs/ai.md`](../docs/ai.md)), or the same numbers as
-  JSON. It reads only daily surfaces, never a raw hypertable, so it is cheap.
-- `GET /v1/export?format=csv|jsonl&dataset=...&start=...&end=...` — a whole
-  range streamed as a **file**. `dataset` is `daily_metrics`, `samples`,
-  `workouts`, `sleep`, `activity` or `state_of_mind`, each with its source
-  endpoint's filters; at most 31 days for `samples`, 366 for the rest.
-  Nothing is buffered, but each download holds a database connection
-  throughout, so at most two run at once and a third gets a `503` with
-  `Retry-After`. `tools/puls-export` is a CLI for it; columns and failure
-  modes are in [`docs/export.md`](../docs/export.md).
-- `GET /healthz` — liveness and DB ping (no auth).
-
-Failures the middleware answers on any `/v1` route: `401` (wrong or missing
-token), `429` with `Retry-After` (see "Rate limiting"), `403` (`user=` for
-someone else with the gate off) and, on everything but the export, `504`
-when a query runs past 30 seconds. `/openapi.json` documents them per route.
-On shutdown (`docker compose stop`/`up -d` recreating it) requests get the
-15-second grace; then whatever is still running is cancelled, and an export
-still streaming is **aborted** (the client sees a broken transfer, never a
-short file that looks complete), so the container exits inside Compose's
-30-second `stop_grace_period`.
-
-```bash
-curl -fL -H "Authorization: Bearer $PULS_API_TOKEN" -OJ \
-  "http://localhost:8081/v1/export?format=csv&dataset=sleep&start=1767225600000&end=1798761600000"
-```
-
-Besides the sample tables, `/v1/samples` and `/v1/sleep/daily` read
-`sources` and `category_labels`, and `/v1/users` reads `batches` (which holds
-no credential — a batch's token is an integer id into `device_tokens`, which
-`api_reader` cannot read). All are on the exact grant list in
-`db/migrations/099_read_roles.sh`, re-applied on every `docker compose up
--d`.
+For endpoint parameters, examples, paging and errors, use the
+[product API guide](../docs/api.md) and [API reference](api/openapi.json).
+The running service also serves `GET /` (index), `GET /docs` (HTML reference)
+and `GET /openapi.json`. [Bulk export](../docs/export.md) covers streamed files.
 
 ### Verify ingest with curl
+
+This fixture **writes synthetic records and a deletion**. Run it only against a
+disposable test stack, not a personal database. For a real installation, use
+[phone sync and read-back](../docs/setup.md#5-verify-the-whole-path) instead.
+Commands below run from `server/` and use the shared ingest token.
 
 ```bash
 source .env
 
 cat > /tmp/puls-fixture.ndjson <<'EOF'
-{"batchID":"0a4fdc4e-9f3b-4f7e-9a64-0c2f7a1b9d11","deviceID":"curl-test","type":"HKQuantityTypeIdentifierHeartRate","reason":"manual","exportedAt":1718000000000,"schemaVersion":1,"clientVersion":"curl","sampleCount":2,"deletionCount":1,"aggregateCount":1,"activitySummaryCount":1}
+{"batchID":"0a4fdc4e-9f3b-4f7e-9a64-0c2f7a1b9d11","deviceID":"curl-test","type":"HKQuantityTypeIdentifierHeartRate","reason":"manual","exportedAt":1718000000000,"schemaVersion":1,"clientVersion":"curl","sampleCount":3,"deletionCount":1,"aggregateCount":1,"activitySummaryCount":1}
 {"uuid":"7f3e2b9a-1c4d-4e5f-8a6b-9c0d1e2f3a4b","type":"HKQuantityTypeIdentifierHeartRate","kind":"quantity","start":1718000000000,"end":1718000005000,"value":62.5,"unit":"count/min","sourceName":"Apple Watch","sourceBundleID":"com.apple.health","sourceVersion":"10.0","device":"Apple Watch","metadata":{"HKMetadataKeyHeartRateMotionContext":1}}
 {"uuid":"8a4f3c0b-2d5e-4f6a-9b7c-0d1e2f3a4b5c","type":"HKQuantityTypeIdentifierHeartRate","kind":"quantity","start":1718000010000,"end":1718000015000,"value":64.0,"unit":"count/min","sourceName":"Apple Watch","sourceBundleID":"com.apple.health","sourceVersion":"10.0"}
+{"uuid":"d2000000-0000-4000-8000-000000000001","type":"HKMedicationDoseEventTypeIdentifierMedicationDoseEvent","kind":"medicationDose","start":1718000000000,"end":1718000000000,"medicationDose":{"medication":"Ibuprofen","medicationID":"d1000000-0000-4000-8000-000000000001","status":"taken","doseQuantity":1,"doseUnit":"count"}}
 {"deleted":{"uuid":"9b5a4d1c-3e6f-4a7b-8c8d-1e2f3a4b5c6d","type":"HKQuantityTypeIdentifierHeartRate"}}
 {"aggregate":{"type":"HKQuantityTypeIdentifierHeartRate","func":"average","intervalValue":1,"intervalUnit":"hour","deviceFilter":"watch","bucketStart":1718000000000,"bucketEnd":1718003600000,"value":62.4,"unit":"count/min"}}
 {"activitySummary":{"date":1718000000000,"moveKcal":420.5,"moveGoalKcal":600.0,"exerciseMin":25.0,"exerciseGoalMin":30.0,"standHours":9.0,"standGoalHours":12.0,"moveMode":0,"moveTimeMin":null,"moveTimeGoalMin":null}}
@@ -872,8 +817,8 @@ gzip -c /tmp/puls-fixture.ndjson | curl -sS \
   -H "X-Wake-ID: 11111111-2222-4333-8444-555555555555" \
   -H "X-Wake-Trigger: observer" \
   --data-binary @-
-# → {"accepted":2,"deleted":0,"duplicates":0,"routePoints":0,"seriesPoints":0,"aggregateSamples":1,"activitySummaries":1}
-# Run it again → {"accepted":0,"deleted":0,"duplicates":2,"routePoints":0,"seriesPoints":0,"aggregateSamples":0,"activitySummaries":0}
+# → {"accepted":3,"deleted":0,"duplicates":0,"routePoints":0,"seriesPoints":0,"aggregateSamples":1,"activitySummaries":1}
+# Run it again → {"accepted":0,"deleted":0,"duplicates":3,"routePoints":0,"seriesPoints":0,"aggregateSamples":0,"activitySummaries":0}
 #   (the batch ID is reserved before health-data mutations, so a retry exits early)
 # Send it with -H "X-Puls-Protocol: 2" (or "schemaVersion":2 in the header line)
 #   → HTTP 400 {"error":"unsupported protocol version","supportedVersions":[1]}
@@ -1010,7 +955,7 @@ make backup
 
 # Dumps on a schedule (default: every 24h, keeping 14 days). Naming the
 # service starts only it (and db); the app containers are left alone.
-cd server && docker compose --profile backup up -d backup
+docker compose -f server/docker-compose.yml --profile backup up -d backup
 
 make backup-list                     # what is in the store
 make restore FILE=<name or path>     # put one back (destroys the current data)
@@ -1136,9 +1081,11 @@ exist.
 
 ### The restore drill
 
-Nothing verifies a backup but restoring it. Run this once on a scratch
-install — not the one holding your data — so the first time you use
-`restore.sh` is not the day you need it.
+Nothing verifies a backup but restoring it. The commands below destroy the
+stack's database. Run them on a **separate scratch Docker host** containing only
+test data. A second checkout on your normal Docker host is not isolated: the
+Compose project name and volume names are shared. To validate a real backup,
+restore a protected copy on that scratch host and verify its contents there.
 
 ```bash
 scripts/bootstrap.sh                    # a stack with something in it
@@ -1166,9 +1113,10 @@ substitute for drilling a dump of your own data.
 
 A good restore, as recorded on a throwaway stack, looks like this:
 
-- `docker compose ps`: six services up, `db` healthy.
+- `docker compose ps`: all expected long-running services up and healthy where
+  probes are configured; `migrate` exited successfully.
 - `docker compose logs migrate`: **`0 applied, 0 rerun, <every .sql file>
-  skipped, 2 script(s) ran`** — the schema came from the dump, and the role
+  skipped, <current .sh count> script(s) ran`** — the schema came from the dump, and the role
   and time-zone scripts put back the roles, their grants and
   `puls_time_zone()`, which the restore itself skips.
 - Every row count identical either side of the wipe, down to the values you

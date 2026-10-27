@@ -1,5 +1,9 @@
 # PulsHealth Requests v1
 
+Use a Data Request when someone should review and share a specific selection
+once. For your own files, use [Export](export.md#on-device-export-no-server).
+For ongoing database sync, use [server setup](setup.md).
+
 One-time, participant-reviewed exports. Create requests in **Settings → Create
 Request**. Specify the title, requester, purpose, contact, inclusive dates, data
 types and CSV, JSON or JSONL. Select individual records or an allowed daily aggregate
@@ -28,7 +32,8 @@ extraction, not proof of available permissions or expected records.
 Only this one query parameter is accepted. Maximum encoded link: 2,800 bytes.
 The custom scheme requires a compatible installed app. Install PulsHealth and
 reopen the link if necessary; there is no hosted landing page or deferred link.
-The current App Store version does not gain this feature until a release ships.
+These instructions describe the app in this checkout. The participant needs
+a released version that supports Requests and the requested export format.
 
 Example decoded payload (UUIDs and dates are illustrative):
 
@@ -64,7 +69,7 @@ history. Research consent and institutional review are outside this feature.
 
 ## Receiver contract
 
-This is a **ZIP upload contract**, separate from Puls Sync Protocol `/v1/ingest`
+This is a **ZIP upload contract**, separate from Puls Sync Protocol `/v1/batches`
 and the read-only product API. A folder link, email address, or existing ingest
 endpoint will not work. A compatible receiver must be provided by the requester.
 

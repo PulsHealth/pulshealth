@@ -1,7 +1,7 @@
 # Product API
 
-The product API is the read-only HTTP interface to everything a PulsHealth
-server holds: daily metrics, Activity rings, workouts and their per-second
+The product API is the read-only HTTP interface to supported data in a
+PulsHealth server: daily metrics, Activity rings, workouts and their per-second
 streams, sleep, raw samples, State of Mind, a chat-ready summary and bulk
 export. It is how your own scripts, dashboards, notebooks and AI assistants
 read your health data, and it is the API the
@@ -11,8 +11,11 @@ read your health data, and it is the API the
 This page covers what is common to every endpoint. The
 [API reference](../server/api/openapi.json) documents each endpoint's
 parameters, responses and fields. It is rendered from the same OpenAPI 3.1
-document the service serves at `GET /openapi.json`, so it never describes a
-different API from the one you are running.
+document the service serves at `GET /openapi.json`. For an installed server,
+use its own `/openapi.json`: the website may describe a newer revision.
+
+New installation? Finish [server setup](setup.md) and a first sync before
+using this reference. For a connector, start with [AI assistants](ai.md).
 
 | At a glance | |
 |---|---|
@@ -26,13 +29,13 @@ different API from the one you are running.
 ## Quickstart
 
 The API is one of the services `docker compose up -d` starts (see
-[Server setup](../server/README.md)). `scripts/bootstrap.sh` generates its
+[Server setup](setup.md)). `scripts/bootstrap.sh` generates its
 token and writes it to `server/.env` as `PULS_API_TOKEN`.
 
 **1. Check that it is up.** `/healthz` needs no token:
 
 ```bash
-curl -s http://127.0.0.1:8081/healthz
+curl --fail-with-body -sS http://127.0.0.1:8081/healthz
 # {"db":true,"ok":true}
 ```
 
@@ -42,7 +45,7 @@ curl -s http://127.0.0.1:8081/healthz
 export PULS_API_BASE_URL=http://127.0.0.1:8081
 export PULS_API_TOKEN=...   # from server/.env
 
-curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
+curl --fail-with-body -sS -H "Authorization: Bearer $PULS_API_TOKEN" \
   "$PULS_API_BASE_URL/v1/catalog/types"
 ```
 
@@ -63,10 +66,11 @@ curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
 }
 ```
 
-**3. Ask a real question.** Here are daily step totals for January 2026:
+**3. Read a date range.** This example asks for January 2026. Replace the
+bounds with dates covered by your catalog; the JSON below is illustrative:
 
 ```bash
-curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
+curl --fail-with-body -sS -H "Authorization: Bearer $PULS_API_TOKEN" \
   "$PULS_API_BASE_URL/v1/metrics/daily?types=HKQuantityTypeIdentifierStepCount&start=1767225600000&end=1769904000000"
 ```
 
@@ -129,7 +133,9 @@ The service refuses to start while `PULS_API_TOKEN` is still the
 `change-me` placeholder from `.env.example`.
 
 To rotate the token, set a new value in `server/.env` and run
-`docker compose up -d api mcp`, then update your clients.
+`docker compose -f server/docker-compose.yml up -d api mcp` from the
+repository root, then update your clients. If installed with `--build`, also
+pass `-f server/compose.build.yml` to use the same local images.
 [Rotating secrets](../server/README.md#rotating-secrets) has the details.
 
 ## Choosing the user
@@ -150,8 +156,8 @@ exactly one user:
   also returns that zone (see [Conventions](#conventions)).
 
 ```bash
-curl -s -H "Authorization: Bearer $PULS_API_TOKEN" "$PULS_API_BASE_URL/v1/users"
-curl -s -H "Authorization: Bearer $PULS_API_TOKEN" \
+curl --fail-with-body -sS -H "Authorization: Bearer $PULS_API_TOKEN" "$PULS_API_BASE_URL/v1/users"
+curl --fail-with-body -sS -H "Authorization: Bearer $PULS_API_TOKEN" \
   "$PULS_API_BASE_URL/v1/profile?user=<uuid>"
 ```
 
@@ -188,9 +194,11 @@ with no data.
   minutes. The daily surfaces (`/v1/metrics/daily`, `/v1/summary`, sleep) are
   already deduplicated. `/v1/samples` returns raw records as synced, so
   **summing raw samples double counts**.
-- **Daily metrics come from the phone's aggregates.** A type appears in
-  `/v1/metrics/daily` only if the app syncs an aggregate for it. In the
-  catalog, those types have non-zero `aggregateRows`.
+- **Daily metrics use the canonical daily view.** It prefers supported
+  phone aggregates and falls back to server rollups for raw types with known
+  sum/average semantics in `aggregate_series`.
+  `aggregateRows` counts uploaded aggregates; it is not a complete test of
+  daily-metric availability. See the [database guide](database-guide.md).
 
 ## Pagination
 
@@ -220,8 +228,10 @@ params = {
 }
 samples = []
 while True:
-    page = requests.get(f"{base}/v1/samples", params=params,
-                        headers={"Authorization": f"Bearer {token}"}, timeout=60).json()
+    response = requests.get(f"{base}/v1/samples", params=params,
+                            headers={"Authorization": f"Bearer {token}"}, timeout=60)
+    response.raise_for_status()
+    page = response.json()
     samples += page["samples"]
     if len(page["samples"]) < params["limit"]:
         break

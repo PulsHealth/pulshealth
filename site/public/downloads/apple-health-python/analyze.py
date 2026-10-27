@@ -2,7 +2,9 @@
 Demo files are synthetic. Requires Python 3.10+; see requirements.txt.
 """
 import argparse
+import math
 from pathlib import Path
+import re
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -19,14 +21,19 @@ def main():
     parser.add_argument("--end", default="2026-08-31", help="Exclusive local date")
     parser.add_argument("--label", default="Synthetic example data")
     args = parser.parse_args()
+    if not all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) for value in (args.start, args.end)):
+        raise ValueError("Use increasing local YYYY-MM-DD dates")
     start, end = pd.Timestamp(args.start), pd.Timestamp(args.end)
     if start.tzinfo or end.tzinfo or start >= end:
         raise ValueError("Use increasing local YYYY-MM-DD dates")
     days = pd.date_range(start, end, inclusive="left", freq="D")
     workouts = pd.read_csv(args.input / "workouts.csv")
+    if workouts.uuid.isna().any() or workouts.start.isna().any():
+        raise ValueError("Workout UUID and start must not be blank")
     if workouts.uuid.duplicated().any():
         raise ValueError("Duplicate workout UUID: inspect input before counting")
-    local = pd.to_datetime(workouts.start, unit="ms", utc=True).dt.tz_convert(args.time_zone)
+    instants = pd.to_numeric(workouts.start, errors="raise")
+    local = pd.to_datetime(instants, unit="ms", utc=True).dt.tz_convert(args.time_zone)
     workout_days = local.dt.tz_localize(None).dt.normalize()
     counts = workout_days.value_counts().reindex(days, fill_value=0).sort_index()
     # Counts represent exported records, not proof of recording coverage.
@@ -37,10 +44,14 @@ def main():
     if not metrics.unit.eq("count/min").all():
         raise ValueError("Resting heart rate must use count/min")
     def daily(frame, column):
+        if frame.date.isna().any() or not frame.date.astype(str).str.fullmatch(r"\d{4}-\d{2}-\d{2}").all():
+            raise ValueError("Daily rows need a nonempty YYYY-MM-DD date")
         date = pd.to_datetime(frame.date, format="%Y-%m-%d")
         if date.duplicated().any():
             raise ValueError("Multiple rows per local day: inspect input")
         values = pd.to_numeric(frame[column], errors="raise")
+        if not values.dropna().map(math.isfinite).all():
+            raise ValueError("Daily values must be finite or blank")
         return pd.Series(values.to_numpy(), index=date).reindex(days)
     hours = daily(sleep, "asleepMinutes") / 60
     heart = daily(metrics, "value")

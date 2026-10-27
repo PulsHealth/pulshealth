@@ -31,6 +31,10 @@ Two checks keep the chain honest, and both run in CI:
 - `npm run check:catalog` in `web/` renders `catalog.generated.ts` from the
   JSON to a temporary file and diffs it against the committed one.
 
+For a receiver or analysis tool, use [Layout](#layout) and
+[Consuming it](#consuming-it). Regeneration is a contributor task; server setup
+never requires Xcode or editing this vocabulary.
+
 ## Regenerating
 
 Change the Swift catalog, then let the test rewrite the file (the
@@ -68,7 +72,9 @@ no escaping beyond what JSON requires (`/` and non-ASCII such as `VO₂` stay
 literal), and a fixed key order. Type entries are sorted by identifier (byte
 order), so adding a type is a contiguous insertion in the diff.
 
-```json
+Illustrative excerpt (ellipses omit entries; download `catalog.json` for valid JSON):
+
+```text
 {
   "protocol": 1,
   "source": "PulsHealthSync/Sources/PulsHealthSync/Models/HealthTypeCatalog.swift",

@@ -54,12 +54,8 @@ export default async function WorkoutsPage() {
           <Link
             key={w.uuid}
             href={`/workouts/${encodeURIComponent(w.uuid)}`}
-            className="row-link"
+            className="row-link workout-list-row"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 16,
-              padding: "16px 20px",
               borderTop: i === 0 ? "none" : "1px solid var(--border)",
               color: "inherit",
             }}
@@ -67,14 +63,14 @@ export default async function WorkoutsPage() {
             <span style={{ width: 38, height: 38, borderRadius: 11, flex: "none", display: "grid", placeItems: "center", background: `${color}1a`, color }}>
               <WorkoutIcon size={19} />
             </span>
-            <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="workout-description">
               <div style={{ fontWeight: 550 }}>{formatActivity(w.activityType)}</div>
               <div style={{ fontSize: 12, color: "var(--faint)", marginTop: 2 }}>{formatFull(w.start, timeZone)}</div>
             </div>
-            <div className="mono tabular" style={{ display: "flex", gap: 22, color: "var(--fg-soft)", fontSize: 13, flexWrap: "wrap", justifyContent: "flex-end" }}>
-              <span style={{ minWidth: 64, textAlign: "right" }}>{formatDuration(w.durationS)}</span>
-              {w.energyKcal != null && <span style={{ minWidth: 70, textAlign: "right" }}>{formatCompact(w.energyKcal)} Cal</span>}
-              {w.distanceM != null && <span style={{ minWidth: 78, textAlign: "right" }}><Distance meters={w.distanceM} /></span>}
+            <div className="mono tabular workout-row-metrics">
+              <span >{formatDuration(w.durationS)}</span>
+              {w.energyKcal != null && <span >{formatCompact(w.energyKcal)} Cal</span>}
+              {w.distanceM != null && <span ><Distance meters={w.distanceM} /></span>}
             </div>
             <ChevronRight size={16} />
           </Link>

@@ -49,6 +49,18 @@ description: '## What does Headphone Audio Exposure measure?
   volume.
 
 
+  ## What is a headphone notification?
+
+  [Headphone Audio Exposure Event](/knowledge-base/types/HKCategoryTypeIdentifierHeadphoneAudioExposureEvent/) is
+  a separate notification category. [Apple’s notification guidance](https://support.apple.com/en-us/108968) gives
+  80 dB for 40 hours across seven days as an example exposure limit and distinguishes notifications from the Reduce
+  Loud Audio setting. Media exposure, rather than phone calls, contributes to that notification calculation.
+
+
+  The checked year contained headphone-level data but **no headphone notification records**. Absence of notifications
+  does not certify safe exposure: feature configuration, supported sources and observation completeness remain relevant.
+
+
   ## What do example records look like?
 
   The reporting year contained **2,906 records**. The largest July–September source supplied **808 intervals on
@@ -95,18 +107,6 @@ description: '## What does Headphone Audio Exposure measure?
   cadence, not a fixed listening schedule or continuous monitoring clock.
 
 
-  ## What is a headphone notification?
-
-  [Headphone Audio Exposure Event](/knowledge-base/types/HKCategoryTypeIdentifierHeadphoneAudioExposureEvent/) is
-  a separate notification category. [Apple’s notification guidance](https://support.apple.com/en-us/108968) gives
-  80 dB for 40 hours across seven days as an example exposure limit and distinguishes notifications from the Reduce
-  Loud Audio setting. Media exposure, rather than phone calls, contributes to that notification calculation.
-
-
-  The checked year contained headphone-level data but **no headphone notification records**. Absence of notifications
-  does not certify safe exposure: feature configuration, supported sources and observation completeness remain relevant.
-
-
   ## How should this be combined with environmental sound?
 
   [Environmental Audio Exposure](/knowledge-base/types/HKQuantityTypeIdentifierEnvironmentalAudioExposure/) and
@@ -131,7 +131,7 @@ references:
 - title: Apple headphone notifications
   url: https://support.apple.com/en-us/108968
   type: official
-last_updated: '2026-10-14'
+last_updated: '2026-10-24'
 research_notes: Executed source-aware eleven-facet notebook before article revision. Primary Apple sources checked;
   unsupported device, threshold and clinical-range claims removed.
 data_research:
@@ -154,7 +154,7 @@ data_research:
   limitations: Example observational data; not population reference ranges. Source groups and recording coverage
     vary. Missing data is unknown, not zero. Temporal overlap is not causation or explicit workout linkage. Levels
     and attenuation are distinct; no complete hearing dose or protection certification inferred.
-seo_title: 'Headphone Audio Exposure in Apple Health: Meaning and Recording Examples'
+seo_title: "Headphone Audio Levels in Apple Health: What They Mean"
 figures:
 - src: /knowledge-base/figures/headphone-audio-exposure/distribution.png
   alt: Histogram of recorded headphone audio exposure values, separated by workout, recorded sleep and other or
@@ -170,3 +170,5 @@ figures:
   section: What do example records look like?
   width: 1440
   height: 768
+
+seo_description: "Understand headphone audio levels in Apple Health: dB(A), listening duration, supported measurements, and why volume percentage is a different measure."

@@ -1,14 +1,32 @@
 # PulsHealth Data And Schema Guide
 
-This document explains what data the PulsHealth database stores, how the schema
-is shaped, and how to query it without misreading the health data. It is written
-for someone who wants to understand the database as a data model, not operate
-the Docker stack.
+Use this reference to query a PulsHealth database without double-counting data
+or mixing people and calendars. To install a server, start with the
+[setup guide](setup.md). For most apps and AI tools, use the read-only
+[product API](api.md) or [MCP connection](ai.md); direct SQL is optional.
 
-The short version: PulsHealth turns HealthKit objects into a personal health
-warehouse in PostgreSQL/TimescaleDB. Raw HealthKit events are preserved in
-sample tables, HealthKit-computed aggregates are stored separately, and derived
-views provide safer analysis surfaces for common daily metrics.
+Start with [Which Table Should I Use?](#which-table-should-i-use), then read the
+relevant table and [gotchas](#important-gotchas). Raw samples preserve HealthKit
+records; aggregates store HealthKit's computed buckets; `metric_daily` selects
+a daily value with a documented fallback.
+
+**SQL examples use psql variables.** In your psql session, set the intended
+person and a bounded range before running them. Replace the example dates and
+use the user ID from your pairing configuration; the UUID below is the default
+single-user install. These filters select data; they are not an authorization
+boundary for an administrator or the shared read-only role.
+
+```sql
+\set user_id '5ea4d000-0000-4000-8000-000000000001'
+\set start_ts '2026-10-01T00:00:00Z'
+\set end_ts '2026-11-01T00:00:00Z'
+\set start_day '2026-10-01'
+\set end_day '2026-11-01'
+```
+
+Timestamp ranges use `[start_ts, end_ts)`; daily queries use `[start_day,
+end_day)` in the calendar described below. In another SQL client, substitute
+bound parameters for psql's `:'name'` syntax.
 
 ## Mental Model
 
@@ -116,6 +134,7 @@ Important columns:
 | `id` | UUID used as the foreign key on data tables |
 | `name`, `email` | Optional profile identity from the app |
 | `dob`, `biological_sex` | Profile attributes used by derived metrics such as heart-rate zones |
+| `time_zone` | Account reporting calendar; NULL falls back to the stack setting |
 
 ### HealthKit Type
 
@@ -223,7 +242,10 @@ SELECT q.start_ts, q.end_ts, q.value, st.unit, s.name AS source
 FROM quantity_samples q
 JOIN sample_types st ON st.type_id = q.type_id
 LEFT JOIN sources s ON s.source_id = q.source_id
-WHERE st.identifier = 'HKQuantityTypeIdentifierHeartRate'
+WHERE q.user_id = :'user_id'::uuid
+  AND q.start_ts >= :'start_ts'::timestamptz
+  AND q.start_ts < :'end_ts'::timestamptz
+  AND st.identifier = 'HKQuantityTypeIdentifierHeartRate'
 ORDER BY q.start_ts DESC
 LIMIT 25;
 ```
@@ -265,10 +287,17 @@ JOIN sample_types st ON st.type_id = c.type_id
 LEFT JOIN category_labels cl
   ON cl.type_identifier = st.identifier
  AND cl.value = c.value
-WHERE st.identifier = 'HKCategoryTypeIdentifierSleepAnalysis'
+WHERE c.user_id = :'user_id'::uuid
+  AND c.start_ts >= :'start_ts'::timestamptz
+  AND c.start_ts < :'end_ts'::timestamptz
+  AND st.identifier = 'HKCategoryTypeIdentifierSleepAnalysis'
 ORDER BY c.start_ts DESC
 LIMIT 50;
 ```
+
+These examples select intervals by their start. To find every interval that
+overlaps a window, use `start_ts < end` and `end_ts > start`; merge overlapping
+sleep intervals before totaling time.
 
 Gotcha: a raw integer category value is not meaningful without its HealthKit
 type. The same integer can mean different things for different category types.
@@ -311,6 +340,9 @@ Example:
 SELECT start_ts, end_ts, activity_type, duration_s, energy_kcal, distance_m,
        stats_detail
 FROM workouts
+WHERE user_id = :'user_id'::uuid
+  AND start_ts >= :'start_ts'::timestamptz
+  AND start_ts < :'end_ts'::timestamptz
 ORDER BY start_ts DESC
 LIMIT 20;
 ```
@@ -365,7 +397,7 @@ nor category samples.
 | `heartbeat_series` | One row per heartbeat-series sample | Beat-to-beat offsets stored as JSON |
 | `ecg_samples` | One row per ECG | Classification, average HR, sampling rate, symptoms status, voltage trace |
 | `state_of_mind` | One row per state-of-mind entry | Momentary emotion or daily mood, valence, labels, associations |
-| `medication_dose_events` | One row per medication dose event | Medication name, status, scheduled time, dose quantity and unit |
+| `medication_dose_events` | One row per medication dose event | Medication name, optional device-local `medication_id`, status, scheduled time, dose quantity and unit |
 
 These tables follow the same general pattern: HealthKit UUID, start/end time,
 optional source, metadata, user, and optional temporal context.
@@ -493,7 +525,7 @@ Columns:
 | `identifier` | HealthKit identifier |
 | `type_id` | Local sample type ID |
 | `user_id` | User |
-| `day` | Local day in `puls_time_zone()`, i.e. the stack's `PULS_TIME_ZONE` (UTC when unset) |
+| `day` | Recorded phone day for aggregates with temporal context; account reporting day for raw fallback and legacy contextless aggregates |
 | `value` | Daily value |
 | `source` | `aggregate` if from HealthKit aggregate buckets, otherwise `rollup` |
 
@@ -504,13 +536,16 @@ Resolution order:
    `interval_value = 1`, `interval_unit = 'day'`, and `device_filter = 'all'`.
    HealthKit handles cross-source deduplication for that series. Other
    functions, intervals, and device-specific series never compete for the
-   daily value. Both bucket boundaries must be consecutive local midnights in
-   `puls_time_zone()`. Shifted or partial buckets remain stored but do not
-   compete, even when uploaded more recently; a valid DST day may be 23 or
-   25 hours long.
-2. Fall back to `quantity_rollups` when no canonical daily bucket exists.
+   daily value. Both boundaries must be consecutive local midnights in the recorded
+   phone context, or the account reporting zone when context is absent.
+   Shifted or partial buckets remain stored but do not compete, even when
+   uploaded more recently; DST days need not last 24 hours.
+2. Fall back to `quantity_rollups` when no non-null canonical daily bucket exists.
    Cumulative types use the highest single-source daily sum to avoid overlap;
-   discrete types use a sample-count-weighted cross-source average.
+   discrete types use a sample-count-weighted cross-source average. Raw days
+   use `puls_user_time_zone(user_id)` (`users.time_zone`, falling back to
+   `PULS_TIME_ZONE`). This is an approximation of daily activity, not a
+   recreation of HealthKit's source-resolution algorithm.
 
 Only types with a configured `sum` or `average` series are included. That
 explicitly establishes cumulative versus discrete semantics; a type configured
@@ -522,7 +557,10 @@ Example:
 ```sql
 SELECT day, value, source
 FROM metric_daily
-WHERE identifier = 'HKQuantityTypeIdentifierStepCount'
+WHERE user_id = :'user_id'::uuid
+  AND day >= :'start_day'::date
+  AND day < :'end_day'::date
+  AND identifier = 'HKQuantityTypeIdentifierStepCount'
 ORDER BY day DESC
 LIMIT 30;
 ```
@@ -601,6 +639,10 @@ arrives.
 
 ### List Metrics Present In The Database
 
+This shared vocabulary lists types seen anywhere on the server, not proof that
+the selected person has samples. Use `/v1/catalog/types` in the
+[product API](api.md) for a user-scoped inventory.
+
 ```sql
 SELECT identifier, kind, unit
 FROM sample_types
@@ -614,7 +656,10 @@ SELECT q.start_ts, q.value, st.unit, src.name AS source_name
 FROM quantity_samples q
 JOIN sample_types st ON st.type_id = q.type_id
 LEFT JOIN sources src ON src.source_id = q.source_id
-WHERE st.identifier = 'HKQuantityTypeIdentifierBodyMass'
+WHERE q.user_id = :'user_id'::uuid
+  AND q.start_ts >= :'start_ts'::timestamptz
+  AND q.start_ts < :'end_ts'::timestamptz
+  AND st.identifier = 'HKQuantityTypeIdentifierBodyMass'
 ORDER BY q.start_ts DESC
 LIMIT 10;
 ```
@@ -624,7 +669,10 @@ LIMIT 10;
 ```sql
 SELECT day, value, source
 FROM metric_daily
-WHERE identifier = 'HKQuantityTypeIdentifierStepCount'
+WHERE user_id = :'user_id'::uuid
+  AND day >= :'start_day'::date
+  AND day < :'end_day'::date
+  AND identifier = 'HKQuantityTypeIdentifierStepCount'
 ORDER BY day;
 ```
 
@@ -640,7 +688,10 @@ JOIN sample_types st ON st.type_id = c.type_id
 LEFT JOIN category_labels cl
   ON cl.type_identifier = st.identifier
  AND cl.value = c.value
-WHERE st.identifier = 'HKCategoryTypeIdentifierSleepAnalysis'
+WHERE c.user_id = :'user_id'::uuid
+  AND c.start_ts >= :'start_ts'::timestamptz
+  AND c.start_ts < :'end_ts'::timestamptz
+  AND st.identifier = 'HKCategoryTypeIdentifierSleepAnalysis'
 ORDER BY c.start_ts DESC;
 ```
 
@@ -654,7 +705,11 @@ SELECT w.uuid,
        w.distance_m,
        count(r.*) AS route_points
 FROM workouts w
-LEFT JOIN workout_route_points r ON r.workout_uuid = w.uuid
+LEFT JOIN workout_route_points r
+  ON r.workout_uuid = w.uuid AND r.user_id = w.user_id
+WHERE w.user_id = :'user_id'::uuid
+  AND w.start_ts >= :'start_ts'::timestamptz
+  AND w.start_ts < :'end_ts'::timestamptz
 GROUP BY w.uuid
 ORDER BY w.start_ts DESC
 LIMIT 20;
@@ -667,13 +722,19 @@ SELECT type_identifier,
        max(received_at) AS last_received_at,
        sum(sample_count) AS samples_received
 FROM batches
+WHERE user_id = :'user_id'::uuid
+  AND received_at >= :'start_ts'::timestamptz
+  AND received_at < :'end_ts'::timestamptz
 GROUP BY type_identifier
 ORDER BY last_received_at DESC NULLS LAST;
 ```
 
 `type_identifier` names only a batch's biggest contributor, so a type that
-rides along in other types' batches looks older here than it is. For one
-type's freshness, take `max(start_ts)` from its sample table.
+rides along in other types' batches looks older here than it is.
+`sum(sample_count)` counts uploaded payload samples, including repeats, not
+unique stored rows. For the newest recorded event of one type, use
+`max(start_ts)` from its user-scoped sample table; that timestamp does not say
+when the server received it.
 
 ### One Row Per Device Wake
 
@@ -686,7 +747,10 @@ SELECT min(received_at) AS wake_started_at,
        max(parse_ms) AS max_parse_ms,
        max(insert_ms) AS max_insert_ms
 FROM batches
-WHERE wake_id IS NOT NULL
+WHERE user_id = :'user_id'::uuid
+  AND received_at >= :'start_ts'::timestamptz
+  AND received_at < :'end_ts'::timestamptz
+  AND wake_id IS NOT NULL
 GROUP BY wake_id, trigger
 ORDER BY wake_started_at DESC;
 ```
@@ -790,7 +854,7 @@ beyond the host, so open an SSH tunnel and connect through it as the read-only
 
 ```bash
 ssh -N -L 15432:127.0.0.1:5432 <user>@<host>
-PGPASSWORD='<database-password>' psql -h 127.0.0.1 -p 15432 -U grafana -d postgres
+psql -h 127.0.0.1 -p 15432 -U grafana -d postgres -W
 ```
 
 Any GUI client (TablePlus, DBeaver, pgAdmin, DataGrip, ...) works the same way:
@@ -798,13 +862,14 @@ SSH tunnel to `<host>`, then host `127.0.0.1`, port `15432`, user `grafana`,
 database `postgres`. The passwords live in the stack's ignored `.env`
 (`POSTGRES_PASSWORD`, `GRAFANA_DB_PASSWORD`), never in this guide.
 
-Local disposable database:
+Enter `GRAFANA_DB_PASSWORD` at the password prompt; do not put it in shell
+history. The shared `grafana` role can read all users, so only trusted operators
+should have it. For account-scoped application access, use the product API or
+the viewer's accounts mode.
 
-```bash
-cd server
-cp .env.example .env
-docker compose up -d migrate      # db + schema, nothing else
-```
-
-The `migrate` service applies `server/db/migrations/` on every
-`docker compose up -d`; see `server/README.md`, "Schema migrations".
+For a fresh local database, use the [setup guide](setup.md), which generates
+real credentials. Copying `.env.example` alone leaves placeholder passwords
+that the migrator refuses. To start only the database and schema after valid
+configuration exists, run `docker compose up -d migrate` from `server/`.
+Migrations run through that service; see
+[Schema migrations](../server/README.md#schema-migrations).

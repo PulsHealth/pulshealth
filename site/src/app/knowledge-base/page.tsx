@@ -9,11 +9,11 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "HealthKit Knowledge Base - 178 Apple Health Data Types",
   description: "The missing manual for Apple Health data: all 178 HealthKit data types, with what each one measures, how often it is sampled, typical and clinical ranges, and how devices compare.",
-  robots: "index, follow, noai, noimageai",
+  robots: "index, follow, max-image-preview:large",
   openGraph: {
     title: "HealthKit Knowledge Base - 178 Apple Health Data Types",
     description: "The missing manual for Apple Health data: all 178 HealthKit data types, with clinical ranges, sampling rates and device notes.",
-    images: [{ url: '/og-default.png', width: 1200, height: 600 }],
+    images: [{ url: '/og-pulshealth-navy.png', width: 1200, height: 630 }],
   },
   alternates: {
     canonical: '/knowledge-base/',
@@ -53,8 +53,8 @@ export default async function KnowledgeBasePage() {
           </span>
         }
       >
-        {/* PageHero lays its buttons out by content width, so the search gets an explicit one. */}
-        <KnowledgeBaseSearch className="w-[min(40rem,calc(100vw-2rem))]" />
+        {/* Search fills the shared hero content width, including narrow phones. */}
+        <KnowledgeBaseSearch className="max-w-[40rem]" />
       </PageHero>
 
       <section className="container mx-auto max-w-6xl px-4 py-20">

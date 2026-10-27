@@ -1,11 +1,11 @@
 -- Daily steps by provenance
-SELECT day::timestamp AT TIME ZONE puls_time_zone() AS time,
+SELECT day::timestamp AT TIME ZONE puls_user_time_zone(${user:sqlstring}::uuid) AS time,
        value, source AS metric
 FROM metric_daily
 WHERE identifier = 'HKQuantityTypeIdentifierStepCount'
   AND user_id = ${user:sqlstring}::uuid
-  AND day >= ($__timeFrom()::timestamptz AT TIME ZONE puls_time_zone())::date
-  AND day <= ($__timeTo()::timestamptz AT TIME ZONE puls_time_zone())::date
+  AND day >= ($__timeFrom()::timestamptz AT TIME ZONE puls_user_time_zone(${user:sqlstring}::uuid))::date
+  AND day <= ($__timeTo()::timestamptz AT TIME ZONE puls_user_time_zone(${user:sqlstring}::uuid))::date
 ORDER BY time;
 
 -- Hours since latest received batch (90-day lookback)
@@ -26,6 +26,6 @@ SELECT day::text AS day, value AS steps, source
 FROM metric_daily
 WHERE identifier = 'HKQuantityTypeIdentifierStepCount'
   AND user_id = ${user:sqlstring}::uuid
-  AND day >= ($__timeFrom()::timestamptz AT TIME ZONE puls_time_zone())::date
-  AND day <= ($__timeTo()::timestamptz AT TIME ZONE puls_time_zone())::date
+  AND day >= ($__timeFrom()::timestamptz AT TIME ZONE puls_user_time_zone(${user:sqlstring}::uuid))::date
+  AND day <= ($__timeTo()::timestamptz AT TIME ZONE puls_user_time_zone(${user:sqlstring}::uuid))::date
 ORDER BY day DESC;

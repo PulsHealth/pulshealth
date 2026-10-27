@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://pulshealth.com'),
-  title: "PulsHealth - Sync, Export, and Control Your Health Data",
+  title: "PulsHealth: Export and Sync Apple Health Data",
   description: "Unlock your Apple Health data. Explore it in the PulsHealth web app, sync to your database, export CSV and JSON, and connect your AI tools.",
   alternates: {
     canonical: '/',
@@ -30,18 +30,18 @@ export const metadata: Metadata = {
   },
   openGraph: {
     siteName: "PulsHealth",
-    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'PulsHealth: Unlock your health data. Sync, export, and control your Apple Health data.' }],
+    images: [{ url: '/og-pulshealth-navy.png', width: 1200, height: 630, alt: 'PulsHealth logo. Export and sync your health data' }],
   },
   twitter: {
     card: 'summary_large_image',
-    images: ['/og-default.png'],
+    images: ['/og-pulshealth-navy.png'],
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0a0a0a",
+  themeColor: "#0b1018",
 };
 
 const GITHUB_URL = "https://github.com/PulsHealth/pulshealth";

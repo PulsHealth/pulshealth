@@ -222,12 +222,25 @@ uploaded server data or revoke credentials on the server.
   PulsHealth database — the database address that sign-in delivered, so the
   app can tell that database from one you run. The state also includes opaque
   HealthKit query anchors,
-  per-type counters, and progress watermarks. It is written atomically with
+  per-type counters, progress watermarks, and workout UUIDs paired with metric
+  identifiers and SHA-256 content fingerprints of successfully uploaded workout
+  streams. These fingerprints help skip unchanged uploads; they contain no
+  individual point values or timestamps. It is written atomically with
   iOS file protection and is excluded from device backups. It holds **no health
   samples** — a sync streams those to your database and keeps none of them in
   the app. The one time health samples rest in the app's storage is an export you
   asked for, briefly, as described under [Exports](#exports); the analysis
   summaries below are derived numbers, not samples.
+- **Medication aliases** — `medication-identities.json` in the app's private
+  container stores Apple's securely archived, opaque medication concept identifiers
+  and randomly generated UUID aliases. This contains concept identity, not dose
+  events, medication names, quantities or timestamps. It uses iOS file protection
+  and is excluded from backups. Sync and requested exports share these aliases
+  across launches and saved databases, separately from sync progress. Only the
+  alias, never the Apple archive, accompanies a dose sent to your chosen destination.
+  Unpairing or resetting sync does not clear this mapping. Deleting the app or
+  losing this file creates new aliases; they do not identify a medication across
+  devices or reinstalls.
 - **Analysis summaries** — when you analyze a data type on the Explore tab,
   the app reads the past year of that type from Apple Health and keeps a
   *summary* of it, one
@@ -253,6 +266,7 @@ uploaded server data or revoke credentials on the server.
   onboarding and background-scheduling flags, Explore display preferences,
   and the counters used to space App Store review requests: active days,
   foreground visits, successful-upload days, the latest counted upload date,
+  the date syncing first succeeded on three distinct days,
   and request-attempt dates, versions, sources (Explore, Export or Sync) and
   count. These contain no health values, type identifiers or account details,
   and are not sent to the developer or an analytics service. A request attempt
@@ -587,36 +601,31 @@ Everything above is about the app and, in the section just before this one,
 the developer's own viewer. This section is about pulshealth.com,
 which is a separate thing.
 
-The site is a set of static files. It uses self-hosted Umami analytics,
-without analytics cookies, advertising identifiers, session recordings or
-cross-site user identification. The operator collects page paths, referrer
-domains, coarse browser/device information, anonymous visit estimates,
-fixed action counts (such as App Store link clicks and successful form
-submissions), and browser loading/interaction/layout performance. An App
-Store click is not evidence of an installation. IP addresses are used
-transiently to derive anonymous identifiers that rotate daily; raw IP
-addresses are not stored in the analytics database. Operational network
-providers may process request addresses under their own policies.
+We use self-hosted, anonymous daily totals to improve this website: page groups,
+broad traffic-source categories, fixed actions (such as App Store button clicks
+and successful form responses), button locations and performance ratings. We do
+not store individual event records, visitor or session identifiers, IP-derived
+identities, raw URLs, form contents or health data in these counters, or join
+visits into a journey. Daily totals are kept for about 13 months; expired totals are removed during routine checks. Network
+providers still process connection addresses to deliver and secure requests.
 
-Campaign landing pages have fixed, public campaign labels in their paths. Their
-App Store buttons include Apple's provider and campaign tokens so Apple can
-report aggregated downloads, purchases and subscriptions associated with a
-campaign. Tokens identify a campaign, not a person. The operator compares
-these privacy-thresholded Apple reports with advertising spend and aggregate
-website actions to evaluate marketing. Apple reports do not expose a website
-visitor's identity or health data. There is no advertising pixel, browser
-fingerprinting or campaign identifier storage added to the app or website.
-Navigating away from a campaign page does not persist that campaign label.
+You can exclude this browser using the control above. It saves only an on/off
+preference until you change it or clear site data. Do Not Track and Global
+Privacy Control are also respected. No analytics or referral cookies are set;
+old campaign cookies are removed. Historical website analytics collected before
+this change used daily rotating identifiers and remain separate from these totals.
 
-The browser and collection gateway discard URL query strings and fragments,
-referrer paths, page titles, form contents and user identifiers. Collection
-respects Do Not Track and Global Privacy Control. Website analytics are
-separate from the iPhone app and the hosted health viewer. Authorized AI
-assistants may read aggregate website statistics to help the operator
-understand and monitor the site. No health data ever
-passes through it: the app does not talk to it, and there is nothing to sign
-in to on it. Its "Sign in" link leads to the developer's invite-only viewer
-at `app.pulshealth.com`, a separate site described in the section above.
+Referral links count aggregate clicks before opening the normal homepage, without
+remembering the campaign on your device. Separate, direct App Store campaign
+links carry a shared campaign label to Apple. Apple may provide delayed,
+privacy-thresholded download and purchase totals; these are not matched to
+website visitors or health records. Clicks are not installations, and purchase
+transactions are not necessarily new customers. A browser opt-out takes effect
+on the page; a referral redirect can count before it opens.
+
+Website statistics stay separate from the iPhone app and hosted health viewer.
+Authorized AI assistants can read aggregate reports for the operator. The website's
+sign-in links open the separate service at `app.pulshealth.com`, described above.
 
 Two forms on the site — "Sign up for updates" and the consulting contact
 form — send exactly what you type into them (a name, an email address, and

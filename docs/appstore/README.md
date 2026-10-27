@@ -11,6 +11,8 @@ and when, is the [Release record](#release-record) at the bottom.
 | Document | What it is |
 |---|---|
 | [`2.1-copy.md`](2.1-copy.md) | Approved 2.1 copy and the five-card advertising campaign; preparation, not a submission record. |
+| [`2.4-copy.md`](2.4-copy.md) | Release notes and reviewer walkthrough for the replacement 2.4 (33) submission. |
+| [`2.3-copy.md`](2.3-copy.md) | Prepared 2.3 release notes and updated first-sync review instructions; no upload or submission implied. |
 | [`2.2-copy.md`](2.2-copy.md) | Prepared Free/Pro description, What's New and reviewer walkthrough for the 2.2 candidate; acceptance and submission remain separate. |
 | [`concepts/review.html`](concepts/review.html) | Offline review gallery: three visual directions, 15 advertising cards, and saved selections. See [`concepts/README.md`](concepts/README.md) for sources and rebuild instructions. |
 | [`subscriptions.md`](subscriptions.md) | Pro product IDs, US prices, feature limits and release acceptance gates; source preparation only. |
@@ -237,7 +239,148 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.4 (33) replacement submitted for App Review (2026-10-26)
+
+App Store Connect accepted submission
+`31ac9c47-3dc5-4432-a5dc-456f55d2c4bf` on 2026-10-26 at 1:42 PM Pacific.
+Both the submission and **2.4 (33)** report **Waiting for Review**.
+Automatic release after approval to all users immediately remains selected.
+Apple approval and public availability are not yet verified. This replaces
+withdrawn build 32; it does not resume that earlier submission.
+
+Explore/Export/Sync changes merged in PR
+[#390](https://github.com/PulsHealth/pulshealth/pull/390) as
+`9218aa60830f054aac64be8be0396836c313477a`. The build-number change merged in
+PR [#391](https://github.com/PulsHealth/pulshealth/pull/391) as
+`b1d8e9fe738b595eea5572683ea52a1764430327`. The clean archive source is
+`09fd67223d403befcaccb269f9704169a86487d2`; its iOS inputs match that merge.
+The archive was built with Xcode 27.1 and the iOS 27.1 SDK. Its IPA, matching
+dSYMs, checksums, signing checks, CI references and submission receipt are
+retained privately. Distribution verification confirmed the fixed app identity,
+iPhone/iPad support, HealthKit/background-delivery entitlements, privacy
+manifests, no debugging entitlement and no bundled StoreKit test configuration.
+
+Type pages offer raw readings, aggregates, or both for Export and Sync.
+Export selection never starts a run; Sync changes wait for Review and Apply.
+Explore uses separate neutral category cards with Workouts easier to find.
+Export starts empty, has clearer stable progress and a centered clear-selection
+alert, and resets after successful sharing. HealthKit deletion records are
+silently excluded from exports; normal sync deletion delivery is unchanged.
+The release notes and reviewer walkthrough are updated; existing demo
+credentials, screenshots, privacy declarations and release settings are retained.
+
+Candidate CI passed with Xcode 26.5 and 27.0 before submission. The feature had
+122 passing local app tests and was installed as a signed development build
+for maintainer testing. Physical-device acceptance of the exact distribution
+archive remains unverified; no archive-specific acceptance is inferred from
+the earlier development install or the submission request.
+
+### 2.4 (32) withdrawn from App Review (2026-10-26)
+
+The maintainer canceled submission
+`13ee1efb-7f52-4557-85f7-a1ee13aeca0f` on 2026-10-26 while continuing app
+changes and phone testing. App Store Connect was rechecked and reports
+**Developer Rejected** for **2.4 (32)**. The submission is no longer awaiting
+review; resubmission requires an explicit release decision.
+
+The submission was originally accepted on 2026-10-26 at 10:58 AM Pacific,
+with **Waiting for Review** status and automatic release after approval.
+Approval, public release, and the live **Made for iPhone Duo** badge were not
+verified before withdrawal. The existing 2.3 version remains **Ready for
+Distribution**.
+
+PR [#386](https://github.com/PulsHealth/pulshealth/pull/386) merged as
+`bba42b51a8d264f99b2868614c8c20949f3a6469` after all required checks passed,
+including Xcode 26.5 and 27.0. The clean archive source
+`32a04c29d235a22f4b25a420181d4ef293b2d461` is contained in that merge, with
+matching app/package inputs. The archive uses Xcode 27.1 and the iOS 27.1 SDK.
+The exported IPA, matching dSYMs, checksums, and acceptance receipts are
+retained privately. Its distribution signature retains HealthKit and
+background-delivery entitlements and disables debugging.
+
+Explore now adapts between a catalog/detail split and compact navigation,
+preserving selection across folding. Onboarding clips adjacent pages to its
+safe viewport. Explore stats stack at accessibility sizes, category labels
+have the full sidebar width, captions wrap, and bounded chart axes remain
+legible while surrounding text retains the requested size.
+
+All 109 signed app tests passed on a dedicated Duo simulator with iOS 27.1.
+Native checks covered both displays, compact Back/reopening, selection and
+export/database draft retention, vertical bars, onboarding clipping, maximum
+text-size statistics and chart axes, plus ordinary iPhone/iPad layout smoke
+checks. System Health permission completion/share-sheet completion, a connected
+pending-Apply bar, and nested sync-detail resizing were not visually exercised.
+Physical-device HealthKit/background acceptance for this artifact is unverified.
+
+Four native JPEG screenshots with synthetic data are attached to the version:
+outer-display Heart Rate and Export at 1398 × 2034, and inner-display Heart Rate
+and charts at 2853 × 2007. They are submitted through the app version, not as
+separate Asset Library review items. The existing iPhone/iPad assets and
+privacy declarations remain in place. Build 31 was uploaded during preparation
+and superseded; it is not selected for this submission.
+
+
+### 2.3 (30) replacement submitted for App Review (2026-10-22)
+
+Build **2.3 (30)** replaces build 29 in App Review. Apple accepted the
+[replacement submission](https://appstoreconnect.apple.com/apps/6757657354/distribution/reviewsubmissions/details/99d44824-58b1-47f1-8400-f67c5a6a4604)
+on **2026-10-22 at 15:34 PDT** and reports **Waiting for Review**. Automatic
+release after approval to all users immediately remains selected. The earlier
+build 29 submission was cancelled to make this replacement; neither this
+submission nor its internal TestFlight availability establishes approval or
+public release.
+
+The candidate adds collapsed-by-default Explore categories with full category
+rows, groups Export layout and ZIP settings under More options, and removes
+the requested explanatory blurbs from Explore, Export and Sync. Existing saved
+category choices remain respected. All earlier 2.3 changes are retained.
+Release notes and build-specific TestFlight guidance were saved; existing
+screenshots, review credentials, privacy declarations and prices were retained.
+
+The archive source is `f3e4fd6eca6e47a2ceb8bf3047f8eb652d2c6b23`;
+PR [#333](https://github.com/PulsHealth/pulshealth/pull/333) merged as
+`77de846c36c2662242124e04454e740f7c10442c` with identical app/package inputs.
+[Candidate iOS CI](https://github.com/PulsHealth/pulshealth/actions/runs/39864394363)
+passed: iOS 27.0 **584 package and 109 app tests**, no skips; iOS 26.5
+**581 package and 101 app tests**, with the documented three/eight platform
+skips. Archive and IPA signatures, HealthKit entitlements, privacy manifests,
+and matching dSYMs were verified. The exact source, IPA hash, test evidence,
+symbols and Apple receipt are retained privately. New physical-device acceptance
+for build 30 remains unverified. No backend or website deployment was needed
+for these UI-only changes.
+
+### 2.3 (29) submitted for App Review (2026-10-22)
+
+Build **2.3 (29)** was archived from clean source
+`7a540f83cd469af051399a80caab82da40e9e105`; the later site-only main revision
+`73c839a9014e1d55ea68f5d9c7b8fe3748282bf4` has identical iOS inputs. Apple
+processed the build and accepted the
+[submission](https://appstoreconnect.apple.com/apps/6757657354/distribution/reviewsubmissions/details/7b66a220-282e-4c1c-920f-0707312b577d)
+on **2026-10-22 at 14:58 PDT**. The verified status is **Waiting for Review**,
+with automatic release after approval to all users immediately. This is not
+Apple approval or a verified public release.
+
+The build includes the aggregate-options crash fix, medication display names
+and installation-local UUID aliases, skipping unchanged acknowledged workout
+streams, and first-sync selection/history review with the onboarding replay
+guard. [Release copy](2.3-copy.md), existing review credentials, screenshots,
+pricing and ratings are retained. The signed archive, exported IPA, matching
+dSYMs, signature/HealthKit/privacy verification and candidate receipt are kept
+privately. The integrated release PR passed iOS CI on Xcode 26.5 and 27.0.
+The maintainer reported completed testing before archiving; that general
+confirmation is distinct from per-scenario or archive-specific device evidence.
+
+The matching privacy page was published and verified against the tested site
+build. Migration 031 and the updated ingest receiver were deployed from
+`73c839a9014e1d55ea68f5d9c7b8fe3748282bf4`; its health, revision label,
+authentication enforcement and medication-ID column were verified, while the
+database container and viewer/API/MCP deployments remained unchanged. No
+historical medication repair was performed.
+
 ### 2.2 (28) submitted for App Review (2026-10-19)
+
+App Store Connect was checked on 2026-10-22 and reports **Ready for Distribution**
+for 2.2 (28). The Waiting for Review status below is historical.
 
 Build **2.2 (28)** was archived from clean source
 `644f0eeaf20b87edc6b23996dbd5a5a4821fe6b8`. Apple processed the build, and the

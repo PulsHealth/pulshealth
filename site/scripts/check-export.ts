@@ -2,9 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadPosts } from "../src/lib/blog";
-import { DOCS } from "../src/lib/docs";
+import { DOCS, docRoutes } from "../src/lib/docs";
+import { renderMachineMarkdown } from "../src/lib/llms";
 import { STATIC_PAGES } from "../src/lib/pages";
-import { campaigns, campaignStoreURL } from "../src/lib/campaigns";
+import { campaigns } from "../src/lib/campaigns";
 import type { BlogPost } from "../src/lib/types";
 
 export function filesIn(directory: string): string[] {
@@ -149,7 +150,21 @@ export function checkExport(siteDir = process.cwd()): void {
   sameSet(docs, DOCS.map(doc => doc.slug), "Documentation pages");
   for (const doc of DOCS) requireFile(path.join(root, doc.repoPath));
   for (const file of ["index.html", "docs/index.html", "docs/self-hosting/index.html", "openapi.json"]) requireFile(path.join(outDir, file));
-  if (!requireFile(path.join(outDir, "llms.txt")).includes("https://pulshealth.com/docs/protocol/")) throw new Error("Exported llms.txt missing protocol link");
+  const llms = requireFile(path.join(outDir, "llms.txt"));
+  const indexSource = fs.readFileSync(path.resolve("../llms.txt"), "utf8");
+  if (llms !== renderMachineMarkdown(indexSource, "llms.txt", docRoutes)) throw new Error("Exported llms.txt differs from its source");
+  for (const route of ["setup", "protocol"]) {
+    if (!llms.includes(`https://pulshealth.com/docs/${route}/`)) throw new Error(`Exported llms.txt missing ${route} link`);
+  }
+  const fullDocs = requireFile(path.join(outDir, "llms-full.txt"));
+  const markdownDocs = DOCS.filter(doc => doc.format !== "openapi");
+  sameSet(fs.readdirSync(path.join(outDir, "docs")).filter(name => name.endsWith(".md")), markdownDocs.map(doc => `${doc.slug}.md`), "Plain Markdown docs");
+  for (const doc of markdownDocs) {
+    const source = fs.readFileSync(path.resolve("..", doc.repoPath), "utf8");
+    const expected = `Source: https://pulshealth.com/docs/${doc.slug}/\n\n${renderMachineMarkdown(source, doc.repoPath, docRoutes)}`;
+    if (requireFile(path.join(outDir, "docs", `${doc.slug}.md`)) !== expected) throw new Error(`Stale Markdown export: ${doc.slug}`);
+    if (!fullDocs.includes(expected)) throw new Error(`Full AI documentation missing or stale: ${doc.slug}`);
+  }
   if (!requireFile(path.join(outDir, "docs/api-reference/index.html")).includes('id="getDailyMetrics"')) throw new Error("API reference missing endpoint");
   const withSlash = (href: string) => href.endsWith("/") ? href : `${href}/`;
   checkIndexableExport(outDir, [
@@ -163,7 +178,9 @@ export function checkExport(siteDir = process.cwd()): void {
   for (const item of campaigns) {
     const html = requireFile(path.join(campaignDir, item.id, "index.html"));
     if (!html.includes('content="noindex, follow"')) throw new Error(`Campaign must be noindex: ${item.id}`);
-    if (!decode(html).includes(campaignStoreURL(item.id))) throw new Error(`Campaign App Store attribution missing: ${item.id}`);
+    if (!html.includes('http-equiv="refresh" content="0;url=/"')) throw new Error(`Campaign must redirect to homepage: ${item.id}`);
+    if (!html.includes('rel="canonical" href="https://pulshealth.com/"')) throw new Error(`Campaign canonical must be homepage: ${item.id}`);
+    if (decode(html).includes(item.headline) || html.includes(`ct=${item.id}`)) throw new Error(`Retired campaign content remains: ${item.id}`);
     checkLocalLinks(html, item.path, outDir);
   }
   console.log(`export: ${identifiers.length} knowledge-base pages and ${DOCS.length} documentation pages checked`);

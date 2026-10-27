@@ -1,11 +1,11 @@
 ---
 title: "Why Your Apple Health Step Counts Don't Match"
-date: "2026-07-03"
-updated: "2026-10-08"
+date: "2026-04-12"
+updated: "2026-10-25"
 draft: false
 author: "Sean Wade"
 tags: ["apple-health", "steps", "data-quality", "export"]
-excerpt: "Different step totals often come from overlapping sources, day boundaries, or stale summaries. Here is how to find the cause without deleting useful history."
+excerpt: "Apple Watch, iPhone and exported step counts can differ. Check device sources, daily summaries and time zones before deleting or changing your Health history."
 ---
 
 Your Watch shows one step count. Health on your iPhone shows another. Export the records, add the values in a spreadsheet, and you may get a third number—sometimes a much larger one.
@@ -14,7 +14,18 @@ That disagreement does not automatically mean your steps are duplicated or your 
 
 **Start by comparing one completed day, using the same time zone, and identifying how each total was calculated.** Today's moving total makes a poor debugging target.
 
-*Updated October 8, 2026: this edition explains the current PulsHealth daily-value calculation and includes an analysis of my own exported records.*
+*Updated October 25, 2026: replaced repeated checklists with a diagnostic table and simplified the export-calculation explanation. The September data comparison is unchanged.*
+
+## Start with the shape of the mismatch
+
+| What you see | First thing to inspect |
+| --- | --- |
+| Only the raw CSV sum is much larger | Overlapping records from multiple sources |
+| One day is high and the next is low | Time zone and day boundaries |
+| Only today's totals disagree | Refresh time and incoming records |
+| A completed day differs across apps | Each app's source selection and calculation |
+
+These are investigation paths, not diagnoses. Choose one completed day and keep its date, time zone, and sources beside every number you compare.
 
 ## 1. Find out which devices contributed
 
@@ -32,7 +43,7 @@ Here is a deliberately simplified example, not a reconstruction of Apple's algor
 
 Adding both columns yields 3,700. But both devices observed the same twenty minutes. Neither that sum nor an average of the columns is automatically the correct combined result.
 
-This is why a raw export and a daily summary are different products. Raw records preserve observations and their provenance. A daily summary applies rules to those observations.
+This is why a raw export and a daily summary are different products. Raw records preserve observations and their provenance. A daily summary applies rules to those observations. The same source check helps investigate an [unexpected Flights Climbed count](/blog/apple-watch-flights-climbed-wrong/) before blaming the Watch sensor.
 
 ## 2. Separate overlapping observations from repeated uploads
 
@@ -41,27 +52,19 @@ People use “duplicate” for two different problems:
 - **The same HealthKit object appears twice.** A retry or repeated file import may have copied an existing record. Inspect the object's identity, not just its value.
 - **Different objects describe overlapping activity.** The Watch and phone can create distinct records for the same walk. Removing repeated identifiers will not resolve that overlap.
 
-PulsHealth's database protects raw quantity records against repeated inserts using their sample identity, with a key containing the HealthKit UUID and start timestamp. Sending an acknowledged page again does not create another copy of those rows. That protection is separate from deciding how much activity overlapping devices represent. [Database reference](/docs/database/)
+PulsHealth handles repeated uploads separately from source overlap: re-sending the same raw sample does not create a second copy. Two devices observing the same walk still create distinct samples. The [database reference](/docs/database/) explains that storage rule.
 
 Conversely, two records containing “120 steps” are not necessarily duplicates. They could describe separate walks. Deleting rows simply because their values match destroys information.
 
-Before editing your history, inspect the record's source, interval, and identifier where your export exposes one. Treat a suspected double count as a calculation problem until you have evidence of an erroneous record.
+Before editing your history, inspect the record's source, interval, and identifier where your export exposes one. There is also a different way to double-count activity: adding a workout to a daily total that already includes it. The [active versus total calories walkthrough](/blog/apple-watch-active-vs-total-calories/) shows that accounting problem.
 
 ## 3. Check whether you exported records or statistics
 
 HealthKit offers statistics queries that merge sources before calculating values. It also lets developers request statistics separately by source. Consequently, an app asking HealthKit for a daily cumulative sum is doing different work from a script adding every raw step record. [Apple's statistics documentation](https://developer.apple.com/documentation/healthkit/hkstatistics)
 
-In PulsHealth there are three relevant paths:
+For an everyday spreadsheet, use a **daily, all-device HealthKit sum** if you want the phone's calculated daily series. Keep the raw records for questions about individual devices or intervals.
 
-| Value | How it is produced | What to watch for |
-|---|---|---|
-| Raw step samples | Individual HealthKit records | Sources can overlap |
-| Daily HealthKit aggregate | Statistics computed on the phone | Check interval, source filter, and freshness |
-| `metric_daily` | Preferred aggregate, with a server fallback | Inspect the `source` field |
-
-For steps, `metric_daily` prefers a **sum, one-day interval, all-device** HealthKit aggregate. A Watch-only sum, hourly series, or maximum is not a substitute for that particular daily definition.
-
-If the canonical daily bucket is unavailable and the type has a qualifying sum configuration, the fallback uses the highest single-source daily sum. It does **not** add every device together. This reduces obvious overlap, but it is a fallback rule—not a reproduction of Apple's source-merging algorithm. It can miss complementary activity: for example, a phone records the morning and a Watch records the evening. [PulsHealth's daily metric rules](/docs/database/)
+PulsHealth's server can also provide a daily value through `metric_daily`. It prefers that canonical HealthKit aggregate. When the aggregate is unavailable, its cumulative fallback uses the highest single-source daily sum. That avoids blindly adding overlapping devices, but can miss complementary activity, such as a phone recording the morning and a Watch recording the evening. Check the returned `source`: `aggregate` means a phone aggregate; `rollup` means the fallback. The [daily metric rules](/docs/database/) describe eligibility and boundaries.
 
 An aggregate is not guaranteed to match a screenshot of Health taken at another time. Permissions, query boundaries, and newly arrived records still matter. When comparing, record both the calculation method and the time you checked it.
 
@@ -92,11 +95,9 @@ For a useful comparison:
 1. Choose a completed day without a recent time-zone change.
 2. Use local midnight to the next local midnight, rather than assuming every day contains exactly 24 hours.
 3. Check the export's offset and the chart's time zone.
-4. In a self-hosted PulsHealth installation, confirm `PULS_TIME_ZONE` matches the intended phone calendar zone.
+4. In PulsHealth, check the account reporting time zone. Phone aggregates with date context retain the recorded phone day; during travel that can differ from the server reporting day. See the [database calendar rules](/docs/database/).
 
 Travel requires an explicit convention: the day at your destination, the day in your home zone, or the zone carried by each record. These are different analytical choices. Document yours instead of treating a shifted total as missing movement.
-
-Check the metric and unit too. Step count is a count; walking distance is a distance. Converting miles to kilometres cannot resolve a mismatch between different metrics.
 
 ## 5. Compare freshness before changing source priority
 
@@ -106,10 +107,8 @@ Open the syncing app with the phone unlocked, run a sync if it provides that act
 
 Changing source priority is useful when you have deliberately chosen which device to trust. It is not a universal repair for an old export, a server fallback, or a UTC grouping error. Changing it will not rewrite a CSV already on your computer.
 
-## A reliable comparison checklist
+## Keep enough information to explain the number
 
-Write down the date, time zone, source filter, and last refresh for each number. Then label the method: **raw sum**, **single-source sum**, **HealthKit aggregate**, or **server fallback**.
+Label each result as a **raw sum**, **single-source sum**, **HealthKit aggregate**, or **server fallback**, with its date boundary and refresh time. That small amount of bookkeeping makes a later discrepancy much easier to trace.
 
-If only the raw all-source sum is larger, investigate overlapping intervals. If adjacent days gain and lose similar amounts, investigate date boundaries. If the discrepancy disappears after an unlocked sync, investigate freshness. If a fallback differs from HealthKit, compare the calculation rules before treating either number as a damaged record.
-
-For a spreadsheet you intend to use every week, export a clearly defined daily series and keep raw records for investigation. The [export reference](/docs/export/) explains the available formats. A useful chart starts with a number whose meaning you can explain.
+For a spreadsheet you intend to use every week, export a defined daily series and retain raw records for investigation. The [export guide](/blog/export-apple-health-to-csv-excel/) shows how to choose between them.

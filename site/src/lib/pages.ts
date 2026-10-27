@@ -1,6 +1,10 @@
 import { SearchItem } from './types';
 
 export const STATIC_PAGES: SearchItem[] = [
+  { id: 'page-friend-flex', type: 'page', title: 'Friend Flex', description: 'Create fitness challenges with friends, compete on personal improvement, track progress, and share results in iMessage.', href: '/friend-flex/', icon: 'Activity' },
+  { id: 'page-friend-flex-support', type: 'page', title: 'Friend Flex Support', description: 'Help with joining challenges, logging results, optional Apple Health, and deleting your data.', href: '/friend-flex/support/', icon: 'HelpCircle' },
+  { id: 'page-friend-flex-privacy', type: 'page', title: 'Friend Flex Privacy Policy', description: 'What Friend Flex stores, who can see it, and how to delete your data.', href: '/friend-flex/privacy/', icon: 'Shield' },
+  { id: 'page-features', type: 'page', title: 'PulsHealth App Features', description: 'Explore Apple Health on iPhone, export CSV and JSON, create custom summaries, and sync your database.', href: '/features/', icon: 'Smartphone' },
   { id: 'page-pro', type: 'page', title: 'PulsHealth Pro', description: 'Optional app subscription for full available Apple Health history and sync of all supported types. Open source, with your own database.', href: '/pro/', icon: 'Heart' },
   { id: 'page-pricing', type: 'page', title: 'PulsHealth App Pricing', description: 'Compare Free and Pro: recent exports and five sync types free, or full history and all sync types with the app subscription. Hosting is separate.', href: '/pricing/', icon: 'Info' },
   { id: 'page-watch-workout-pro', type: 'page', title: 'Watch Workout Pro', description: 'Create, save, share, and schedule structured workouts on iPhone for Apple Workout on Apple Watch. Optional on-device Apple Intelligence and Pro subscription.', href: '/watch-workout-pro/', icon: 'Activity' },

@@ -6,6 +6,12 @@ any language; the reference receiver is the Go ingest server in
 [`server/ingest/`](../../server/ingest/), and a deliberately minimal one is
 [`examples/receivers/python-sqlite/`](../../examples/receivers/python-sqlite/).
 
+To run the existing backend, follow [Server setup](../setup.md). You do not
+need to implement this protocol to use the app. To build a receiver, start with
+[the checklist](#11-minimal-conformant-receiver-checklist), then use the schemas
+and fixtures below to validate it. Reading synced data is a separate interface:
+the [product API](../api.md).
+
 | Artifact | Where |
 |---|---|
 | This specification | `docs/protocol/README.md` |
@@ -313,7 +319,8 @@ numbers: the lead I trace in microvolts, one entry per measurement, typically
 HealthKit's label and association cases).
 
 **`medicationDose`** (iOS 26) carries a `medicationDose` object:
-`medication` (string or null: the display name when resolvable), `status`
+`medication` (string or null: the display name when resolvable),
+`medicationID` (optional UUID string or null), `status`
 (`taken`, `skipped`, `snoozed`, `notLogged`, or another HealthKit log status
 name), `scheduledAt` (epoch ms or null), `scheduledAtContext`,
 `doseQuantity` (number or null) and `doseUnit` (string or null, the dose's own
@@ -323,8 +330,12 @@ unit, not a catalog unit).
 matching the dose's opaque HealthKit concept identifier against authorized
 medication concepts (including archived medications). If unavailable, send null;
 an Objective-C object description or memory address is not a medication name.
-Different concepts may share a name, and names may change. This v1 field does not
-provide a stable concept ID, strength conversion or a per-tablet mass. A dose in
+Different concepts may share a name, and names may change. `medicationID` is a
+random UUID assigned by the sender by comparing opaque HealthKit concept
+identifiers for equality. It groups doses only while that device's local identity
+map survives; it is not a cross-device or reinstall-stable ID and cannot be
+reconstructed from a display name. Older senders omit it. This does not provide
+strength conversion or a per-tablet mass. A dose in
 `count` must not be treated as grams or milligrams.
 
 
@@ -580,7 +591,12 @@ wins within a batch.
 
 Identity: `(workoutUUID, t)` for route points and `(workoutUUID, type, t)`
 for series points; insert-if-absent. Chunks of one stream may arrive in
-several batches and in any order relative to each other.
+several batches and in any order relative to each other. Resending an edited
+series can add new timestamps, but existing values remain unchanged; omitting
+previous points does not delete them. Content fingerprints in the client only
+suppress unchanged uploads, and do not turn these records into replacements.
+Receivers that need edit/removal support require a separate explicit repair
+process; a full upload alone does not repair those changes.
 
 ### 6.7 Profile and users
 
@@ -628,9 +644,10 @@ a generic one.
 | 429 | Receiver asks the app to back off | yes |
 | 5xx | Anything transient: database down, deadlock, timeout, disk full | yes |
 
-A non-429 4xx is terminal for that page: the app keeps its cursor, logs the
-error, and re-sends the same page on its next run, which fails the same way
-until the receiver changes. **Answer 4xx only for input that is genuinely
+A non-429 4xx is terminal for that page: the app keeps its cursor and logs the
+error. Current clients put terminal refusals into a cooldown before automatic
+retries; a manual sync can retry immediately ([8.1](#81-retry-contract)).
+**Answer 4xx only for input that is genuinely
 malformed**, and answer transient failures with 5xx or 429 so the app's
 backoff does its job. A receiver that cannot store a valid line it does not
 understand SHOULD discard it and still return 2xx, not 400.
@@ -652,8 +669,9 @@ version" message instead of a stall.
 
 ## 8. Sender behaviour a receiver can rely on
 
-Derived from `HTTPSyncTransport` and the sync engine; version 1 clients
-behave this way and a receiver MAY depend on it.
+Derived from the current `HTTPSyncTransport` and sync engine. Retry scheduling
+can change between app releases without changing protocol v1; durable
+acknowledgment and idempotent storage remain the receiver contract.
 
 ### 8.1 Retry contract
 
@@ -665,12 +683,22 @@ behave this way and a receiver MAY depend on it.
   with default 4. During a background wake triggered by HealthKit
   (`X-Wake-Trigger: observer`) the app spends **one** retry and gives up,
   because the wake's execution budget is short; the next wake re-sends.
-- **Retried**: 5xx, 429, and network errors (connection refused, reset,
-  timeout, TLS failure). **Never retried**: any other 4xx, a missing
-  configuration.
+- **Server-directed delay**: current clients honor `Retry-After` on 429 and
+  503 (seconds or an HTTP date). A delay above 60 seconds, or 10 seconds in an
+  observer wake, ends that run instead of retrying early.
+- **Retried**: 5xx, 429, and transient network errors such as connection
+  refusal, reset or timeout. **Never retried within the run**: other 4xx,
+  missing configuration, invalid URLs, ATS refusal or certificate errors
+  that need a configuration fix.
+- **Cooldown**: current clients pause automatic runs for a type after a
+  terminal refusal (4xx except 408/429, incompatible protocol or terminal
+  network error). The pause starts at 15 minutes and doubles to six hours.
+  A manual sync bypasses it; an acknowledged upload or applied configuration
+  change clears it. Older clients may retry on every wake.
 - **Cursor**: the HealthKit anchor or watermark behind a batch advances only
-  after a 2xx. A retried or re-sent batch therefore carries exactly the same
-  lines, and a batch that never succeeds is sent again on every later run.
+  after a 2xx. Retries of an upload keep its payload; a later run can reread
+  the unacknowledged page. Receivers must tolerate repeated sample UUIDs even
+  when the new upload has a different `batchID`.
 
 ### 8.2 Batch shapes
 
