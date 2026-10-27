@@ -690,7 +690,10 @@ The workout route map (`lib/mapStyles.ts`) draws its basemap from free public
 tile endpoints that need no API key: Esri's Dark Gray and Light Gray Canvas
 (`server.arcgisonline.com` — the dark and light styles, and so the `auto`
 default), OpenStreetMap (`tile.openstreetmap.org`), Esri World Imagery, and
-OpenTopoMap. The Canvas tiles stop at zoom 16; Leaflet scales those up for the
+OpenTopoMap. The default dark map has a restrained navy tint, with zoom controls and
+attribution styled to match the viewer. Other saved basemap styles retain their
+original colors. Provider credits remain visible.
+The Canvas tiles stop at zoom 16; Leaflet scales those up for the
 three levels past it. CARTO's basemaps used to supply the dark, light and
 Voyager styles, but since September 2026 they answer every keyless request
 with an "API KEY REQUIRED" tile, so they are gone: Voyager had no keyless

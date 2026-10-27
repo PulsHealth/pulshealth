@@ -1,3 +1,6 @@
+"use client";
+
+import { useChartWidth } from "./useChartWidth";
 // Static SVG time-series chart for an intra-workout stream (heart rate, power,
 // cadence, speed). X is minutes from the workout start; Y is the metric value.
 // Same hand-rolled chart helpers and house style as RouteProfile. Optional
@@ -6,7 +9,6 @@
 import { makeScale, niceStep, niceTicks, smoothPath, type Pt } from "@/lib/chart";
 
 const PAD = { top: 14, right: 14, bottom: 24, left: 44 };
-const W = 760;
 
 export interface ZoneBand {
   lo: number | null;
@@ -31,6 +33,7 @@ export function TimeSeriesChart({
   markers?: number[];
   zoneBands?: ZoneBand[];
 }) {
+  const { ref, width: W } = useChartWidth(points.length);
   const xy = points
     .map((p) => ({ x: (p.t - startMs) / 60000, y: p.value })) // minutes, value
     .filter((d) => Number.isFinite(d.x) && Number.isFinite(d.y));
@@ -56,7 +59,7 @@ export function TimeSeriesChart({
 
   // Whole multiples of a nice minute step, never past the data's end; the
   // first one carries the unit.
-  const xstep = niceStep(xMax / 8);
+  const xstep = niceStep(xMax / (W < 480 ? 4 : 8));
   const xlabels = Array.from({ length: Math.floor(xMax / xstep.step + 1e-9) + 1 }, (_, i) => {
     const min = i * xstep.step;
     return { x: sx(min), label: i === 0 ? "0 min" : min.toFixed(xstep.decimals) };
@@ -66,6 +69,7 @@ export function TimeSeriesChart({
 
   return (
     <svg
+      ref={ref}
       width="100%"
       height={height}
       viewBox={`0 0 ${W} ${height}`}

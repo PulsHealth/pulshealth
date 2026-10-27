@@ -102,6 +102,43 @@ def strings_in(x):
             yield from strings_in(v)
 
 
+class RecordedDataTests(unittest.TestCase):
+    def test_recorded_routes_and_heart_rate_are_kept_without_identity(self):
+        raw = synthetic_rows(days=1)
+        wid = raw["workouts"][0][0]
+        for point in raw["series"]:
+            point[2] = str(float(point[2]) - float(raw["workouts"][0][2]))
+        route = [[wid, "0", "37.123456", "-122.123456", "12", "3.4", "90"],
+                 [wid, "10", "37.1235", "-122.1235", "13", "3.5", "91"]]
+        scrub = bp.Scrubber(random.Random(9), recorded=True)
+        workouts = bp.transform_workouts(raw["workouts"], raw["series"], scrub, {}, route)
+        self.assertEqual(workouts[0]["route"][0], [0, 37.123456, -122.123456, 12, 3.4, 90])
+        expected = [float(r[3]) for r in raw["series"] if r[1] == Q + "HeartRate"]
+        actual = [p[1] for p in workouts[0]["series"][Q + "HeartRate"]]
+        self.assertEqual(actual, expected)
+        self.assertEqual(workouts[0]["statsDetail"][Q + "HeartRate"]["avg"], 130)
+        self.assertNotIn(wid, json.dumps(workouts))
+        self.assertNotIn("Someone", json.dumps(workouts))
+        no_route = bp.transform_workouts(raw["workouts"], raw["series"], scrub, {})
+        self.assertNotIn("route", no_route[0])
+
+    def test_routes_are_only_read_with_explicit_opt_in_and_owner_scope(self):
+        class Source:
+            def __init__(self):
+                self.queries = []
+            def rows(self, sql):
+                self.queries.append(sql)
+                return []
+        source = Source()
+        bp.extract(source, "owner", "UTC", "2026-01-01", "2026-01-02")
+        self.assertFalse(any("SELECT p.workout_uuid, extract" in q for q in source.queries))
+        bp.extract(source, "owner", "UTC", "2026-01-01", "2026-01-02", recorded=True)
+        route_query = source.queries[-1]
+        self.assertIn("p.user_id = 'owner'", route_query)
+        self.assertIn("w.user_id = p.user_id", route_query)
+        self.assertTrue(any("extract(epoch from p.ts - w.start_ts)" in q for q in source.queries))
+
+
 class BuildPackTests(unittest.TestCase):
     def setUp(self):
         self.pack, self.scrub = make_pack()

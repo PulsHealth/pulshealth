@@ -79,3 +79,26 @@ python3 scripts/demo-data/test_demo_data.py --emit /tmp/demo-batches
 ```
 
 The tests build a pack from synthetic rows: no database, and no one's data.
+
+## Owner-authorized recorded data
+
+`build_pack.py --recorded-data` preserves the owner's recorded GPS routes,
+workout series, and measurement values, without adding noise or inventing
+routes. Use it only with the owner's explicit permission for the intended
+preview or public demo. This mode is not anonymous: real locations and health
+patterns remain. Names, emails, source/device identifiers and arbitrary
+metadata are still removed; source labels remain Apple Watch and iPhone.
+Dates are replayed on the demo timeline, and the existing type allowlist and
+sample bucketing still apply. The default de-identified mode is unchanged.
+
+For a private local viewer preview, convert the pack without writing to a database:
+
+```bash
+python3 scripts/demo-data/preview.py --pack /private/pack.json.gz --zone America/Los_Angeles --out /private/preview.json
+```
+
+Set `PULS_DEMO_PREVIEW_FILE=/private/preview.json` and the matching `PULS_TIME_ZONE`
+in the local viewer's ignored `.env.local`. The viewer reads the file only outside
+production, and uses recorded data for all demo workouts and metrics, leaving
+missing metrics empty. Neither file belongs in Git. Production demos continue
+to use the database; load a new pack into a new demo user as described above.
