@@ -66,6 +66,13 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className={styles.section}>
+        <div className={styles.sectionHeading}>
+          <div><h2>What will you make<br />with your health data?</h2><p>A year in review, a marathon training story, or artwork made from your walks, runs, and rides. Explore four interactive examples, then make them your own.</p></div>
+          <Link href="/examples/" className={styles.secondaryButton}>Explore examples <ArrowRight size={17} aria-hidden /></Link>
+        </div>
+      </section>
+
       <section id="sync" className={styles.ownershipSection}>
         <div className={`${styles.section} ${styles.ownershipGrid}`}>
           <div>

@@ -13,6 +13,7 @@ const withSlash = (href: string) => (href.endsWith("/") ? href : `${href}/`);
 function staticSources(href: string): string[] {
   const route = href.replace(/^\/|\/$/g, "");
   const sources = [`site/src/app/${route ? `${route}/` : ""}page.tsx`];
+  if (route.startsWith("examples/")) sources.splice(0, 1, "site/src/app/examples/[slug]/page.tsx", "site/src/lib/examples.ts", "site/src/lib/example-data.ts", "site/src/lib/example-recorded.json", "site/src/components/examples/example-demo.tsx", "site/src/components/examples/report-visuals.tsx", "site/src/components/examples/year-review.tsx", "site/src/components/examples/marathon-review.tsx", "site/src/components/examples/route-studio.tsx", "site/src/lib/example-report.ts");
   if (route === "friend-flex/privacy") sources.push("site/content/friend-flex/privacy-policy.md");
   if (route === "privacy") sources.push("docs/privacy-policy.md");
   if (/^watch-workout-pro\/(support|privacy)$/.test(route)) sources.push(`site/content/watchworkoutpro/${route.endsWith("/privacy") ? "privacy-policy" : "support"}.md`);

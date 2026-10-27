@@ -323,3 +323,16 @@ neither proves indexing or an AI recommendation. Failed submissions preserve
 previous fingerprints and retry after the next verified deployment (including
 an unchanged republish); no tight automatic retry loop is used. Each accepted batch is checkpointed; a later deployment retries unacknowledged
 changes. A failed state write may repeat a previously accepted batch.
+
+## Interactive examples
+
+`/examples/` showcases four projects, with detail routes generated from
+`src/lib/examples.ts`. Default demos use reviewed recorded summaries and normalized route paths in
+`src/lib/example-recorded.json`. Raw source records stay private. Generated data
+from `src/lib/example-data.ts` is optional; user-selected showcase JSON is held
+only in memory.
+No health file upload, browser persistence, map provider or AI request is made.
+The local CSV/JSONL adapter and route SQL live in `../examples/showcase/`.
+The examples lead with their outputs; data notes and AI briefs are collapsed.
+Share images contain no personal attribution. The year report includes optional
+daily health summaries, and the route tools support interactive styling and exploration.

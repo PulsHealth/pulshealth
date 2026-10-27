@@ -1,0 +1,38 @@
+import Link from "next/link";
+import { EXAMPLES } from "@/lib/examples";
+import { ExampleDemo } from "@/components/examples/example-demo";
+import styles from "@/components/examples/examples.module.css";
+export const metadata = {
+  title: "Apple Health Data Examples | PulsHealth",
+  description:
+    "Make a health year in review, explore marathon training, turn activity into art, and visualize your walks, runs and rides. Interactive demos using recorded workouts and local examples.",
+  alternates: { canonical: "/examples/" },
+};
+export default function ExamplesPage() {
+  return (
+    <main className={styles.page}>
+      <header className={styles.galleryHeader}>
+        <h1>Health data, made useful.</h1>
+        <p>Four things you can make with your data.</p>
+      </header>
+      <div className={styles.grid}>
+        {EXAMPLES.map((example) => (
+          <article className={styles.project} key={example.slug}>
+            <Link
+              className={styles.preview}
+              href={`/examples/${example.slug}/`}
+              aria-label={example.action}
+            >
+              <ExampleDemo slug={example.slug} compact />
+            </Link>
+            <h2>{example.title}</h2>
+            <p>{example.description}</p>
+            <Link className={styles.link} href={`/examples/${example.slug}/`}>
+              {example.action}
+            </Link>
+          </article>
+        ))}
+      </div>
+    </main>
+  );
+}
