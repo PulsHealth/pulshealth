@@ -84,7 +84,6 @@ struct SyncView: View {
             linksSection
         }
         .navigationTitle("Sync")
-        .reviewRequestOpportunity(.sync, blocked: !path.isEmpty)
         .navigationDestination(for: SyncRoute.self) { route in
             switch route {
             case .server(let scan, let choice): ServerSettingsView(scanOnArrival: scan, preferred: choice)

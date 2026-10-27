@@ -232,9 +232,11 @@ requests"). If the review instance was stood up, take it down
 ### Native App Store review requests (next submission)
 
 Settings → About → Write a Review permanently opens the App Store review
-page. Automatic requests use Apple's native prompt directly after a complete
-shared export, a visible successful upload or a return from a populated
-analysis, once the local usage thresholds are met. Navigation, backgrounding,
+page. Automatic requests use Apple's native prompt after a complete shared
+export, a return from a populated analysis, or the next foreground visit
+after successful uploads on three distinct days (including background sync),
+once the local usage thresholds are met and app work settles. Sync requests
+do not require three foreground-use days or opening the Sync tab. Navigation, backgrounding,
 modals and unfinished work suppress requests. Attempts are spaced at least
 120 days apart and occur at most once per app version; Apple controls whether
 a prompt is shown. There is no satisfaction pre-prompt, reward or filtering by

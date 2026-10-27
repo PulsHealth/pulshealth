@@ -617,13 +617,16 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 
 Settings → About → Write a Review permanently opens Apple's review page.
 Automatic requests use Apple's native StoreKit prompt, with no custom prompt
-or satisfaction question. A request is offered only at a completed task:
+or satisfaction question. Requests are offered at these pauses:
 
 - A complete, nonempty export has been successfully shared or saved, and the
   person used the app in a previous foreground session.
-- A foreground/manual upload finishes while Sync is visible, after three
-  active days and acknowledged uploads on at least two days. The first
-  30 seconds of a visit never offer a sync review request.
+- On the next foreground visit after acknowledged uploads on three distinct
+  days, including background uploads. No extra foreground-use days or new
+  upload is required, and any tab can present the request once startup and
+  sync work settle. A third successful day reached during the current visit
+  waits for another visit. A cancelled return opportunity is not reoffered
+  during the same visit.
 - The person returns to Explore from a complete, populated analysis, after
   three active days.
 
@@ -637,8 +640,9 @@ consume no cooldown. Apple controls whether its prompt appears; an API call
 records an **attempt**, never a submitted rating or review. TestFlight does
 not show the native prompt.
 
-Only day/session counters, the latest recorded successful-upload date, and
-request-attempt metadata persist in the app's own UserDefaults. No health
+Only day/session counters, the latest recorded successful-upload date, the
+date of the third successful sync day, and request-attempt metadata persist
+in the app's own UserDefaults. No health
 values or type identifiers are stored there, and nothing is sent to analytics.
 
 ## Data Requests

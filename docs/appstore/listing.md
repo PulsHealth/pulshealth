@@ -334,8 +334,10 @@ device and days of wakes; they can join the set in a later version.
 
 ### Native review requests (next submission)
 
-StoreKit requests a rating or review only after completed tasks and a pause,
-with a shared 120-day cooldown and one attempt per app version. Settings →
+StoreKit requests a rating or review after completed exports or analyses, or
+on the next foreground visit after successful syncing on three distinct days,
+including background sync. Each request waits for a pause, with a shared
+120-day cooldown and one attempt per app version. Settings →
 About → Write a Review opens Apple's review page. Usage-day counters and
 attempt metadata stay in UserDefaults; no health values, identifiers or
 review responses are collected for this feature. It introduces no analytics
