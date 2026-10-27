@@ -6,6 +6,8 @@
    ─────────────────────────────────────────────────────────────────────── */
 
 :root {
+  --sidebar-width: 248px;
+  --content-gutter: clamp(24px, 2.5vw, 48px);
   --bg: #0b1018;
   --bg-elevated: #111b28;
   --panel: #111b28;
@@ -215,7 +217,7 @@ a.card:hover {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   min-height: calc(100vh - var(--site-header-height) - 1px);
 }
 @media (max-width: 1023px) {
@@ -226,8 +228,7 @@ a.card:hover {
 }
 .content {
   min-width: 0;
-  padding: 40px clamp(20px, 5vw, 64px) 96px;
-  max-width: 1180px;
+  padding: 40px var(--content-gutter) 72px;
 }
 
 /* link reset */
@@ -377,7 +378,6 @@ button {
 .nav-link.active {
   background: var(--panel-strong);
   color: var(--accent);
-  box-shadow: inset 2px 0 var(--accent);
 }
 .nav-link.active .nav-icon {
   color: var(--accent);
@@ -495,27 +495,53 @@ button {
 }
 
 /* ── Leaflet route map ─────────────────────────────────────────────────── */
-/* The basemap style is chosen in Settings (lib/mapStyles); tiles render in
-   their native colours, so no CSS recolouring here — only the chrome is themed. */
-.leaflet-container {
+/* Beat Leaflet's runtime stylesheet so its controls follow the viewer theme. */
+.workout-route-map.leaflet-container {
   background: var(--bg-elevated);
   font: inherit;
+  isolation: isolate;
 }
-.leaflet-control-attribution {
+.workout-route-map:is([data-map-style="auto"], [data-map-style="dark"]) .leaflet-tile-pane {
+  filter: brightness(.78) sepia(.35) hue-rotate(165deg) saturate(1.5);
+}
+.workout-route-map.leaflet-container .leaflet-bar {
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px #0003;
+  overflow: hidden;
+}
+.workout-route-map.leaflet-container .leaflet-bar a {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  background: var(--bg-elevated);
+  color: var(--fg-soft);
+  border-bottom-color: var(--border);
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+}
+.workout-route-map.leaflet-container .leaflet-bar a:hover {
   background: var(--panel-strong);
-  color: var(--faint);
-  backdrop-filter: blur(4px);
-}
-.leaflet-control-attribution a {
   color: var(--accent);
 }
-.leaflet-bar a {
-  background: var(--bg-elevated);
-  color: var(--fg);
-  border-bottom-color: var(--border);
+.workout-route-map.leaflet-container .leaflet-bar a.leaflet-disabled {
+  color: var(--faint);
 }
-.leaflet-bar a:hover {
-  background: var(--panel-strong);
+.workout-route-map.leaflet-container .leaflet-control-attribution {
+  max-width: 100%;
+  padding: 5px 9px;
+  background: #111b28ed;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+  border-top-left-radius: 8px;
+  backdrop-filter: blur(8px);
+}
+.workout-route-map.leaflet-container .leaflet-control-attribution a {
+  color: var(--fg-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* ── tappable list rows (e.g. workouts → detail) ───────────────────────── */
@@ -700,4 +726,35 @@ button {
   .data-row-name { white-space: normal; overflow-wrap: anywhere; }
   .data-row-meta { display: flex; grid-column: 2; grid-row: 2; justify-content: space-between; flex-wrap: wrap; gap: 6px 14px; }
   .data-list-row > svg:last-child { grid-column: 3; grid-row: 1 / 3; }
+}
+
+/* Reflow the overview on wide desktops instead of leaving unused canvas. */
+.dashboard-summary { display: grid; gap: 28px; }
+.dashboard-summary > * { min-width: 0; }
+.dashboard-summary .dashboard-overview { margin-bottom: 0; }
+.dashboard-highlights { display: grid; grid-template-rows: auto 1fr; }
+.dashboard-highlight-grid > div, .dashboard-highlight-grid .card { height: 100%; }
+.dashboard-highlights h2 { margin: 0 0 14px; }
+.dashboard-highlight-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.dashboard-workouts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.dashboard-browse { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+@media (min-width: 1280px) {
+  .dashboard-highlight-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 1800px) {
+  .dashboard-summary { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: stretch; }
+  .dashboard-overview { display: grid; align-content: center; }
+  .overview-layout { justify-content: center; }
+  .overview-metrics { flex-basis: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  :root { --content-gutter: 20px; }
+  .dashboard-highlight-grid, .dashboard-workouts { grid-template-columns: minmax(0, 1fr); }
+  .dashboard-browse { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-browse .card { padding: 16px !important; }
+}
+
+/* Viewer geometry follows its sidebar; the public site's header stays centered. */
+@media (min-width: 1024px) {
+  .site-header .site-header-inner { max-width: none; margin: 0; padding-inline: 26px var(--content-gutter); }
 }

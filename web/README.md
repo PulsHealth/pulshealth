@@ -639,9 +639,12 @@ navigation, including categories, account controls and website resources. Choosi
 or pressing Escape closes it; Escape returns focus to the header menu button.
 The shared demo keeps a visible **Demo** badge even with the menu closed.
 The mobile menu puts health navigation above the same public resource links used
-on pulshealth.com. Both headers use centered 1280 px content rows, 72 px high on desktop and 64 px on phones,
-32 px desktop / 24 px mobile edge padding (20 px on narrow phones),
-and the same 1024 px desktop breakpoint.
+on pulshealth.com. The viewer uses the public site’s header styles in a full-width row, with its
+brand aligned with the sidebar and desktop navigation and actions on the right. It is 72 px high on desktop and 64 px on phones, with the
+same 1024 px desktop breakpoint as the public site. Dashboard content fills
+the available width; on wide desktops the activity overview and highlights
+share a row. Selected sidebar links use a filled background, with an outline
+reserved for keyboard focus.
 
 Page headers begin with the title and description, without a page label above
 them. Demo and live data indicators remain visible in the navigation.
@@ -687,7 +690,10 @@ The workout route map (`lib/mapStyles.ts`) draws its basemap from free public
 tile endpoints that need no API key: Esri's Dark Gray and Light Gray Canvas
 (`server.arcgisonline.com` — the dark and light styles, and so the `auto`
 default), OpenStreetMap (`tile.openstreetmap.org`), Esri World Imagery, and
-OpenTopoMap. The Canvas tiles stop at zoom 16; Leaflet scales those up for the
+OpenTopoMap. The default dark map has a restrained navy tint, with zoom controls and
+attribution styled to match the viewer. Other saved basemap styles retain their
+original colors. Provider credits remain visible.
+The Canvas tiles stop at zoom 16; Leaflet scales those up for the
 three levels past it. CARTO's basemaps used to supply the dark, light and
 Voyager styles, but since September 2026 they answer every keyless request
 with an "API KEY REQUIRED" tile, so they are gone: Voyager had no keyless

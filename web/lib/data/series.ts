@@ -259,7 +259,7 @@ const LATEST_RECENT_DAYS = 14;
 export async function getLatestMany(userId: string, identifiers: string[]): Promise<Map<string, Latest>> {
   const out = new Map<string, Latest>();
   if (!identifiers.length) return out;
-  return liveRead("getLatestMany", () => new Map(identifiers.map((id) => [id, demoLatest(id)])), async () => {
+  return liveRead("getLatestMany", () => new Map(identifiers.flatMap((id) => { const latest = demoLatest(id); return latest ? [[id, latest] as const] : []; })), async () => {
     // One probe per type: the type reaches the scan as an outer reference of
     // the LATERAL, which a security-barrier view accepts (a DISTINCT ON over
     // a join read every sample there is).

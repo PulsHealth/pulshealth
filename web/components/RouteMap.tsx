@@ -68,6 +68,7 @@ export function RouteMap({
         scrollWheelZoom: false, // don't hijack page scroll; click to zoom
       });
       mapRef.current = map;
+      map.attributionControl.setPrefix(false);
 
       applyTiles();
 
@@ -105,6 +106,8 @@ export function RouteMap({
   return (
     <div
       ref={elRef}
+      className="workout-route-map"
+      data-map-style={styleId}
       role="region"
       aria-label="Workout route map"
       style={{ height, width: "100%", borderRadius: 14, overflow: "hidden", border: "1px solid var(--border)", zIndex: 0 }}

@@ -85,52 +85,55 @@ export default async function Dashboard() {
     <>
       <PageHeader
         title={greetingAt(now, timeZone)}
-        subtitle="Your health data, synced from Apple Health to your own server — and finally easy to look at."
       />
 
-      {/* Hero: rings + headline numbers */}
-      <section className="panel rise dashboard-overview" style={{ animationDelay: "40ms" }}>
-        <div className="overview-layout">
-          <div style={{ position: "relative", flex: "none" }}>
-            <ActivityRings rings={rings} />
-          </div>
-          <div className="overview-metrics">
-            {rings.map((r) => (
-              <div key={r.label}>
-                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                  <span className="dot" style={{ background: r.color }} />
-                  <span className="eyebrow" style={{ color: "var(--muted)" }}>{r.label}</span>
-                </div>
-                <div className="metric-num" style={{ fontSize: 34, fontWeight: 600, marginTop: 8 }}>
-                  {formatCompact(r.value)}
-                  <span style={{ fontSize: 14, color: "var(--muted)", fontWeight: 400 }}> / {formatCompact(r.goal)}</span>
-                </div>
-                <div style={{ fontSize: 12, color: "var(--faint)", marginTop: 3 }}>{r.unit}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Highlights */}
-      <h2 className="eyebrow" style={{ margin: "30px 0 14px" }}>Highlights</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(232px, 1fr))", gap: 14 }}>
-        {KEY_METRICS.map((id, i) => {
-          const type = typeByIdentifier(id);
-          if (!type) return null;
-          const s = seriesById.get(id);
-          const spark = (s?.points ?? []).slice(-14).map((p) => p.value);
-          let value: number | null;
-          if (id === "HKCategoryTypeIdentifierSleepAnalysis") value = s?.points.at(-1)?.value ?? null;
-          else if (isCumulative(id)) value = todays.get(id) ?? null;
-          else value = latest.get(id)?.value ?? s?.points.at(-1)?.value ?? null;
-          const unit = id === "HKCategoryTypeIdentifierSleepAnalysis" ? "h" : type.unit;
-          return (
-            <div key={id} className="rise" style={{ animationDelay: `${80 + i * 30}ms` }}>
-              <MetricCard type={type} value={value} unit={unit} spark={spark} t={latest.get(id)?.t} />
+      <div className="dashboard-summary">
+        {/* Hero: rings + headline numbers */}
+        <section className="panel rise dashboard-overview" style={{ animationDelay: "40ms" }}>
+          <div className="overview-layout">
+            <div style={{ position: "relative", flex: "none" }}>
+              <ActivityRings rings={rings} />
             </div>
-          );
-        })}
+            <div className="overview-metrics">
+              {rings.map((r) => (
+                <div key={r.label}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <span className="dot" style={{ background: r.color }} />
+                    <span className="eyebrow" style={{ color: "var(--muted)" }}>{r.label}</span>
+                  </div>
+                  <div className="metric-num" style={{ fontSize: 34, fontWeight: 600, marginTop: 8 }}>
+                    {formatCompact(r.value)}
+                    <span style={{ fontSize: 14, color: "var(--muted)", fontWeight: 400 }}> / {formatCompact(r.goal)}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--faint)", marginTop: 3 }}>{r.unit}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Highlights */}
+        <section className="dashboard-highlights" aria-labelledby="highlights-heading">
+          <h2 id="highlights-heading" className="eyebrow">Highlights</h2>
+          <div className="dashboard-highlight-grid">
+            {KEY_METRICS.map((id, i) => {
+              const type = typeByIdentifier(id);
+              if (!type) return null;
+              const s = seriesById.get(id);
+              const spark = (s?.points ?? []).slice(-14).map((p) => p.value);
+              let value: number | null;
+              if (id === "HKCategoryTypeIdentifierSleepAnalysis") value = s?.points.at(-1)?.value ?? null;
+              else if (isCumulative(id)) value = todays.get(id) ?? null;
+              else value = latest.get(id)?.value ?? s?.points.at(-1)?.value ?? null;
+              const unit = id === "HKCategoryTypeIdentifierSleepAnalysis" ? "h" : type.unit;
+              return (
+                <div key={id} className="rise" style={{ animationDelay: `${80 + i * 30}ms` }}>
+                  <MetricCard type={type} value={value} unit={unit} spark={spark} t={latest.get(id)?.t} />
+                </div>
+              );
+            })}
+          </div>
+        </section>
       </div>
 
       {/* Recent workouts */}
@@ -142,7 +145,7 @@ export default async function Dashboard() {
               All workouts <ChevronRight size={14} />
             </Link>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14 }}>
+          <div className="dashboard-workouts">
             {workouts.map((w) => (
               <Link key={w.uuid} href={`/workouts/${encodeURIComponent(w.uuid)}`} className="card" style={{ padding: 18 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -179,7 +182,7 @@ async function BrowseWithCounts({ user }: { user: string }) {
 
 function Browse({ stats }: { stats?: Map<string, TypeStat> }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(186px, 1fr))", gap: 14 }}>
+    <div className="dashboard-browse">
       {GROUPS.map((g) => {
         const types = typesInGroup(g);
         const totalRows = stats ? types.reduce((sum, t) => sum + (stats.get(t.identifier)?.rows ?? 0), 0) : null;

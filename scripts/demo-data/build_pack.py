@@ -3,7 +3,7 @@
 
 Reads a window of one user's data (default: the 26 weeks before today) from a
 PulsHealth database, read-only, and writes a small "pack" that load.py replays
-into a demo account through the ingest API. Nothing in the pack is a real
+into a demo account through the ingest API. In the default mode, nothing in the pack is a real
 reading, a real time, a real place or a real name:
 
   * Types: an allowlist of everyday activity, heart, sleep, body and workout
@@ -25,6 +25,9 @@ reading, a real time, a real place or a real name:
   * Places: no real GPS point is read. Workouts that had a route get a
     generated one on loops in a public park, paced by the workout's own
     (scaled) distance samples.
+
+--recorded-data explicitly preserves owner-authorized measurements and real
+GPS points, while removing identifying text. It is not anonymous.
 
 The pack is still derived from a real person's history: keep it out of
 version control and anywhere public. See scripts/demo-data/README.md.
@@ -209,7 +212,7 @@ def device_of(name: str, bundle: str) -> str:
     return "app"
 
 
-def extract(src: Source, user: str, zone: str, start: str, end: str) -> dict:
+def extract(src: Source, user: str, zone: str, start: str, end: str, recorded=False) -> dict:
     meta_cols = ", ".join(f"q.metadata->>'{k}'" for k in sorted(set(SAMPLE_METADATA.values())))
     quantity = src.rows(
         f"""SELECT t.identifier, coalesce(s.name, ''), coalesce(s.bundle_id, ''),
@@ -248,12 +251,13 @@ def extract(src: Source, user: str, zone: str, start: str, end: str) -> dict:
               FROM workouts w
              WHERE w.user_id = '{user}' AND {window('w.start_ts', zone, start, end)}"""
     )
+    series_time = "extract(epoch from p.ts - w.start_ts)" if recorded else local_seconds("p.ts", zone, start)
     series = src.rows(
         f"""SELECT p.workout_uuid, t.identifier,
-                   {local_seconds('p.ts', zone, start)}, p.value
+                   {series_time}, p.value
               FROM workout_series_points p
               JOIN sample_types t USING (type_id)
-              JOIN workouts w ON w.uuid = p.workout_uuid
+              JOIN workouts w ON w.uuid = p.workout_uuid AND w.user_id = p.user_id
              WHERE w.user_id = '{user}' AND {window('w.start_ts', zone, start, end)}
                AND p.ts >= ('{start}'::timestamp AT TIME ZONE '{zone}') - interval '1 day'
                AND p.ts < ('{end}'::timestamp AT TIME ZONE '{zone}') + interval '1 day'
@@ -264,18 +268,31 @@ def extract(src: Source, user: str, zone: str, start: str, end: str) -> dict:
               FROM activity_summaries
              WHERE user_id = '{user}' AND date >= '{start}'::date AND date < '{end}'::date"""
     )
-    return {"quantity": quantity, "category": category, "workouts": workouts, "series": series, "rings": rings}
+    routes = []
+    if recorded:
+        routes = src.rows(f"""SELECT p.workout_uuid, extract(epoch from p.ts - w.start_ts),
+                     p.lat, p.lon, p.altitude_m, p.speed_mps, p.course_deg
+                FROM workout_route_points p JOIN workouts w
+                  ON w.uuid = p.workout_uuid AND w.user_id = p.user_id
+               WHERE w.user_id = '{user}' AND p.user_id = '{user}'
+                 AND {window('w.start_ts', zone, start, end)}
+                 AND p.ts >= w.start_ts AND p.ts <= w.end_ts
+               ORDER BY p.workout_uuid, p.ts""")
+    return {"quantity": quantity, "category": category, "workouts": workouts, "series": series, "rings": rings, "routes": routes}
 
 
 # ── transform ───────────────────────────────────────────────────────────────
 
 
 class Scrubber:
-    def __init__(self, rng: random.Random):
+    def __init__(self, rng: random.Random, recorded=False):
         self.rng = rng
-        self.factor = {g: rng.uniform(lo, hi) for g, (lo, hi) in FACTORS.items()}
+        self.recorded = recorded
+        self.factor = {g: (1.0 if recorded else rng.uniform(lo, hi)) for g, (lo, hi) in FACTORS.items()}
 
     def scale(self, ident: str, value: float, noisy: bool = True) -> float:
+        if self.recorded:
+            return value
         group, kind = QUANTITY[ident][0], QUANTITY[ident][1]
         v = value * self.factor.get(group, 1.0)
         if noisy and ident not in EXACT:
@@ -363,7 +380,7 @@ def transform_category(rows, scrub: Scrubber):
         night_end = max(night_end, r[2] + r[3])
         nights[-1].append(r)
     for night in nights:
-        shift = scrub.rng.choice((-1, 1)) * scrub.rng.uniform(0, 20 * 60)
+        shift = 0 if scrub.recorded else scrub.rng.choice((-1, 1)) * scrub.rng.uniform(0, 20 * 60)
         end = max(r[2] + r[3] for r in night)
         for r in night:
             r.append(round(end - r[2], 3))
@@ -377,6 +394,8 @@ def thin_series(ident: str, points, scrub: Scrubber):
     """Workout series points [offset, value], thinned to SERIES_BUCKET s."""
     _group, kind, _b, _p, digits = QUANTITY[ident]
     points.sort()
+    if scrub.recorded:
+        return [[round(off, 3), value] for off, value in points]
     out = []
     if kind == "sum":
         sums = defaultdict(float)
@@ -538,12 +557,15 @@ def generate_route(activity: str, span_s: float, distance_m: float | None, dist_
     return out
 
 
-def transform_workouts(rows, series_rows, scrub: Scrubber, loops):
+def transform_workouts(rows, series_rows, scrub: Scrubber, loops, route_rows=()):
+    recorded_routes = defaultdict(list)
+    for wid, off, lat, lon, alt, speed, course in route_rows:
+        recorded_routes[wid].append([float(off), float(lat), float(lon), fnum(alt), fnum(speed), fnum(course)])
     series = defaultdict(lambda: defaultdict(list))
     starts = {r[0]: float(r[2]) for r in rows}
     for wid, ident, t, value in series_rows:
         if wid in starts:
-            series[wid][ident].append((float(t) - starts[wid], float(value)))
+            series[wid][ident].append((float(t) if scrub.recorded else float(t) - starts[wid], float(value)))
     out = []
     for (wid, activity, t, span, start_ms, duration, energy, distance,
          detail, events, activities, indoor, mets, has_route) in sorted(rows, key=lambda r: float(r[2])):
@@ -579,7 +601,10 @@ def transform_workouts(rows, series_rows, scrub: Scrubber, loops):
         ser = {k: v for k, v in ser.items() if v}
         if ser:
             w["series"] = ser
-        if has_route == "t":
+        if scrub.recorded:
+            if recorded_routes[wid]:
+                w["route"] = recorded_routes[wid]
+        elif has_route == "t":
             dist_key = Q + ("DistanceCycling" if activity == "cycling" else "DistanceWalkingRunning")
             route = generate_route(activity, span, w.get("distance"), ser.get(dist_key), scrub.rng, loops)
             if route:
@@ -616,6 +641,7 @@ def main() -> None:
     ap.add_argument("--zone", help="IANA zone the days are cut in (default: the database's puls_time_zone())")
     ap.add_argument("--end", help="first local date NOT included (default: today in --zone)")
     ap.add_argument("--out", required=True, help="where to write the pack (.json.gz)")
+    ap.add_argument("--recorded-data", action="store_true", help="Owner-authorized data: preserve measurements and real GPS routes; remove identity. Not anonymous.")
     ap.add_argument("--seed", type=int, help="random seed (default: fresh randomness; never commit one)")
     args = ap.parse_args()
 
@@ -634,17 +660,17 @@ def main() -> None:
     start = end - dt.timedelta(days=PACK_DAYS)
 
     print(f"build_pack: reading {PACK_DAYS} days in {zone}", file=sys.stderr)
-    raw = extract(src, args.user, zone, start.isoformat(), end.isoformat())
+    raw = extract(src, args.user, zone, start.isoformat(), end.isoformat(), args.recorded_data)
     for k, v in raw.items():
         print(f"build_pack:   {k}: {len(v)} rows", file=sys.stderr)
 
     rng = random.Random(args.seed) if args.seed is not None else random.SystemRandom()
-    scrub = Scrubber(rng)
+    scrub = Scrubber(rng, args.recorded_data)
     loops = {name: Loop(c, a, b, t, rng) for name, (c, a, b, t) in LOOPS.items()}
 
     quantity = transform_quantity(raw["quantity"], scrub)
     category = transform_category(raw["category"], scrub)
-    workouts = transform_workouts(raw["workouts"], raw["series"], scrub, loops)
+    workouts = transform_workouts(raw["workouts"], raw["series"], scrub, loops, raw["routes"])
     rings = transform_rings(raw["rings"], scrub)
     del raw
 
@@ -669,6 +695,7 @@ def main() -> None:
     units = {t: CATALOG_UNITS[t] for t in types if CATALOG_UNITS.get(t)}
 
     pack = {
+        "recordedData": args.recorded_data,
         "format": "puls-demo-pack",
         "version": 1,
         "packID": str(uuid.uuid4()),
@@ -689,7 +716,7 @@ def main() -> None:
     routed = sum(1 for w in workouts if "route" in w)
     print(
         f"build_pack: wrote {args.out}: {len(quantity)} quantity, {len(category)} category, "
-        f"{len(workouts)} workouts ({routed} with generated routes), {len(rings)} ring days",
+        f"{len(workouts)} workouts ({routed} with routes), {len(rings)} ring days",
         file=sys.stderr,
     )
 
