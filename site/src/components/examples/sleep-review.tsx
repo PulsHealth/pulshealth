@@ -100,7 +100,7 @@ const SleepPoster = forwardRef<
             fill={i ? "#f5c985" : "#74c9ff"}
             fontSize="28"
           >
-            {item.label} · {item.n} nights
+            {item.label} · {item.n} {item.n === 1 ? "night" : "nights"}
           </text>
           <text x={item.x} y="528" fill="#eef4fc" fontSize="64">
             {sleepTime(item.summary.median)}
@@ -109,7 +109,7 @@ const SleepPoster = forwardRef<
             median sleep / night
           </text>
           <text x={item.x} y="638" fill="#eef4fc" fontSize="33">
-            {number(item.summary.episodes, 1)} awake episodes / night
+            {number(item.summary.episodes, 1)} {item.summary.episodes === 1 ? "awake episode" : "awake episodes"} / night
           </text>
           <text x={item.x} y="682" fill="#a9bdd2" fontSize="23">
             {duration(item.summary.awakeDuringSleep)} recorded awake / night
