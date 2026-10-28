@@ -2,6 +2,7 @@
 import { ImageResponse } from "next/og";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import sensorRecorded from "../src/lib/sensor-recorded.json";
 import sleepRecorded from "../src/lib/sleep-recorded.json";
 import recorded from "../src/lib/example-recorded.json";
 import { EXAMPLES } from "../src/lib/examples";
@@ -21,26 +22,37 @@ const out = new URL("../public/inspiration-cards/", import.meta.url);
 await mkdir(out, { recursive: true });
 for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
   const routes =
-    example.slug === "deep-workout-analysis"
-      ? recorded.routeComparisons[0].attempts.map((run) => run.path)
-      : recorded.routes.slice(0, 100).map((route) => route.path);
+    example.slug === "heart-rate-sensors"
+      ? sensorRecorded.recordings.map((run) =>
+          run.points
+            .map(
+              (p, i) =>
+                `${i ? "L" : "M"}${50 + (p.seconds / 3200) * 620},${360 - (p.value / 200) * 300}`,
+            )
+            .join(" "),
+        )
+      : example.slug === "deep-workout-analysis"
+        ? recorded.routeComparisons[0].attempts.map((run) => run.path)
+        : recorded.routes.slice(0, 100).map((route) => route.path);
   const totalMiles = Math.round(
     recorded.totals.km * 0.621371192,
   ).toLocaleString("en-US");
   const subtitle =
-    example.slug === "sleep-and-parenthood"
-      ? "Sleep before and after family milestones"
-      : example.slug === "year-in-review"
-        ? `${recorded.totals.workouts} workouts · ${totalMiles} miles`
-        : example.slug === "marathon-training"
-          ? "16 weeks to marathon day"
-          : example.slug === "deep-workout-analysis"
-            ? `${recorded.routeComparisons[0].attempts.length} runs. One familiar route.`
-            : example.slug === "activity-art"
-              ? "Made from real movement"
-              : example.slug === "activity-atlas"
-                ? "Walks. Runs. Rides."
-                : "What could you build with your health data?";
+    example.slug === "heart-rate-sensors"
+      ? "Recording cadence, density and gaps"
+      : example.slug === "sleep-and-parenthood"
+        ? "Sleep before and after family milestones"
+        : example.slug === "year-in-review"
+          ? `${recorded.totals.workouts} workouts · ${totalMiles} miles`
+          : example.slug === "marathon-training"
+            ? "16 weeks to marathon day"
+            : example.slug === "deep-workout-analysis"
+              ? `${recorded.routeComparisons[0].attempts.length} runs. One familiar route.`
+              : example.slug === "activity-art"
+                ? "Made from real movement"
+                : example.slug === "activity-atlas"
+                  ? "Walks. Runs. Rides."
+                  : "What could you build with your health data?";
   const response = new ImageResponse(
     <div
       style={{

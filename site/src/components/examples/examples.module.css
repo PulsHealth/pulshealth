@@ -1348,3 +1348,58 @@
     grid-template-columns: 1fr;
   }
 }
+.sensorFinding {
+  border: 1px solid #5b503e;
+  background: #2c291f66;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 24px 0;
+}
+.sensorFinding strong {
+  color: #f5c985;
+  font-size: 1.2rem;
+}
+.sensorFinding p {
+  color: #a9bdd2;
+  max-width: 800px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+.sensorTrace {
+  margin: 26px 0;
+}
+.sensorTrace h3 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+.sensorTrace svg,
+.sensorDensity svg {
+  width: 100%;
+}
+.sensorDensity {
+  margin: 24px 0;
+}
+.sensorDensity > span {
+  font-size: 0.85rem;
+}
+.intervalTable {
+  overflow-x: auto;
+  margin-top: 24px;
+}
+.intervalTable table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.intervalTable td,
+.intervalTable th {
+  font-size: 0.85rem;
+  padding: 14px;
+  border-bottom: 1px solid #304459;
+}
+.intervalTable th {
+  font-weight: 400;
+  color: #a9bdd2;
+}

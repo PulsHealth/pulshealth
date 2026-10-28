@@ -60,5 +60,14 @@ export const EXAMPLES = [
     prompt:
       "Compare my recorded sleep before and after family milestones using my PulsHealth sleep sessions. Use the longest positive session per wake-up day. Show median and middle-half duration, short-night frequency, recorded awake time and missing-night coverage. Align timelines on day zero and keep exact milestone dates private in public outputs. Describe associations without claiming parenthood caused the changes. Create a shareable image.",
   },
+  {
+    slug: "heart-rate-sensors",
+    title: "Watch vs external heart rate",
+    intro: "Find what the recordings actually show.",
+    description: "Compare heart-rate sampling cadence, density and gaps across Watch and Bluetooth recordings.",
+    input: "Expanded workout heart-rate streams and source audit",
+    action: "Compare recordings",
+    prompt: "Audit my PulsHealth heart-rate sources to find external sensor recordings and any simultaneous Apple Watch data. Compare expanded workout streams, not raw HealthKit quantity object counts. Show interval distributions, readings per minute and gaps. If recordings are from different runs, state that clearly and do not infer sensor accuracy or heart-rate agreement. Keep dates, source identifiers and personal attribution private in public output.",
+  },
 ] as const;
 export type ExampleSlug = (typeof EXAMPLES)[number]["slug"];
