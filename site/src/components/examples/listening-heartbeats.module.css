@@ -1,0 +1,109 @@
+.poster {
+  background: #101d2e;
+  border: 1px solid #2a3d53;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.poster svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+.toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #b9c9dc;
+}
+.toolbar select {
+  color: #eef4fc;
+  background: #17283d;
+  border: 1px solid #3b536d;
+  padding: 9px;
+  border-radius: 7px;
+}
+.badge {
+  color: #b9c9dc;
+  font-size: 0.82rem;
+  margin-right: auto;
+}
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+  gap: 28px;
+  margin-top: 28px;
+}
+.body h2 {
+  font-size: 1.3rem;
+  font-weight: 550;
+  margin-bottom: 12px;
+}
+.body p,
+.note {
+  color: #b9c9dc;
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+.note {
+  margin-top: 18px;
+  max-width: 850px;
+}
+.moments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.moments button {
+  text-align: left;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.moments time {
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.days {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 18px;
+}
+.days button {
+  padding: 0;
+  min-height: 28px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+}
+.days button:focus-visible,
+.toolbar :focus-visible,
+.moments button:focus-visible {
+  outline: 3px solid #eef4fc;
+  outline-offset: 3px;
+}
+.days button[aria-pressed="true"] {
+  outline: 2px solid #eef4fc;
+  outline-offset: 1px;
+}
+.dayDetail {
+  min-height: 4em;
+}
+@media (max-width: 650px) {
+  .body {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .days {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+  .badge {
+    width: 100%;
+  }
+}

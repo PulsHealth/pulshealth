@@ -5,7 +5,7 @@ import styles from "@/components/examples/examples.module.css";
 export const metadata = {
   title: "Inspiration | PulsHealth",
   description:
-    "Make a health year in review, explore marathon training, compare repeated running routes, turn activity into art, and visualize your walks, runs and rides. Interactive demos using recorded workouts and local examples.",
+    "Make a health year in review, explore marathon training, compare repeated running routes, turn activity into art, and visualize your walks, runs and rides. Explore listening diaries and heartbeat stories alongside recorded workout demos and clearly labeled illustrative examples.",
   alternates: { canonical: "/examples/" },
   openGraph: { title: "Inspiration | PulsHealth", description: "What could you build with your health data freed from your phone?", url: "/examples/", images: [{url:"/inspiration-cards/index.png",width:1200,height:630,alt:"PulsHealth health data inspiration"}] },
   twitter: {card:"summary_large_image",title:"Inspiration | PulsHealth",images:["/inspiration-cards/index.png"]},
