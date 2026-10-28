@@ -354,7 +354,7 @@ export const YearPoster = forwardRef<
         </>
       )}
       <text x="74" y={h - 42} fill={muted} fontSize="18">
-        Made with PulsHealth · Recorded data; coverage varies by metric
+        Made with PulsHealth
       </text>
     </svg>
   );

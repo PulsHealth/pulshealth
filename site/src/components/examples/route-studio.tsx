@@ -295,17 +295,6 @@ export function ArtStudio({
           {status}
         </p>
         {!routes.length && <p>No routes match this activity.</p>}
-        <p className={styles.micro}>
-          {routes.length} route shapes.{" "}
-          {mode === "layers"
-            ? "Shared geographic scale."
-            : "Individually scaled"}
-          {mode === "orbit"
-            ? " and rotated."
-            : mode === "collection"
-              ? "."
-              : ""}
-        </p>
       </aside>
     </div>
   );

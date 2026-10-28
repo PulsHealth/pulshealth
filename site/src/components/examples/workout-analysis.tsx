@@ -301,10 +301,6 @@ export function WorkoutAnalysis({
             </button>
           ))}
         </div>
-        <p className={styles.micro}>
-          Taller bars show faster recorded pace. Runs appear in chronological
-          order.
-        </p>
         <div className={styles.attemptTable}>
           <table>
             <thead>
@@ -367,11 +363,6 @@ export function WorkoutAnalysis({
         <button onClick={async () => { try { if (poster.current) setStatus(await exportImage(poster.current, "same-route-analysis", true)); } catch { setStatus("Could not share comparison."); } }}>Share comparison</button>
         <p role="status">{status}</p>
       </div>
-      <p className={styles.micro}>
-        Similar routes, same direction, within 8% recorded distance. At least
-        95% of sampled points must lie within 75 m of the other track in both
-        directions. Conditions, stops and effort can differ.
-      </p>
       <div className={styles.exportOnly} aria-hidden="true">
         <ComparisonPoster ref={poster} group={group} />
       </div>

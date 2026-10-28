@@ -340,10 +340,6 @@ export function RunReplay({
             </span>
           ))}
         </div>
-        <p className={styles.micro}>
-          Recorded metric samples. Gaps stay visible. GPS progress follows each
-          run&apos;s sampled track.
-        </p>
       </section>
       <section className={styles.reportSection}>
         <div className={styles.sectionTitle}>
@@ -462,13 +458,6 @@ export function RunReplay({
                 ))}
               </div>
             </div>
-            <p className={styles.micro}>
-              All runs start together at workout time zero. Positions
-              interpolate between recorded GPS samples up to two minutes apart;
-              longer gaps hide the marker. Progress follows each recorded track.
-              GPS elapsed time can include pauses. Standings rank GPS progress,
-              then time to the end of the recorded track.
-            </p>
           </>
         ) : (
           <p className={styles.shortNote}>

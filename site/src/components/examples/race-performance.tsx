@@ -175,10 +175,6 @@ export function RacePerformance({
           ))}
         </div>
       )}
-      <p className={styles.micro}>
-        Watch-recorded workout measurements. Pace uses recorded distance and
-        duration.
-      </p>
     </section>
   );
 }
