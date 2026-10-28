@@ -52,19 +52,19 @@ export const EXAMPLES = [
 
   {
     slug: "sleep-and-parenthood",
-    title: "Sleep through new chapters",
+    title: "Sleep changes with a newborn",
     intro: "Sleep before and after becoming a parent.",
     description: "Sleep stages, nightly duration, and recorded awakenings before and after a new arrival.",
     input: "Sleep sessions and private milestone dates",
     action: "Compare sleep",
     prompt:
-      "Compare my recorded sleep before and after one family milestone using my PulsHealth sleep sessions. Use the longest positive session per wake-up day. Show source-consistent sleep stage timelines, short comparison windows, nightly duration, recorded awake-episode counts and duration, longest continuous sleep and missing-night coverage. Align timelines on day zero and keep calendar dates and identifying details private in public outputs. Describe associations without claiming parenthood caused the changes. Create a shareable image.",
+      "Compare my recorded sleep before and after one family milestone using my PulsHealth sleep sessions. Use the longest positive session per wake-up day. Show clear aggregate distributions of sleep duration, stage mix, recorded awake-time and awakening patterns, and broad trends across the following weeks. Keep individual-night rows and tables out of the presentation. Align timelines on day zero and keep calendar dates and identifying details private in public outputs. Describe associations without claiming parenthood caused the changes. Create a shareable image.",
   },
   {
     slug: "heart-rate-sensors",
-    title: "Watch vs external heart rate",
+    title: "Comparing heart rate sensors",
     intro: "Find what the recordings actually show.",
-    description: "Compare heart-rate sampling cadence, density and gaps across Watch and Bluetooth recordings.",
+    description: "Compare matched five-mile routes and heart-rate recordings from an Apple Watch and an external monitor.",
     input: "Expanded workout heart-rate streams and source audit",
     action: "Compare recordings",
     prompt: "Audit my PulsHealth heart-rate sources to find external sensor recordings and any simultaneous Apple Watch data. Compare expanded workout streams, not raw HealthKit quantity object counts. Show interval distributions, readings per minute and gaps. If recordings are from different runs, state that clearly and do not infer sensor accuracy or heart-rate agreement. Keep dates, source identifiers and personal attribution private in public output.",

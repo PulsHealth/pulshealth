@@ -15,6 +15,12 @@ const clock = (seconds: number) => {
   const rounded = Math.round(seconds);
   return `${Math.floor(rounded / 60)}:${String(rounded % 60).padStart(2, "0")}`;
 };
+const matchedRoute = (report: SensorReport) =>
+  report.recordings.every((run) => run.path) &&
+  !!report.recordings[0].routeMatch &&
+  report.recordings[0].routeMatch.coveragePercent >= 95 &&
+  report.recordings[0].routeMatch.p95Feet <=
+    report.recordings[0].routeMatch.thresholdFeet;
 const SensorPoster = forwardRef<SVGSVGElement, { report: SensorReport }>(
   function SensorPoster({ report }, ref) {
     const end = Math.max(...report.recordings.map((run) => run.seconds));
@@ -34,10 +40,10 @@ const SensorPoster = forwardRef<SVGSVGElement, { report: SensorReport }>(
           HEART RATE · RECORDING CADENCE
         </text>
         <text x="64" y="230" fill="#eef4fc" fontSize="86" fontWeight="600">
-          Same metric.
+          Comparing heart
         </text>
         <text x="64" y="330" fill="#74c9ff" fontSize="86" fontWeight="600">
-          Different recordings.
+          rate sensors.
         </text>
         {report.recordings.map((run, i) => {
           const stats = samplingStats(run);
@@ -82,7 +88,7 @@ const SensorPoster = forwardRef<SVGSVGElement, { report: SensorReport }>(
           Each bar counts readings in one elapsed minute.
         </text>
         <text x="72" y="1150" fill="#eef4fc" fontSize="28">
-          Separate runs. Accuracy cannot be inferred.
+          Separate runs · recorded heart-rate streams
         </text>
         <text x="72" y="1205" fill="#a9bdd2" fontSize="23">
           Measured cadence of the synced workout streams.
@@ -95,9 +101,16 @@ const SensorPoster = forwardRef<SVGSVGElement, { report: SensorReport }>(
   },
 );
 export function SensorReview({ compact = false }: { compact?: boolean }) {
-  const [report, setReport] = useState<SensorReport>(recorded),
+  const [data, setReport] = useState<SensorReport>(recorded),
+    [watchIndex, setWatchIndex] = useState(0),
     [mode, setMode] = useState<"readings" | "intervals">("readings"),
     [status, setStatus] = useState("");
+  const watchRuns = data.watchRuns ?? [data.recordings[0]];
+  const activeWatch = Math.min(watchIndex, watchRuns.length - 1);
+  const report: SensorReport = {
+    ...data,
+    recordings: [watchRuns[activeWatch], data.recordings[1]],
+  };
   const poster = useRef<SVGSVGElement>(null),
     end = Math.max(...report.recordings.map((run) => run.seconds)),
     maxGap = Math.max(
@@ -148,6 +161,7 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
                     if (file.size > 2000000)
                       throw new Error("Use a file smaller than 2 MB.");
                     setReport(parseSensorReport(await file.text()));
+                    setWatchIndex(0);
                     setStatus("");
                   } catch (error) {
                     setStatus(
@@ -164,29 +178,56 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
               Your file stays in this browser. Recordings contain elapsed timing
               only.
             </p>
-            <button onClick={() => setReport(recorded)}>Reset example</button>
+            <button
+              onClick={() => {
+                setReport(recorded);
+                setWatchIndex(0);
+              }}
+            >
+              Reset example
+            </button>
           </div>
         </details>
       </div>
       <header className={styles.analysisHero}>
         <h2>
-          Same metric.
+          Comparing heart
           <br />
-          <span>Different recordings.</span>
+          <span>rate sensors.</span>
         </h2>
       </header>
-      <div className={styles.sensorFinding}>
-        <strong>
-          {report.sharedRuns === 0
-            ? "No simultaneous pair found"
-            : `${report.sharedRuns} paired runs reported`}
-        </strong>
-        <p>
-          {report.sharedRuns === 0
-            ? "The Bluetooth-source run has no concurrent Watch-source heart-rate records in the synced data. The comparison below uses two separate runs of similar distance and duration."
-            : "Pairing status comes from the source audit supplied with this file."}
-        </p>
-      </div>
+      {report.monitor && (
+        <section className={styles.sensorMonitor}>
+          <div>
+            <span className={styles.micro}>Heart-rate monitor</span>
+            <h2>{report.monitor.name}</h2>
+            {report.monitor.description && <p>{report.monitor.description}</p>}
+          </div>
+          <div>
+            {[
+              { label: "Connection", value: report.monitor.connection },
+              { label: "Worn", value: report.monitor.position },
+              { label: "Sensor", value: report.monitor.sensing },
+            ]
+              .filter((item) => item.value)
+              .map((item) => (
+                <div key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            {report.monitor.sourceUrl && (
+              <a
+                href={report.monitor.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Monitor details ↗
+              </a>
+            )}
+          </div>
+        </section>
+      )}
       <div className={styles.headToHead}>
         {report.recordings.map((run, i) => {
           const stats = samplingStats(run);
@@ -208,10 +249,7 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
                   ],
                   ["HR points", number(stats.count)],
                   ["Points per minute", number(stats.perMinute, 1)],
-                  ["95th percentile interval", `${number(stats.p95, 2)} s`],
-                  ["Longest interval", `${number(stats.longest, 1)} s`],
-                  ["Intervals over 10 sec", number(stats.over10)],
-                  ["Intervals under 10 ms", number(stats.nearCoincident)],
+
                   ["Workout mean HR", `${number(run.meanHR, 1)} bpm`],
                 ].map(([label, value]) => (
                   <div key={label}>
@@ -224,6 +262,100 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
           );
         })}
       </div>
+      {report.recordings[0].path && report.recordings[1].path && (
+        <section className={styles.sensorRouteCard}>
+          <div className={styles.sectionTitle}>
+            <div>
+              <h2>
+                {matchedRoute(report) ? "A familiar route" : "Recorded routes"}
+              </h2>
+              <p>
+                {watchRuns.length} Watch{" "}
+                {watchRuns.length === 1 ? "run" : "runs"}. One external-sensor
+                recording.
+              </p>
+            </div>
+            <label className={styles.baseline}>
+              Compare
+              <select
+                aria-label="Watch comparison run"
+                value={activeWatch}
+                onChange={(event) => setWatchIndex(Number(event.target.value))}
+              >
+                {watchRuns.map((run, i) => (
+                  <option key={i} value={i}>
+                    Watch run {i + 1} · {number(run.km * 0.621371192, 2)} mi ·{" "}
+                    {clock(run.seconds)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className={styles.sensorRouteGrid}>
+            <svg
+              viewBox="0 0 720 420"
+              role="img"
+              aria-label="Overlaid GPS tracks of the Watch and Bluetooth runs"
+            >
+              {report.recordings.map((run, i) => (
+                <path
+                  key={i}
+                  d={run.path}
+                  fill="none"
+                  stroke={colors[i]}
+                  strokeWidth={i ? 2 : 4}
+                  strokeOpacity={i ? 0.9 : 0.55}
+                  strokeLinecap="round"
+                />
+              ))}
+            </svg>
+            <div className={styles.sensorRouteFacts}>
+              {report.recordings[0].routeMatch && (
+                <>
+                  <div>
+                    <strong>
+                      {number(
+                        report.recordings[0].routeMatch?.coveragePercent ??
+                          null,
+                      )}
+                      %
+                    </strong>
+                    <span>
+                      sampled route points within{" "}
+                      {number(
+                        report.recordings[0].routeMatch?.thresholdFeet ?? null,
+                      )}{" "}
+                      ft
+                    </span>
+                  </div>
+                  <div>
+                    <strong>
+                      {number(report.recordings[0].routeMatch?.p95Feet ?? null)}{" "}
+                      ft
+                    </strong>
+                    <span>95th-percentile track separation</span>
+                  </div>
+                </>
+              )}
+              <div className={styles.overviewLegend}>
+                <span>
+                  <i style={{ background: colors[0] }} />
+                  Watch run {activeWatch + 1}
+                </span>
+                <span>
+                  <i style={{ background: colors[1] }} />
+                  External monitor
+                </span>
+              </div>
+              <p>
+                {matchedRoute(report)
+                  ? "Recorded on separate runs of closely matched routes."
+                  : "Recorded on separate runs."}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
       <section className={styles.reportSection}>
         <div className={styles.sectionTitle}>
           <h2>How the recordings unfold</h2>
@@ -319,8 +451,7 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
           </div>
         ))}
         <p className={styles.micro}>
-          Both charts use the same elapsed-time axis. These are separate
-          workouts; heart-rate differences do not measure sensor agreement.
+          Shared elapsed-time scale · recorded on separate runs.
         </p>
       </section>
       <section className={styles.reportSection}>
@@ -392,12 +523,8 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
         </div>
       </section>
       <p className={styles.micro}>
-        Intervals use expanded workout heart-rate points. HealthKit can group
-        many readings into one raw quantity sample; raw object counts do not
-        establish sampling cadence. Near-coincident timestamps remain distinct
-        recorded observations and do not establish hardware polling rates.
-        Source names identify the writer, and the external sensor model was not
-        retained. No same-effort accuracy conclusion is drawn.
+        Recorded cadence across separate runs; heart-rate differences may
+        reflect different efforts and conditions.
       </p>
       <div className={styles.raceFooter}>
         {[false, true].map((share) => (

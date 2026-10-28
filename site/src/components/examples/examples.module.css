@@ -25,13 +25,15 @@
   gap: 42px 30px;
 }
 .project {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 .project h2 {
   font-size: 1.4rem;
   font-weight: 550;
   letter-spacing: -0.025em;
-  margin: 17px 0 9px;
+  margin: 0 0 16px;
 }
 .project p {
   color: #a9bdd2;
@@ -50,6 +52,8 @@
   font-size: 0.9rem;
 }
 .preview {
+  margin-top: auto;
+  flex-shrink: 0;
   display: block;
   overflow: hidden;
   border-radius: 14px;
@@ -1502,4 +1506,343 @@
     grid-template-columns: 1fr 1fr;
   }
 }
-.sleepNightDetail { scroll-margin-top: 90px; }
+.sleepNightDetail {
+  scroll-margin-top: 90px;
+}
+.sleepOverviewHero {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 24px;
+  margin: 30px 0 38px;
+  flex-wrap: wrap;
+}
+.sleepOverviewHero h2 {
+  font-size: clamp(2.2rem, 5.5vw, 4.4rem);
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+}
+.sleepOverviewHero p {
+  margin-top: 14px;
+  color: #a9bdd2;
+}
+.sleepMedianComparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.85fr;
+  gap: 30px;
+  padding: 12px 4px 42px;
+}
+.sleepMedianComparison > div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sleepMedianComparison strong {
+  font-size: clamp(2.4rem, 5.5vw, 4.5rem);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+}
+.sleepMedianComparison small,
+.sleepChange span {
+  color: #a9bdd2;
+  font-size: 0.85rem;
+}
+.sleepMedianComparison .sleepChange {
+  align-self: center;
+  border-left: 1px solid #35495c;
+  padding-left: 26px;
+}
+.sleepMedianComparison .sleepChange strong {
+  font-size: 2rem;
+  color: #f5c985;
+}
+.overviewLegend {
+  display: flex;
+  gap: 22px;
+  margin: 8px 0;
+  font-size: 0.8rem;
+}
+.overviewLegend span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.overviewLegend i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+.overviewSmallStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  padding-top: 24px;
+  margin-top: 10px;
+  border-top: 1px solid #2d4256;
+}
+.overviewSmallStats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.overviewSmallStats span {
+  color: #a9bdd2;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.overviewSmallStats strong {
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.overviewSmallStats strong small {
+  color: #a9bdd2;
+}
+.overviewBuckets {
+  display: grid;
+  gap: 18px;
+  margin: 36px 0 18px;
+}
+.overviewBuckets > div {
+  text-align: center;
+  min-width: 0;
+}
+.overviewBucketPair {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 7px;
+  height: 185px;
+  padding-top: 25px;
+}
+.overviewBucketPair > div {
+  width: 40%;
+  max-width: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  gap: 8px;
+  min-width: 0;
+}
+.overviewBucketPair i {
+  display: block;
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+}
+.overviewBucketPair span {
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+.overviewBuckets > div > strong {
+  display: block;
+  font-weight: 400;
+  font-size: 0.8rem;
+  margin-top: 14px;
+  color: #a9bdd2;
+}
+.overviewStageBars {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  margin: 32px 0;
+}
+.overviewStageBars > div {
+  display: grid;
+  grid-template-columns: 65px 1fr;
+  gap: 18px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+.overviewStageBars > div > div {
+  display: flex;
+  height: 46px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #23364b;
+}
+.overviewStageBars span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.overviewStageLegend {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  padding-top: 20px;
+}
+.overviewStageLegend > div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+.overviewStageLegend > div > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.overviewStageLegend i {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+}
+.overviewStageLegend small {
+  color: #a9bdd2;
+  font-weight: 400;
+}
+.overviewStageLegend strong {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.overviewProgressValues,
+.overviewProgressLabels {
+  display: grid;
+  gap: 8px;
+  text-align: center;
+}
+.overviewProgressValues {
+  margin-top: 30px;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+.overviewProgressLabels {
+  margin-bottom: 25px;
+  color: #a9bdd2;
+  font-size: 0.8rem;
+}
+@media (max-width: 650px) {
+  .sleepMedianComparison {
+    grid-template-columns: 1fr 1fr;
+    gap: 25px 12px;
+  }
+  .sleepMedianComparison .sleepChange {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    border: 0;
+    padding: 0;
+  }
+  .overviewSmallStats {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .overviewSmallStats > div {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+  .overviewSmallStats strong {
+    flex-shrink: 0;
+  }
+  .overviewStageLegend {
+    grid-template-columns: 1fr 1fr;
+  }
+  .overviewBuckets {
+    gap: 8px;
+  }
+  .overviewProgressValues {
+    font-size: 0.75rem;
+  }
+  .overviewProgressLabels {
+    font-size: 0.7rem;
+  }
+}
+.sensorRouteCard {
+  border: 1px solid #314a61;
+  border-radius: 16px;
+  background: #122236;
+  padding: clamp(20px, 3vw, 34px);
+  margin: 20px 0 28px;
+}
+.sensorRouteCard h2 {
+  font-size: 1.6rem;
+  letter-spacing: -0.035em;
+}
+.sensorRouteCard p {
+  color: #a9bdd2;
+  font-size: 0.85rem;
+  margin-top: 10px;
+  line-height: 1.6;
+}
+.sensorRouteGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(200px, 0.75fr);
+  gap: 25px;
+  align-items: center;
+}
+.sensorRouteGrid svg {
+  width: 100%;
+}
+.sensorRouteFacts > div:not(.overviewLegend) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 24px 0;
+}
+.sensorRouteFacts strong {
+  font-size: 2.5rem;
+  color: #f5c985;
+}
+.sensorRouteFacts span {
+  color: #a9bdd2;
+  font-size: 0.8rem;
+}
+.sensorMonitor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin: 28px 0;
+  padding: 28px 4px;
+  border-bottom: 1px solid #2d4257;
+}
+.sensorMonitor h2 {
+  font-size: 1.6rem;
+  margin-top: 12px;
+  letter-spacing: -0.03em;
+}
+.sensorMonitor p {
+  color: #a9bdd2;
+  margin-top: 12px;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+.sensorMonitor > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 35px;
+  align-items: center;
+}
+.sensorMonitor > div:last-child > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sensorMonitor span:not(.micro) {
+  color: #a9bdd2;
+  font-size: 0.8rem;
+}
+.sensorMonitor a {
+  color: #74c9ff;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+@media (max-width: 700px) {
+  .sensorRouteGrid,
+  .sensorMonitor {
+    grid-template-columns: 1fr;
+  }
+  .sensorRouteFacts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .sensorRouteFacts > p,
+  .sensorRouteFacts > .overviewLegend {
+    grid-column: 1/-1;
+  }
+}

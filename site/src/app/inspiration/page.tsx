@@ -20,6 +20,7 @@ export default function ExamplesPage() {
       <div className={styles.grid}>
         {EXAMPLES.map((example) => (
           <article className={styles.project} key={example.slug}>
+            <h2>{example.title}</h2>
             <Link
               className={styles.preview}
               href={`/inspiration/${example.slug}/`}
@@ -27,7 +28,6 @@ export default function ExamplesPage() {
             >
               <ExampleDemo slug={example.slug} compact />
             </Link>
-            <h2>{example.title}</h2>
           </article>
         ))}
       </div>
