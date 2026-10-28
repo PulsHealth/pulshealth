@@ -108,7 +108,6 @@ export function YearReview({
               Share
             </button>
           </div>
-          <p className={styles.micro}>PNG · 1080 pixels wide</p>
           <p role="status" className={styles.status}>
             {status}
           </p>
@@ -148,10 +147,6 @@ export function YearReview({
         <section className={styles.reportSection}>
           <h2>Time well spent.</h2>
           <ActivityMix report={report} />
-          <p className={styles.micro}>
-            {number(report.totals.hours)} workout hours across{" "}
-            {report.sports.length} activities.
-          </p>
         </section>
         <section className={styles.reportSection}>
           <h2>Your rhythm, month by month.</h2>
@@ -173,17 +168,11 @@ export function YearReview({
               <span>recorded exercise hours</span>
             </div>
           </div>
-          <p className={styles.micro}>
-            Exercise minutes and workout durations are separate measures.
-          </p>
         </section>
         {m.sleepDays > 0 && (
           <section className={styles.reportSection}>
             <h2>The quieter part of the year.</h2>
             <SleepSummary report={report} />
-            <p className={styles.micro}>
-              {m.sleepDays} nights with recorded main sleep. Gaps stay missing.
-            </p>
           </section>
         )}
         {m.heartDays > 0 && (
@@ -220,9 +209,6 @@ export function YearReview({
               label="Mean recorded active energy per day (kcal)"
               color="#f5c985"
             />
-            <p className={styles.micro}>
-              Daily active energy already includes workout energy.
-            </p>
           </section>
         )}
       </div>

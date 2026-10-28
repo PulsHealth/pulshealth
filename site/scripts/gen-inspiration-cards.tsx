@@ -85,7 +85,7 @@ for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
         }}
       >
         <span style={{ fontSize: 23, color: "#a9bdd2" }}>
-          PULSHEALTH · INSPIRATION
+          PULSHEALTH
         </span>
         <span
           style={{

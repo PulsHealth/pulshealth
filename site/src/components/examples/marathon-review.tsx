@@ -68,13 +68,6 @@ export function MarathonReview({
           </div>
         </div>
       </div>
-      <p className={styles.micro}>
-        {report.raceExcluded
-          ? "Race workout excluded from training."
-          : "No race selected; any race workout remains in the training totals."}{" "}
-        {report.weeks.reduce((n, w) => n + w.missing, 0) > 0 &&
-          `${report.weeks.reduce((n, w) => n + w.missing, 0)} runs have no recorded distance; totals include known distances only.`}
-      </p>
       <div className={styles.trainingGrid}>
         <section className={styles.reportSection}>
           <div className={styles.sectionTitle}>
