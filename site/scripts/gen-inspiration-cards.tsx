@@ -7,10 +7,6 @@ import { join } from "node:path";
 import sensorRecorded from "../src/lib/sensor-recorded.json";
 import sleepRecorded from "../src/lib/sleep-recorded.json";
 import recorded from "../src/lib/example-recorded.json";
-import {
-  listeningDays,
-  heartbeatPoints,
-} from "../src/lib/listening-heartbeats";
 import { EXAMPLES } from "../src/lib/examples";
 const fontDir =
   process.env.SOCIAL_CARD_FONT_DIR ?? "/System/Library/Fonts/Supplemental";
@@ -51,25 +47,21 @@ for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
     recorded.totals.km * 0.621371192,
   ).toLocaleString("en-US");
   const subtitle =
-    example.slug === "soundtrack-of-your-year"
-      ? "A listening diary / Illustrative data"
-      : example.slug === "life-in-heartbeats"
-        ? "One day of sampled readings / Illustrative data"
-        : example.slug === "heart-rate-sensors"
-          ? "Apple Watch vs. Polar H10"
-          : example.slug === "sleep-and-parenthood"
-            ? "Sleep length, interruptions and the overall pattern"
-            : example.slug === "year-in-review"
-              ? `${recorded.totals.workouts} workouts · ${totalMiles} miles`
-              : example.slug === "marathon-training"
-                ? "16 weeks to marathon day"
-                : example.slug === "deep-workout-analysis"
-                  ? `${recorded.routeComparisons[0].attempts.length} runs. One familiar route.`
-                  : example.slug === "activity-art"
-                    ? "Made from real movement"
-                    : example.slug === "activity-atlas"
-                      ? "Walks. Runs. Rides."
-                      : "What could you build with your health data?";
+    example.slug === "heart-rate-sensors"
+      ? "Apple Watch vs. Polar H10"
+      : example.slug === "sleep-and-parenthood"
+        ? "Sleep length, interruptions and the overall pattern"
+        : example.slug === "year-in-review"
+          ? `${recorded.totals.workouts} workouts · ${totalMiles} miles`
+          : example.slug === "marathon-training"
+            ? "16 weeks to marathon day"
+            : example.slug === "deep-workout-analysis"
+              ? `${recorded.routeComparisons[0].attempts.length} runs. One familiar route.`
+              : example.slug === "activity-art"
+                ? "Made from real movement"
+                : example.slug === "activity-atlas"
+                  ? "Walks. Runs. Rides."
+                  : "What could you build with your health data?";
   const response = new ImageResponse(
     <div
       style={{
@@ -110,93 +102,59 @@ for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
         </span>
       </div>
       <svg width="470" height="450" viewBox="0 0 720 420">
-        {example.slug === "soundtrack-of-your-year"
-          ? listeningDays.map((d, i) => (
-              <rect
-                key={i}
-                x={30 + (i % 31) * 21}
-                y={40 + Math.floor(i / 31) * 26}
-                width="15"
-                height="20"
-                rx="2"
-                fill={
-                  d.level === null
-                    ? "#26384d"
-                    : d.level < 68
-                      ? "#739be0"
-                      : d.level < 78
-                        ? "#baa5ec"
-                        : "#f0b789"
-                }
-              />
-            ))
-          : example.slug === "life-in-heartbeats"
-            ? heartbeatPoints.map((p, i) => (
-                <circle
-                  key={i}
-                  cx={25 + (p.hour / 24) * 670}
-                  cy={340 - ((p.bpm - 40) / 120) * 260}
-                  r="3"
-                  fill="#f19cb8"
-                />
-              ))
-            : example.slug === "sleep-and-parenthood"
-              ? sleep.series.map((series, i) => {
-                  let x = 35;
-                  const line = series.density
-                    .map(
-                      (p, j) =>
-                        `${j ? "L" : "M"}${35 + (p.minutes / sleep.domain) * 650},${255 - (p.value / densityMax) * 200}`,
-                    )
-                    .join(" ");
-                  return (
-                    <g key={i}>
-                      <path
-                        d={`${line} L685,255 L35,255 Z`}
-                        fill={i ? "#f5c985" : "#74c9ff"}
-                        fillOpacity=".18"
-                      />
-                      <path
-                        d={line}
-                        fill="none"
-                        stroke={i ? "#f5c985" : "#74c9ff"}
-                        strokeWidth="5"
-                      />
-
-                      {(
-                        ["deep", "core", "rem", "awake", "unspecified"] as const
-                      ).map((stage) => {
-                        const width = ((series.stages[stage] ?? 0) / 100) * 650,
-                          position = x;
-                        x += width;
-                        return (
-                          <rect
-                            key={stage}
-                            x={position}
-                            y={325 + i * 70}
-                            width={width}
-                            height="20"
-                            fill={SLEEP_COLORS[stage]}
-                          />
-                        );
-                      })}
-                    </g>
-                  );
-                })
-              : routes.map((path, i) => (
+        {example.slug === "sleep-and-parenthood"
+          ? sleep.series.map((series, i) => {
+              let x = 35;
+              const line = series.density
+                .map(
+                  (p, j) =>
+                    `${j ? "L" : "M"}${35 + (p.minutes / sleep.domain) * 650},${255 - (p.value / densityMax) * 200}`,
+                )
+                .join(" ");
+              return (
+                <g key={i}>
                   <path
-                    key={i}
-                    d={path}
-                    fill="none"
-                    stroke={["#74c9ff", "#d7b8ff", "#f5c985"][i % 3]}
-                    strokeWidth={
-                      example.slug === "deep-workout-analysis" ? 2 : 1.4
-                    }
-                    opacity={
-                      example.slug === "deep-workout-analysis" ? 0.8 : 0.5
-                    }
+                    d={`${line} L685,255 L35,255 Z`}
+                    fill={i ? "#f5c985" : "#74c9ff"}
+                    fillOpacity=".18"
                   />
-                ))}
+                  <path
+                    d={line}
+                    fill="none"
+                    stroke={i ? "#f5c985" : "#74c9ff"}
+                    strokeWidth="5"
+                  />
+
+                  {(
+                    ["deep", "core", "rem", "awake", "unspecified"] as const
+                  ).map((stage) => {
+                    const width = ((series.stages[stage] ?? 0) / 100) * 650,
+                      position = x;
+                    x += width;
+                    return (
+                      <rect
+                        key={stage}
+                        x={position}
+                        y={325 + i * 70}
+                        width={width}
+                        height="20"
+                        fill={SLEEP_COLORS[stage]}
+                      />
+                    );
+                  })}
+                </g>
+              );
+            })
+          : routes.map((path, i) => (
+              <path
+                key={i}
+                d={path}
+                fill="none"
+                stroke={["#74c9ff", "#d7b8ff", "#f5c985"][i % 3]}
+                strokeWidth={example.slug === "deep-workout-analysis" ? 2 : 1.4}
+                opacity={example.slug === "deep-workout-analysis" ? 0.8 : 0.5}
+              />
+            ))}
       </svg>
     </div>,
     { width: 1200, height: 630, fonts },
