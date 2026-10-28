@@ -62,7 +62,7 @@ export const EXAMPLES = [
   },
   {
     slug: "heart-rate-sensors",
-    title: "Watch vs external heart rate",
+    title: "Comparing heart rate sensors",
     intro: "Find what the recordings actually show.",
     description: "Compare matched five-mile routes and heart-rate recordings from an Apple Watch and an external monitor.",
     input: "Expanded workout heart-rate streams and source audit",

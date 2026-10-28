@@ -40,10 +40,10 @@ const SensorPoster = forwardRef<SVGSVGElement, { report: SensorReport }>(
           HEART RATE · RECORDING CADENCE
         </text>
         <text x="64" y="230" fill="#eef4fc" fontSize="86" fontWeight="600">
-          {matchedRoute(report) ? "One route." : "Heart rate."}
+          Comparing heart
         </text>
         <text x="64" y="330" fill="#74c9ff" fontSize="86" fontWeight="600">
-          Two recordings.
+          rate sensors.
         </text>
         {report.recordings.map((run, i) => {
           const stats = samplingStats(run);
@@ -191,105 +191,11 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
       </div>
       <header className={styles.analysisHero}>
         <h2>
-          {matchedRoute(report) ? "One route." : "Heart rate."}
+          Comparing heart
           <br />
-          <span>Two recordings.</span>
+          <span>rate sensors.</span>
         </h2>
       </header>
-      {report.recordings[0].path && report.recordings[1].path && (
-        <section className={styles.sensorRouteCard}>
-          <div className={styles.sectionTitle}>
-            <div>
-              <h2>
-                {matchedRoute(report) ? "A familiar route" : "Recorded routes"}
-              </h2>
-              <p>
-                {watchRuns.length} Watch{" "}
-                {watchRuns.length === 1 ? "run" : "runs"}. One external-sensor
-                recording.
-              </p>
-            </div>
-            <label className={styles.baseline}>
-              Compare
-              <select
-                aria-label="Watch comparison run"
-                value={activeWatch}
-                onChange={(event) => setWatchIndex(Number(event.target.value))}
-              >
-                {watchRuns.map((run, i) => (
-                  <option key={i} value={i}>
-                    Watch run {i + 1} · {number(run.km * 0.621371192, 2)} mi ·{" "}
-                    {clock(run.seconds)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className={styles.sensorRouteGrid}>
-            <svg
-              viewBox="0 0 720 420"
-              role="img"
-              aria-label="Overlaid GPS tracks of the matched Watch and Bluetooth runs"
-            >
-              {report.recordings.map((run, i) => (
-                <path
-                  key={i}
-                  d={run.path}
-                  fill="none"
-                  stroke={colors[i]}
-                  strokeWidth={i ? 2 : 4}
-                  strokeOpacity={i ? 0.9 : 0.55}
-                  strokeLinecap="round"
-                />
-              ))}
-            </svg>
-            <div className={styles.sensorRouteFacts}>
-              {report.recordings[0].routeMatch && (
-                <>
-                  <div>
-                    <strong>
-                      {number(
-                        report.recordings[0].routeMatch?.coveragePercent ??
-                          null,
-                      )}
-                      %
-                    </strong>
-                    <span>
-                      sampled route points within{" "}
-                      {number(
-                        report.recordings[0].routeMatch?.thresholdFeet ?? null,
-                      )}{" "}
-                      ft
-                    </span>
-                  </div>
-                  <div>
-                    <strong>
-                      {number(report.recordings[0].routeMatch?.p95Feet ?? null)}{" "}
-                      ft
-                    </strong>
-                    <span>95th-percentile track separation</span>
-                  </div>
-                </>
-              )}
-              <div className={styles.overviewLegend}>
-                <span>
-                  <i style={{ background: colors[0] }} />
-                  Watch run {activeWatch + 1}
-                </span>
-                <span>
-                  <i style={{ background: colors[1] }} />
-                  External monitor
-                </span>
-              </div>
-              <p>
-                {matchedRoute(report)
-                  ? "Recorded on separate runs of closely matched routes."
-                  : "Recorded on separate runs."}
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
       {report.monitor && (
         <section className={styles.sensorMonitor}>
           <div>
@@ -356,6 +262,100 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
           );
         })}
       </div>
+      {report.recordings[0].path && report.recordings[1].path && (
+        <section className={styles.sensorRouteCard}>
+          <div className={styles.sectionTitle}>
+            <div>
+              <h2>
+                {matchedRoute(report) ? "A familiar route" : "Recorded routes"}
+              </h2>
+              <p>
+                {watchRuns.length} Watch{" "}
+                {watchRuns.length === 1 ? "run" : "runs"}. One external-sensor
+                recording.
+              </p>
+            </div>
+            <label className={styles.baseline}>
+              Compare
+              <select
+                aria-label="Watch comparison run"
+                value={activeWatch}
+                onChange={(event) => setWatchIndex(Number(event.target.value))}
+              >
+                {watchRuns.map((run, i) => (
+                  <option key={i} value={i}>
+                    Watch run {i + 1} · {number(run.km * 0.621371192, 2)} mi ·{" "}
+                    {clock(run.seconds)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className={styles.sensorRouteGrid}>
+            <svg
+              viewBox="0 0 720 420"
+              role="img"
+              aria-label="Overlaid GPS tracks of the Watch and Bluetooth runs"
+            >
+              {report.recordings.map((run, i) => (
+                <path
+                  key={i}
+                  d={run.path}
+                  fill="none"
+                  stroke={colors[i]}
+                  strokeWidth={i ? 2 : 4}
+                  strokeOpacity={i ? 0.9 : 0.55}
+                  strokeLinecap="round"
+                />
+              ))}
+            </svg>
+            <div className={styles.sensorRouteFacts}>
+              {report.recordings[0].routeMatch && (
+                <>
+                  <div>
+                    <strong>
+                      {number(
+                        report.recordings[0].routeMatch?.coveragePercent ??
+                          null,
+                      )}
+                      %
+                    </strong>
+                    <span>
+                      sampled route points within{" "}
+                      {number(
+                        report.recordings[0].routeMatch?.thresholdFeet ?? null,
+                      )}{" "}
+                      ft
+                    </span>
+                  </div>
+                  <div>
+                    <strong>
+                      {number(report.recordings[0].routeMatch?.p95Feet ?? null)}{" "}
+                      ft
+                    </strong>
+                    <span>95th-percentile track separation</span>
+                  </div>
+                </>
+              )}
+              <div className={styles.overviewLegend}>
+                <span>
+                  <i style={{ background: colors[0] }} />
+                  Watch run {activeWatch + 1}
+                </span>
+                <span>
+                  <i style={{ background: colors[1] }} />
+                  External monitor
+                </span>
+              </div>
+              <p>
+                {matchedRoute(report)
+                  ? "Recorded on separate runs of closely matched routes."
+                  : "Recorded on separate runs."}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
       <section className={styles.reportSection}>
         <div className={styles.sectionTitle}>
           <h2>How the recordings unfold</h2>
