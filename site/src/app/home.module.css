@@ -43,6 +43,7 @@
 .setupVisual > div:nth-child(2) > p:nth-child(2) { font-size: 18px; line-height: 1.7; padding: 26px; color: #d9e5f3; }
 .setupSteps { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 23px 2px 0; font-size: 11px; color: #c2cfdf; }
 .setupSteps svg { color: #6a85a1; flex-shrink: 0; }
+.examplesSection { padding-top: 100px; }
 .appDetails { display: flex; align-items: center; gap: 30px; padding-block: 70px; border-bottom: 1px solid #91afd324; }
 .appDetailsIcon { border: 1px solid #58708f50; padding: 21px; border-radius: 22px; color: #91bce1; background: #172333; }
 .appDetails h2 { font-size: 29px; }
@@ -75,6 +76,7 @@
   .ownershipGrid { grid-template-columns: 1fr; gap: 42px; padding-block: 60px; }
   .sectionIntro { font-size: 21px; }
   .setupVisual > div:nth-child(2) > p:nth-child(2) { padding: 22px 20px; font-size: 16px; line-height: 1.7; overflow-wrap: anywhere; }
+  .examplesSection { padding-top: 60px; }
   .appDetails { gap: 20px; padding-block: 45px; }
   .appDetailsIcon { padding: 15px; }
   .appDetails > div:nth-child(2) { flex: 1; }
