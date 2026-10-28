@@ -174,6 +174,18 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
     [minimum, setMinimum] = useState(1),
     [chosen, setChosen] = useState(0),
     [status, setStatus] = useState("");
+  const detailRef = useRef<HTMLElement>(null);
+  const inspectNight = (offset: number) => {
+    setChosen(offset);
+    requestAnimationFrame(() =>
+      detailRef.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      }),
+    );
+  };
   const poster = useRef<SVGSVGElement>(null),
     milestone = report.milestones[0],
     a = sleepPeriod(milestone, -before, 0, minimum),
@@ -321,26 +333,6 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
           </select>
         </label>
       </div>
-      <div className={styles.sleepHighlights}>
-        <div>
-          <strong>
-            {number(a.episodes, 1)} → {number(b.episodes, 1)}
-          </strong>
-          <span>median counted awake episodes / night</span>
-        </div>
-        <div>
-          <strong>
-            {duration(a.awakeDuringSleep)} → {duration(b.awakeDuringSleep)}
-          </strong>
-          <span>median recorded awake time / night</span>
-        </div>
-        <div>
-          <strong>
-            {sleepTime(a.longestSleep)} → {sleepTime(b.longestSleep)}
-          </strong>
-          <span>median longest recorded sleep stretch</span>
-        </div>
-      </div>
       <section className={styles.reportSection}>
         <div className={styles.sectionTitle}>
           <h2>See how each night unfolded</h2>
@@ -382,7 +374,7 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
                     disabled={!day || day.minutes === null}
                     aria-pressed={selected?.offset === offset}
                     aria-label={`${relativeNight(offset)}, ${sleepTime(day?.minutes ?? null)}, ${number(stats?.episodes ?? null)} counted awake episodes`}
-                    onClick={() => setChosen(offset)}
+                    onClick={() => inspectNight(offset)}
                   >
                     <span>{offset < 0 ? -offset : offset + 1}</span>
                     <svg
@@ -405,7 +397,10 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
         </div>
       </section>
       {selected && detail && (
-        <section className={styles.reportSection}>
+        <section
+          ref={detailRef}
+          className={`${styles.reportSection} ${styles.sleepNightDetail}`}
+        >
           <div className={styles.sectionTitle}>
             <h2>{relativeNight(selected.offset)}</h2>
             <span>{sleepTime(selected.minutes)} recorded sleep</span>
@@ -505,6 +500,26 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
           </div>
         </section>
       )}
+      <div className={styles.sleepHighlights}>
+        <div>
+          <strong>
+            {number(a.episodes, 1)} → {number(b.episodes, 1)}
+          </strong>
+          <span>median counted awake episodes / night</span>
+        </div>
+        <div>
+          <strong>
+            {duration(a.awakeDuringSleep)} → {duration(b.awakeDuringSleep)}
+          </strong>
+          <span>median recorded awake time / night</span>
+        </div>
+        <div>
+          <strong>
+            {sleepTime(a.longestSleep)} → {sleepTime(b.longestSleep)}
+          </strong>
+          <span>median longest recorded sleep stretch</span>
+        </div>
+      </div>
       <section className={styles.reportSection}>
         <div className={styles.sectionTitle}>
           <h2>Before &amp; after, side by side</h2>
@@ -633,7 +648,7 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
                     <td>
                       <button
                         disabled={!pre || pre.minutes === null}
-                        onClick={() => setChosen(-i - 1)}
+                        onClick={() => inspectNight(-i - 1)}
                       >
                         {sleepTime(pre?.minutes ?? null)}
                       </button>
@@ -641,7 +656,7 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
                     <td>
                       <button
                         disabled={!post || post.minutes === null}
-                        onClick={() => setChosen(i)}
+                        onClick={() => inspectNight(i)}
                       >
                         {sleepTime(post?.minutes ?? null)}
                       </button>
