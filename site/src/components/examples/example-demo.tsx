@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import recorded from "@/lib/example-recorded.json";
 import { parseExampleData } from "@/lib/example-data";
@@ -19,6 +19,7 @@ export function ExampleDemo({
 }) {
   const [report, setReport] = useState<Report>(recorded as Report),
     [isExample, setIsExample] = useState(true),
+    [revision, setRevision] = useState(0),
     [error, setError] = useState("");
   const content =
     slug === "year-in-review" ? (
@@ -55,6 +56,7 @@ export function ExampleDemo({
                       throw new Error("Choose a file smaller than 10 MB.");
                     const data = parseExampleData(await file.text());
                     setReport(buildReport(data));
+                    setRevision((n) => n + 1);
                     setIsExample(false);
                     setError("");
                   } catch (error) {
@@ -78,6 +80,7 @@ export function ExampleDemo({
           <button
             onClick={() => {
               setReport(recorded as Report);
+              setRevision((n) => n + 1);
               setIsExample(true);
               setError("");
             }}
@@ -91,7 +94,7 @@ export function ExampleDemo({
           {error}
         </p>
       )}
-      {content}
+      <Fragment key={revision}>{content}</Fragment>
     </div>
   );
 }
