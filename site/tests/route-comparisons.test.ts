@@ -21,3 +21,11 @@ test('missing distances, short tracks and dissimilar run lengths cannot create c
   longer.distanceM=2500;missing.distanceM=null;short.route=short.route!.slice(0,3);
   assert.deepEqual(compareRoutes([first,longer,missing,short]),[]);
 });
+
+test('reversed short closed loops are not grouped as same-direction efforts', () => {
+  const first=run('loop-a'), reverse=run('loop-b');
+  first.distanceM=reverse.distanceM=1100;
+  first.route=Array.from({length:33}, (_,i)=>({lat:40+Math.sin(i/32*Math.PI*2)*.0015,lon:-100+Math.cos(i/32*Math.PI*2)*.0015}));
+  reverse.route=[...first.route].reverse();
+  assert.deepEqual(compareRoutes([first,reverse]),[]);
+});

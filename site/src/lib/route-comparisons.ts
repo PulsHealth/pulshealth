@@ -47,7 +47,7 @@ function coverage(a: Point[], b: Point[]) {
       return nearest;
     })
     .sort((a, b) => a - b);
-  return distances[Math.floor((distances.length - 1) * 0.95)] <= 75;
+  return distances[Math.ceil(distances.length * 0.95) - 1] <= 75;
 }
 function sample(route: Point[]) {
   if (route.length <= 96) return route;
@@ -97,6 +97,15 @@ export function compareRoutes(workouts: ExampleWorkout[]): RouteComparison[] {
         ) > 400
       )
         return false;
+    // Compare traversal order in both directions, including small closed loops
+    // whose endpoints coincide and whose diameter is below the anchor limit.
+    let forward = 0, reverse = 0;
+    for (const fraction of [.125, .25, .375, .5, .625, .75, .875]) {
+      const p = x[Math.round((x.length - 1) * fraction)];
+      forward += meters(p, y[Math.round((y.length - 1) * fraction)]);
+      reverse += meters(p, y[Math.round((y.length - 1) * (1 - fraction))]);
+    }
+    if (reverse + 7 * 30 < forward) return false;
     return coverage(x, y) && coverage(y, x);
   }
   const groups: ExampleWorkout[][] = [];
