@@ -12,7 +12,6 @@ import "./navigation.css"
 const primary = [
   { title: "Dashboard", href: "https://app.pulshealth.com/" },
   { title: "Knowledge Base", href: "/knowledge-base/" },
-  { title: "Examples", href: "/examples/" },
   { title: "Docs", href: "/docs/" },
   { title: "Consulting", href: "/consulting/" },
 ]

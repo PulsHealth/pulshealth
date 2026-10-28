@@ -3,7 +3,7 @@ import { EXAMPLES } from "@/lib/examples";
 import { ExampleDemo } from "@/components/examples/example-demo";
 import styles from "@/components/examples/examples.module.css";
 export const metadata = {
-  title: "Apple Health Data Examples | PulsHealth",
+  title: "Examples | PulsHealth",
   description:
     "Make a health year in review, explore marathon training, turn activity into art, and visualize your walks, runs and rides. Interactive demos using recorded workouts and local examples.",
   alternates: { canonical: "/examples/" },
@@ -12,8 +12,8 @@ export default function ExamplesPage() {
   return (
     <main className={styles.page}>
       <header className={styles.galleryHeader}>
-        <h1>Health data, made useful.</h1>
-        <p>Four things you can make with your data.</p>
+        <h1>Examples</h1>
+        <p>What could you build with your health data freed from your phone?</p>
       </header>
       <div className={styles.grid}>
         {EXAMPLES.map((example) => (
@@ -21,15 +21,11 @@ export default function ExamplesPage() {
             <Link
               className={styles.preview}
               href={`/examples/${example.slug}/`}
-              aria-label={example.action}
+              aria-label={`View ${example.title}`}
             >
               <ExampleDemo slug={example.slug} compact />
             </Link>
             <h2>{example.title}</h2>
-            <p>{example.description}</p>
-            <Link className={styles.link} href={`/examples/${example.slug}/`}>
-              {example.action}
-            </Link>
           </article>
         ))}
       </div>

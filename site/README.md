@@ -333,6 +333,7 @@ from `src/lib/example-data.ts` is optional; user-selected showcase JSON is held
 only in memory.
 No health file upload, browser persistence, map provider or AI request is made.
 The local CSV/JSONL adapter and route SQL live in `../examples/showcase/`.
-The examples lead with their outputs; data notes and AI briefs are collapsed.
+The examples lead with clickable previews and titles; data notes and AI briefs are collapsed.
+Discovery links live in the footer, homepage and docs landing page, outside the top navigation.
 Share images contain no personal attribution. The year report includes optional
 daily health summaries, and the route tools support interactive styling and exploration.
