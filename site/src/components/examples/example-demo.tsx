@@ -6,6 +6,7 @@ import { parseExampleData } from "@/lib/example-data";
 import { buildReport, type Report } from "@/lib/example-report";
 import { EXAMPLES, type ExampleSlug } from "@/lib/examples";
 import { WorkoutAnalysis } from "./workout-analysis";
+import { ListeningHeartbeats } from "./listening-heartbeats";
 import { SensorReview } from "./sensor-review";
 import { SleepReview } from "./sleep-review";
 import { YearReview } from "./year-review";
@@ -36,6 +37,10 @@ export function ExampleDemo({
     ) : (
       <RouteAtlas report={report} compact={compact} />
     );
+  if (slug === "soundtrack-of-your-year")
+    return <ListeningHeartbeats kind="listening" compact={compact} />;
+  if (slug === "life-in-heartbeats")
+    return <ListeningHeartbeats kind="heartbeats" compact={compact} />;
   if (slug === "heart-rate-sensors") return <SensorReview compact={compact} />;
   if (slug === "sleep-and-parenthood") return <SleepReview compact={compact} />;
   if (compact) return content;

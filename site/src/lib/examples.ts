@@ -54,7 +54,8 @@ export const EXAMPLES = [
     slug: "sleep-and-parenthood",
     title: "Sleep changes with a newborn",
     intro: "Sleep before and after becoming a parent.",
-    description: "Sleep stages, nightly duration, and recorded awakenings before and after a new arrival.",
+    description:
+      "Sleep stages, nightly duration, and recorded awakenings before and after a new arrival.",
     input: "Sleep sessions and private milestone dates",
     action: "Compare sleep",
     prompt:
@@ -64,10 +65,34 @@ export const EXAMPLES = [
     slug: "heart-rate-sensors",
     title: "Comparing heart rate sensors",
     intro: "Find what the recordings actually show.",
-    description: "Compare matched five-mile routes and heart-rate recordings from an Apple Watch and an external monitor.",
+    description:
+      "Compare matched five-mile routes and heart-rate recordings from an Apple Watch and an external monitor.",
     input: "Expanded workout heart-rate streams and source audit",
     action: "Compare recordings",
-    prompt: "Audit my PulsHealth heart-rate sources to find external sensor recordings and any simultaneous Apple Watch data. Compare expanded workout streams, not raw HealthKit quantity object counts. Show interval distributions, readings per minute and gaps. If recordings are from different runs, state that clearly and do not infer sensor accuracy or heart-rate agreement. Keep dates, source identifiers and personal attribution private in public output.",
+    prompt:
+      "Audit my PulsHealth heart-rate sources to find external sensor recordings and any simultaneous Apple Watch data. Compare expanded workout streams, not raw HealthKit quantity object counts. Show interval distributions, readings per minute and gaps. If recordings are from different runs, state that clearly and do not infer sensor accuracy or heart-rate agreement. Keep dates, source identifiers and personal attribution private in public output.",
+  },
+  {
+    slug: "soundtrack-of-your-year",
+    title: "The soundtrack of your year",
+    intro: "A year of listening, seen through sound.",
+    description:
+      "Explore a listening calendar made from headphone sound levels and recorded exposure time.",
+    input: "Headphone audio exposure intervals",
+    action: "Explore the listening diary",
+    prompt:
+      "Create a listening-year calendar from my PulsHealth headphone audio exposure intervals. This data has sound levels and timestamps, not songs or artists. Use my chosen reporting time zone; union overlapping intervals for recorded duration and audit sources before aggregating. For combined levels use duration-weighted sound energy, never an arithmetic mean of decibels. Leave missing days unknown and avoid safety judgments. Offer month filters and a shareable image with provenance. Do not upload my records.",
+  },
+  {
+    slug: "life-in-heartbeats",
+    title: "Your life in heartbeats",
+    intro: "Follow the shape of an ordinary day.",
+    description:
+      "Explore a day of heart-rate readings with walks, workouts, and your own annotated moments.",
+    input: "Heart-rate readings, workouts, and optional notes",
+    action: "Explore a day",
+    prompt:
+      "Build an interactive day-in-heartbeats story from my PulsHealth timestamped heart-rate readings, workout times, and available sleep intervals. Let me choose a local day and reporting time zone, zoom into morning or evening, and annotate moments myself. Plot actual sampled bpm rather than a simulated ECG or total heartbeat count. Do not interpolate across long gaps. Keep source provenance, missing periods, and coverage visible; never infer emotions, diagnoses, or causes. Export a shareable image with private dates and annotations omitted unless I choose to include them.",
   },
 ] as const;
 export type ExampleSlug = (typeof EXAMPLES)[number]["slug"];

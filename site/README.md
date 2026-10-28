@@ -345,3 +345,8 @@ The sleep-through-parenthood project uses `sleep-recorded.json`, containing rela
 The sleep view compares aggregate duration distributions, recorded awakenings, stage proportions and broad post-arrival periods. Period controls select equal windows before and after; missing recordings never count as zero. A one-minute awake threshold defines interruption episodes. PNG sharing uses the same aggregate model, without individual nights or calendar dates.
 
 The sensor comparison includes four nearby Watch runs matched to the external-monitor route. Normalized shared-frame paths and bidirectional sampled point-to-track metrics are display-only; absolute coordinates, workout IDs and dates remain private. Recordings are separate runs, so the charts compare recorded cadence and density rather than paired accuracy. The optional monitor profile supports verified hardware details; the featured monitor is a contributor-confirmed Polar H10, with chest-strap, ECG and Bluetooth details linked to Polar’s official product reference. The synced writer itself identifies only a Bluetooth device.
+
+The Examples gallery also includes `soundtrack-of-your-year` (headphone exposure calendar) and
+`life-in-heartbeats` (annotated sampled-heart-rate day). Both use deterministic,
+clearly labeled invented data, support view selection and PNG download, and include
+a copyable AI brief. Listening records do not contain song or artist metadata.
