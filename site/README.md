@@ -338,6 +338,10 @@ The navbar labels the section Examples after Knowledge Base. Footer, homepage an
 Share images contain no personal attribution. The year report includes optional
 daily health summaries, and the route tools support interactive styling and exploration.
 
-Each Inspiration project has a 1200×630 Open Graph/X link-preview card. Regenerate these reviewed display-only images with `bun scripts/gen-inspiration-cards.tsx` from `site/` (same licensed local font setup as the default social-card generator). All five projects offer local PNG downloads and native file sharing where supported; the year has post, square and story formats. The copy-link control shares only the public project URL.
+Each Inspiration project has a 1200×630 Open Graph/X link-preview card. Regenerate these reviewed display-only images with `bun scripts/gen-inspiration-cards.tsx` from `site/` (same licensed local font setup as the default social-card generator). All projects offer local PNG downloads and native file sharing where supported; the year has post, square and story formats. The copy-link control shares only the public project URL.
 
 The sleep-through-parenthood project uses `sleep-recorded.json`, containing relative offsets and main-session measurements only. Rebuild it with `../examples/showcase/prepare-sleep.py` from private source responses; exact milestone dates stay outside the tree. Sleep durations remain in hours/minutes.
+
+The sleep view compares aggregate duration distributions, recorded awakenings, stage proportions and broad post-arrival periods. Period controls select equal windows before and after; missing recordings never count as zero. A one-minute awake threshold defines interruption episodes. PNG sharing uses the same aggregate model, without individual nights or calendar dates.
+
+The sensor comparison includes four nearby Watch runs matched to the external-monitor route. Normalized shared-frame paths and bidirectional sampled point-to-track metrics are display-only; absolute coordinates, workout IDs and dates remain private. Recordings are separate runs, so the charts compare recorded cadence and density rather than paired accuracy. The optional monitor profile supports verified hardware details; the current records identify only a Bluetooth heart-rate monitor.

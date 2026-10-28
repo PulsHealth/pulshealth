@@ -1,4 +1,5 @@
-import { SLEEP_COLORS, type SleepStage } from "../src/lib/sleep-report";
+import { sleepOverview } from "../src/lib/sleep-overview";
+import { SLEEP_COLORS, parseSleepReport } from "../src/lib/sleep-report";
 /** Render public link-preview cards from the same display-only data as the demos. */
 import { ImageResponse } from "next/og";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -18,6 +19,13 @@ const fonts = await Promise.all(
     weight,
     style: "normal" as const,
   })),
+);
+const sleep = sleepOverview(
+  parseSleepReport(JSON.stringify(sleepRecorded)).milestones[0],
+  90,
+);
+const densityMax = Math.max(
+  ...sleep.series.flatMap((s) => s.density.map((p) => p.value)),
 );
 const out = new URL("../public/inspiration-cards/", import.meta.url);
 await mkdir(out, { recursive: true });
@@ -42,7 +50,7 @@ for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
     example.slug === "heart-rate-sensors"
       ? "Recording cadence, density and gaps"
       : example.slug === "sleep-and-parenthood"
-        ? "Sleep stages, awakenings and nightly duration"
+        ? "Sleep length, interruptions and the overall pattern"
         : example.slug === "year-in-review"
           ? `${recorded.totals.workouts} workouts · ${totalMiles} miles`
           : example.slug === "marathon-training"
@@ -95,29 +103,48 @@ for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
       </div>
       <svg width="470" height="450" viewBox="0 0 720 420">
         {example.slug === "sleep-and-parenthood"
-          ? sleepRecorded.milestones[0].days
-              .filter((day) => day.offset >= -14 && day.offset < 14)
-              .map((day) => (
-                <g key={day.offset}>
-                  <rect
-                    x="20"
-                    y={(day.offset + 14) * 14}
-                    width="680"
-                    height="10"
-                    fill="#223449"
+          ? sleep.series.map((series, i) => {
+              let x = 35;
+              const line = series.density
+                .map(
+                  (p, j) =>
+                    `${j ? "L" : "M"}${35 + (p.minutes / sleep.domain) * 650},${255 - (p.value / densityMax) * 200}`,
+                )
+                .join(" ");
+              return (
+                <g key={i}>
+                  <path
+                    d={`${line} L685,255 L35,255 Z`}
+                    fill={i ? "#f5c985" : "#74c9ff"}
+                    fillOpacity=".18"
                   />
-                  {(day.segments ?? []).map((segment, i) => (
-                    <rect
-                      key={i}
-                      x={20 + (segment.start / 720) * 680}
-                      y={(day.offset + 14) * 14}
-                      width={((segment.end - segment.start) / 720) * 680}
-                      height="10"
-                      fill={SLEEP_COLORS[segment.stage as SleepStage]}
-                    />
-                  ))}
+                  <path
+                    d={line}
+                    fill="none"
+                    stroke={i ? "#f5c985" : "#74c9ff"}
+                    strokeWidth="5"
+                  />
+
+                  {(
+                    ["deep", "core", "rem", "awake", "unspecified"] as const
+                  ).map((stage) => {
+                    const width = ((series.stages[stage] ?? 0) / 100) * 650,
+                      position = x;
+                    x += width;
+                    return (
+                      <rect
+                        key={stage}
+                        x={position}
+                        y={325 + i * 70}
+                        width={width}
+                        height="20"
+                        fill={SLEEP_COLORS[stage]}
+                      />
+                    );
+                  })}
                 </g>
-              ))
+              );
+            })
           : routes.map((path, i) => (
               <path
                 key={i}
