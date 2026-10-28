@@ -4,6 +4,7 @@ import type { Report } from "@/lib/example-report";
 import { MONTH_NAMES } from "@/lib/example-report";
 import type { RouteComparison } from "@/lib/route-comparisons";
 import { number } from "./report-visuals";
+import { RunReplay } from "./run-replay";
 import { exportImage } from "./export-image";
 import styles from "./examples.module.css";
 const miles = 0.621371192;
@@ -92,7 +93,7 @@ export function WorkoutAnalysis({
 }) {
   const groups = report.routeComparisons ?? [];
   const [groupIndex, setGroupIndex] = useState(0),
-    [attempt, setAttempt] = useState(0),
+    [attempt, setAttempt] = useState((groups[0]?.attempts.length ?? 1) - 1),
     [baseline, setBaseline] = useState(0),
     [status, setStatus] = useState("");
   const poster = useRef<SVGSVGElement>(null);
@@ -274,6 +275,7 @@ export function WorkoutAnalysis({
             )}
         </aside>
       </div>
+      <RunReplay key={group.name} group={group} selected={attempt} baseline={baseline} />
       <section className={styles.reportSection}>
         <div className={styles.sectionTitle}>
           <h2>Every effort, side by side</h2>

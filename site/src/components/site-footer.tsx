@@ -19,7 +19,7 @@ const columns: { heading: string; links: FooterLink[] }[] = [
   {
     heading: "Resources",
     links: [
-      { title: "Inspiration", href: "/inspiration/" },
+      { title: "Cool Examples", href: "/cool-examples/" },
       { title: "Documentation", href: "/docs/" },
       { title: "Knowledge base", href: "/knowledge-base/" },
       { title: "Blog", href: "/blog/" },

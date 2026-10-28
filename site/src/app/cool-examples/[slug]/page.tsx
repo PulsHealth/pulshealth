@@ -18,9 +18,9 @@ export async function generateMetadata({
   const e = EXAMPLES.find((e) => e.slug === slug);
   return e
     ? {
-        title: `${e.title} | PulsHealth Inspiration`,
+        title: `${e.title} | PulsHealth Cool Examples`,
         description: e.description,
-        alternates: { canonical: `/inspiration/${slug}/` },
+        alternates: { canonical: `/cool-examples/${slug}/` },
       }
     : {};
 }
@@ -35,8 +35,8 @@ export default async function ExamplePage({
   return (
     <main className={styles.page}>
       <header className={styles.detailHeader}>
-        <Link href="/inspiration/" className={styles.back}>
-          All inspiration
+        <Link href="/cool-examples/" className={styles.back}>
+          All cool examples
         </Link>
         <h1>{example.title}</h1>
       </header>

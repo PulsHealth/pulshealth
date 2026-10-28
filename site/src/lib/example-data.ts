@@ -1,5 +1,11 @@
 /** Generated fallback fixtures and validation for local health exports. */
 export type Activity = "Running" | "Walking" | "Cycling" | "Other";
+export type WorkoutStreams = Partial<
+  Record<
+    "heartRate" | "powerW" | "speedMps",
+    { seconds: number; value: number }[]
+  >
+>;
 export type RaceMetrics = {
   heartRate?: number;
   powerW?: number;
@@ -15,9 +21,10 @@ export type ExampleWorkout = {
   activity: Activity;
   sport?: string;
   metrics?: RaceMetrics;
+  streams?: WorkoutStreams;
   distanceM: number | null;
   durationS: number;
-  route?: { lat: number; lon: number }[];
+  route?: { lat: number; lon: number; seconds?: number }[];
 };
 export type ExampleData = {
   label: string;
@@ -212,6 +219,36 @@ export function parseExampleData(text: string): ExampleData {
             "Workout metrics must be nonnegative finite numbers.",
           );
     }
+    if (w.streams !== undefined) {
+      if (
+        !w.streams ||
+        typeof w.streams !== "object" ||
+        Array.isArray(w.streams)
+      )
+        throw new Error("Workout streams must be an object.");
+      for (const key of ["heartRate", "powerW", "speedMps"]) {
+        const stream = w.streams[key];
+        if (stream === undefined) continue;
+        if (!Array.isArray(stream) || stream.length > 3000)
+          throw new Error("Use at most 3,000 points per metric stream.");
+        let previous = -1;
+        for (const point of stream) {
+          if (
+            !point ||
+            !Number.isFinite(point.seconds) ||
+            point.seconds < 0 ||
+            point.seconds <= previous ||
+            !Number.isFinite(point.value) ||
+            point.value < 0
+          )
+            throw new Error(
+              "Metric streams need increasing elapsed seconds and nonnegative finite values.",
+            );
+          previous = point.seconds;
+        }
+        points += stream.length;
+      }
+    }
     ids.add(w.id);
     if (w.route !== undefined) {
       if (
@@ -226,11 +263,24 @@ export function parseExampleData(text: string): ExampleData {
         )
       )
         throw new Error("Route points need valid lat and lon coordinates.");
+      let previous = -1;
+      for (const p of w.route)
+        if (p.seconds !== undefined) {
+          if (
+            !Number.isFinite(p.seconds) ||
+            p.seconds < 0 ||
+            p.seconds <= previous
+          )
+            throw new Error(
+              "Route timing needs increasing nonnegative elapsed seconds.",
+            );
+          previous = p.seconds;
+        }
       points += w.route.length;
     }
   }
   if (points > 200000)
-    throw new Error("Use at most 200,000 route points per file.");
+    throw new Error("Use at most 200,000 route and metric points per file.");
   if (
     data.raceId !== undefined &&
     (typeof data.raceId !== "string" || !ids.has(data.raceId))

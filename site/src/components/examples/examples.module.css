@@ -1134,4 +1134,153 @@
     flex-direction: column;
   }
 }
-.demo .effortChart button[aria-pressed="true"] { color: #f5c985; }
+.demo .effortChart button[aria-pressed="true"] {
+  color: #f5c985;
+}
+.headToHead {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+.headToHead article {
+  background: #152638;
+  border: 1px solid #2b4157;
+  border-top-width: 4px;
+  padding: 24px;
+  border-radius: 12px;
+  min-width: 0;
+}
+.headToHead h3 {
+  font-size: 1.4rem;
+  margin: 12px 0;
+}
+.headPace {
+  display: block;
+  font-size: clamp(2.1rem, 5vw, 3.8rem);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+}
+.headPace small {
+  font-size: 1rem;
+  color: #a9bdd2;
+  letter-spacing: 0;
+}
+.headToHead dl {
+  margin-top: 20px;
+}
+.headToHead dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid #304459;
+  padding: 12px 0;
+  font-size: 0.9rem;
+}
+.headToHead dt {
+  color: #a9bdd2;
+}
+.headToHead dd {
+  font-variant-numeric: tabular-nums;
+}
+.traceOptions,
+.replayControls {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 22px 0;
+}
+.traceOptions label,
+.replayControls label {
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.replayControls select {
+  background: #13263a;
+  border: 1px solid #3b5269;
+  padding: 9px;
+  border-radius: 6px;
+}
+.replayControls input[type="range"] {
+  flex: 1 1 250px;
+  accent-color: #f5c985;
+}
+.replayLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  font-size: 0.75rem;
+  margin: 12px 0 20px;
+}
+.replayLegend span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.replayLegend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.replayClock {
+  color: #f5c985;
+  font-size: 1.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.replayGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+.replayGrid svg {
+  width: 100%;
+  align-self: center;
+}
+.replayStandings {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 12px;
+}
+.replayStandings > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 0.8rem;
+}
+.replayStandings i {
+  height: 4px;
+  border-radius: 3px;
+  grid-column: 1 / -1;
+}
+.reportSection + .reportSection {
+  margin-top: 24px;
+}
+@media (max-width: 600px) {
+  .headToHead {
+    gap: 10px;
+  }
+  .headToHead article {
+    padding: 15px 12px;
+  }
+  .headToHead dl > div {
+    font-size: 0.75rem;
+  }
+  .headToHead h3 {
+    font-size: 1.05rem;
+  }
+  .replayGrid {
+    grid-template-columns: 1fr;
+  }
+  .replayStandings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    max-height: 220px;
+  }
+}

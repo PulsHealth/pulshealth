@@ -1,6 +1,6 @@
 # Make something with your Apple Health history
 
-Five interactive projects at [pulshealth.com/inspiration](https://pulshealth.com/inspiration/):
+Five interactive projects at [pulshealth.com/cool-examples](https://pulshealth.com/cool-examples/):
 
 - **Your health year in review:** monthly workout distances by activity, workout count and recorded time.
 - **The road to race day:** 16 calendar weeks of running, with total distance and longest run. The selected race workout stays separate.
@@ -145,7 +145,7 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
-Open `/inspiration/`. Rendering and browser interactions live in
+Open `/cool-examples/`. Rendering and browser interactions live in
 `site/src/components/examples/`; sample generation, validation, training
 aggregation and projection live in `site/src/lib/example-data.ts`.
 
@@ -173,3 +173,5 @@ preserved. Update these recorded-example counts when replacing the fixture.
 Race workout records can include optional `metrics`: `heartRate` (bpm), `powerW` (W), `steps`, `activeKcal`, `strideM` (m), `groundContactMs` (ms), and `verticalCm` (cm). Supply only measured values. The display defaults to miles, feet and inches; the training view can switch to metric. Raw source units remain canonical.
 
 Deep workout analysis matches geographically similar running routes in the selected year: at least 1 km, eight GPS points, recorded distances within 8%, endpoints within 150 m, ordered route anchors within 400 m, and 95% of sampled points within 75 m of the other track in both directions. Each match is compared with the original reference route. Matching uses up to 96 points per route, at most 500 candidate runs and 20 repeated-route groups. The output includes normalized overlays and measured duration, distance, heart rate and power where present. These are approximate route matches, not controlled fitness comparisons.
+
+For metric overlays, workout JSON may include `streams` with `heartRate`, `powerW` and `speedMps` arrays of `{ "seconds": 30, "value": 150 }`. Seconds are elapsed from workout start, strictly increasing within each stream. Route points may include a `seconds` field in addition to `lat` and `lon` for timed GPS replay. Supply observed timing only. The public fixture uses 30-second metric averages and GPS sampled once per recorded minute; original timestamps stay private. Replay progress is measured along each sampled track, with interpolation only across gaps up to 120 seconds. End of GPS track does not establish official finish time. Metric overlays by GPS progress exclude samples outside the observed GPS range.

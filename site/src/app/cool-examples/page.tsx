@@ -3,16 +3,16 @@ import { EXAMPLES } from "@/lib/examples";
 import { ExampleDemo } from "@/components/examples/example-demo";
 import styles from "@/components/examples/examples.module.css";
 export const metadata = {
-  title: "Inspiration | PulsHealth",
+  title: "Cool Examples | PulsHealth",
   description:
     "Make a health year in review, explore marathon training, compare repeated running routes, turn activity into art, and visualize your walks, runs and rides. Interactive demos using recorded workouts and local examples.",
-  alternates: { canonical: "/inspiration/" },
+  alternates: { canonical: "/cool-examples/" },
 };
 export default function ExamplesPage() {
   return (
     <main className={styles.page}>
       <header className={styles.galleryHeader}>
-        <h1>Inspiration</h1>
+        <h1>Cool Examples</h1>
         <p>What could you build with your health data freed from your phone?</p>
       </header>
       <div className={styles.grid}>
@@ -20,7 +20,7 @@ export default function ExamplesPage() {
           <article className={styles.project} key={example.slug}>
             <Link
               className={styles.preview}
-              href={`/inspiration/${example.slug}/`}
+              href={`/cool-examples/${example.slug}/`}
               aria-label={`View ${example.title}`}
             >
               <ExampleDemo slug={example.slug} compact />

@@ -2,6 +2,7 @@ import {
   routePaths,
   type ExampleWorkout,
   type RaceMetrics,
+  type WorkoutStreams,
 } from "./example-data";
 
 export type RouteComparison = {
@@ -12,6 +13,8 @@ export type RouteComparison = {
     minutes: number;
     path: string;
     metrics?: RaceMetrics;
+    streams?: WorkoutStreams;
+    track?: { seconds: number; x: number; y: number }[];
   }[];
 };
 type Point = { lat: number; lon: number };
@@ -99,8 +102,9 @@ export function compareRoutes(workouts: ExampleWorkout[]): RouteComparison[] {
         return false;
     // Compare traversal order in both directions, including small closed loops
     // whose endpoints coincide and whose diameter is below the anchor limit.
-    let forward = 0, reverse = 0;
-    for (const fraction of [.125, .25, .375, .5, .625, .75, .875]) {
+    let forward = 0,
+      reverse = 0;
+    for (const fraction of [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]) {
       const p = x[Math.round((x.length - 1) * fraction)];
       forward += meters(p, y[Math.round((y.length - 1) * fraction)]);
       reverse += meters(p, y[Math.round((y.length - 1) * (1 - fraction))]);
@@ -127,6 +131,34 @@ export function compareRoutes(workouts: ExampleWorkout[]): RouteComparison[] {
           km: w.distanceM! / 1000,
           minutes: w.durationS / 60,
           path: paths[index].d,
+          ...(w.route!.every((p) => p.seconds !== undefined)
+            ? {
+                track: [
+                  ...paths[index].d.matchAll(/[ML]([\d.-]+),([\d.-]+)/g),
+                ].map((p, j) => ({
+                  seconds: w.route![j].seconds!,
+                  x: Number(p[1]),
+                  y: Number(p[2]),
+                })),
+              }
+            : {}),
+          ...(w.streams
+            ? {
+                streams: Object.fromEntries(
+                  ["heartRate", "powerW", "speedMps"]
+                    .filter(
+                      (key) => w.streams![key as keyof WorkoutStreams]?.length,
+                    )
+                    .map((key) => [
+                      key,
+                      w.streams![key as keyof WorkoutStreams]!.map((p) => ({
+                        seconds: p.seconds,
+                        value: p.value,
+                      })),
+                    ]),
+                ),
+              }
+            : {}),
           ...(w.metrics
             ? {
                 metrics: Object.fromEntries(
