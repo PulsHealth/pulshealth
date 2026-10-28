@@ -54,11 +54,11 @@ export const EXAMPLES = [
     slug: "sleep-and-parenthood",
     title: "Sleep through new chapters",
     intro: "Sleep before and after becoming a parent.",
-    description: "Recorded sleep patterns around two family milestones.",
+    description: "Sleep stages, nightly duration, and recorded awakenings before and after a new arrival.",
     input: "Sleep sessions and private milestone dates",
     action: "Compare sleep",
     prompt:
-      "Compare my recorded sleep before and after family milestones using my PulsHealth sleep sessions. Use the longest positive session per wake-up day. Show median and middle-half duration, short-night frequency, recorded awake time and missing-night coverage. Align timelines on day zero and keep exact milestone dates private in public outputs. Describe associations without claiming parenthood caused the changes. Create a shareable image.",
+      "Compare my recorded sleep before and after one family milestone using my PulsHealth sleep sessions. Use the longest positive session per wake-up day. Show source-consistent sleep stage timelines, short comparison windows, nightly duration, recorded awake-episode counts and duration, longest continuous sleep and missing-night coverage. Align timelines on day zero and keep calendar dates and identifying details private in public outputs. Describe associations without claiming parenthood caused the changes. Create a shareable image.",
   },
   {
     slug: "heart-rate-sensors",
