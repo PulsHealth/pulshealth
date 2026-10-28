@@ -25,13 +25,15 @@
   gap: 42px 30px;
 }
 .project {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 .project h2 {
   font-size: 1.4rem;
   font-weight: 550;
   letter-spacing: -0.025em;
-  margin: 17px 0 9px;
+  margin: 0 0 16px;
 }
 .project p {
   color: #a9bdd2;
@@ -50,6 +52,8 @@
   font-size: 0.9rem;
 }
 .preview {
+  margin-top: auto;
+  flex-shrink: 0;
   display: block;
   overflow: hidden;
   border-radius: 14px;

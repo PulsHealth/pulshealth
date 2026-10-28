@@ -41,9 +41,12 @@ const SleepPoster = forwardRef<
         SLEEP · BEFORE &amp; AFTER
       </text>
       <text x="64" y="225" fill="#eef4fc" fontSize="86" fontWeight="600">
-        How sleep changed.
+        Sleep changes
       </text>
-      <text x="72" y="285" fill="#a9bdd2" fontSize="24">
+      <text x="72" y="278" fill="#eef4fc" fontSize="48">
+        with a newborn.
+      </text>
+      <text x="72" y="315" fill="#a9bdd2" fontSize="24">
         Median sleep per night
       </text>
       {overview.series.map((series, i) => (
@@ -186,7 +189,7 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
       </div>
       <header className={styles.sleepOverviewHero}>
         <div>
-          <h2>Sleep, before &amp; after.</h2>
+          <h2>Sleep changes with a newborn</h2>
           <p>The overall pattern around a new arrival.</p>
         </div>
         <div className={styles.segment} aria-label="Comparison period">

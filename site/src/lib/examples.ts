@@ -52,7 +52,7 @@ export const EXAMPLES = [
 
   {
     slug: "sleep-and-parenthood",
-    title: "Sleep through new chapters",
+    title: "Sleep changes with a newborn",
     intro: "Sleep before and after becoming a parent.",
     description: "Sleep stages, nightly duration, and recorded awakenings before and after a new arrival.",
     input: "Sleep sessions and private milestone dates",
