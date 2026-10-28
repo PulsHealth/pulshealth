@@ -1,6 +1,6 @@
 # Make something with your Apple Health history
 
-Four interactive projects at [pulshealth.com/examples](https://pulshealth.com/inspiration/):
+Five interactive projects at [pulshealth.com/inspiration](https://pulshealth.com/inspiration/):
 
 - **Your health year in review:** monthly workout distances by activity, workout count and recorded time.
 - **The road to race day:** 16 calendar weeks of running, with total distance and longest run. The selected race workout stays separate.
@@ -171,3 +171,5 @@ Never put the input health export in the repository. Existing output files are
 preserved. Update these recorded-example counts when replacing the fixture.
 
 Race workout records can include optional `metrics`: `heartRate` (bpm), `powerW` (W), `steps`, `activeKcal`, `strideM` (m), `groundContactMs` (ms), and `verticalCm` (cm). Supply only measured values. The display defaults to miles, feet and inches; the training view can switch to metric. Raw source units remain canonical.
+
+Deep workout analysis matches geographically similar running routes in the selected year: at least 1 km, eight GPS points, recorded distances within 8%, endpoints within 150 m, ordered route anchors within 400 m, and 95% of sampled points within 75 m of the other track in both directions. Each match is compared with the original reference route. Matching uses up to 96 points per route, at most 500 candidate runs and 20 repeated-route groups. The output includes normalized overlays and measured duration, distance, heart rate and power where present. These are approximate route matches, not controlled fitness comparisons.

@@ -435,8 +435,8 @@
   margin-top: 15px;
 }
 .trainingHero h2 > span {
-  font-size: .6em;
-  letter-spacing: -.04em;
+  font-size: 0.6em;
+  letter-spacing: -0.04em;
   color: #83ceff;
 }
 .trainingHero .sectionStats {
@@ -991,5 +991,146 @@
   .trainingHero h2 > span {
     font-size: 0.62em;
     letter-spacing: -0.04em;
+  }
+}
+.analysisHero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 28px 0 40px;
+}
+.analysisHero h2 {
+  font-size: clamp(2.6rem, 6vw, 5.3rem);
+  line-height: 1.03;
+  letter-spacing: -0.055em;
+}
+.analysisHero h2 span {
+  color: #74c9ff;
+}
+.groupChoices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.groupChoices button {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 6px;
+  min-width: 120px;
+  padding: 14px 20px;
+}
+.groupChoices small {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+.analysisGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.analysisGrid svg {
+  width: 100%;
+}
+.analysisGrid .raceMetrics {
+  grid-template-columns: 1fr 1fr;
+}
+.analysisGrid .raceMetrics strong {
+  font-size: 1.3rem;
+}
+.selectedPace {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 22px 0;
+}
+.selectedPace strong {
+  font-size: 4rem;
+  letter-spacing: -0.06em;
+  color: #f5c985;
+}
+.selectedPace span {
+  color: #a9bdd2;
+}
+.baseline {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.baseline select {
+  padding: 9px;
+  border: 1px solid #3b5269;
+  border-radius: 7px;
+  background: #13263a;
+  color: #eef4fc;
+  max-width: 180px;
+}
+.paceDelta {
+  color: #f5c985;
+  font-size: 1.15rem;
+  margin-top: 20px;
+}
+.effortChart {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  overflow-x: auto;
+  padding: 24px 0;
+}
+.demo .effortChart button {
+  display: flex;
+  flex: 1 0 52px;
+  min-width: 52px;
+  align-items: center;
+  flex-direction: column;
+  justify-content: end;
+  padding: 8px 2px;
+  border: 0;
+  background: transparent;
+  gap: 10px;
+  font-size: 0.7rem;
+}
+.effortChart i {
+  width: 24px;
+  border-radius: 4px 4px 0 0;
+}
+.effortChart small {
+  color: #a9bdd2;
+}
+.attemptTable {
+  overflow-x: auto;
+  margin-top: 24px;
+}
+.attemptTable table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.attemptTable th,
+.attemptTable td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #2a4056;
+  font-size: 0.8rem;
+}
+.attemptTable th {
+  color: #a9bdd2;
+  font-weight: 400;
+}
+.attemptTable tr[data-selected="true"] {
+  background: #283546;
+}
+@media (max-width: 800px) {
+  .analysisGrid {
+    grid-template-columns: 1fr;
+  }
+  .analysisHero {
+    align-items: start;
+    flex-direction: column;
   }
 }

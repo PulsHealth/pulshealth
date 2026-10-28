@@ -5,6 +5,7 @@ import recorded from "@/lib/example-recorded.json";
 import { parseExampleData } from "@/lib/example-data";
 import { buildReport, type Report } from "@/lib/example-report";
 import { EXAMPLES, type ExampleSlug } from "@/lib/examples";
+import { WorkoutAnalysis } from "./workout-analysis";
 import { YearReview } from "./year-review";
 import { MarathonReview } from "./marathon-review";
 import { ArtStudio, RouteAtlas } from "./route-studio";
@@ -26,6 +27,8 @@ export function ExampleDemo({
       <MarathonReview report={report} compact={compact} />
     ) : slug === "activity-art" ? (
       <ArtStudio report={report} compact={compact} />
+    ) : slug === "deep-workout-analysis" ? (
+      <WorkoutAnalysis report={report} compact={compact} />
     ) : (
       <RouteAtlas report={report} compact={compact} />
     );

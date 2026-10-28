@@ -39,5 +39,14 @@ export const EXAMPLES = [
     prompt:
       "Create a local atlas from my PulsHealth workout routes. Use shared geographic bounds for all routes, correct longitude scale for latitude, preserve separate workout paths, and let me filter walking, running, cycling, and other activities. Show route coverage separately from total workouts. Do not send coordinates to map providers or upload my data.",
   },
+  {
+    slug: "deep-workout-analysis",
+    title: "Deep workout analysis",
+    intro: "Same route. A different run.",
+    description: "Compare repeated runs on geographically matched routes.",
+    input: "Workouts and routes",
+    action: "Compare runs",
+    prompt: "Find repeated running routes in my PulsHealth data using geographic overlap, direction, start/end proximity and similar distance. Compare recorded time, pace and available heart rate or power across attempts. Show route overlays so I can inspect matches. Keep absent metrics missing and do not infer fitness gains or causes from faster times alone.",
+  },
 ] as const;
 export type ExampleSlug = (typeof EXAMPLES)[number]["slug"];

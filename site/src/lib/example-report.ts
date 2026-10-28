@@ -1,3 +1,4 @@
+import { compareRoutes, type RouteComparison } from "./route-comparisons";
 import {
   ACTIVITIES,
   routePaths,
@@ -74,6 +75,7 @@ export type Report = {
   race: { km: number | null; minutes: number; metrics?: RaceMetrics } | null;
   raceExcluded: boolean;
   routes: ReportRoute[];
+  routeComparisons?: RouteComparison[];
   routeCoverage: { workouts: number; withRoutes: number; localRoutes: number };
 };
 export function mean(values: (number | null)[]): number | null {
@@ -266,6 +268,7 @@ export function buildReport(data: ExampleData, localOnly = false): Report {
             : {}),
         }
       : null,
+    routeComparisons: compareRoutes(selected),
     routes: paths.map((p, i) => ({
       id: `route-${i + 1}`,
       activity: p.activity,

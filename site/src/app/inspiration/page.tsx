@@ -5,7 +5,7 @@ import styles from "@/components/examples/examples.module.css";
 export const metadata = {
   title: "Inspiration | PulsHealth",
   description:
-    "Make a health year in review, explore marathon training, turn activity into art, and visualize your walks, runs and rides. Interactive demos using recorded workouts and local examples.",
+    "Make a health year in review, explore marathon training, compare repeated running routes, turn activity into art, and visualize your walks, runs and rides. Interactive demos using recorded workouts and local examples.",
   alternates: { canonical: "/inspiration/" },
 };
 export default function ExamplesPage() {
