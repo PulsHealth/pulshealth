@@ -601,6 +601,7 @@ export const MarathonPoster = forwardRef<
   { report: Report; unit?: "km" | "mi" }
 >(function MarathonPoster({ report, unit = "mi" }, ref) {
   const factor = unit === "mi" ? 0.621371192 : 1;
+  const raceSeconds = Math.round((report.race?.minutes ?? 0) * 60);
   const total = report.weeks.reduce((n, w) => n + w.km, 0),
     peak = Math.max(0, ...report.weeks.map((w) => w.km)),
     knownLongest = report.weeks.flatMap((w) =>
@@ -664,7 +665,7 @@ export const MarathonPoster = forwardRef<
       </g>
       {report.race ? <>
         <text x="74" y="1170" fill="#f5c985" fontSize="40">
-          {Math.floor(report.race.minutes / 60)}:{String(Math.floor(report.race.minutes % 60)).padStart(2,"0")}:{String(Math.round(report.race.minutes * 60) % 60).padStart(2,"0")} · race workout time
+          {Math.floor(raceSeconds / 3600)}:{String(Math.floor(raceSeconds / 60) % 60).padStart(2,"0")}:{String(raceSeconds % 60).padStart(2,"0")} · race workout time
         </text>
         <text x="74" y="1220" fill="#eef4fc" fontSize="27">
           {number(report.race.km === null ? null : report.race.km * factor,2)} recorded {unit} · {number(total * factor)} {unit} of training
