@@ -2,6 +2,7 @@
 import { ImageResponse } from "next/og";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import sleepRecorded from "../src/lib/sleep-recorded.json";
 import recorded from "../src/lib/example-recorded.json";
 import { EXAMPLES } from "../src/lib/examples";
 const fontDir =
@@ -27,17 +28,19 @@ for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
     recorded.totals.km * 0.621371192,
   ).toLocaleString("en-US");
   const subtitle =
-    example.slug === "year-in-review"
-      ? `${recorded.totals.workouts} workouts · ${totalMiles} miles`
-      : example.slug === "marathon-training"
-        ? "16 weeks to marathon day"
-        : example.slug === "deep-workout-analysis"
-          ? `${recorded.routeComparisons[0].attempts.length} runs. One familiar route.`
-          : example.slug === "activity-art"
-            ? "Made from real movement"
-            : example.slug === "activity-atlas"
-              ? "Walks. Runs. Rides."
-              : "What could you build with your health data?";
+    example.slug === "sleep-and-parenthood"
+      ? "Sleep before and after family milestones"
+      : example.slug === "year-in-review"
+        ? `${recorded.totals.workouts} workouts · ${totalMiles} miles`
+        : example.slug === "marathon-training"
+          ? "16 weeks to marathon day"
+          : example.slug === "deep-workout-analysis"
+            ? `${recorded.routeComparisons[0].attempts.length} runs. One familiar route.`
+            : example.slug === "activity-art"
+              ? "Made from real movement"
+              : example.slug === "activity-atlas"
+                ? "Walks. Runs. Rides."
+                : "What could you build with your health data?";
   const response = new ImageResponse(
     <div
       style={{
@@ -78,16 +81,32 @@ for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
         </span>
       </div>
       <svg width="470" height="450" viewBox="0 0 720 420">
-        {routes.map((path, i) => (
-          <path
-            key={i}
-            d={path}
-            fill="none"
-            stroke={["#74c9ff", "#d7b8ff", "#f5c985"][i % 3]}
-            strokeWidth={example.slug === "deep-workout-analysis" ? 2 : 1.4}
-            opacity={example.slug === "deep-workout-analysis" ? 0.8 : 0.5}
-          />
-        ))}
+        {example.slug === "sleep-and-parenthood"
+          ? sleepRecorded.milestones[0].days
+              .filter(
+                (day) =>
+                  day.offset >= -90 && day.offset < 90 && day.minutes !== null,
+              )
+              .map((day) => (
+                <rect
+                  key={day.offset}
+                  x={20 + ((day.offset + 90) / 180) * 680}
+                  y={360 - Math.min(day.minutes! / 720, 1) * 300}
+                  width="3"
+                  height={Math.min(day.minutes! / 720, 1) * 300}
+                  fill={day.offset < 0 ? "#74c9ff" : "#f5c985"}
+                />
+              ))
+          : routes.map((path, i) => (
+              <path
+                key={i}
+                d={path}
+                fill="none"
+                stroke={["#74c9ff", "#d7b8ff", "#f5c985"][i % 3]}
+                strokeWidth={example.slug === "deep-workout-analysis" ? 2 : 1.4}
+                opacity={example.slug === "deep-workout-analysis" ? 0.8 : 0.5}
+              />
+            ))}
       </svg>
     </div>,
     { width: 1200, height: 630, fonts },
@@ -97,4 +116,4 @@ for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
     Buffer.from(await response.arrayBuffer()),
   );
 }
-console.log("Generated six Inspiration link-preview cards.");
+console.log("Generated Inspiration link-preview cards.");

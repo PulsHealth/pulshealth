@@ -6,6 +6,7 @@ import { parseExampleData } from "@/lib/example-data";
 import { buildReport, type Report } from "@/lib/example-report";
 import { EXAMPLES, type ExampleSlug } from "@/lib/examples";
 import { WorkoutAnalysis } from "./workout-analysis";
+import { SleepReview } from "./sleep-review";
 import { YearReview } from "./year-review";
 import { MarathonReview } from "./marathon-review";
 import { ArtStudio, RouteAtlas } from "./route-studio";
@@ -34,6 +35,7 @@ export function ExampleDemo({
     ) : (
       <RouteAtlas report={report} compact={compact} />
     );
+  if (slug === "sleep-and-parenthood") return <SleepReview compact={compact} />;
   if (compact) return content;
   return (
     <div className={styles.demo}>

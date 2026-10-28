@@ -1,0 +1,7562 @@
+{
+  "milestones": [
+    {
+      "label": "First child",
+      "availableThrough": 364,
+      "days": [
+        {
+          "offset": -180,
+          "minutes": 587.5,
+          "awake": 29.5,
+          "rem": 142,
+          "deep": 22
+        },
+        {
+          "offset": -179,
+          "minutes": 572.5,
+          "awake": 23.5,
+          "rem": 134.5,
+          "deep": 68
+        },
+        {
+          "offset": -178,
+          "minutes": 582.5,
+          "awake": 48,
+          "rem": 134.5,
+          "deep": 52.5
+        },
+        {
+          "offset": -177,
+          "minutes": 536,
+          "awake": 41.5,
+          "rem": 108,
+          "deep": 55.5
+        },
+        {
+          "offset": -176,
+          "minutes": 626,
+          "awake": 12.5,
+          "rem": 168,
+          "deep": 63
+        },
+        {
+          "offset": -175,
+          "minutes": 526,
+          "awake": 30.5,
+          "rem": 86,
+          "deep": 32.5
+        },
+        {
+          "offset": -174,
+          "minutes": 595,
+          "awake": 5.5,
+          "rem": 145.5,
+          "deep": 49.5
+        },
+        {
+          "offset": -173,
+          "minutes": 545.5,
+          "awake": 37.5,
+          "rem": 132.5,
+          "deep": 56
+        },
+        {
+          "offset": -172,
+          "minutes": 504,
+          "awake": 129.5,
+          "rem": 99,
+          "deep": 44
+        },
+        {
+          "offset": -171,
+          "minutes": 581,
+          "awake": 32,
+          "rem": 177.5,
+          "deep": 80
+        },
+        {
+          "offset": -170,
+          "minutes": 499,
+          "awake": 42,
+          "rem": 143.5,
+          "deep": 58.5
+        },
+        {
+          "offset": -169,
+          "minutes": 513,
+          "awake": 67.5,
+          "rem": 122.5,
+          "deep": 33
+        },
+        {
+          "offset": -168,
+          "minutes": 501.5,
+          "awake": 61.5,
+          "rem": 90.5,
+          "deep": 56
+        },
+        {
+          "offset": -167,
+          "minutes": 361,
+          "awake": 21.5,
+          "rem": 70,
+          "deep": 53.5
+        },
+        {
+          "offset": -166,
+          "minutes": 492,
+          "awake": 7,
+          "rem": 165,
+          "deep": 57
+        },
+        {
+          "offset": -165,
+          "minutes": 502,
+          "awake": 33.5,
+          "rem": 141,
+          "deep": 48.5
+        },
+        {
+          "offset": -164,
+          "minutes": 537,
+          "awake": 9.5,
+          "rem": 147.5,
+          "deep": 74.5
+        },
+        {
+          "offset": -163,
+          "minutes": 547.5,
+          "awake": 22,
+          "rem": 156.5,
+          "deep": 31.5
+        },
+        {
+          "offset": -162,
+          "minutes": 599,
+          "awake": 35,
+          "rem": 157.5,
+          "deep": 35
+        },
+        {
+          "offset": -161,
+          "minutes": 479,
+          "awake": 55,
+          "rem": 149,
+          "deep": 43
+        },
+        {
+          "offset": -160,
+          "minutes": 455.5,
+          "awake": 12.5,
+          "rem": 111,
+          "deep": 78
+        },
+        {
+          "offset": -159,
+          "minutes": 606.5,
+          "awake": 14,
+          "rem": 120.5,
+          "deep": 75
+        },
+        {
+          "offset": -158,
+          "minutes": 526,
+          "awake": 15,
+          "rem": 116.5,
+          "deep": 36.5
+        },
+        {
+          "offset": -157,
+          "minutes": 432,
+          "awake": 12,
+          "rem": 80,
+          "deep": 38.5
+        },
+        {
+          "offset": -156,
+          "minutes": 532,
+          "awake": 12.5,
+          "rem": 130,
+          "deep": 27.5
+        },
+        {
+          "offset": -155,
+          "minutes": 527.5,
+          "awake": 23.5,
+          "rem": 133.5,
+          "deep": 28.5
+        },
+        {
+          "offset": -154,
+          "minutes": 525.5,
+          "awake": 19.5,
+          "rem": 112,
+          "deep": 55
+        },
+        {
+          "offset": -153,
+          "minutes": 522.5,
+          "awake": 13.5,
+          "rem": 128,
+          "deep": 73
+        },
+        {
+          "offset": -152,
+          "minutes": 526.5,
+          "awake": 59.5,
+          "rem": 169.5,
+          "deep": 56.5
+        },
+        {
+          "offset": -151,
+          "minutes": 581,
+          "awake": 17,
+          "rem": 147.5,
+          "deep": 32.5
+        },
+        {
+          "offset": -150,
+          "minutes": 596,
+          "awake": 28,
+          "rem": 145.5,
+          "deep": 61
+        },
+        {
+          "offset": -149,
+          "minutes": 474.5,
+          "awake": 109,
+          "rem": 153.5,
+          "deep": 35.5
+        },
+        {
+          "offset": -148,
+          "minutes": 576,
+          "awake": 18,
+          "rem": 160.5,
+          "deep": 68.5
+        },
+        {
+          "offset": -147,
+          "minutes": 522.5,
+          "awake": 21,
+          "rem": 123.5,
+          "deep": 33.5
+        },
+        {
+          "offset": -146,
+          "minutes": 577.5,
+          "awake": 23,
+          "rem": 185,
+          "deep": 74.5
+        },
+        {
+          "offset": -145,
+          "minutes": 571.5,
+          "awake": 27,
+          "rem": 136,
+          "deep": 31
+        },
+        {
+          "offset": -144,
+          "minutes": 564.5,
+          "awake": 24,
+          "rem": 136.5,
+          "deep": 73.5
+        },
+        {
+          "offset": -143,
+          "minutes": 591.5,
+          "awake": 7,
+          "rem": 139,
+          "deep": 49.5
+        },
+        {
+          "offset": -142,
+          "minutes": 514,
+          "awake": 58.5,
+          "rem": 106,
+          "deep": 46
+        },
+        {
+          "offset": -141,
+          "minutes": 517,
+          "awake": 56.5,
+          "rem": 114,
+          "deep": 46.5
+        },
+        {
+          "offset": -140,
+          "minutes": 613.5,
+          "awake": 5,
+          "rem": 197,
+          "deep": 49
+        },
+        {
+          "offset": -139,
+          "minutes": 507,
+          "awake": 19.5,
+          "rem": 125,
+          "deep": 48
+        },
+        {
+          "offset": -138,
+          "minutes": 537,
+          "awake": 32,
+          "rem": 146,
+          "deep": 31.5
+        },
+        {
+          "offset": -137,
+          "minutes": 510,
+          "awake": 8.5,
+          "rem": 142,
+          "deep": 38
+        },
+        {
+          "offset": -136,
+          "minutes": 545.5,
+          "awake": 22.5,
+          "rem": 136,
+          "deep": 48.5
+        },
+        {
+          "offset": -135,
+          "minutes": 366.5,
+          "awake": 10,
+          "rem": 75,
+          "deep": 34.5
+        },
+        {
+          "offset": -134,
+          "minutes": 572.5,
+          "awake": 12,
+          "rem": 164.5,
+          "deep": 53
+        },
+        {
+          "offset": -133,
+          "minutes": 367.5,
+          "awake": 18.5,
+          "rem": 65.5,
+          "deep": 33
+        },
+        {
+          "offset": -132,
+          "minutes": 494,
+          "awake": 10,
+          "rem": 129,
+          "deep": 83
+        },
+        {
+          "offset": -131,
+          "minutes": 603,
+          "awake": 14,
+          "rem": 155.5,
+          "deep": 66.5
+        },
+        {
+          "offset": -130,
+          "minutes": 552.5,
+          "awake": 9.5,
+          "rem": 166,
+          "deep": 48.5
+        },
+        {
+          "offset": -129,
+          "minutes": 427,
+          "awake": 14.5,
+          "rem": 79,
+          "deep": 44.5
+        },
+        {
+          "offset": -128,
+          "minutes": 576,
+          "awake": 8,
+          "rem": 190.5,
+          "deep": 45
+        },
+        {
+          "offset": -127,
+          "minutes": 552,
+          "awake": 16.5,
+          "rem": 164.5,
+          "deep": 42.5
+        },
+        {
+          "offset": -126,
+          "minutes": 552.5,
+          "awake": 3.5,
+          "rem": 158.5,
+          "deep": 62.5
+        },
+        {
+          "offset": -125,
+          "minutes": 490.5,
+          "awake": 10,
+          "rem": 136,
+          "deep": 79
+        },
+        {
+          "offset": -124,
+          "minutes": 586,
+          "awake": 18.5,
+          "rem": 164.5,
+          "deep": 36.5
+        },
+        {
+          "offset": -123,
+          "minutes": 574,
+          "awake": 14.5,
+          "rem": 138,
+          "deep": 67
+        },
+        {
+          "offset": -122,
+          "minutes": 608,
+          "awake": 11,
+          "rem": 185,
+          "deep": 55
+        },
+        {
+          "offset": -121,
+          "minutes": 532,
+          "awake": 14,
+          "rem": 121,
+          "deep": 33.5
+        },
+        {
+          "offset": -120,
+          "minutes": 518,
+          "awake": 5,
+          "rem": 135,
+          "deep": 46.5
+        },
+        {
+          "offset": -119,
+          "minutes": 510,
+          "awake": 10.5,
+          "rem": 125.5,
+          "deep": 78.5
+        },
+        {
+          "offset": -118,
+          "minutes": 564,
+          "awake": 17.5,
+          "rem": 133.5,
+          "deep": 58
+        },
+        {
+          "offset": -117,
+          "minutes": 409,
+          "awake": 34.5,
+          "rem": 107,
+          "deep": 66.5
+        },
+        {
+          "offset": -116,
+          "minutes": 594.5,
+          "awake": 16,
+          "rem": 155,
+          "deep": 62.5
+        },
+        {
+          "offset": -115,
+          "minutes": 554,
+          "awake": 40,
+          "rem": 140.5,
+          "deep": 45.5
+        },
+        {
+          "offset": -114,
+          "minutes": 633.5,
+          "awake": 4,
+          "rem": 196.5,
+          "deep": 21
+        },
+        {
+          "offset": -113,
+          "minutes": 502.5,
+          "awake": 26,
+          "rem": 135.5,
+          "deep": 61
+        },
+        {
+          "offset": -112,
+          "minutes": 587,
+          "awake": 13,
+          "rem": 164,
+          "deep": 64
+        },
+        {
+          "offset": -111,
+          "minutes": 521.5,
+          "awake": 17,
+          "rem": 144.5,
+          "deep": 51
+        },
+        {
+          "offset": -110,
+          "minutes": 549,
+          "awake": 13.5,
+          "rem": 123.5,
+          "deep": 33
+        },
+        {
+          "offset": -109,
+          "minutes": 499,
+          "awake": 79.5,
+          "rem": 140,
+          "deep": 27
+        },
+        {
+          "offset": -108,
+          "minutes": 499.5,
+          "awake": 13.5,
+          "rem": 102,
+          "deep": 51.5
+        },
+        {
+          "offset": -107,
+          "minutes": 553,
+          "awake": 12.5,
+          "rem": 166,
+          "deep": 37.5
+        },
+        {
+          "offset": -106,
+          "minutes": 572.5,
+          "awake": 32,
+          "rem": 145,
+          "deep": 45.5
+        },
+        {
+          "offset": -105,
+          "minutes": 483,
+          "awake": 6.5,
+          "rem": 131,
+          "deep": 65.5
+        },
+        {
+          "offset": -104,
+          "minutes": 525,
+          "awake": 10,
+          "rem": 145.5,
+          "deep": 51.5
+        },
+        {
+          "offset": -103,
+          "minutes": 572,
+          "awake": 10.5,
+          "rem": 126.5,
+          "deep": 29
+        },
+        {
+          "offset": -102,
+          "minutes": 550.5,
+          "awake": 21,
+          "rem": 141,
+          "deep": 69
+        },
+        {
+          "offset": -101,
+          "minutes": 531,
+          "awake": 19,
+          "rem": 96,
+          "deep": 39
+        },
+        {
+          "offset": -100,
+          "minutes": 546,
+          "awake": 16.5,
+          "rem": 127.5,
+          "deep": 52.5
+        },
+        {
+          "offset": -99,
+          "minutes": 338,
+          "awake": 13.5,
+          "rem": 91,
+          "deep": 42.5
+        },
+        {
+          "offset": -98,
+          "minutes": 571,
+          "awake": 5.5,
+          "rem": 167.5,
+          "deep": 63
+        },
+        {
+          "offset": -97,
+          "minutes": 510,
+          "awake": 13.5,
+          "rem": 142,
+          "deep": 63
+        },
+        {
+          "offset": -96,
+          "minutes": 535,
+          "awake": 15,
+          "rem": 154.5,
+          "deep": 39
+        },
+        {
+          "offset": -95,
+          "minutes": 547.5,
+          "awake": 14.5,
+          "rem": 140,
+          "deep": 44.5
+        },
+        {
+          "offset": -94,
+          "minutes": 556.5,
+          "awake": 11,
+          "rem": 145.5,
+          "deep": 47.5
+        },
+        {
+          "offset": -93,
+          "minutes": 553.5,
+          "awake": 10,
+          "rem": 141.5,
+          "deep": 68.5
+        },
+        {
+          "offset": -92,
+          "minutes": 431.5,
+          "awake": 123,
+          "rem": 93,
+          "deep": 64.5
+        },
+        {
+          "offset": -91,
+          "minutes": 641.5,
+          "awake": 6.5,
+          "rem": 179,
+          "deep": 56.5
+        },
+        {
+          "offset": -90,
+          "minutes": 387,
+          "awake": 14.5,
+          "rem": 78,
+          "deep": 53.5
+        },
+        {
+          "offset": -89,
+          "minutes": 525,
+          "awake": 5.5,
+          "rem": 149.5,
+          "deep": 43.5
+        },
+        {
+          "offset": -88,
+          "minutes": 540.5,
+          "awake": 8,
+          "rem": 138.5,
+          "deep": 54
+        },
+        {
+          "offset": -87,
+          "minutes": 606.5,
+          "awake": 29,
+          "rem": 178,
+          "deep": 52.5
+        },
+        {
+          "offset": -86,
+          "minutes": 541,
+          "awake": 9,
+          "rem": 124.5,
+          "deep": 56
+        },
+        {
+          "offset": -85,
+          "minutes": 466,
+          "awake": 74,
+          "rem": 124.5,
+          "deep": 54.5
+        },
+        {
+          "offset": -84,
+          "minutes": 469.5,
+          "awake": 25.5,
+          "rem": 106,
+          "deep": 36.5
+        },
+        {
+          "offset": -83,
+          "minutes": 485,
+          "awake": 3,
+          "rem": 148.5,
+          "deep": 60
+        },
+        {
+          "offset": -82,
+          "minutes": 442.5,
+          "awake": 2.5,
+          "rem": 138,
+          "deep": 54
+        },
+        {
+          "offset": -81,
+          "minutes": 547.5,
+          "awake": 41.5,
+          "rem": 151.5,
+          "deep": 59.5
+        },
+        {
+          "offset": -80,
+          "minutes": 365.5,
+          "awake": 15.5,
+          "rem": 80.5,
+          "deep": 36
+        },
+        {
+          "offset": -79,
+          "minutes": 504.5,
+          "awake": 8.5,
+          "rem": 148.5,
+          "deep": 48
+        },
+        {
+          "offset": -78,
+          "minutes": 430.5,
+          "awake": 22,
+          "rem": 138.5,
+          "deep": 66.5
+        },
+        {
+          "offset": -77,
+          "minutes": 628.5,
+          "awake": 2.5,
+          "rem": 213.5,
+          "deep": 60
+        },
+        {
+          "offset": -76,
+          "minutes": 473,
+          "awake": 55.5,
+          "rem": 151,
+          "deep": 44
+        },
+        {
+          "offset": -75,
+          "minutes": 537,
+          "awake": 1.5,
+          "rem": 137,
+          "deep": 56
+        },
+        {
+          "offset": -74,
+          "minutes": 505,
+          "awake": 9,
+          "rem": 124.5,
+          "deep": 68
+        },
+        {
+          "offset": -73,
+          "minutes": 555,
+          "awake": 10.5,
+          "rem": 139,
+          "deep": 65
+        },
+        {
+          "offset": -72,
+          "minutes": 435.5,
+          "awake": 14.5,
+          "rem": 134.5,
+          "deep": 54.5
+        },
+        {
+          "offset": -71,
+          "minutes": 578,
+          "awake": 6,
+          "rem": 172,
+          "deep": 33
+        },
+        {
+          "offset": -70,
+          "minutes": 508.5,
+          "awake": 10.5,
+          "rem": 125,
+          "deep": 78.5
+        },
+        {
+          "offset": -69,
+          "minutes": 465.5,
+          "awake": 5.5,
+          "rem": 116,
+          "deep": 52.5
+        },
+        {
+          "offset": -68,
+          "minutes": 518.5,
+          "awake": 4,
+          "rem": 150,
+          "deep": 55
+        },
+        {
+          "offset": -67,
+          "minutes": 299,
+          "awake": 31.5,
+          "rem": 63.5,
+          "deep": 63
+        },
+        {
+          "offset": -66,
+          "minutes": 547,
+          "awake": 6,
+          "rem": 151.5,
+          "deep": 32.5
+        },
+        {
+          "offset": -65,
+          "minutes": 422,
+          "awake": 84,
+          "rem": 107,
+          "deep": 44
+        },
+        {
+          "offset": -64,
+          "minutes": 535.5,
+          "awake": 5.5,
+          "rem": 137,
+          "deep": 21.5
+        },
+        {
+          "offset": -63,
+          "minutes": 489,
+          "awake": 8.5,
+          "rem": 132,
+          "deep": 65
+        },
+        {
+          "offset": -62,
+          "minutes": 478,
+          "awake": 7,
+          "rem": 122.5,
+          "deep": 46
+        },
+        {
+          "offset": -61,
+          "minutes": 572.5,
+          "awake": 27.5,
+          "rem": 157,
+          "deep": 26.5
+        },
+        {
+          "offset": -60,
+          "minutes": 411.5,
+          "awake": 2,
+          "rem": 117,
+          "deep": 45
+        },
+        {
+          "offset": -59,
+          "minutes": 384,
+          "awake": 36,
+          "rem": 87,
+          "deep": 76.5
+        },
+        {
+          "offset": -58,
+          "minutes": 489,
+          "awake": 98,
+          "rem": 148,
+          "deep": 50.5
+        },
+        {
+          "offset": -57,
+          "minutes": 528.5,
+          "awake": 9,
+          "rem": 132,
+          "deep": 55.5
+        },
+        {
+          "offset": -56,
+          "minutes": 468.5,
+          "awake": 4.5,
+          "rem": 135,
+          "deep": 89
+        },
+        {
+          "offset": -55,
+          "minutes": 419,
+          "awake": 8.5,
+          "rem": 102,
+          "deep": 53
+        },
+        {
+          "offset": -54,
+          "minutes": 567.5,
+          "awake": 8.5,
+          "rem": 165.5,
+          "deep": 55.5
+        },
+        {
+          "offset": -53,
+          "minutes": 442.5,
+          "awake": 6,
+          "rem": 132,
+          "deep": 56.5
+        },
+        {
+          "offset": -52,
+          "minutes": 481.5,
+          "awake": 11,
+          "rem": 117.5,
+          "deep": 27
+        },
+        {
+          "offset": -51,
+          "minutes": 541,
+          "awake": 13,
+          "rem": 146,
+          "deep": 52
+        },
+        {
+          "offset": -50,
+          "minutes": 390.5,
+          "awake": 8.5,
+          "rem": 92.5,
+          "deep": 38.5
+        },
+        {
+          "offset": -49,
+          "minutes": 492,
+          "awake": 33,
+          "rem": 160.5,
+          "deep": 76
+        },
+        {
+          "offset": -48,
+          "minutes": 462.5,
+          "awake": 27,
+          "rem": 108.5,
+          "deep": 62.5
+        },
+        {
+          "offset": -47,
+          "minutes": 511.5,
+          "awake": 11,
+          "rem": 134,
+          "deep": 62.5
+        },
+        {
+          "offset": -46,
+          "minutes": 502,
+          "awake": 8.5,
+          "rem": 128,
+          "deep": 39.5
+        },
+        {
+          "offset": -45,
+          "minutes": 418,
+          "awake": 60,
+          "rem": 106,
+          "deep": 65.5
+        },
+        {
+          "offset": -44,
+          "minutes": 318.5,
+          "awake": 10,
+          "rem": 64,
+          "deep": 70
+        },
+        {
+          "offset": -43,
+          "minutes": 552.5,
+          "awake": 58.5,
+          "rem": 159.5,
+          "deep": 55
+        },
+        {
+          "offset": -42,
+          "minutes": 472.5,
+          "awake": 9.5,
+          "rem": 124,
+          "deep": 55
+        },
+        {
+          "offset": -41,
+          "minutes": 499,
+          "awake": 5,
+          "rem": 124,
+          "deep": 52
+        },
+        {
+          "offset": -40,
+          "minutes": 519,
+          "awake": 4.5,
+          "rem": 136.5,
+          "deep": 50.5
+        },
+        {
+          "offset": -39,
+          "minutes": 460,
+          "awake": 11,
+          "rem": 153.5,
+          "deep": 56
+        },
+        {
+          "offset": -38,
+          "minutes": 486.5,
+          "awake": 18,
+          "rem": 115,
+          "deep": 54.5
+        },
+        {
+          "offset": -37,
+          "minutes": 455,
+          "awake": 6,
+          "rem": 121,
+          "deep": 74
+        },
+        {
+          "offset": -36,
+          "minutes": 507,
+          "awake": 23.5,
+          "rem": 99,
+          "deep": 74.5
+        },
+        {
+          "offset": -35,
+          "minutes": 582,
+          "awake": 3.5,
+          "rem": 179,
+          "deep": 68
+        },
+        {
+          "offset": -34,
+          "minutes": 525,
+          "awake": 3.5,
+          "rem": 153,
+          "deep": 52
+        },
+        {
+          "offset": -33,
+          "minutes": 542,
+          "awake": 3,
+          "rem": 163.5,
+          "deep": 53
+        },
+        {
+          "offset": -32,
+          "minutes": 398,
+          "awake": 8.5,
+          "rem": 89.5,
+          "deep": 68
+        },
+        {
+          "offset": -31,
+          "minutes": 530,
+          "awake": 2.5,
+          "rem": 163,
+          "deep": 68
+        },
+        {
+          "offset": -30,
+          "minutes": 376,
+          "awake": 4.5,
+          "rem": 124,
+          "deep": 34.5
+        },
+        {
+          "offset": -29,
+          "minutes": 403.5,
+          "awake": 3.5,
+          "rem": 91,
+          "deep": 35
+        },
+        {
+          "offset": -28,
+          "minutes": 459.5,
+          "awake": 12.5,
+          "rem": 102,
+          "deep": 59.5
+        },
+        {
+          "offset": -27,
+          "minutes": 412,
+          "awake": 13,
+          "rem": 128.5,
+          "deep": 36.5
+        },
+        {
+          "offset": -26,
+          "minutes": 354.5,
+          "awake": 2.5,
+          "rem": 84,
+          "deep": 69
+        },
+        {
+          "offset": -25,
+          "minutes": 363,
+          "awake": 27.5,
+          "rem": 66,
+          "deep": 17.5
+        },
+        {
+          "offset": -24,
+          "minutes": 387,
+          "awake": 7.5,
+          "rem": 101.5,
+          "deep": 51.5
+        },
+        {
+          "offset": -23,
+          "minutes": 468,
+          "awake": 14.5,
+          "rem": 135,
+          "deep": 42
+        },
+        {
+          "offset": -22,
+          "minutes": 440.5,
+          "awake": 42,
+          "rem": 113.5,
+          "deep": 59.5
+        },
+        {
+          "offset": -21,
+          "minutes": 548.5,
+          "awake": 4,
+          "rem": 174,
+          "deep": 56.5
+        },
+        {
+          "offset": -20,
+          "minutes": 490,
+          "awake": 6.5,
+          "rem": 132.5,
+          "deep": 77
+        },
+        {
+          "offset": -19,
+          "minutes": 475,
+          "awake": 7.5,
+          "rem": 154.5,
+          "deep": 50.5
+        },
+        {
+          "offset": -18,
+          "minutes": 503.5,
+          "awake": 16.5,
+          "rem": 161,
+          "deep": 38
+        },
+        {
+          "offset": -17,
+          "minutes": 554.5,
+          "awake": 18.5,
+          "rem": 153,
+          "deep": 22
+        },
+        {
+          "offset": -16,
+          "minutes": 570.5,
+          "awake": 69.5,
+          "rem": 126.5,
+          "deep": 38
+        },
+        {
+          "offset": -15,
+          "minutes": 439,
+          "awake": 22.5,
+          "rem": 113.5,
+          "deep": 63.5
+        },
+        {
+          "offset": -14,
+          "minutes": 512,
+          "awake": 17,
+          "rem": 132.5,
+          "deep": 61.5
+        },
+        {
+          "offset": -13,
+          "minutes": 471.5,
+          "awake": 10.5,
+          "rem": 104,
+          "deep": 58.5
+        },
+        {
+          "offset": -12,
+          "minutes": 486.5,
+          "awake": 70.5,
+          "rem": 124.5,
+          "deep": 53.5
+        },
+        {
+          "offset": -11,
+          "minutes": 494,
+          "awake": 14,
+          "rem": 123.5,
+          "deep": 70
+        },
+        {
+          "offset": -10,
+          "minutes": 448,
+          "awake": 8,
+          "rem": 109.5,
+          "deep": 66.5
+        },
+        {
+          "offset": -9,
+          "minutes": 518.5,
+          "awake": 22.5,
+          "rem": 143.5,
+          "deep": 39
+        },
+        {
+          "offset": -8,
+          "minutes": 449,
+          "awake": 64.5,
+          "rem": 109,
+          "deep": 47.5
+        },
+        {
+          "offset": -7,
+          "minutes": 531.5,
+          "awake": 15.5,
+          "rem": 138.5,
+          "deep": 56.5
+        },
+        {
+          "offset": -6,
+          "minutes": 465.5,
+          "awake": 7,
+          "rem": 111.5,
+          "deep": 62.5
+        },
+        {
+          "offset": -5,
+          "minutes": 508.5,
+          "awake": 8.5,
+          "rem": 138,
+          "deep": 36
+        },
+        {
+          "offset": -4,
+          "minutes": 472.5,
+          "awake": 74.5,
+          "rem": 92,
+          "deep": 75
+        },
+        {
+          "offset": -3,
+          "minutes": 460,
+          "awake": 14,
+          "rem": 119.5,
+          "deep": 54.5
+        },
+        {
+          "offset": -2,
+          "minutes": 539.5,
+          "awake": 86,
+          "rem": 165.5,
+          "deep": 45.5
+        },
+        {
+          "offset": -1,
+          "minutes": 349,
+          "awake": 32,
+          "rem": 96.5,
+          "deep": 43.5
+        },
+        {
+          "offset": 0,
+          "minutes": 328.5,
+          "awake": 23,
+          "rem": 70,
+          "deep": 27.5
+        },
+        {
+          "offset": 1,
+          "minutes": 410.5,
+          "awake": 23.5,
+          "rem": 116.5,
+          "deep": 68.5
+        },
+        {
+          "offset": 2,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 3,
+          "minutes": 308,
+          "awake": 167.5,
+          "rem": 76,
+          "deep": 50.5
+        },
+        {
+          "offset": 4,
+          "minutes": 560.5,
+          "awake": 27.5,
+          "rem": 205.5,
+          "deep": 50
+        },
+        {
+          "offset": 5,
+          "minutes": 514.5,
+          "awake": 25,
+          "rem": 179.5,
+          "deep": 64.5
+        },
+        {
+          "offset": 6,
+          "minutes": 489.5,
+          "awake": 7.5,
+          "rem": 156,
+          "deep": 58
+        },
+        {
+          "offset": 7,
+          "minutes": 465.5,
+          "awake": 115,
+          "rem": 89,
+          "deep": 34.5
+        },
+        {
+          "offset": 8,
+          "minutes": 492,
+          "awake": 27.5,
+          "rem": 128.5,
+          "deep": 53
+        },
+        {
+          "offset": 9,
+          "minutes": 291,
+          "awake": 12,
+          "rem": 42,
+          "deep": 28
+        },
+        {
+          "offset": 10,
+          "minutes": 636,
+          "awake": 28.5,
+          "rem": 155,
+          "deep": 64
+        },
+        {
+          "offset": 11,
+          "minutes": 484.5,
+          "awake": 67,
+          "rem": 130.5,
+          "deep": 49.5
+        },
+        {
+          "offset": 12,
+          "minutes": 383.5,
+          "awake": 229,
+          "rem": 88,
+          "deep": 50
+        },
+        {
+          "offset": 13,
+          "minutes": 552,
+          "awake": 21,
+          "rem": 162,
+          "deep": 64.5
+        },
+        {
+          "offset": 14,
+          "minutes": 345,
+          "awake": 3.5,
+          "rem": 88.5,
+          "deep": 47
+        },
+        {
+          "offset": 15,
+          "minutes": 545,
+          "awake": 11.5,
+          "rem": 176,
+          "deep": 73.5
+        },
+        {
+          "offset": 16,
+          "minutes": 456,
+          "awake": 132.5,
+          "rem": 116.5,
+          "deep": 57.5
+        },
+        {
+          "offset": 17,
+          "minutes": 505,
+          "awake": 55.5,
+          "rem": 99,
+          "deep": 50
+        },
+        {
+          "offset": 18,
+          "minutes": 398,
+          "awake": 9,
+          "rem": 124.5,
+          "deep": 30
+        },
+        {
+          "offset": 19,
+          "minutes": 450.5,
+          "awake": 15.5,
+          "rem": 119.5,
+          "deep": 64.5
+        },
+        {
+          "offset": 20,
+          "minutes": 453.5,
+          "awake": 3.5,
+          "rem": 139.5,
+          "deep": 85
+        },
+        {
+          "offset": 21,
+          "minutes": 400,
+          "awake": 16,
+          "rem": 109.5,
+          "deep": 47
+        },
+        {
+          "offset": 22,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 23,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 24,
+          "minutes": 437,
+          "awake": 154,
+          "rem": 103,
+          "deep": 48
+        },
+        {
+          "offset": 25,
+          "minutes": 330.5,
+          "awake": 93.5,
+          "rem": 76.5,
+          "deep": 32.5
+        },
+        {
+          "offset": 26,
+          "minutes": 514.5,
+          "awake": 38,
+          "rem": 162,
+          "deep": 48
+        },
+        {
+          "offset": 27,
+          "minutes": 341.5,
+          "awake": 89,
+          "rem": 78.5,
+          "deep": 26.5
+        },
+        {
+          "offset": 28,
+          "minutes": 338,
+          "awake": 72,
+          "rem": 91,
+          "deep": 18.5
+        },
+        {
+          "offset": 29,
+          "minutes": 371.5,
+          "awake": 151.5,
+          "rem": 102.5,
+          "deep": 52
+        },
+        {
+          "offset": 30,
+          "minutes": 462,
+          "awake": 88.5,
+          "rem": 136.5,
+          "deep": 58
+        },
+        {
+          "offset": 31,
+          "minutes": 381,
+          "awake": 63.5,
+          "rem": 95,
+          "deep": 50.5
+        },
+        {
+          "offset": 32,
+          "minutes": 437,
+          "awake": 23.5,
+          "rem": 111,
+          "deep": 49
+        },
+        {
+          "offset": 33,
+          "minutes": 369,
+          "awake": 118,
+          "rem": 77,
+          "deep": 57
+        },
+        {
+          "offset": 34,
+          "minutes": 440,
+          "awake": 92.5,
+          "rem": 132,
+          "deep": 77
+        },
+        {
+          "offset": 35,
+          "minutes": 439.5,
+          "awake": 82,
+          "rem": 91,
+          "deep": 54
+        },
+        {
+          "offset": 36,
+          "minutes": 427,
+          "awake": 33,
+          "rem": 116.5,
+          "deep": 50
+        },
+        {
+          "offset": 37,
+          "minutes": 397,
+          "awake": 62,
+          "rem": 91.5,
+          "deep": 33.5
+        },
+        {
+          "offset": 38,
+          "minutes": 382.5,
+          "awake": 140.5,
+          "rem": 96,
+          "deep": 47.5
+        },
+        {
+          "offset": 39,
+          "minutes": 360,
+          "awake": 93.5,
+          "rem": 102,
+          "deep": 76.5
+        },
+        {
+          "offset": 40,
+          "minutes": 362.5,
+          "awake": 93.5,
+          "rem": 72.5,
+          "deep": 35.5
+        },
+        {
+          "offset": 41,
+          "minutes": 255.5,
+          "awake": 76,
+          "rem": 63.5,
+          "deep": 31
+        },
+        {
+          "offset": 42,
+          "minutes": 442,
+          "awake": 88.5,
+          "rem": 124,
+          "deep": 24
+        },
+        {
+          "offset": 43,
+          "minutes": 402.5,
+          "awake": 34.5,
+          "rem": 124,
+          "deep": 51
+        },
+        {
+          "offset": 44,
+          "minutes": 435,
+          "awake": 101.5,
+          "rem": 110.5,
+          "deep": 70.5
+        },
+        {
+          "offset": 45,
+          "minutes": 416,
+          "awake": 43,
+          "rem": 95,
+          "deep": 61.5
+        },
+        {
+          "offset": 46,
+          "minutes": 479.5,
+          "awake": 37,
+          "rem": 157,
+          "deep": 79.5
+        },
+        {
+          "offset": 47,
+          "minutes": 489,
+          "awake": 117.5,
+          "rem": 90.5,
+          "deep": 67.5
+        },
+        {
+          "offset": 48,
+          "minutes": 444,
+          "awake": 24.5,
+          "rem": 103,
+          "deep": 56.5
+        },
+        {
+          "offset": 49,
+          "minutes": 377,
+          "awake": 42,
+          "rem": 113,
+          "deep": 35
+        },
+        {
+          "offset": 50,
+          "minutes": 470.5,
+          "awake": 3,
+          "rem": 124,
+          "deep": 63
+        },
+        {
+          "offset": 51,
+          "minutes": 401.5,
+          "awake": 23.5,
+          "rem": 91,
+          "deep": 51.5
+        },
+        {
+          "offset": 52,
+          "minutes": 382.5,
+          "awake": 20,
+          "rem": 100,
+          "deep": 46
+        },
+        {
+          "offset": 53,
+          "minutes": 395,
+          "awake": 36,
+          "rem": 110,
+          "deep": 58
+        },
+        {
+          "offset": 54,
+          "minutes": 484,
+          "awake": 99.5,
+          "rem": 119,
+          "deep": 47.5
+        },
+        {
+          "offset": 55,
+          "minutes": 429.5,
+          "awake": 147.5,
+          "rem": 87,
+          "deep": 37.5
+        },
+        {
+          "offset": 56,
+          "minutes": 430,
+          "awake": 11.5,
+          "rem": 123.5,
+          "deep": 69.5
+        },
+        {
+          "offset": 57,
+          "minutes": 569.5,
+          "awake": 47,
+          "rem": 139,
+          "deep": 85
+        },
+        {
+          "offset": 58,
+          "minutes": 323,
+          "awake": 57.5,
+          "rem": 69,
+          "deep": 66.5
+        },
+        {
+          "offset": 59,
+          "minutes": 420.5,
+          "awake": 52,
+          "rem": 134.5,
+          "deep": 61.5
+        },
+        {
+          "offset": 60,
+          "minutes": 538,
+          "awake": 73.5,
+          "rem": 134.5,
+          "deep": 48.5
+        },
+        {
+          "offset": 61,
+          "minutes": 534,
+          "awake": 42.5,
+          "rem": 105,
+          "deep": 35.5
+        },
+        {
+          "offset": 62,
+          "minutes": 385,
+          "awake": 117,
+          "rem": 77.5,
+          "deep": 45
+        },
+        {
+          "offset": 63,
+          "minutes": 463,
+          "awake": 6.5,
+          "rem": 118.5,
+          "deep": 44
+        },
+        {
+          "offset": 64,
+          "minutes": 473.5,
+          "awake": 52,
+          "rem": 120.5,
+          "deep": 45
+        },
+        {
+          "offset": 65,
+          "minutes": 516.5,
+          "awake": 17.5,
+          "rem": 125,
+          "deep": 55
+        },
+        {
+          "offset": 66,
+          "minutes": 451,
+          "awake": 6,
+          "rem": 128.5,
+          "deep": 44.5
+        },
+        {
+          "offset": 67,
+          "minutes": 467.5,
+          "awake": 22.5,
+          "rem": 100,
+          "deep": 74
+        },
+        {
+          "offset": 68,
+          "minutes": 477.5,
+          "awake": 19,
+          "rem": 114.5,
+          "deep": 36.5
+        },
+        {
+          "offset": 69,
+          "minutes": 468.5,
+          "awake": 14.5,
+          "rem": 116.5,
+          "deep": 79.5
+        },
+        {
+          "offset": 70,
+          "minutes": 510,
+          "awake": 20.5,
+          "rem": 157.5,
+          "deep": 47
+        },
+        {
+          "offset": 71,
+          "minutes": 531.5,
+          "awake": 10.5,
+          "rem": 157,
+          "deep": 67.5
+        },
+        {
+          "offset": 72,
+          "minutes": 485.5,
+          "awake": 9,
+          "rem": 121.5,
+          "deep": 22
+        },
+        {
+          "offset": 73,
+          "minutes": 425.5,
+          "awake": 23.5,
+          "rem": 126,
+          "deep": 32
+        },
+        {
+          "offset": 74,
+          "minutes": 476,
+          "awake": 48,
+          "rem": 90.5,
+          "deep": 56
+        },
+        {
+          "offset": 75,
+          "minutes": 423.5,
+          "awake": 31.5,
+          "rem": 98,
+          "deep": 57
+        },
+        {
+          "offset": 76,
+          "minutes": 269,
+          "awake": 34,
+          "rem": 43,
+          "deep": 50
+        },
+        {
+          "offset": 77,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 78,
+          "minutes": 419.5,
+          "awake": 19.5,
+          "rem": 113.5,
+          "deep": 53
+        },
+        {
+          "offset": 79,
+          "minutes": 318,
+          "awake": 79,
+          "rem": 79.5,
+          "deep": 30.5
+        },
+        {
+          "offset": 80,
+          "minutes": 463,
+          "awake": 6.5,
+          "rem": 137.5,
+          "deep": 22.5
+        },
+        {
+          "offset": 81,
+          "minutes": 492.5,
+          "awake": 2.5,
+          "rem": 125,
+          "deep": 50
+        },
+        {
+          "offset": 82,
+          "minutes": 470.5,
+          "awake": 11.5,
+          "rem": 126,
+          "deep": 38.5
+        },
+        {
+          "offset": 83,
+          "minutes": 457,
+          "awake": 13,
+          "rem": 139.5,
+          "deep": 30
+        },
+        {
+          "offset": 84,
+          "minutes": 339,
+          "awake": 18.5,
+          "rem": 72,
+          "deep": 35.5
+        },
+        {
+          "offset": 85,
+          "minutes": 466,
+          "awake": 32.5,
+          "rem": 115,
+          "deep": 58.5
+        },
+        {
+          "offset": 86,
+          "minutes": 526,
+          "awake": 10.5,
+          "rem": 153.5,
+          "deep": 67
+        },
+        {
+          "offset": 87,
+          "minutes": 415.5,
+          "awake": 44.5,
+          "rem": 118,
+          "deep": 45.5
+        },
+        {
+          "offset": 88,
+          "minutes": 462.5,
+          "awake": 12,
+          "rem": 130.5,
+          "deep": 29.5
+        },
+        {
+          "offset": 89,
+          "minutes": 428,
+          "awake": 10,
+          "rem": 77.5,
+          "deep": 38.5
+        },
+        {
+          "offset": 90,
+          "minutes": 532.5,
+          "awake": 40,
+          "rem": 166,
+          "deep": 44
+        },
+        {
+          "offset": 91,
+          "minutes": 438.5,
+          "awake": 68.5,
+          "rem": 94,
+          "deep": 45
+        },
+        {
+          "offset": 92,
+          "minutes": 538.5,
+          "awake": 10.5,
+          "rem": 178.5,
+          "deep": 50.5
+        },
+        {
+          "offset": 93,
+          "minutes": 429,
+          "awake": 5,
+          "rem": 105,
+          "deep": 67.5
+        },
+        {
+          "offset": 94,
+          "minutes": 457,
+          "awake": 61,
+          "rem": 119,
+          "deep": 66
+        },
+        {
+          "offset": 95,
+          "minutes": 511,
+          "awake": 6.5,
+          "rem": 151.5,
+          "deep": 44
+        },
+        {
+          "offset": 96,
+          "minutes": 448.5,
+          "awake": 19,
+          "rem": 130.5,
+          "deep": 56.5
+        },
+        {
+          "offset": 97,
+          "minutes": 452,
+          "awake": 34.5,
+          "rem": 116,
+          "deep": 62
+        },
+        {
+          "offset": 98,
+          "minutes": 469,
+          "awake": 1.5,
+          "rem": 120.5,
+          "deep": 46.5
+        },
+        {
+          "offset": 99,
+          "minutes": 440.5,
+          "awake": 6,
+          "rem": 103.5,
+          "deep": 30.5
+        },
+        {
+          "offset": 100,
+          "minutes": 481.5,
+          "awake": 19,
+          "rem": 139,
+          "deep": 51.5
+        },
+        {
+          "offset": 101,
+          "minutes": 482.5,
+          "awake": 10.5,
+          "rem": 134.5,
+          "deep": 65.5
+        },
+        {
+          "offset": 102,
+          "minutes": 542.5,
+          "awake": 65.5,
+          "rem": 137.5,
+          "deep": 52.5
+        },
+        {
+          "offset": 103,
+          "minutes": 331,
+          "awake": 8,
+          "rem": 51,
+          "deep": 45
+        },
+        {
+          "offset": 104,
+          "minutes": 453,
+          "awake": 3.5,
+          "rem": 111.5,
+          "deep": 57.5
+        },
+        {
+          "offset": 105,
+          "minutes": 462,
+          "awake": 28,
+          "rem": 128.5,
+          "deep": 43
+        },
+        {
+          "offset": 106,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 107,
+          "minutes": 494.5,
+          "awake": 7.5,
+          "rem": 140,
+          "deep": 57
+        },
+        {
+          "offset": 108,
+          "minutes": 553,
+          "awake": 31,
+          "rem": 181,
+          "deep": 54.5
+        },
+        {
+          "offset": 109,
+          "minutes": 449,
+          "awake": 15,
+          "rem": 112,
+          "deep": 52
+        },
+        {
+          "offset": 110,
+          "minutes": 491,
+          "awake": 24.5,
+          "rem": 132,
+          "deep": 43
+        },
+        {
+          "offset": 111,
+          "minutes": 549,
+          "awake": 5,
+          "rem": 163.5,
+          "deep": 60.5
+        },
+        {
+          "offset": 112,
+          "minutes": 536,
+          "awake": 37,
+          "rem": 114.5,
+          "deep": 24
+        },
+        {
+          "offset": 113,
+          "minutes": 471,
+          "awake": 3.5,
+          "rem": 120,
+          "deep": 48.5
+        },
+        {
+          "offset": 114,
+          "minutes": 476,
+          "awake": 4.5,
+          "rem": 134.5,
+          "deep": 89
+        },
+        {
+          "offset": 115,
+          "minutes": 406.5,
+          "awake": 9,
+          "rem": 125,
+          "deep": 45
+        },
+        {
+          "offset": 116,
+          "minutes": 463,
+          "awake": 12,
+          "rem": 125,
+          "deep": 44
+        },
+        {
+          "offset": 117,
+          "minutes": 474.5,
+          "awake": 7.5,
+          "rem": 119.5,
+          "deep": 26
+        },
+        {
+          "offset": 118,
+          "minutes": 453,
+          "awake": 3,
+          "rem": 138.5,
+          "deep": 45
+        },
+        {
+          "offset": 119,
+          "minutes": 380.5,
+          "awake": 6,
+          "rem": 85,
+          "deep": 77.5
+        },
+        {
+          "offset": 120,
+          "minutes": 430.5,
+          "awake": 7.5,
+          "rem": 129.5,
+          "deep": 50.5
+        },
+        {
+          "offset": 121,
+          "minutes": 490,
+          "awake": 6.5,
+          "rem": 120.5,
+          "deep": 86
+        },
+        {
+          "offset": 122,
+          "minutes": 422,
+          "awake": 2.5,
+          "rem": 110,
+          "deep": 61
+        },
+        {
+          "offset": 123,
+          "minutes": 495,
+          "awake": 16.5,
+          "rem": 157,
+          "deep": 43.5
+        },
+        {
+          "offset": 124,
+          "minutes": 462.5,
+          "awake": 8.5,
+          "rem": 127.5,
+          "deep": 65
+        },
+        {
+          "offset": 125,
+          "minutes": 507.5,
+          "awake": 11,
+          "rem": 140,
+          "deep": 49.5
+        },
+        {
+          "offset": 126,
+          "minutes": 471,
+          "awake": 30,
+          "rem": 119,
+          "deep": 44.5
+        },
+        {
+          "offset": 127,
+          "minutes": 505,
+          "awake": 78,
+          "rem": 149.5,
+          "deep": 31.5
+        },
+        {
+          "offset": 128,
+          "minutes": 423,
+          "awake": 8.5,
+          "rem": 120,
+          "deep": 42
+        },
+        {
+          "offset": 129,
+          "minutes": 495.5,
+          "awake": 44.5,
+          "rem": 124,
+          "deep": 51.5
+        },
+        {
+          "offset": 130,
+          "minutes": 296.5,
+          "awake": 79,
+          "rem": 83.5,
+          "deep": 49
+        },
+        {
+          "offset": 131,
+          "minutes": 469.5,
+          "awake": 19,
+          "rem": 114,
+          "deep": 65.5
+        },
+        {
+          "offset": 132,
+          "minutes": 495,
+          "awake": 9,
+          "rem": 129,
+          "deep": 61.5
+        },
+        {
+          "offset": 133,
+          "minutes": 522.5,
+          "awake": 13,
+          "rem": 130,
+          "deep": 51.5
+        },
+        {
+          "offset": 134,
+          "minutes": 423.5,
+          "awake": 18,
+          "rem": 103,
+          "deep": 55.5
+        },
+        {
+          "offset": 135,
+          "minutes": 474,
+          "awake": 26.5,
+          "rem": 104,
+          "deep": 54
+        },
+        {
+          "offset": 136,
+          "minutes": 482,
+          "awake": 15,
+          "rem": 109.5,
+          "deep": 30.5
+        },
+        {
+          "offset": 137,
+          "minutes": 496.5,
+          "awake": 23,
+          "rem": 135.5,
+          "deep": 40.5
+        },
+        {
+          "offset": 138,
+          "minutes": 523.5,
+          "awake": 9,
+          "rem": 144.5,
+          "deep": 29
+        },
+        {
+          "offset": 139,
+          "minutes": 413.5,
+          "awake": 1,
+          "rem": 128.5,
+          "deep": 49.5
+        },
+        {
+          "offset": 140,
+          "minutes": 472.5,
+          "awake": 7,
+          "rem": 138,
+          "deep": 38
+        },
+        {
+          "offset": 141,
+          "minutes": 535,
+          "awake": 9,
+          "rem": 162.5,
+          "deep": 42
+        },
+        {
+          "offset": 142,
+          "minutes": 442,
+          "awake": 5,
+          "rem": 130.5,
+          "deep": 28
+        },
+        {
+          "offset": 143,
+          "minutes": 403.5,
+          "awake": 12,
+          "rem": 109.5,
+          "deep": 80
+        },
+        {
+          "offset": 144,
+          "minutes": 411.5,
+          "awake": 14,
+          "rem": 104.5,
+          "deep": 64
+        },
+        {
+          "offset": 145,
+          "minutes": 471.5,
+          "awake": 15,
+          "rem": 112,
+          "deep": 54
+        },
+        {
+          "offset": 146,
+          "minutes": 500,
+          "awake": 56.5,
+          "rem": 101,
+          "deep": 40.5
+        },
+        {
+          "offset": 147,
+          "minutes": 401.5,
+          "awake": 8,
+          "rem": 108.5,
+          "deep": 48.5
+        },
+        {
+          "offset": 148,
+          "minutes": 503,
+          "awake": 17.5,
+          "rem": 128.5,
+          "deep": 60
+        },
+        {
+          "offset": 149,
+          "minutes": 375.5,
+          "awake": 24.5,
+          "rem": 106,
+          "deep": 35
+        },
+        {
+          "offset": 150,
+          "minutes": 244,
+          "awake": 1,
+          "rem": 52,
+          "deep": 64
+        },
+        {
+          "offset": 151,
+          "minutes": 565.5,
+          "awake": 19,
+          "rem": 182.5,
+          "deep": 49
+        },
+        {
+          "offset": 152,
+          "minutes": 463.5,
+          "awake": 13,
+          "rem": 133.5,
+          "deep": 69
+        },
+        {
+          "offset": 153,
+          "minutes": 554.5,
+          "awake": 17.5,
+          "rem": 165.5,
+          "deep": 64.5
+        },
+        {
+          "offset": 154,
+          "minutes": 550,
+          "awake": 21,
+          "rem": 169,
+          "deep": 48
+        },
+        {
+          "offset": 155,
+          "minutes": 439.5,
+          "awake": 3,
+          "rem": 136.5,
+          "deep": 78.5
+        },
+        {
+          "offset": 156,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 157,
+          "minutes": 420.5,
+          "awake": 43,
+          "rem": 103.5,
+          "deep": 41.5
+        },
+        {
+          "offset": 158,
+          "minutes": 430,
+          "awake": 6.5,
+          "rem": 111.5,
+          "deep": 46.5
+        },
+        {
+          "offset": 159,
+          "minutes": 462,
+          "awake": 11.5,
+          "rem": 106,
+          "deep": 33.5
+        },
+        {
+          "offset": 160,
+          "minutes": 488.5,
+          "awake": 12.5,
+          "rem": 147,
+          "deep": 44
+        },
+        {
+          "offset": 161,
+          "minutes": 481.5,
+          "awake": 27,
+          "rem": 140.5,
+          "deep": 88
+        },
+        {
+          "offset": 162,
+          "minutes": 549,
+          "awake": 47.5,
+          "rem": 163.5,
+          "deep": 57
+        },
+        {
+          "offset": 163,
+          "minutes": 455,
+          "awake": 89,
+          "rem": 113.5,
+          "deep": 42
+        },
+        {
+          "offset": 164,
+          "minutes": 506.5,
+          "awake": 18.5,
+          "rem": 120,
+          "deep": 44.5
+        },
+        {
+          "offset": 165,
+          "minutes": 443,
+          "awake": 43,
+          "rem": 134.5,
+          "deep": 50
+        },
+        {
+          "offset": 166,
+          "minutes": 496,
+          "awake": 23,
+          "rem": 132,
+          "deep": 39
+        },
+        {
+          "offset": 167,
+          "minutes": 469.5,
+          "awake": 33,
+          "rem": 118.5,
+          "deep": 69
+        },
+        {
+          "offset": 168,
+          "minutes": 551,
+          "awake": 105,
+          "rem": 134.5,
+          "deep": 34.5
+        },
+        {
+          "offset": 169,
+          "minutes": 471,
+          "awake": 73.5,
+          "rem": 116,
+          "deep": 66
+        },
+        {
+          "offset": 170,
+          "minutes": 480.5,
+          "awake": 70,
+          "rem": 126.5,
+          "deep": 47.5
+        },
+        {
+          "offset": 171,
+          "minutes": 463,
+          "awake": 1.5,
+          "rem": 127.5,
+          "deep": 63
+        },
+        {
+          "offset": 172,
+          "minutes": 366,
+          "awake": 30,
+          "rem": 63.5,
+          "deep": 45
+        },
+        {
+          "offset": 173,
+          "minutes": 461.5,
+          "awake": 5,
+          "rem": 156.5,
+          "deep": 37.5
+        },
+        {
+          "offset": 174,
+          "minutes": 512.5,
+          "awake": 13,
+          "rem": 137.5,
+          "deep": 62
+        },
+        {
+          "offset": 175,
+          "minutes": 438.5,
+          "awake": 26,
+          "rem": 111,
+          "deep": 39
+        },
+        {
+          "offset": 176,
+          "minutes": 469,
+          "awake": 4,
+          "rem": 114,
+          "deep": 65
+        },
+        {
+          "offset": 177,
+          "minutes": 418,
+          "awake": 17.5,
+          "rem": 126.5,
+          "deep": 56
+        },
+        {
+          "offset": 178,
+          "minutes": 414,
+          "awake": 23,
+          "rem": 132.5,
+          "deep": 38
+        },
+        {
+          "offset": 179,
+          "minutes": 522,
+          "awake": 29,
+          "rem": 123.5,
+          "deep": 55
+        },
+        {
+          "offset": 180,
+          "minutes": 487.5,
+          "awake": 55,
+          "rem": 152.5,
+          "deep": 43.5
+        },
+        {
+          "offset": 181,
+          "minutes": 448,
+          "awake": 6.5,
+          "rem": 135.5,
+          "deep": 50
+        },
+        {
+          "offset": 182,
+          "minutes": 394.5,
+          "awake": 15.5,
+          "rem": 107,
+          "deep": 66
+        },
+        {
+          "offset": 183,
+          "minutes": 419,
+          "awake": 4,
+          "rem": 90.5,
+          "deep": 51
+        },
+        {
+          "offset": 184,
+          "minutes": 471.5,
+          "awake": 69.5,
+          "rem": 144.5,
+          "deep": 74
+        },
+        {
+          "offset": 185,
+          "minutes": 421,
+          "awake": 61,
+          "rem": 100.5,
+          "deep": 73
+        },
+        {
+          "offset": 186,
+          "minutes": 442,
+          "awake": 38,
+          "rem": 115,
+          "deep": 45
+        },
+        {
+          "offset": 187,
+          "minutes": 502,
+          "awake": 57.5,
+          "rem": 147.5,
+          "deep": 43.5
+        },
+        {
+          "offset": 188,
+          "minutes": 379.5,
+          "awake": 131.5,
+          "rem": 106.5,
+          "deep": 63.5
+        },
+        {
+          "offset": 189,
+          "minutes": 507,
+          "awake": 141,
+          "rem": 113.5,
+          "deep": 60
+        },
+        {
+          "offset": 190,
+          "minutes": 474,
+          "awake": 52.5,
+          "rem": 146,
+          "deep": 67
+        },
+        {
+          "offset": 191,
+          "minutes": 376.5,
+          "awake": 63.5,
+          "rem": 94.5,
+          "deep": 71
+        },
+        {
+          "offset": 192,
+          "minutes": 386,
+          "awake": 87.5,
+          "rem": 86.5,
+          "deep": 60.5
+        },
+        {
+          "offset": 193,
+          "minutes": 398.5,
+          "awake": 69.5,
+          "rem": 87,
+          "deep": 60.5
+        },
+        {
+          "offset": 194,
+          "minutes": 506,
+          "awake": 95,
+          "rem": 88,
+          "deep": 46.5
+        },
+        {
+          "offset": 195,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 196,
+          "minutes": 546,
+          "awake": 17,
+          "rem": 146.5,
+          "deep": 56.5
+        },
+        {
+          "offset": 197,
+          "minutes": 311,
+          "awake": 83,
+          "rem": 91,
+          "deep": 50
+        },
+        {
+          "offset": 198,
+          "minutes": 386,
+          "awake": 69.5,
+          "rem": 99,
+          "deep": 89
+        },
+        {
+          "offset": 199,
+          "minutes": 473,
+          "awake": 61.5,
+          "rem": 117.5,
+          "deep": 49.5
+        },
+        {
+          "offset": 200,
+          "minutes": 562.5,
+          "awake": 82,
+          "rem": 138,
+          "deep": 44.5
+        },
+        {
+          "offset": 201,
+          "minutes": 519,
+          "awake": 60,
+          "rem": 151.5,
+          "deep": 48
+        },
+        {
+          "offset": 202,
+          "minutes": 484.5,
+          "awake": 49,
+          "rem": 124,
+          "deep": 77
+        },
+        {
+          "offset": 203,
+          "minutes": 487.5,
+          "awake": 100.5,
+          "rem": 103.5,
+          "deep": 39
+        },
+        {
+          "offset": 204,
+          "minutes": 465.5,
+          "awake": 46.5,
+          "rem": 100.5,
+          "deep": 36.5
+        },
+        {
+          "offset": 205,
+          "minutes": 373,
+          "awake": 44,
+          "rem": 53.5,
+          "deep": 52
+        },
+        {
+          "offset": 206,
+          "minutes": 500,
+          "awake": 65,
+          "rem": 122,
+          "deep": 42.5
+        },
+        {
+          "offset": 207,
+          "minutes": 496,
+          "awake": 57.5,
+          "rem": 105.5,
+          "deep": 61
+        },
+        {
+          "offset": 208,
+          "minutes": 532.5,
+          "awake": 42.5,
+          "rem": 131.5,
+          "deep": 59
+        },
+        {
+          "offset": 209,
+          "minutes": 437.5,
+          "awake": 70,
+          "rem": 109.5,
+          "deep": 56
+        },
+        {
+          "offset": 210,
+          "minutes": 412,
+          "awake": 5,
+          "rem": 100,
+          "deep": 61.5
+        },
+        {
+          "offset": 211,
+          "minutes": 507.5,
+          "awake": 9,
+          "rem": 98,
+          "deep": 31.5
+        },
+        {
+          "offset": 212,
+          "minutes": 405,
+          "awake": 60.5,
+          "rem": 100.5,
+          "deep": 54
+        },
+        {
+          "offset": 213,
+          "minutes": 532.5,
+          "awake": 3,
+          "rem": 152,
+          "deep": 60.5
+        },
+        {
+          "offset": 214,
+          "minutes": 420.5,
+          "awake": 28,
+          "rem": 105.5,
+          "deep": 46.5
+        },
+        {
+          "offset": 215,
+          "minutes": 526.5,
+          "awake": 48,
+          "rem": 128,
+          "deep": 59.5
+        },
+        {
+          "offset": 216,
+          "minutes": 474.5,
+          "awake": 16.5,
+          "rem": 146.5,
+          "deep": 31.5
+        },
+        {
+          "offset": 217,
+          "minutes": 481.5,
+          "awake": 3,
+          "rem": 134,
+          "deep": 59.5
+        },
+        {
+          "offset": 218,
+          "minutes": 512.5,
+          "awake": 6,
+          "rem": 139.5,
+          "deep": 53.5
+        },
+        {
+          "offset": 219,
+          "minutes": 428.5,
+          "awake": 69.5,
+          "rem": 105.5,
+          "deep": 50.5
+        },
+        {
+          "offset": 220,
+          "minutes": 496.5,
+          "awake": 49,
+          "rem": 137,
+          "deep": 46.5
+        },
+        {
+          "offset": 221,
+          "minutes": 274.5,
+          "awake": 3,
+          "rem": 65,
+          "deep": 52.5
+        },
+        {
+          "offset": 222,
+          "minutes": 435.5,
+          "awake": 18,
+          "rem": 120,
+          "deep": 58
+        },
+        {
+          "offset": 223,
+          "minutes": 454.5,
+          "awake": 13,
+          "rem": 118.5,
+          "deep": 49.5
+        },
+        {
+          "offset": 224,
+          "minutes": 496,
+          "awake": 15.5,
+          "rem": 139,
+          "deep": 80.5
+        },
+        {
+          "offset": 225,
+          "minutes": 461,
+          "awake": 7.5,
+          "rem": 114.5,
+          "deep": 28
+        },
+        {
+          "offset": 226,
+          "minutes": 431.5,
+          "awake": 19.5,
+          "rem": 120,
+          "deep": 47
+        },
+        {
+          "offset": 227,
+          "minutes": 448,
+          "awake": 36,
+          "rem": 111.5,
+          "deep": 27
+        },
+        {
+          "offset": 228,
+          "minutes": 482,
+          "awake": 5,
+          "rem": 124,
+          "deep": 65.5
+        },
+        {
+          "offset": 229,
+          "minutes": 428,
+          "awake": 43.5,
+          "rem": 120,
+          "deep": 26.5
+        },
+        {
+          "offset": 230,
+          "minutes": 437,
+          "awake": 14,
+          "rem": 97,
+          "deep": 58
+        },
+        {
+          "offset": 231,
+          "minutes": 487.5,
+          "awake": 2.5,
+          "rem": 148,
+          "deep": 36.5
+        },
+        {
+          "offset": 232,
+          "minutes": 498.5,
+          "awake": 13,
+          "rem": 128.5,
+          "deep": 61.5
+        },
+        {
+          "offset": 233,
+          "minutes": 439.5,
+          "awake": 15,
+          "rem": 121.5,
+          "deep": 69.5
+        },
+        {
+          "offset": 234,
+          "minutes": 439,
+          "awake": 5,
+          "rem": 125.5,
+          "deep": 39
+        },
+        {
+          "offset": 235,
+          "minutes": 311,
+          "awake": 62.5,
+          "rem": 98,
+          "deep": 57.5
+        },
+        {
+          "offset": 236,
+          "minutes": 494,
+          "awake": 22,
+          "rem": 128.5,
+          "deep": 61
+        },
+        {
+          "offset": 237,
+          "minutes": 229.5,
+          "awake": 24.5,
+          "rem": 71,
+          "deep": 47.5
+        },
+        {
+          "offset": 238,
+          "minutes": 407,
+          "awake": 2.5,
+          "rem": 136,
+          "deep": 50.5
+        },
+        {
+          "offset": 239,
+          "minutes": 468,
+          "awake": 18.5,
+          "rem": 137,
+          "deep": 44
+        },
+        {
+          "offset": 240,
+          "minutes": 389.5,
+          "awake": 3,
+          "rem": 92.5,
+          "deep": 65.5
+        },
+        {
+          "offset": 241,
+          "minutes": 491,
+          "awake": 7,
+          "rem": 122.5,
+          "deep": 80
+        },
+        {
+          "offset": 242,
+          "minutes": 450,
+          "awake": 73,
+          "rem": 153,
+          "deep": 28.5
+        },
+        {
+          "offset": 243,
+          "minutes": 403,
+          "awake": 5,
+          "rem": 106,
+          "deep": 55.5
+        },
+        {
+          "offset": 244,
+          "minutes": 421,
+          "awake": 13,
+          "rem": 98,
+          "deep": 46
+        },
+        {
+          "offset": 245,
+          "minutes": 402.5,
+          "awake": 2,
+          "rem": 125.5,
+          "deep": 65
+        },
+        {
+          "offset": 246,
+          "minutes": 433,
+          "awake": 3.5,
+          "rem": 95,
+          "deep": 62
+        },
+        {
+          "offset": 247,
+          "minutes": 449,
+          "awake": 5,
+          "rem": 123,
+          "deep": 62
+        },
+        {
+          "offset": 248,
+          "minutes": 496,
+          "awake": 18.5,
+          "rem": 112.5,
+          "deep": 50.5
+        },
+        {
+          "offset": 249,
+          "minutes": 465,
+          "awake": 5,
+          "rem": 135,
+          "deep": 43
+        },
+        {
+          "offset": 250,
+          "minutes": 362,
+          "awake": 5.5,
+          "rem": 100,
+          "deep": 18.5
+        },
+        {
+          "offset": 251,
+          "minutes": 429.5,
+          "awake": 9,
+          "rem": 91.5,
+          "deep": 62.5
+        },
+        {
+          "offset": 252,
+          "minutes": 509.5,
+          "awake": 2.5,
+          "rem": 154,
+          "deep": 63
+        },
+        {
+          "offset": 253,
+          "minutes": 441.5,
+          "awake": 2.5,
+          "rem": 121.5,
+          "deep": 49
+        },
+        {
+          "offset": 254,
+          "minutes": 455.5,
+          "awake": 18,
+          "rem": 133.5,
+          "deep": 46.5
+        },
+        {
+          "offset": 255,
+          "minutes": 406.5,
+          "awake": 7.5,
+          "rem": 95.5,
+          "deep": 47
+        },
+        {
+          "offset": 256,
+          "minutes": 399,
+          "awake": 9.5,
+          "rem": 80,
+          "deep": 33
+        },
+        {
+          "offset": 257,
+          "minutes": 408,
+          "awake": 41,
+          "rem": 102.5,
+          "deep": 70
+        },
+        {
+          "offset": 258,
+          "minutes": 426,
+          "awake": 8.5,
+          "rem": 101,
+          "deep": 50
+        },
+        {
+          "offset": 259,
+          "minutes": 428.5,
+          "awake": 6.5,
+          "rem": 116.5,
+          "deep": 80
+        },
+        {
+          "offset": 260,
+          "minutes": 455,
+          "awake": 7,
+          "rem": 137,
+          "deep": 57
+        },
+        {
+          "offset": 261,
+          "minutes": 362,
+          "awake": 12,
+          "rem": 80,
+          "deep": 41
+        },
+        {
+          "offset": 262,
+          "minutes": 428,
+          "awake": 38,
+          "rem": 103,
+          "deep": 55
+        },
+        {
+          "offset": 263,
+          "minutes": 431.5,
+          "awake": 9.5,
+          "rem": 139,
+          "deep": 67
+        },
+        {
+          "offset": 264,
+          "minutes": 480,
+          "awake": 5,
+          "rem": 131,
+          "deep": 60
+        },
+        {
+          "offset": 265,
+          "minutes": 403.5,
+          "awake": 3,
+          "rem": 141,
+          "deep": 30.5
+        },
+        {
+          "offset": 266,
+          "minutes": 407,
+          "awake": 56.5,
+          "rem": 111,
+          "deep": 42.5
+        },
+        {
+          "offset": 267,
+          "minutes": 488,
+          "awake": 6.5,
+          "rem": 138.5,
+          "deep": 68.5
+        },
+        {
+          "offset": 268,
+          "minutes": 499,
+          "awake": 28.5,
+          "rem": 144.5,
+          "deep": 44.5
+        },
+        {
+          "offset": 269,
+          "minutes": 458,
+          "awake": 3,
+          "rem": 131.5,
+          "deep": 44
+        },
+        {
+          "offset": 270,
+          "minutes": 437.5,
+          "awake": 31,
+          "rem": 125,
+          "deep": 56
+        },
+        {
+          "offset": 271,
+          "minutes": 392,
+          "awake": 64.5,
+          "rem": 93,
+          "deep": 71.5
+        },
+        {
+          "offset": 272,
+          "minutes": 368,
+          "awake": 4,
+          "rem": 73,
+          "deep": 48.5
+        },
+        {
+          "offset": 273,
+          "minutes": 429,
+          "awake": 2,
+          "rem": 151,
+          "deep": 29.5
+        },
+        {
+          "offset": 274,
+          "minutes": 409,
+          "awake": 8.5,
+          "rem": 117.5,
+          "deep": 45.5
+        },
+        {
+          "offset": 275,
+          "minutes": 460.5,
+          "awake": 73.5,
+          "rem": 105,
+          "deep": 63.5
+        },
+        {
+          "offset": 276,
+          "minutes": 441.5,
+          "awake": 14,
+          "rem": 118,
+          "deep": 48.5
+        },
+        {
+          "offset": 277,
+          "minutes": 420.5,
+          "awake": 262.5,
+          "rem": 114,
+          "deep": 28.5
+        },
+        {
+          "offset": 278,
+          "minutes": 407.5,
+          "awake": 4,
+          "rem": 123,
+          "deep": 41
+        },
+        {
+          "offset": 279,
+          "minutes": 467,
+          "awake": 7,
+          "rem": 147.5,
+          "deep": 78.5
+        },
+        {
+          "offset": 280,
+          "minutes": 443.5,
+          "awake": 0.5,
+          "rem": 116.5,
+          "deep": 64.5
+        },
+        {
+          "offset": 281,
+          "minutes": 455,
+          "awake": 7,
+          "rem": 122.5,
+          "deep": 58.5
+        },
+        {
+          "offset": 282,
+          "minutes": 467.5,
+          "awake": 8,
+          "rem": 109,
+          "deep": 63.5
+        },
+        {
+          "offset": 283,
+          "minutes": 392.5,
+          "awake": 85.5,
+          "rem": 98.5,
+          "deep": 26.5
+        },
+        {
+          "offset": 284,
+          "minutes": 525,
+          "awake": 29.5,
+          "rem": 114,
+          "deep": 93
+        },
+        {
+          "offset": 285,
+          "minutes": 441.5,
+          "awake": 56,
+          "rem": 79.5,
+          "deep": 59
+        },
+        {
+          "offset": 286,
+          "minutes": 440,
+          "awake": 8.5,
+          "rem": 119.5,
+          "deep": 45.5
+        },
+        {
+          "offset": 287,
+          "minutes": 464.5,
+          "awake": 26.5,
+          "rem": 130.5,
+          "deep": 58
+        },
+        {
+          "offset": 288,
+          "minutes": 314,
+          "awake": 10,
+          "rem": 92.5,
+          "deep": 60.5
+        },
+        {
+          "offset": 289,
+          "minutes": 428.5,
+          "awake": 31.5,
+          "rem": 109.5,
+          "deep": 39.5
+        },
+        {
+          "offset": 290,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 291,
+          "minutes": 480.5,
+          "awake": 3,
+          "rem": 137,
+          "deep": 73.5
+        },
+        {
+          "offset": 292,
+          "minutes": 390.5,
+          "awake": 5.5,
+          "rem": 107.5,
+          "deep": 48.5
+        },
+        {
+          "offset": 293,
+          "minutes": 445.5,
+          "awake": 15,
+          "rem": 125,
+          "deep": 80.5
+        },
+        {
+          "offset": 294,
+          "minutes": 428,
+          "awake": 31,
+          "rem": 138,
+          "deep": 69
+        },
+        {
+          "offset": 295,
+          "minutes": 490.5,
+          "awake": 8,
+          "rem": 138,
+          "deep": 53
+        },
+        {
+          "offset": 296,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 297,
+          "minutes": 432,
+          "awake": 23.5,
+          "rem": 123,
+          "deep": 71
+        },
+        {
+          "offset": 298,
+          "minutes": 419,
+          "awake": 33,
+          "rem": 103,
+          "deep": 45.5
+        },
+        {
+          "offset": 299,
+          "minutes": 522.5,
+          "awake": 61,
+          "rem": 136,
+          "deep": 66
+        },
+        {
+          "offset": 300,
+          "minutes": 434.5,
+          "awake": 4.5,
+          "rem": 119,
+          "deep": 51
+        },
+        {
+          "offset": 301,
+          "minutes": 379,
+          "awake": 1,
+          "rem": 83.5,
+          "deep": 52
+        },
+        {
+          "offset": 302,
+          "minutes": 425.5,
+          "awake": 15,
+          "rem": 120,
+          "deep": 39.5
+        },
+        {
+          "offset": 303,
+          "minutes": 439,
+          "awake": 26.5,
+          "rem": 108,
+          "deep": 51.5
+        },
+        {
+          "offset": 304,
+          "minutes": 407,
+          "awake": 43,
+          "rem": 107.5,
+          "deep": 77.5
+        },
+        {
+          "offset": 305,
+          "minutes": 488,
+          "awake": 13,
+          "rem": 162,
+          "deep": 22
+        },
+        {
+          "offset": 306,
+          "minutes": 365,
+          "awake": 22,
+          "rem": 94.5,
+          "deep": 35.5
+        },
+        {
+          "offset": 307,
+          "minutes": 474,
+          "awake": 7.5,
+          "rem": 148.5,
+          "deep": 58.5
+        },
+        {
+          "offset": 308,
+          "minutes": 409,
+          "awake": 62,
+          "rem": 94.5,
+          "deep": 70.5
+        },
+        {
+          "offset": 309,
+          "minutes": 432.5,
+          "awake": 3.5,
+          "rem": 130,
+          "deep": 80
+        },
+        {
+          "offset": 310,
+          "minutes": 449,
+          "awake": 84,
+          "rem": 118.5,
+          "deep": 49.5
+        },
+        {
+          "offset": 311,
+          "minutes": 462.5,
+          "awake": 3.5,
+          "rem": 117.5,
+          "deep": 62
+        },
+        {
+          "offset": 312,
+          "minutes": 430,
+          "awake": 55,
+          "rem": 119.5,
+          "deep": 36.5
+        },
+        {
+          "offset": 313,
+          "minutes": 477,
+          "awake": 59.5,
+          "rem": 104.5,
+          "deep": 56.5
+        },
+        {
+          "offset": 314,
+          "minutes": 500.5,
+          "awake": 7,
+          "rem": 140.5,
+          "deep": 56
+        },
+        {
+          "offset": 315,
+          "minutes": 414.5,
+          "awake": 4.5,
+          "rem": 102,
+          "deep": 60.5
+        },
+        {
+          "offset": 316,
+          "minutes": 472,
+          "awake": 35,
+          "rem": 144,
+          "deep": 57
+        },
+        {
+          "offset": 317,
+          "minutes": 500,
+          "awake": 76.5,
+          "rem": 148.5,
+          "deep": 31
+        },
+        {
+          "offset": 318,
+          "minutes": 454.5,
+          "awake": 7.5,
+          "rem": 134,
+          "deep": 32.5
+        },
+        {
+          "offset": 319,
+          "minutes": 449,
+          "awake": 83.5,
+          "rem": 93,
+          "deep": 72
+        },
+        {
+          "offset": 320,
+          "minutes": 442,
+          "awake": 34.5,
+          "rem": 103,
+          "deep": 53
+        },
+        {
+          "offset": 321,
+          "minutes": 461.5,
+          "awake": 111,
+          "rem": 114.5,
+          "deep": 38
+        },
+        {
+          "offset": 322,
+          "minutes": 421,
+          "awake": 73,
+          "rem": 116,
+          "deep": 51
+        },
+        {
+          "offset": 323,
+          "minutes": 476.5,
+          "awake": 150,
+          "rem": 116.5,
+          "deep": 62.5
+        },
+        {
+          "offset": 324,
+          "minutes": 468.5,
+          "awake": 62.5,
+          "rem": 114,
+          "deep": 38
+        },
+        {
+          "offset": 325,
+          "minutes": 442,
+          "awake": 86.5,
+          "rem": 112.5,
+          "deep": 71
+        },
+        {
+          "offset": 326,
+          "minutes": 460,
+          "awake": 50,
+          "rem": 126,
+          "deep": 44
+        },
+        {
+          "offset": 327,
+          "minutes": 463,
+          "awake": 13.5,
+          "rem": 126.5,
+          "deep": 58.5
+        },
+        {
+          "offset": 328,
+          "minutes": 422,
+          "awake": 18,
+          "rem": 110,
+          "deep": 58
+        },
+        {
+          "offset": 329,
+          "minutes": 519,
+          "awake": 31.5,
+          "rem": 128,
+          "deep": 49
+        },
+        {
+          "offset": 330,
+          "minutes": 463,
+          "awake": 112,
+          "rem": 126.5,
+          "deep": 51.5
+        },
+        {
+          "offset": 331,
+          "minutes": 489.5,
+          "awake": 19,
+          "rem": 120,
+          "deep": 55.5
+        },
+        {
+          "offset": 332,
+          "minutes": 355,
+          "awake": 20,
+          "rem": 83.5,
+          "deep": 48
+        },
+        {
+          "offset": 333,
+          "minutes": 398,
+          "awake": 10.5,
+          "rem": 119.5,
+          "deep": 66
+        },
+        {
+          "offset": 334,
+          "minutes": 422.5,
+          "awake": 89.5,
+          "rem": 84.5,
+          "deep": 64.5
+        },
+        {
+          "offset": 335,
+          "minutes": 341.5,
+          "awake": 3,
+          "rem": 92,
+          "deep": 37
+        },
+        {
+          "offset": 336,
+          "minutes": 442.5,
+          "awake": 4,
+          "rem": 139,
+          "deep": 55
+        },
+        {
+          "offset": 337,
+          "minutes": 535.5,
+          "awake": 20,
+          "rem": 146,
+          "deep": 54
+        },
+        {
+          "offset": 338,
+          "minutes": 325,
+          "awake": 7.5,
+          "rem": 77.5,
+          "deep": 52.5
+        },
+        {
+          "offset": 339,
+          "minutes": 449.5,
+          "awake": 74.5,
+          "rem": 120,
+          "deep": 72.5
+        },
+        {
+          "offset": 340,
+          "minutes": 326.5,
+          "awake": 1,
+          "rem": 102,
+          "deep": 51.5
+        },
+        {
+          "offset": 341,
+          "minutes": 496.5,
+          "awake": 43,
+          "rem": 131,
+          "deep": 65.5
+        },
+        {
+          "offset": 342,
+          "minutes": 451.5,
+          "awake": 4,
+          "rem": 110,
+          "deep": 70
+        },
+        {
+          "offset": 343,
+          "minutes": 396,
+          "awake": 99,
+          "rem": 90,
+          "deep": 72
+        },
+        {
+          "offset": 344,
+          "minutes": 500,
+          "awake": 27,
+          "rem": 163,
+          "deep": 57
+        },
+        {
+          "offset": 345,
+          "minutes": 462,
+          "awake": 132,
+          "rem": 97,
+          "deep": 58.5
+        },
+        {
+          "offset": 346,
+          "minutes": 342.5,
+          "awake": 43,
+          "rem": 55,
+          "deep": 55.5
+        },
+        {
+          "offset": 347,
+          "minutes": 478,
+          "awake": 63,
+          "rem": 94,
+          "deep": 62.5
+        },
+        {
+          "offset": 348,
+          "minutes": 552.5,
+          "awake": 49,
+          "rem": 125,
+          "deep": 35
+        },
+        {
+          "offset": 349,
+          "minutes": 485.5,
+          "awake": 13,
+          "rem": 131,
+          "deep": 73
+        },
+        {
+          "offset": 350,
+          "minutes": 429.5,
+          "awake": 69,
+          "rem": 119.5,
+          "deep": 62
+        },
+        {
+          "offset": 351,
+          "minutes": 526,
+          "awake": 19,
+          "rem": 116,
+          "deep": 49
+        },
+        {
+          "offset": 352,
+          "minutes": 473.5,
+          "awake": 18.5,
+          "rem": 121.5,
+          "deep": 35
+        },
+        {
+          "offset": 353,
+          "minutes": 425.5,
+          "awake": 11.5,
+          "rem": 138,
+          "deep": 41.5
+        },
+        {
+          "offset": 354,
+          "minutes": 440.5,
+          "awake": 25,
+          "rem": 128,
+          "deep": 52
+        },
+        {
+          "offset": 355,
+          "minutes": 417,
+          "awake": 2,
+          "rem": 84,
+          "deep": 39
+        },
+        {
+          "offset": 356,
+          "minutes": 454,
+          "awake": 120,
+          "rem": 136,
+          "deep": 47
+        },
+        {
+          "offset": 357,
+          "minutes": 261,
+          "awake": 17,
+          "rem": 44.5,
+          "deep": 47.5
+        },
+        {
+          "offset": 358,
+          "minutes": 540.5,
+          "awake": 32.5,
+          "rem": 146.5,
+          "deep": 63.5
+        },
+        {
+          "offset": 359,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 360,
+          "minutes": 439.5,
+          "awake": 44.5,
+          "rem": 50,
+          "deep": 10
+        },
+        {
+          "offset": 361,
+          "minutes": 352.5,
+          "awake": 198,
+          "rem": 78.5,
+          "deep": 21.5
+        },
+        {
+          "offset": 362,
+          "minutes": 312.5,
+          "awake": 48,
+          "rem": 95.5,
+          "deep": 36
+        },
+        {
+          "offset": 363,
+          "minutes": 246.5,
+          "awake": 266,
+          "rem": 35.5,
+          "deep": 21.5
+        },
+        {
+          "offset": 364,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        }
+      ]
+    },
+    {
+      "label": "Second child",
+      "availableThrough": 352,
+      "days": [
+        {
+          "offset": -180,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": -179,
+          "minutes": 539.5,
+          "awake": 20,
+          "rem": 115,
+          "deep": 33
+        },
+        {
+          "offset": -178,
+          "minutes": 567,
+          "awake": 9.5,
+          "rem": 156.5,
+          "deep": 48.5
+        },
+        {
+          "offset": -177,
+          "minutes": 389,
+          "awake": 13.5,
+          "rem": 97,
+          "deep": 30.5
+        },
+        {
+          "offset": -176,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": -175,
+          "minutes": 471,
+          "awake": 15.5,
+          "rem": 111.5,
+          "deep": 29
+        },
+        {
+          "offset": -174,
+          "minutes": 476.5,
+          "awake": 18,
+          "rem": 117,
+          "deep": 61.5
+        },
+        {
+          "offset": -173,
+          "minutes": 408,
+          "awake": 85,
+          "rem": 67.5,
+          "deep": 69.5
+        },
+        {
+          "offset": -172,
+          "minutes": 488.5,
+          "awake": 11,
+          "rem": 144,
+          "deep": 30.5
+        },
+        {
+          "offset": -171,
+          "minutes": 528.5,
+          "awake": 1.5,
+          "rem": 155,
+          "deep": 78
+        },
+        {
+          "offset": -170,
+          "minutes": 417.5,
+          "awake": 18,
+          "rem": 95.5,
+          "deep": 39.5
+        },
+        {
+          "offset": -169,
+          "minutes": 501,
+          "awake": 8,
+          "rem": 138,
+          "deep": 35.5
+        },
+        {
+          "offset": -168,
+          "minutes": 464.5,
+          "awake": 2.5,
+          "rem": 131,
+          "deep": 51.5
+        },
+        {
+          "offset": -167,
+          "minutes": 479.5,
+          "awake": 8.5,
+          "rem": 131.5,
+          "deep": 57.5
+        },
+        {
+          "offset": -166,
+          "minutes": 511,
+          "awake": 50,
+          "rem": 126.5,
+          "deep": 47
+        },
+        {
+          "offset": -165,
+          "minutes": 416.5,
+          "awake": 3.5,
+          "rem": 86.5,
+          "deep": 47
+        },
+        {
+          "offset": -164,
+          "minutes": 418,
+          "awake": 19.5,
+          "rem": 106,
+          "deep": 62.5
+        },
+        {
+          "offset": -163,
+          "minutes": 591,
+          "awake": 15.5,
+          "rem": 116.5,
+          "deep": 91.5
+        },
+        {
+          "offset": -162,
+          "minutes": 447,
+          "awake": 21.5,
+          "rem": 111,
+          "deep": 61
+        },
+        {
+          "offset": -161,
+          "minutes": 507.5,
+          "awake": 10,
+          "rem": 135.5,
+          "deep": 49
+        },
+        {
+          "offset": -160,
+          "minutes": 411.5,
+          "awake": 62.5,
+          "rem": 102,
+          "deep": 59.5
+        },
+        {
+          "offset": -159,
+          "minutes": 448.5,
+          "awake": 36,
+          "rem": 101.5,
+          "deep": 17
+        },
+        {
+          "offset": -158,
+          "minutes": 425,
+          "awake": 122,
+          "rem": 115.5,
+          "deep": 73
+        },
+        {
+          "offset": -157,
+          "minutes": 451,
+          "awake": 15.5,
+          "rem": 115.5,
+          "deep": 38.5
+        },
+        {
+          "offset": -156,
+          "minutes": 486.5,
+          "awake": 8,
+          "rem": 129.5,
+          "deep": 83.5
+        },
+        {
+          "offset": -155,
+          "minutes": 445,
+          "awake": 119,
+          "rem": 108,
+          "deep": 39.5
+        },
+        {
+          "offset": -154,
+          "minutes": 580,
+          "awake": 8,
+          "rem": 167,
+          "deep": 47.5
+        },
+        {
+          "offset": -153,
+          "minutes": 453,
+          "awake": 2.5,
+          "rem": 118.5,
+          "deep": 53.5
+        },
+        {
+          "offset": -152,
+          "minutes": 418,
+          "awake": 58,
+          "rem": 96.5,
+          "deep": 30.5
+        },
+        {
+          "offset": -151,
+          "minutes": 433.5,
+          "awake": 61.5,
+          "rem": 118,
+          "deep": 46.5
+        },
+        {
+          "offset": -150,
+          "minutes": 474.5,
+          "awake": 12,
+          "rem": 127,
+          "deep": 25.5
+        },
+        {
+          "offset": -149,
+          "minutes": 422,
+          "awake": 20,
+          "rem": 105,
+          "deep": 7.5
+        },
+        {
+          "offset": -148,
+          "minutes": 587,
+          "awake": 56.5,
+          "rem": 93,
+          "deep": 68.5
+        },
+        {
+          "offset": -147,
+          "minutes": 546.5,
+          "awake": 10.5,
+          "rem": 168,
+          "deep": 63.5
+        },
+        {
+          "offset": -146,
+          "minutes": 401,
+          "awake": 12.5,
+          "rem": 109,
+          "deep": 57.5
+        },
+        {
+          "offset": -145,
+          "minutes": 416,
+          "awake": 8,
+          "rem": 94,
+          "deep": 52
+        },
+        {
+          "offset": -144,
+          "minutes": 525,
+          "awake": 5.5,
+          "rem": 110,
+          "deep": 50
+        },
+        {
+          "offset": -143,
+          "minutes": 436,
+          "awake": 116.5,
+          "rem": 90,
+          "deep": 68
+        },
+        {
+          "offset": -142,
+          "minutes": 305,
+          "awake": 2,
+          "rem": 68,
+          "deep": 35
+        },
+        {
+          "offset": -141,
+          "minutes": 435.5,
+          "awake": 26.5,
+          "rem": 117,
+          "deep": 45
+        },
+        {
+          "offset": -140,
+          "minutes": 439,
+          "awake": 13,
+          "rem": 127.5,
+          "deep": 20
+        },
+        {
+          "offset": -139,
+          "minutes": 526,
+          "awake": 12,
+          "rem": 130,
+          "deep": 53.5
+        },
+        {
+          "offset": -138,
+          "minutes": 499,
+          "awake": 18,
+          "rem": 125.5,
+          "deep": 46
+        },
+        {
+          "offset": -137,
+          "minutes": 506,
+          "awake": 7,
+          "rem": 131.5,
+          "deep": 39.5
+        },
+        {
+          "offset": -136,
+          "minutes": 526.5,
+          "awake": 14,
+          "rem": 135,
+          "deep": 41.5
+        },
+        {
+          "offset": -135,
+          "minutes": 425,
+          "awake": 63,
+          "rem": 90,
+          "deep": 8.5
+        },
+        {
+          "offset": -134,
+          "minutes": 407.5,
+          "awake": 27,
+          "rem": 108.5,
+          "deep": 22
+        },
+        {
+          "offset": -133,
+          "minutes": 325.5,
+          "awake": 24,
+          "rem": 62,
+          "deep": 53
+        },
+        {
+          "offset": -132,
+          "minutes": 602.5,
+          "awake": 10,
+          "rem": 192,
+          "deep": 64.5
+        },
+        {
+          "offset": -131,
+          "minutes": 480,
+          "awake": 12.5,
+          "rem": 90,
+          "deep": 71
+        },
+        {
+          "offset": -130,
+          "minutes": 476.5,
+          "awake": 40.5,
+          "rem": 103.5,
+          "deep": 58
+        },
+        {
+          "offset": -129,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": -128,
+          "minutes": 445.5,
+          "awake": 28.5,
+          "rem": 96,
+          "deep": 40
+        },
+        {
+          "offset": -127,
+          "minutes": 588.5,
+          "awake": 75,
+          "rem": 163,
+          "deep": 47
+        },
+        {
+          "offset": -126,
+          "minutes": 605.5,
+          "awake": 32,
+          "rem": 171,
+          "deep": 51
+        },
+        {
+          "offset": -125,
+          "minutes": 398,
+          "awake": 222,
+          "rem": 82,
+          "deep": 48
+        },
+        {
+          "offset": -124,
+          "minutes": 534.5,
+          "awake": 17.5,
+          "rem": 174,
+          "deep": 64.5
+        },
+        {
+          "offset": -123,
+          "minutes": 322.5,
+          "awake": 5,
+          "rem": 70.5,
+          "deep": 68
+        },
+        {
+          "offset": -122,
+          "minutes": 433.5,
+          "awake": 13.5,
+          "rem": 108,
+          "deep": 20.5
+        },
+        {
+          "offset": -121,
+          "minutes": 495,
+          "awake": 10.5,
+          "rem": 149,
+          "deep": 47
+        },
+        {
+          "offset": -120,
+          "minutes": 459.5,
+          "awake": 13,
+          "rem": 100,
+          "deep": 59.5
+        },
+        {
+          "offset": -119,
+          "minutes": 528,
+          "awake": 20.5,
+          "rem": 144,
+          "deep": 40.5
+        },
+        {
+          "offset": -118,
+          "minutes": 498,
+          "awake": 24,
+          "rem": 140.5,
+          "deep": 39.5
+        },
+        {
+          "offset": -117,
+          "minutes": 444,
+          "awake": 8.5,
+          "rem": 105.5,
+          "deep": 15.5
+        },
+        {
+          "offset": -116,
+          "minutes": 425.5,
+          "awake": 22,
+          "rem": 107.5,
+          "deep": 64.5
+        },
+        {
+          "offset": -115,
+          "minutes": 562,
+          "awake": 10.5,
+          "rem": 139,
+          "deep": 49.5
+        },
+        {
+          "offset": -114,
+          "minutes": 492,
+          "awake": 38.5,
+          "rem": 106,
+          "deep": 55
+        },
+        {
+          "offset": -113,
+          "minutes": 470,
+          "awake": 25.5,
+          "rem": 102,
+          "deep": 40.5
+        },
+        {
+          "offset": -112,
+          "minutes": 505.5,
+          "awake": 17.5,
+          "rem": 119,
+          "deep": 34.5
+        },
+        {
+          "offset": -111,
+          "minutes": 527.5,
+          "awake": 6,
+          "rem": 125.5,
+          "deep": 47.5
+        },
+        {
+          "offset": -110,
+          "minutes": 461,
+          "awake": 14,
+          "rem": 118.5,
+          "deep": 40.5
+        },
+        {
+          "offset": -109,
+          "minutes": 487,
+          "awake": 12.5,
+          "rem": 126.5,
+          "deep": 32.5
+        },
+        {
+          "offset": -108,
+          "minutes": 405,
+          "awake": 34,
+          "rem": 88.5,
+          "deep": 37.5
+        },
+        {
+          "offset": -107,
+          "minutes": 554.5,
+          "awake": 6.5,
+          "rem": 144,
+          "deep": 58.5
+        },
+        {
+          "offset": -106,
+          "minutes": 508,
+          "awake": 11.5,
+          "rem": 153.5,
+          "deep": 38
+        },
+        {
+          "offset": -105,
+          "minutes": 420,
+          "awake": 28.5,
+          "rem": 93,
+          "deep": 40
+        },
+        {
+          "offset": -104,
+          "minutes": 506.5,
+          "awake": 7.5,
+          "rem": 133,
+          "deep": 72
+        },
+        {
+          "offset": -103,
+          "minutes": 494.5,
+          "awake": 9,
+          "rem": 123,
+          "deep": 72
+        },
+        {
+          "offset": -102,
+          "minutes": 456.5,
+          "awake": 53,
+          "rem": 116,
+          "deep": 51
+        },
+        {
+          "offset": -101,
+          "minutes": 516.5,
+          "awake": 18.5,
+          "rem": 116.5,
+          "deep": 54
+        },
+        {
+          "offset": -100,
+          "minutes": 550,
+          "awake": 6.5,
+          "rem": 155,
+          "deep": 68.5
+        },
+        {
+          "offset": -99,
+          "minutes": 523.5,
+          "awake": 28,
+          "rem": 123,
+          "deep": 26
+        },
+        {
+          "offset": -98,
+          "minutes": 558,
+          "awake": 12.5,
+          "rem": 135.5,
+          "deep": 65.5
+        },
+        {
+          "offset": -97,
+          "minutes": 464,
+          "awake": 138.5,
+          "rem": 70,
+          "deep": 78
+        },
+        {
+          "offset": -96,
+          "minutes": 602.5,
+          "awake": 10.5,
+          "rem": 150,
+          "deep": 45
+        },
+        {
+          "offset": -95,
+          "minutes": 507,
+          "awake": 4.5,
+          "rem": 138.5,
+          "deep": 64
+        },
+        {
+          "offset": -94,
+          "minutes": 495.5,
+          "awake": 16,
+          "rem": 130.5,
+          "deep": 38
+        },
+        {
+          "offset": -93,
+          "minutes": 286.5,
+          "awake": 3,
+          "rem": 55.5,
+          "deep": 42
+        },
+        {
+          "offset": -92,
+          "minutes": 531,
+          "awake": 9.5,
+          "rem": 117.5,
+          "deep": 41
+        },
+        {
+          "offset": -91,
+          "minutes": 391,
+          "awake": 63.5,
+          "rem": 87.5,
+          "deep": 46.5
+        },
+        {
+          "offset": -90,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": -89,
+          "minutes": 503.5,
+          "awake": 14,
+          "rem": 156,
+          "deep": 66
+        },
+        {
+          "offset": -88,
+          "minutes": 451.5,
+          "awake": 12.5,
+          "rem": 109,
+          "deep": 52.5
+        },
+        {
+          "offset": -87,
+          "minutes": 537,
+          "awake": 23.5,
+          "rem": 150,
+          "deep": 59.5
+        },
+        {
+          "offset": -86,
+          "minutes": 506,
+          "awake": 22.5,
+          "rem": 141,
+          "deep": 39
+        },
+        {
+          "offset": -85,
+          "minutes": 465.5,
+          "awake": 3,
+          "rem": 136.5,
+          "deep": 82.5
+        },
+        {
+          "offset": -84,
+          "minutes": 534,
+          "awake": 23.5,
+          "rem": 141.5,
+          "deep": 56
+        },
+        {
+          "offset": -83,
+          "minutes": 597,
+          "awake": 21,
+          "rem": 155.5,
+          "deep": 69.5
+        },
+        {
+          "offset": -82,
+          "minutes": 376,
+          "awake": 11,
+          "rem": 84.5,
+          "deep": 44
+        },
+        {
+          "offset": -81,
+          "minutes": 434,
+          "awake": 169.5,
+          "rem": 111.5,
+          "deep": 63.5
+        },
+        {
+          "offset": -80,
+          "minutes": 568,
+          "awake": 8.5,
+          "rem": 151.5,
+          "deep": 45.5
+        },
+        {
+          "offset": -79,
+          "minutes": 474,
+          "awake": 14,
+          "rem": 105.5,
+          "deep": 51.5
+        },
+        {
+          "offset": -78,
+          "minutes": 452,
+          "awake": 51,
+          "rem": 116.5,
+          "deep": 37
+        },
+        {
+          "offset": -77,
+          "minutes": 448.5,
+          "awake": 170.5,
+          "rem": 68,
+          "deep": 27.5
+        },
+        {
+          "offset": -76,
+          "minutes": 551,
+          "awake": 22.5,
+          "rem": 171,
+          "deep": 36.5
+        },
+        {
+          "offset": -75,
+          "minutes": 372.5,
+          "awake": 92,
+          "rem": 71,
+          "deep": 58.5
+        },
+        {
+          "offset": -74,
+          "minutes": 466,
+          "awake": 2.5,
+          "rem": 132,
+          "deep": 34.5
+        },
+        {
+          "offset": -73,
+          "minutes": 536,
+          "awake": 14.5,
+          "rem": 113,
+          "deep": 58.5
+        },
+        {
+          "offset": -72,
+          "minutes": 435.5,
+          "awake": 24,
+          "rem": 98,
+          "deep": 76.5
+        },
+        {
+          "offset": -71,
+          "minutes": 498,
+          "awake": 7,
+          "rem": 149.5,
+          "deep": 55.5
+        },
+        {
+          "offset": -70,
+          "minutes": 574.5,
+          "awake": 15,
+          "rem": 151.5,
+          "deep": 58.5
+        },
+        {
+          "offset": -69,
+          "minutes": 437,
+          "awake": 7,
+          "rem": 104,
+          "deep": 35
+        },
+        {
+          "offset": -68,
+          "minutes": 557,
+          "awake": 7.5,
+          "rem": 120.5,
+          "deep": 34.5
+        },
+        {
+          "offset": -67,
+          "minutes": 531,
+          "awake": 12.5,
+          "rem": 133,
+          "deep": 44
+        },
+        {
+          "offset": -66,
+          "minutes": 512.5,
+          "awake": 5.5,
+          "rem": 163,
+          "deep": 53.5
+        },
+        {
+          "offset": -65,
+          "minutes": 509,
+          "awake": 54.5,
+          "rem": 138.5,
+          "deep": 57
+        },
+        {
+          "offset": -64,
+          "minutes": 482.5,
+          "awake": 38,
+          "rem": 148.5,
+          "deep": 57.5
+        },
+        {
+          "offset": -63,
+          "minutes": 445.5,
+          "awake": 190.5,
+          "rem": 112,
+          "deep": 35.5
+        },
+        {
+          "offset": -62,
+          "minutes": 452,
+          "awake": 10,
+          "rem": 114.5,
+          "deep": 33.5
+        },
+        {
+          "offset": -61,
+          "minutes": 565.5,
+          "awake": 42,
+          "rem": 100.5,
+          "deep": 71
+        },
+        {
+          "offset": -60,
+          "minutes": 426.5,
+          "awake": 23,
+          "rem": 132,
+          "deep": 25.5
+        },
+        {
+          "offset": -59,
+          "minutes": 514.5,
+          "awake": 15.5,
+          "rem": 149.5,
+          "deep": 78
+        },
+        {
+          "offset": -58,
+          "minutes": 491.5,
+          "awake": 10.5,
+          "rem": 171.5,
+          "deep": 64
+        },
+        {
+          "offset": -57,
+          "minutes": 387,
+          "awake": 2,
+          "rem": 111.5,
+          "deep": 28
+        },
+        {
+          "offset": -56,
+          "minutes": 555.5,
+          "awake": 63.5,
+          "rem": 135.5,
+          "deep": 51.5
+        },
+        {
+          "offset": -55,
+          "minutes": 527.5,
+          "awake": 11.5,
+          "rem": 119.5,
+          "deep": 51.5
+        },
+        {
+          "offset": -54,
+          "minutes": 488,
+          "awake": 17.5,
+          "rem": 149,
+          "deep": 36
+        },
+        {
+          "offset": -53,
+          "minutes": 427,
+          "awake": 48.5,
+          "rem": 97.5,
+          "deep": 31.5
+        },
+        {
+          "offset": -52,
+          "minutes": 466.3,
+          "awake": 80.8,
+          "rem": 132.2,
+          "deep": 54.9
+        },
+        {
+          "offset": -51,
+          "minutes": 499.7,
+          "awake": 22.4,
+          "rem": 130.2,
+          "deep": 48.9
+        },
+        {
+          "offset": -50,
+          "minutes": 372.6,
+          "awake": 14.5,
+          "rem": 82.3,
+          "deep": 34.9
+        },
+        {
+          "offset": -49,
+          "minutes": 467.3,
+          "awake": 24.4,
+          "rem": 139.1,
+          "deep": 27.9
+        },
+        {
+          "offset": -48,
+          "minutes": 503.2,
+          "awake": 15.4,
+          "rem": 172.5,
+          "deep": 33.4
+        },
+        {
+          "offset": -47,
+          "minutes": 520.2,
+          "awake": 33.4,
+          "rem": 116.2,
+          "deep": 25.4
+        },
+        {
+          "offset": -46,
+          "minutes": 406.0,
+          "awake": 177.4,
+          "rem": 112.2,
+          "deep": 42.4
+        },
+        {
+          "offset": -45,
+          "minutes": 408.5,
+          "awake": 10.0,
+          "rem": 89.8,
+          "deep": 46.4
+        },
+        {
+          "offset": -44,
+          "minutes": 366.1,
+          "awake": 9.5,
+          "rem": 123.7,
+          "deep": 39.9
+        },
+        {
+          "offset": -43,
+          "minutes": 523.2,
+          "awake": 12.0,
+          "rem": 174.6,
+          "deep": 55.9
+        },
+        {
+          "offset": -42,
+          "minutes": 505.2,
+          "awake": 19.9,
+          "rem": 159.1,
+          "deep": 57.8
+        },
+        {
+          "offset": -41,
+          "minutes": 475.2,
+          "awake": 23.9,
+          "rem": 136.1,
+          "deep": 51.4
+        },
+        {
+          "offset": -40,
+          "minutes": 394.0,
+          "awake": 34.9,
+          "rem": 102.2,
+          "deep": 44.4
+        },
+        {
+          "offset": -39,
+          "minutes": 424.4,
+          "awake": 5.0,
+          "rem": 116.2,
+          "deep": 28.4
+        },
+        {
+          "offset": -38,
+          "minutes": 563.0,
+          "awake": 10.5,
+          "rem": 183.0,
+          "deep": 42.4
+        },
+        {
+          "offset": -37,
+          "minutes": 378.0,
+          "awake": 8.5,
+          "rem": 115.7,
+          "deep": 33.9
+        },
+        {
+          "offset": -36,
+          "minutes": 559.0,
+          "awake": 20.4,
+          "rem": 156.6,
+          "deep": 29.4
+        },
+        {
+          "offset": -35,
+          "minutes": 524.5,
+          "awake": 22.9,
+          "rem": 126.8,
+          "deep": 29.3
+        },
+        {
+          "offset": -34,
+          "minutes": 445.0,
+          "awake": 15.9,
+          "rem": 128.3,
+          "deep": 63.1
+        },
+        {
+          "offset": -33,
+          "minutes": 407.2,
+          "awake": 20.4,
+          "rem": 98.4,
+          "deep": 24.9
+        },
+        {
+          "offset": -32,
+          "minutes": 508.1,
+          "awake": 17.9,
+          "rem": 164.1,
+          "deep": 56.2
+        },
+        {
+          "offset": -31,
+          "minutes": 292.3,
+          "awake": 4.5,
+          "rem": 72.6,
+          "deep": 59.7
+        },
+        {
+          "offset": -30,
+          "minutes": 511.1,
+          "awake": 56.7,
+          "rem": 115.3,
+          "deep": 95.0
+        },
+        {
+          "offset": -29,
+          "minutes": 384.3,
+          "awake": 30.3,
+          "rem": 107.9,
+          "deep": 36.8
+        },
+        {
+          "offset": -28,
+          "minutes": 502.2,
+          "awake": 94.5,
+          "rem": 157.1,
+          "deep": 53.7
+        },
+        {
+          "offset": -27,
+          "minutes": 488.2,
+          "awake": 59.8,
+          "rem": 119.7,
+          "deep": 45.9
+        },
+        {
+          "offset": -26,
+          "minutes": 414.4,
+          "awake": 26.4,
+          "rem": 115.2,
+          "deep": 32.4
+        },
+        {
+          "offset": -25,
+          "minutes": 483.8,
+          "awake": 16.9,
+          "rem": 147.6,
+          "deep": 31.9
+        },
+        {
+          "offset": -24,
+          "minutes": 441.9,
+          "awake": 54.3,
+          "rem": 125.7,
+          "deep": 75.8
+        },
+        {
+          "offset": -23,
+          "minutes": 479.8,
+          "awake": 8.5,
+          "rem": 133.2,
+          "deep": 50.9
+        },
+        {
+          "offset": -22,
+          "minutes": 528.5,
+          "awake": 33.8,
+          "rem": 165.1,
+          "deep": 48.7
+        },
+        {
+          "offset": -21,
+          "minutes": 381.3,
+          "awake": 33.3,
+          "rem": 101.9,
+          "deep": 54.2
+        },
+        {
+          "offset": -20,
+          "minutes": 477.3,
+          "awake": 56.7,
+          "rem": 126.3,
+          "deep": 63.6
+        },
+        {
+          "offset": -19,
+          "minutes": 493.2,
+          "awake": 12.9,
+          "rem": 138.2,
+          "deep": 51.2
+        },
+        {
+          "offset": -18,
+          "minutes": 420.1,
+          "awake": 12.9,
+          "rem": 126.3,
+          "deep": 24.9
+        },
+        {
+          "offset": -17,
+          "minutes": 450.4,
+          "awake": 15.4,
+          "rem": 129.3,
+          "deep": 51.7
+        },
+        {
+          "offset": -16,
+          "minutes": 437.8,
+          "awake": 8.5,
+          "rem": 159.1,
+          "deep": 52.4
+        },
+        {
+          "offset": -15,
+          "minutes": 399.4,
+          "awake": 78.7,
+          "rem": 86.3,
+          "deep": 61.3
+        },
+        {
+          "offset": -14,
+          "minutes": 524.2,
+          "awake": 41.4,
+          "rem": 151.1,
+          "deep": 57.9
+        },
+        {
+          "offset": -13,
+          "minutes": 499.2,
+          "awake": 23.9,
+          "rem": 111.7,
+          "deep": 45.4
+        },
+        {
+          "offset": -12,
+          "minutes": 533.1,
+          "awake": 21.4,
+          "rem": 142.6,
+          "deep": 50.4
+        },
+        {
+          "offset": -11,
+          "minutes": 510.2,
+          "awake": 11.5,
+          "rem": 131.2,
+          "deep": 43.4
+        },
+        {
+          "offset": -10,
+          "minutes": 453.8,
+          "awake": 19.9,
+          "rem": 144.1,
+          "deep": 37.4
+        },
+        {
+          "offset": -9,
+          "minutes": 428.9,
+          "awake": 15.0,
+          "rem": 114.7,
+          "deep": 30.9
+        },
+        {
+          "offset": -8,
+          "minutes": 341.3,
+          "awake": 8.5,
+          "rem": 91.7,
+          "deep": 38.6
+        },
+        {
+          "offset": -7,
+          "minutes": 404.4,
+          "awake": 9.0,
+          "rem": 130.2,
+          "deep": 29.4
+        },
+        {
+          "offset": -6,
+          "minutes": 479.2,
+          "awake": 74.2,
+          "rem": 133.6,
+          "deep": 46.4
+        },
+        {
+          "offset": -5,
+          "minutes": 381.0,
+          "awake": 7.0,
+          "rem": 107.7,
+          "deep": 39.4
+        },
+        {
+          "offset": -4,
+          "minutes": 500.2,
+          "awake": 28.9,
+          "rem": 155.1,
+          "deep": 62.3
+        },
+        {
+          "offset": -3,
+          "minutes": 516.6,
+          "awake": 28.3,
+          "rem": 125.8,
+          "deep": 41.3
+        },
+        {
+          "offset": -2,
+          "minutes": 509.1,
+          "awake": 28.8,
+          "rem": 138.2,
+          "deep": 27.8
+        },
+        {
+          "offset": -1,
+          "minutes": 485.7,
+          "awake": 34.8,
+          "rem": 149.1,
+          "deep": 47.2
+        },
+        {
+          "offset": 0,
+          "minutes": 97.7,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 1,
+          "minutes": 266.1,
+          "awake": 85.7,
+          "rem": 88.2,
+          "deep": 35.1
+        },
+        {
+          "offset": 2,
+          "minutes": 405.4,
+          "awake": 158.9,
+          "rem": 109.7,
+          "deep": 59.8
+        },
+        {
+          "offset": 3,
+          "minutes": 337.6,
+          "awake": 29.9,
+          "rem": 78.8,
+          "deep": 82.3
+        },
+        {
+          "offset": 4,
+          "minutes": 402.7,
+          "awake": 97.9,
+          "rem": 92.5,
+          "deep": 52.2
+        },
+        {
+          "offset": 5,
+          "minutes": 428.1,
+          "awake": 109.9,
+          "rem": 81.5,
+          "deep": 48.2
+        },
+        {
+          "offset": 6,
+          "minutes": 518.5,
+          "awake": 19.9,
+          "rem": 149.2,
+          "deep": 36.8
+        },
+        {
+          "offset": 7,
+          "minutes": 382.3,
+          "awake": 59.2,
+          "rem": 84.0,
+          "deep": 49.7
+        },
+        {
+          "offset": 8,
+          "minutes": 540.4,
+          "awake": 5.5,
+          "rem": 170.0,
+          "deep": 77.1
+        },
+        {
+          "offset": 9,
+          "minutes": 469.3,
+          "awake": 20.4,
+          "rem": 152.1,
+          "deep": 37.3
+        },
+        {
+          "offset": 10,
+          "minutes": 470.8,
+          "awake": 8.5,
+          "rem": 134.2,
+          "deep": 47.7
+        },
+        {
+          "offset": 11,
+          "minutes": 377.9,
+          "awake": 94.5,
+          "rem": 69.1,
+          "deep": 45.7
+        },
+        {
+          "offset": 12,
+          "minutes": 369.9,
+          "awake": 39.8,
+          "rem": 89.0,
+          "deep": 65.6
+        },
+        {
+          "offset": 13,
+          "minutes": 397.7,
+          "awake": 65.7,
+          "rem": 92.5,
+          "deep": 67.6
+        },
+        {
+          "offset": 14,
+          "minutes": 341.6,
+          "awake": 80.5,
+          "rem": 58.2,
+          "deep": 39.8
+        },
+        {
+          "offset": 15,
+          "minutes": 396.5,
+          "awake": 18.9,
+          "rem": 124.2,
+          "deep": 53.4
+        },
+        {
+          "offset": 16,
+          "minutes": 330.1,
+          "awake": 78.7,
+          "rem": 79.8,
+          "deep": 62.8
+        },
+        {
+          "offset": 17,
+          "minutes": 436.9,
+          "awake": 5.0,
+          "rem": 122.7,
+          "deep": 98.3
+        },
+        {
+          "offset": 18,
+          "minutes": 408.0,
+          "awake": 48.8,
+          "rem": 108.7,
+          "deep": 79.3
+        },
+        {
+          "offset": 19,
+          "minutes": 473.3,
+          "awake": 19.9,
+          "rem": 129.7,
+          "deep": 57.4
+        },
+        {
+          "offset": 20,
+          "minutes": 453.4,
+          "awake": 9.9,
+          "rem": 119.8,
+          "deep": 44.7
+        },
+        {
+          "offset": 21,
+          "minutes": 433.0,
+          "awake": 42.8,
+          "rem": 135.2,
+          "deep": 34.3
+        },
+        {
+          "offset": 22,
+          "minutes": 484.1,
+          "awake": 52.6,
+          "rem": 125.3,
+          "deep": 35.1
+        },
+        {
+          "offset": 23,
+          "minutes": 431.4,
+          "awake": 12.5,
+          "rem": 129.6,
+          "deep": 29.9
+        },
+        {
+          "offset": 24,
+          "minutes": 445.8,
+          "awake": 22.9,
+          "rem": 121.2,
+          "deep": 53.4
+        },
+        {
+          "offset": 25,
+          "minutes": 442.9,
+          "awake": 6.0,
+          "rem": 134.7,
+          "deep": 40.4
+        },
+        {
+          "offset": 26,
+          "minutes": 448.9,
+          "awake": 14.4,
+          "rem": 127.7,
+          "deep": 37.4
+        },
+        {
+          "offset": 27,
+          "minutes": 342.1,
+          "awake": 69.3,
+          "rem": 81.8,
+          "deep": 43.9
+        },
+        {
+          "offset": 28,
+          "minutes": 402.0,
+          "awake": 5.5,
+          "rem": 118.2,
+          "deep": 52.4
+        },
+        {
+          "offset": 29,
+          "minutes": 329.7,
+          "awake": 38.4,
+          "rem": 62.3,
+          "deep": 43.4
+        },
+        {
+          "offset": 30,
+          "minutes": 394.4,
+          "awake": 174.4,
+          "rem": 69.7,
+          "deep": 36.1
+        },
+        {
+          "offset": 31,
+          "minutes": 415.4,
+          "awake": 5.5,
+          "rem": 131.2,
+          "deep": 37.9
+        },
+        {
+          "offset": 32,
+          "minutes": 333.6,
+          "awake": 17.4,
+          "rem": 77.6,
+          "deep": 31.3
+        },
+        {
+          "offset": 33,
+          "minutes": 444.5,
+          "awake": 11.4,
+          "rem": 156.1,
+          "deep": 47.2
+        },
+        {
+          "offset": 34,
+          "minutes": 391.0,
+          "awake": 64.3,
+          "rem": 143.6,
+          "deep": 31.9
+        },
+        {
+          "offset": 35,
+          "minutes": 438.4,
+          "awake": 22.4,
+          "rem": 114.2,
+          "deep": 67.3
+        },
+        {
+          "offset": 36,
+          "minutes": 415.9,
+          "awake": 63.8,
+          "rem": 157.1,
+          "deep": 41.4
+        },
+        {
+          "offset": 37,
+          "minutes": 435.9,
+          "awake": 57.3,
+          "rem": 148.6,
+          "deep": 61.8
+        },
+        {
+          "offset": 38,
+          "minutes": 374.0,
+          "awake": 66.3,
+          "rem": 105.2,
+          "deep": 26.4
+        },
+        {
+          "offset": 39,
+          "minutes": 398.4,
+          "awake": 127.6,
+          "rem": 107.2,
+          "deep": 44.4
+        },
+        {
+          "offset": 40,
+          "minutes": 436.4,
+          "awake": 9.0,
+          "rem": 112.7,
+          "deep": 54.4
+        },
+        {
+          "offset": 41,
+          "minutes": 392.4,
+          "awake": 91.7,
+          "rem": 64.1,
+          "deep": 35.6
+        },
+        {
+          "offset": 42,
+          "minutes": 466.3,
+          "awake": 11.5,
+          "rem": 150.6,
+          "deep": 72.8
+        },
+        {
+          "offset": 43,
+          "minutes": 405.5,
+          "awake": 13.9,
+          "rem": 111.2,
+          "deep": 38.4
+        },
+        {
+          "offset": 44,
+          "minutes": 324.3,
+          "awake": 25.6,
+          "rem": 82.2,
+          "deep": 39.1
+        },
+        {
+          "offset": 45,
+          "minutes": 454.3,
+          "awake": 27.9,
+          "rem": 125.6,
+          "deep": 70.3
+        },
+        {
+          "offset": 46,
+          "minutes": 396.5,
+          "awake": 12.9,
+          "rem": 105.2,
+          "deep": 32.9
+        },
+        {
+          "offset": 47,
+          "minutes": 451.3,
+          "awake": 29.4,
+          "rem": 152.1,
+          "deep": 24.9
+        },
+        {
+          "offset": 48,
+          "minutes": 456.3,
+          "awake": 9.5,
+          "rem": 128.7,
+          "deep": 27.9
+        },
+        {
+          "offset": 49,
+          "minutes": 402.0,
+          "awake": 96.6,
+          "rem": 103.7,
+          "deep": 59.4
+        },
+        {
+          "offset": 50,
+          "minutes": 430.0,
+          "awake": 69.2,
+          "rem": 106.8,
+          "deep": 54.1
+        },
+        {
+          "offset": 51,
+          "minutes": 362.6,
+          "awake": 7.5,
+          "rem": 77.3,
+          "deep": 34.9
+        },
+        {
+          "offset": 52,
+          "minutes": 374.9,
+          "awake": 10.0,
+          "rem": 102.2,
+          "deep": 31.6
+        },
+        {
+          "offset": 53,
+          "minutes": 402.4,
+          "awake": 16.9,
+          "rem": 102.2,
+          "deep": 52.9
+        },
+        {
+          "offset": 54,
+          "minutes": 378.5,
+          "awake": 7.0,
+          "rem": 106.7,
+          "deep": 48.9
+        },
+        {
+          "offset": 55,
+          "minutes": 517.2,
+          "awake": 51.6,
+          "rem": 123.8,
+          "deep": 21.5
+        },
+        {
+          "offset": 56,
+          "minutes": 504.7,
+          "awake": 21.0,
+          "rem": 125.3,
+          "deep": 27.6
+        },
+        {
+          "offset": 57,
+          "minutes": 313.7,
+          "awake": 13.9,
+          "rem": 78.6,
+          "deep": 48.7
+        },
+        {
+          "offset": 58,
+          "minutes": 418.1,
+          "awake": 21.9,
+          "rem": 108.9,
+          "deep": 84.5
+        },
+        {
+          "offset": 59,
+          "minutes": 380.8,
+          "awake": 22.4,
+          "rem": 101.4,
+          "deep": 61.2
+        },
+        {
+          "offset": 60,
+          "minutes": 449.8,
+          "awake": 37.9,
+          "rem": 114.7,
+          "deep": 32.4
+        },
+        {
+          "offset": 61,
+          "minutes": 468.3,
+          "awake": 16.4,
+          "rem": 100.7,
+          "deep": 35.9
+        },
+        {
+          "offset": 62,
+          "minutes": 306.7,
+          "awake": 66.8,
+          "rem": 82.3,
+          "deep": 66.8
+        },
+        {
+          "offset": 63,
+          "minutes": 421.9,
+          "awake": 34.9,
+          "rem": 104.7,
+          "deep": 67.3
+        },
+        {
+          "offset": 64,
+          "minutes": 464.7,
+          "awake": 22.4,
+          "rem": 148.1,
+          "deep": 40.4
+        },
+        {
+          "offset": 65,
+          "minutes": 396.9,
+          "awake": 7.5,
+          "rem": 106.2,
+          "deep": 42.9
+        },
+        {
+          "offset": 66,
+          "minutes": 405.4,
+          "awake": 26.9,
+          "rem": 105.2,
+          "deep": 40.4
+        },
+        {
+          "offset": 67,
+          "minutes": 398.4,
+          "awake": 11.5,
+          "rem": 114.7,
+          "deep": 46.4
+        },
+        {
+          "offset": 68,
+          "minutes": 384.0,
+          "awake": 27.4,
+          "rem": 118.2,
+          "deep": 28.4
+        },
+        {
+          "offset": 69,
+          "minutes": 408.4,
+          "awake": 44.4,
+          "rem": 80.8,
+          "deep": 36.4
+        },
+        {
+          "offset": 70,
+          "minutes": 332.1,
+          "awake": 9.5,
+          "rem": 54.4,
+          "deep": 57.4
+        },
+        {
+          "offset": 71,
+          "minutes": 436.9,
+          "awake": 3.0,
+          "rem": 151.1,
+          "deep": 27.9
+        },
+        {
+          "offset": 72,
+          "minutes": 414.9,
+          "awake": 26.9,
+          "rem": 88.3,
+          "deep": 78.3
+        },
+        {
+          "offset": 73,
+          "minutes": 419.4,
+          "awake": 18.4,
+          "rem": 110.2,
+          "deep": 50.4
+        },
+        {
+          "offset": 74,
+          "minutes": 342.1,
+          "awake": 11.9,
+          "rem": 97.9,
+          "deep": 41.3
+        },
+        {
+          "offset": 75,
+          "minutes": 377.9,
+          "awake": 42.8,
+          "rem": 101.4,
+          "deep": 44.2
+        },
+        {
+          "offset": 76,
+          "minutes": 413.0,
+          "awake": 4.5,
+          "rem": 97.7,
+          "deep": 51.1
+        },
+        {
+          "offset": 77,
+          "minutes": 413.2,
+          "awake": 5.0,
+          "rem": 137.2,
+          "deep": 52.2
+        },
+        {
+          "offset": 78,
+          "minutes": 436.0,
+          "awake": 12.4,
+          "rem": 146.7,
+          "deep": 27.3
+        },
+        {
+          "offset": 79,
+          "minutes": 400.7,
+          "awake": 10.4,
+          "rem": 104.9,
+          "deep": 27.8
+        },
+        {
+          "offset": 80,
+          "minutes": 378.9,
+          "awake": 26.8,
+          "rem": 79.1,
+          "deep": 64.6
+        },
+        {
+          "offset": 81,
+          "minutes": 421.1,
+          "awake": 13.4,
+          "rem": 139.7,
+          "deep": 63.1
+        },
+        {
+          "offset": 82,
+          "minutes": 480.3,
+          "awake": 88.5,
+          "rem": 130.3,
+          "deep": 31.8
+        },
+        {
+          "offset": 83,
+          "minutes": 436.0,
+          "awake": 50.6,
+          "rem": 106.7,
+          "deep": 42.6
+        },
+        {
+          "offset": 84,
+          "minutes": 536.2,
+          "awake": 35.6,
+          "rem": 143.8,
+          "deep": 62.1
+        },
+        {
+          "offset": 85,
+          "minutes": 389.3,
+          "awake": 46.7,
+          "rem": 99.9,
+          "deep": 36.3
+        },
+        {
+          "offset": 86,
+          "minutes": 515.6,
+          "awake": 23.4,
+          "rem": 103.9,
+          "deep": 56.7
+        },
+        {
+          "offset": 87,
+          "minutes": 294.3,
+          "awake": 82.5,
+          "rem": 71.6,
+          "deep": 32.3
+        },
+        {
+          "offset": 88,
+          "minutes": 460.4,
+          "awake": 20.4,
+          "rem": 137.7,
+          "deep": 64.6
+        },
+        {
+          "offset": 89,
+          "minutes": 491.2,
+          "awake": 22.9,
+          "rem": 146.7,
+          "deep": 45.7
+        },
+        {
+          "offset": 90,
+          "minutes": 457.9,
+          "awake": 17.9,
+          "rem": 136.7,
+          "deep": 42.3
+        },
+        {
+          "offset": 91,
+          "minutes": 467.9,
+          "awake": 15.4,
+          "rem": 120.3,
+          "deep": 39.8
+        },
+        {
+          "offset": 92,
+          "minutes": 440.0,
+          "awake": 30.3,
+          "rem": 129.8,
+          "deep": 53.7
+        },
+        {
+          "offset": 93,
+          "minutes": 477.8,
+          "awake": 14.9,
+          "rem": 152.6,
+          "deep": 35.3
+        },
+        {
+          "offset": 94,
+          "minutes": 508.1,
+          "awake": 21.4,
+          "rem": 136.7,
+          "deep": 54.2
+        },
+        {
+          "offset": 95,
+          "minutes": 481.6,
+          "awake": 9.0,
+          "rem": 119.5,
+          "deep": 34.2
+        },
+        {
+          "offset": 96,
+          "minutes": 367.4,
+          "awake": 13.4,
+          "rem": 97.5,
+          "deep": 49.2
+        },
+        {
+          "offset": 97,
+          "minutes": 457.4,
+          "awake": 15.9,
+          "rem": 150.6,
+          "deep": 51.2
+        },
+        {
+          "offset": 98,
+          "minutes": 443.0,
+          "awake": 13.4,
+          "rem": 111.9,
+          "deep": 26.3
+        },
+        {
+          "offset": 99,
+          "minutes": 388.4,
+          "awake": 20.5,
+          "rem": 81.2,
+          "deep": 31.1
+        },
+        {
+          "offset": 100,
+          "minutes": null,
+          "awake": null,
+          "rem": null,
+          "deep": null
+        },
+        {
+          "offset": 101,
+          "minutes": 499.2,
+          "awake": 89.2,
+          "rem": 106.7,
+          "deep": 55.4
+        },
+        {
+          "offset": 102,
+          "minutes": 468.7,
+          "awake": 22.4,
+          "rem": 122.7,
+          "deep": 42.4
+        },
+        {
+          "offset": 103,
+          "minutes": 450.3,
+          "awake": 59.8,
+          "rem": 115.7,
+          "deep": 35.4
+        },
+        {
+          "offset": 104,
+          "minutes": 419.4,
+          "awake": 76.7,
+          "rem": 77.8,
+          "deep": 43.9
+        },
+        {
+          "offset": 105,
+          "minutes": 461.3,
+          "awake": 110.6,
+          "rem": 102.7,
+          "deep": 37.4
+        },
+        {
+          "offset": 106,
+          "minutes": 515.7,
+          "awake": 44.6,
+          "rem": 169.9,
+          "deep": 28.6
+        },
+        {
+          "offset": 107,
+          "minutes": 497.7,
+          "awake": 55.8,
+          "rem": 134.1,
+          "deep": 64.8
+        },
+        {
+          "offset": 108,
+          "minutes": 441.8,
+          "awake": 95.7,
+          "rem": 96.2,
+          "deep": 37.9
+        },
+        {
+          "offset": 109,
+          "minutes": 323.6,
+          "awake": 201.8,
+          "rem": 82.8,
+          "deep": 39.4
+        },
+        {
+          "offset": 110,
+          "minutes": 531.2,
+          "awake": 49.3,
+          "rem": 157.6,
+          "deep": 66.3
+        },
+        {
+          "offset": 111,
+          "minutes": 287.2,
+          "awake": 25.9,
+          "rem": 51.9,
+          "deep": 71.8
+        },
+        {
+          "offset": 112,
+          "minutes": 517.7,
+          "awake": 39.1,
+          "rem": 144.3,
+          "deep": 47.1
+        },
+        {
+          "offset": 113,
+          "minutes": 437.9,
+          "awake": 70.8,
+          "rem": 134.2,
+          "deep": 44.4
+        },
+        {
+          "offset": 114,
+          "minutes": 295.7,
+          "awake": 60.8,
+          "rem": 46.9,
+          "deep": 39.9
+        },
+        {
+          "offset": 115,
+          "minutes": 461.3,
+          "awake": 71.2,
+          "rem": 134.1,
+          "deep": 46.9
+        },
+        {
+          "offset": 116,
+          "minutes": 498.7,
+          "awake": 19.4,
+          "rem": 160.1,
+          "deep": 55.4
+        },
+        {
+          "offset": 117,
+          "minutes": 436.5,
+          "awake": 79.7,
+          "rem": 126.8,
+          "deep": 53.6
+        },
+        {
+          "offset": 118,
+          "minutes": 421.8,
+          "awake": 8.5,
+          "rem": 114.0,
+          "deep": 47.2
+        },
+        {
+          "offset": 119,
+          "minutes": 408.9,
+          "awake": 70.8,
+          "rem": 124.2,
+          "deep": 69.3
+        },
+        {
+          "offset": 120,
+          "minutes": 510.7,
+          "awake": 13.5,
+          "rem": 150.6,
+          "deep": 60.3
+        },
+        {
+          "offset": 121,
+          "minutes": 307.7,
+          "awake": 201.8,
+          "rem": 84.8,
+          "deep": 51.9
+        },
+        {
+          "offset": 122,
+          "minutes": 451.3,
+          "awake": 87.7,
+          "rem": 123.7,
+          "deep": 65.8
+        },
+        {
+          "offset": 123,
+          "minutes": 321.2,
+          "awake": 3.5,
+          "rem": 99.3,
+          "deep": 68.3
+        },
+        {
+          "offset": 124,
+          "minutes": 389.6,
+          "awake": 60.8,
+          "rem": 126.7,
+          "deep": 61.4
+        },
+        {
+          "offset": 125,
+          "minutes": 355.1,
+          "awake": 12.5,
+          "rem": 96.3,
+          "deep": 47.4
+        },
+        {
+          "offset": 126,
+          "minutes": 370.6,
+          "awake": 3.0,
+          "rem": 111.2,
+          "deep": 42.4
+        },
+        {
+          "offset": 127,
+          "minutes": 252.4,
+          "awake": 2.5,
+          "rem": 59.4,
+          "deep": 48.9
+        },
+        {
+          "offset": 128,
+          "minutes": 418.4,
+          "awake": 57.3,
+          "rem": 114.7,
+          "deep": 49.9
+        },
+        {
+          "offset": 129,
+          "minutes": 457.3,
+          "awake": 8.5,
+          "rem": 121.7,
+          "deep": 44.9
+        },
+        {
+          "offset": 130,
+          "minutes": 442.8,
+          "awake": 56.3,
+          "rem": 150.1,
+          "deep": 57.4
+        },
+        {
+          "offset": 131,
+          "minutes": 385.0,
+          "awake": 94.6,
+          "rem": 77.8,
+          "deep": 58.4
+        },
+        {
+          "offset": 132,
+          "minutes": 415.8,
+          "awake": 15.9,
+          "rem": 102.7,
+          "deep": 39.4
+        },
+        {
+          "offset": 133,
+          "minutes": 458.8,
+          "awake": 5.5,
+          "rem": 141.1,
+          "deep": 67.8
+        },
+        {
+          "offset": 134,
+          "minutes": 389.5,
+          "awake": 62.3,
+          "rem": 76.3,
+          "deep": 78.8
+        },
+        {
+          "offset": 135,
+          "minutes": 409.4,
+          "awake": 45.3,
+          "rem": 128.7,
+          "deep": 28.9
+        },
+        {
+          "offset": 136,
+          "minutes": 463.3,
+          "awake": 67.7,
+          "rem": 161.1,
+          "deep": 25.9
+        },
+        {
+          "offset": 137,
+          "minutes": 530.6,
+          "awake": 21.9,
+          "rem": 150.1,
+          "deep": 71.8
+        },
+        {
+          "offset": 138,
+          "minutes": 390.5,
+          "awake": 6.0,
+          "rem": 120.2,
+          "deep": 31.4
+        },
+        {
+          "offset": 139,
+          "minutes": 484.2,
+          "awake": 75.2,
+          "rem": 129.2,
+          "deep": 42.9
+        },
+        {
+          "offset": 140,
+          "minutes": 487.7,
+          "awake": 25.9,
+          "rem": 147.1,
+          "deep": 59.8
+        },
+        {
+          "offset": 141,
+          "minutes": 417.4,
+          "awake": 28.9,
+          "rem": 141.6,
+          "deep": 37.9
+        },
+        {
+          "offset": 142,
+          "minutes": 445.3,
+          "awake": 22.9,
+          "rem": 138.1,
+          "deep": 39.9
+        },
+        {
+          "offset": 143,
+          "minutes": 418.9,
+          "awake": 3.5,
+          "rem": 121.2,
+          "deep": 63.3
+        },
+        {
+          "offset": 144,
+          "minutes": 383.5,
+          "awake": 5.5,
+          "rem": 112.7,
+          "deep": 40.9
+        },
+        {
+          "offset": 145,
+          "minutes": 490.7,
+          "awake": 25.4,
+          "rem": 147.1,
+          "deep": 63.8
+        },
+        {
+          "offset": 146,
+          "minutes": 521.6,
+          "awake": 4.5,
+          "rem": 164.1,
+          "deep": 58.8
+        },
+        {
+          "offset": 147,
+          "minutes": 480.7,
+          "awake": 21.4,
+          "rem": 118.7,
+          "deep": 54.4
+        },
+        {
+          "offset": 148,
+          "minutes": 423.8,
+          "awake": 81.7,
+          "rem": 135.1,
+          "deep": 49.9
+        },
+        {
+          "offset": 149,
+          "minutes": 513.6,
+          "awake": 18.4,
+          "rem": 147.1,
+          "deep": 61.8
+        },
+        {
+          "offset": 150,
+          "minutes": 441.8,
+          "awake": 37.9,
+          "rem": 143.1,
+          "deep": 26.9
+        },
+        {
+          "offset": 151,
+          "minutes": 505.1,
+          "awake": 60.3,
+          "rem": 118.2,
+          "deep": 41.4
+        },
+        {
+          "offset": 152,
+          "minutes": 518.6,
+          "awake": 15.4,
+          "rem": 130.2,
+          "deep": 87.8
+        },
+        {
+          "offset": 153,
+          "minutes": 542.0,
+          "awake": 28.9,
+          "rem": 138.6,
+          "deep": 38.9
+        },
+        {
+          "offset": 154,
+          "minutes": 497.7,
+          "awake": 14.9,
+          "rem": 129.6,
+          "deep": 42.9
+        },
+        {
+          "offset": 155,
+          "minutes": 483.7,
+          "awake": 73.7,
+          "rem": 140.6,
+          "deep": 45.9
+        },
+        {
+          "offset": 156,
+          "minutes": 425.9,
+          "awake": 153.5,
+          "rem": 105.7,
+          "deep": 45.9
+        },
+        {
+          "offset": 157,
+          "minutes": 450.8,
+          "awake": 36.4,
+          "rem": 123.2,
+          "deep": 43.9
+        },
+        {
+          "offset": 158,
+          "minutes": 471.7,
+          "awake": 19.9,
+          "rem": 136.1,
+          "deep": 48.4
+        },
+        {
+          "offset": 159,
+          "minutes": 349.8,
+          "awake": 59.1,
+          "rem": 98.2,
+          "deep": 33.1
+        },
+        {
+          "offset": 160,
+          "minutes": 489.6,
+          "awake": 92.7,
+          "rem": 100.2,
+          "deep": 35.1
+        },
+        {
+          "offset": 161,
+          "minutes": 521.5,
+          "awake": 68.7,
+          "rem": 148.6,
+          "deep": 42.9
+        },
+        {
+          "offset": 162,
+          "minutes": 476.2,
+          "awake": 6.0,
+          "rem": 127.1,
+          "deep": 53.4
+        },
+        {
+          "offset": 163,
+          "minutes": 477.7,
+          "awake": 105.1,
+          "rem": 134.1,
+          "deep": 47.9
+        },
+        {
+          "offset": 164,
+          "minutes": 472.7,
+          "awake": 10.5,
+          "rem": 139.6,
+          "deep": 42.4
+        },
+        {
+          "offset": 165,
+          "minutes": 500.2,
+          "awake": 63.8,
+          "rem": 145.6,
+          "deep": 44.4
+        },
+        {
+          "offset": 166,
+          "minutes": 546.0,
+          "awake": 13.5,
+          "rem": 154.6,
+          "deep": 47.4
+        },
+        {
+          "offset": 167,
+          "minutes": 404.4,
+          "awake": 50.8,
+          "rem": 130.2,
+          "deep": 47.9
+        },
+        {
+          "offset": 168,
+          "minutes": 458.8,
+          "awake": 157.0,
+          "rem": 128.7,
+          "deep": 25.9
+        },
+        {
+          "offset": 169,
+          "minutes": 442.3,
+          "awake": 18.9,
+          "rem": 119.7,
+          "deep": 36.9
+        },
+        {
+          "offset": 170,
+          "minutes": 441.8,
+          "awake": 68.3,
+          "rem": 85.3,
+          "deep": 37.4
+        },
+        {
+          "offset": 171,
+          "minutes": 440.8,
+          "awake": 63.8,
+          "rem": 99.7,
+          "deep": 24.9
+        },
+        {
+          "offset": 172,
+          "minutes": 435.8,
+          "awake": 68.8,
+          "rem": 110.7,
+          "deep": 90.8
+        },
+        {
+          "offset": 173,
+          "minutes": 491.6,
+          "awake": 32.9,
+          "rem": 119.2,
+          "deep": 64.3
+        },
+        {
+          "offset": 174,
+          "minutes": 554.3,
+          "awake": 69.2,
+          "rem": 198.0,
+          "deep": 29.6
+        },
+        {
+          "offset": 175,
+          "minutes": 494.6,
+          "awake": 95.2,
+          "rem": 140.1,
+          "deep": 26.9
+        },
+        {
+          "offset": 176,
+          "minutes": 490.2,
+          "awake": 53.8,
+          "rem": 165.1,
+          "deep": 50.9
+        },
+        {
+          "offset": 177,
+          "minutes": 435.8,
+          "awake": 13.0,
+          "rem": 124.2,
+          "deep": 51.9
+        },
+        {
+          "offset": 178,
+          "minutes": 437.8,
+          "awake": 41.9,
+          "rem": 129.2,
+          "deep": 42.9
+        },
+        {
+          "offset": 179,
+          "minutes": 528.1,
+          "awake": 12.0,
+          "rem": 135.1,
+          "deep": 30.4
+        },
+        {
+          "offset": 180,
+          "minutes": 496.7,
+          "awake": 54.3,
+          "rem": 117.7,
+          "deep": 32.4
+        },
+        {
+          "offset": 181,
+          "minutes": 481.7,
+          "awake": 13.5,
+          "rem": 127.2,
+          "deep": 44.4
+        },
+        {
+          "offset": 182,
+          "minutes": 460.8,
+          "awake": 7.5,
+          "rem": 121.7,
+          "deep": 67.8
+        },
+        {
+          "offset": 183,
+          "minutes": 412.9,
+          "awake": 73.3,
+          "rem": 82.3,
+          "deep": 33.9
+        },
+        {
+          "offset": 184,
+          "minutes": 549.5,
+          "awake": 11.5,
+          "rem": 141.1,
+          "deep": 43.4
+        },
+        {
+          "offset": 185,
+          "minutes": 502.2,
+          "awake": 9.5,
+          "rem": 123.7,
+          "deep": 40.9
+        },
+        {
+          "offset": 186,
+          "minutes": 385.5,
+          "awake": 19.4,
+          "rem": 111.7,
+          "deep": 46.9
+        },
+        {
+          "offset": 187,
+          "minutes": 554.0,
+          "awake": 16.9,
+          "rem": 159.1,
+          "deep": 41.9
+        },
+        {
+          "offset": 188,
+          "minutes": 484.7,
+          "awake": 3.5,
+          "rem": 123.7,
+          "deep": 29.4
+        },
+        {
+          "offset": 189,
+          "minutes": 461.3,
+          "awake": 38.9,
+          "rem": 122.7,
+          "deep": 40.9
+        },
+        {
+          "offset": 190,
+          "minutes": 520.1,
+          "awake": 57.3,
+          "rem": 165.6,
+          "deep": 52.4
+        },
+        {
+          "offset": 191,
+          "minutes": 383.0,
+          "awake": 125.1,
+          "rem": 92.3,
+          "deep": 47.9
+        },
+        {
+          "offset": 192,
+          "minutes": 489.7,
+          "awake": 38.9,
+          "rem": 138.1,
+          "deep": 47.4
+        },
+        {
+          "offset": 193,
+          "minutes": 442.8,
+          "awake": 19.9,
+          "rem": 104.7,
+          "deep": 55.9
+        },
+        {
+          "offset": 194,
+          "minutes": 362.0,
+          "awake": 116.1,
+          "rem": 110.7,
+          "deep": 35.4
+        },
+        {
+          "offset": 195,
+          "minutes": 464.8,
+          "awake": 14.5,
+          "rem": 136.1,
+          "deep": 31.4
+        },
+        {
+          "offset": 196,
+          "minutes": 473.3,
+          "awake": 14.5,
+          "rem": 116.7,
+          "deep": 76.3
+        },
+        {
+          "offset": 197,
+          "minutes": 398.9,
+          "awake": 113.6,
+          "rem": 114.2,
+          "deep": 45.4
+        },
+        {
+          "offset": 198,
+          "minutes": 518.6,
+          "awake": 23.9,
+          "rem": 148.6,
+          "deep": 35.9
+        },
+        {
+          "offset": 199,
+          "minutes": 364.6,
+          "awake": 13.0,
+          "rem": 71.8,
+          "deep": 53.4
+        },
+        {
+          "offset": 200,
+          "minutes": 420.3,
+          "awake": 67.3,
+          "rem": 129.2,
+          "deep": 35.4
+        },
+        {
+          "offset": 201,
+          "minutes": 394.5,
+          "awake": 152.5,
+          "rem": 96.7,
+          "deep": 45.4
+        },
+        {
+          "offset": 202,
+          "minutes": 513.1,
+          "awake": 56.3,
+          "rem": 162.6,
+          "deep": 35.4
+        },
+        {
+          "offset": 203,
+          "minutes": 496.2,
+          "awake": 38.4,
+          "rem": 120.7,
+          "deep": 34.9
+        },
+        {
+          "offset": 204,
+          "minutes": 396.4,
+          "awake": 45.9,
+          "rem": 89.8,
+          "deep": 40.9
+        },
+        {
+          "offset": 205,
+          "minutes": 539.5,
+          "awake": 13.5,
+          "rem": 135.1,
+          "deep": 46.4
+        },
+        {
+          "offset": 206,
+          "minutes": 449.3,
+          "awake": 65.3,
+          "rem": 153.6,
+          "deep": 26.9
+        },
+        {
+          "offset": 207,
+          "minutes": 458.2,
+          "awake": 77.7,
+          "rem": 128.7,
+          "deep": 35.9
+        },
+        {
+          "offset": 208,
+          "minutes": 379.5,
+          "awake": 8.5,
+          "rem": 115.2,
+          "deep": 63.8
+        },
+        {
+          "offset": 209,
+          "minutes": 482.7,
+          "awake": 4.5,
+          "rem": 152.6,
+          "deep": 25.4
+        },
+        {
+          "offset": 210,
+          "minutes": 389.9,
+          "awake": 5.0,
+          "rem": 70.3,
+          "deep": 37.4
+        },
+        {
+          "offset": 211,
+          "minutes": 502.1,
+          "awake": 12.5,
+          "rem": 146.6,
+          "deep": 60.3
+        },
+        {
+          "offset": 212,
+          "minutes": 470.2,
+          "awake": 63.3,
+          "rem": 105.7,
+          "deep": 52.4
+        },
+        {
+          "offset": 213,
+          "minutes": 475.2,
+          "awake": 42.4,
+          "rem": 145.6,
+          "deep": 51.4
+        },
+        {
+          "offset": 214,
+          "minutes": 438.3,
+          "awake": 77.2,
+          "rem": 123.2,
+          "deep": 57.8
+        },
+        {
+          "offset": 215,
+          "minutes": 430.8,
+          "awake": 75.8,
+          "rem": 120.2,
+          "deep": 39.4
+        },
+        {
+          "offset": 216,
+          "minutes": 466.2,
+          "awake": 23.4,
+          "rem": 156.1,
+          "deep": 43.4
+        },
+        {
+          "offset": 217,
+          "minutes": 461.2,
+          "awake": 58.3,
+          "rem": 128.6,
+          "deep": 33.4
+        },
+        {
+          "offset": 218,
+          "minutes": 519.1,
+          "awake": 25.4,
+          "rem": 127.2,
+          "deep": 38.9
+        },
+        {
+          "offset": 219,
+          "minutes": 431.8,
+          "awake": 103.7,
+          "rem": 116.2,
+          "deep": 32.9
+        },
+        {
+          "offset": 220,
+          "minutes": 485.2,
+          "awake": 17.9,
+          "rem": 118.2,
+          "deep": 44.4
+        },
+        {
+          "offset": 221,
+          "minutes": 446.3,
+          "awake": 7.5,
+          "rem": 104.7,
+          "deep": 49.4
+        },
+        {
+          "offset": 222,
+          "minutes": 471.2,
+          "awake": 56.8,
+          "rem": 108.7,
+          "deep": 33.9
+        },
+        {
+          "offset": 223,
+          "minutes": 363.0,
+          "awake": 4.5,
+          "rem": 93.2,
+          "deep": 63.3
+        },
+        {
+          "offset": 224,
+          "minutes": 474.7,
+          "awake": 22.9,
+          "rem": 148.6,
+          "deep": 62.8
+        },
+        {
+          "offset": 225,
+          "minutes": 484.7,
+          "awake": 38.4,
+          "rem": 106.7,
+          "deep": 56.9
+        },
+        {
+          "offset": 226,
+          "minutes": 369.0,
+          "awake": 7.0,
+          "rem": 102.2,
+          "deep": 47.9
+        },
+        {
+          "offset": 227,
+          "minutes": 467.7,
+          "awake": 9.0,
+          "rem": 135.1,
+          "deep": 34.4
+        },
+        {
+          "offset": 228,
+          "minutes": 395.9,
+          "awake": 8.0,
+          "rem": 129.2,
+          "deep": 44.4
+        },
+        {
+          "offset": 229,
+          "minutes": 508.6,
+          "awake": 55.3,
+          "rem": 158.6,
+          "deep": 56.4
+        },
+        {
+          "offset": 230,
+          "minutes": 466.7,
+          "awake": 14.0,
+          "rem": 126.6,
+          "deep": 85.8
+        },
+        {
+          "offset": 231,
+          "minutes": 505.6,
+          "awake": 14.9,
+          "rem": 136.1,
+          "deep": 34.4
+        },
+        {
+          "offset": 232,
+          "minutes": 471.2,
+          "awake": 13.5,
+          "rem": 91.8,
+          "deep": 36.9
+        },
+        {
+          "offset": 233,
+          "minutes": 547.0,
+          "awake": 37.9,
+          "rem": 132.1,
+          "deep": 38.9
+        },
+        {
+          "offset": 234,
+          "minutes": 464.7,
+          "awake": 24.9,
+          "rem": 130.6,
+          "deep": 40.4
+        },
+        {
+          "offset": 235,
+          "minutes": 477.2,
+          "awake": 35.9,
+          "rem": 111.7,
+          "deep": 29.9
+        },
+        {
+          "offset": 236,
+          "minutes": 466.7,
+          "awake": 18.9,
+          "rem": 135.6,
+          "deep": 66.8
+        },
+        {
+          "offset": 237,
+          "minutes": 345.1,
+          "awake": 4.0,
+          "rem": 83.8,
+          "deep": 59.4
+        },
+        {
+          "offset": 238,
+          "minutes": 553.5,
+          "awake": 15.4,
+          "rem": 157.6,
+          "deep": 63.8
+        },
+        {
+          "offset": 239,
+          "minutes": 517.1,
+          "awake": 17.9,
+          "rem": 168.6,
+          "deep": 47.3
+        },
+        {
+          "offset": 240,
+          "minutes": 442.4,
+          "awake": 34.9,
+          "rem": 80.3,
+          "deep": 42.4
+        },
+        {
+          "offset": 241,
+          "minutes": 522.6,
+          "awake": 42.8,
+          "rem": 142.1,
+          "deep": 48.4
+        },
+        {
+          "offset": 242,
+          "minutes": 409.4,
+          "awake": 52.3,
+          "rem": 120.7,
+          "deep": 44.9
+        },
+        {
+          "offset": 243,
+          "minutes": 471.3,
+          "awake": 23.4,
+          "rem": 132.7,
+          "deep": 70.3
+        },
+        {
+          "offset": 244,
+          "minutes": 464.3,
+          "awake": 70.8,
+          "rem": 140.1,
+          "deep": 57.4
+        },
+        {
+          "offset": 245,
+          "minutes": 404.5,
+          "awake": 12.5,
+          "rem": 117.7,
+          "deep": 44.4
+        },
+        {
+          "offset": 246,
+          "minutes": 527.6,
+          "awake": 44.4,
+          "rem": 132.2,
+          "deep": 55.4
+        },
+        {
+          "offset": 247,
+          "minutes": 380.0,
+          "awake": 11.5,
+          "rem": 106.7,
+          "deep": 31.4
+        },
+        {
+          "offset": 248,
+          "minutes": 531.1,
+          "awake": 9.5,
+          "rem": 154.6,
+          "deep": 34.4
+        },
+        {
+          "offset": 249,
+          "minutes": 383.0,
+          "awake": 24.4,
+          "rem": 80.3,
+          "deep": 59.8
+        },
+        {
+          "offset": 250,
+          "minutes": 529.6,
+          "awake": 48.8,
+          "rem": 123.2,
+          "deep": 33.4
+        },
+        {
+          "offset": 251,
+          "minutes": 363.6,
+          "awake": 7.5,
+          "rem": 97.8,
+          "deep": 44.9
+        },
+        {
+          "offset": 252,
+          "minutes": 458.8,
+          "awake": 40.4,
+          "rem": 124.7,
+          "deep": 41.9
+        },
+        {
+          "offset": 253,
+          "minutes": 508.2,
+          "awake": 63.3,
+          "rem": 144.1,
+          "deep": 42.4
+        },
+        {
+          "offset": 254,
+          "minutes": 535.6,
+          "awake": 52.8,
+          "rem": 124.7,
+          "deep": 27.4
+        },
+        {
+          "offset": 255,
+          "minutes": 528.6,
+          "awake": 13.9,
+          "rem": 146.6,
+          "deep": 60.8
+        },
+        {
+          "offset": 256,
+          "minutes": 387.5,
+          "awake": 196.9,
+          "rem": 87.8,
+          "deep": 33.9
+        },
+        {
+          "offset": 257,
+          "minutes": 463.8,
+          "awake": 33.9,
+          "rem": 119.7,
+          "deep": 37.4
+        },
+        {
+          "offset": 258,
+          "minutes": 476.8,
+          "awake": 39.4,
+          "rem": 115.7,
+          "deep": 31.4
+        },
+        {
+          "offset": 259,
+          "minutes": 501.7,
+          "awake": 13.9,
+          "rem": 139.6,
+          "deep": 64.3
+        },
+        {
+          "offset": 260,
+          "minutes": 477.2,
+          "awake": 61.3,
+          "rem": 132.6,
+          "deep": 35.4
+        },
+        {
+          "offset": 261,
+          "minutes": 490.2,
+          "awake": 17.9,
+          "rem": 126.2,
+          "deep": 26.9
+        },
+        {
+          "offset": 262,
+          "minutes": 337.1,
+          "awake": 13.5,
+          "rem": 72.8,
+          "deep": 56.4
+        },
+        {
+          "offset": 263,
+          "minutes": 452.8,
+          "awake": 20.4,
+          "rem": 130.7,
+          "deep": 40.4
+        },
+        {
+          "offset": 264,
+          "minutes": 411.9,
+          "awake": 151.5,
+          "rem": 97.2,
+          "deep": 42.8
+        },
+        {
+          "offset": 265,
+          "minutes": 378.3,
+          "awake": 5.0,
+          "rem": 99.9,
+          "deep": 55.2
+        },
+        {
+          "offset": 266,
+          "minutes": 464.9,
+          "awake": 89.5,
+          "rem": 149.2,
+          "deep": 38.8
+        },
+        {
+          "offset": 267,
+          "minutes": 382.8,
+          "awake": 35.3,
+          "rem": 117.3,
+          "deep": 43.3
+        },
+        {
+          "offset": 268,
+          "minutes": 459.9,
+          "awake": 92.5,
+          "rem": 124.8,
+          "deep": 46.7
+        },
+        {
+          "offset": 269,
+          "minutes": 337.1,
+          "awake": 5.0,
+          "rem": 95.0,
+          "deep": 48.2
+        },
+        {
+          "offset": 270,
+          "minutes": 432.1,
+          "awake": 100.9,
+          "rem": 116.3,
+          "deep": 32.8
+        },
+        {
+          "offset": 271,
+          "minutes": 485.7,
+          "awake": 20.9,
+          "rem": 131.3,
+          "deep": 46.7
+        },
+        {
+          "offset": 272,
+          "minutes": 459.3,
+          "awake": 11.0,
+          "rem": 139.1,
+          "deep": 48.9
+        },
+        {
+          "offset": 273,
+          "minutes": 317.1,
+          "awake": 5.5,
+          "rem": 85.8,
+          "deep": 39.9
+        },
+        {
+          "offset": 274,
+          "minutes": 437.3,
+          "awake": 94.7,
+          "rem": 122.7,
+          "deep": 25.9
+        },
+        {
+          "offset": 275,
+          "minutes": 365.5,
+          "awake": 36.9,
+          "rem": 60.3,
+          "deep": 54.9
+        },
+        {
+          "offset": 276,
+          "minutes": 438.3,
+          "awake": 8.5,
+          "rem": 126.2,
+          "deep": 38.9
+        },
+        {
+          "offset": 277,
+          "minutes": 524.1,
+          "awake": 31.9,
+          "rem": 147.1,
+          "deep": 62.3
+        },
+        {
+          "offset": 278,
+          "minutes": 419.9,
+          "awake": 104.7,
+          "rem": 115.2,
+          "deep": 57.8
+        },
+        {
+          "offset": 279,
+          "minutes": 505.1,
+          "awake": 8.5,
+          "rem": 142.6,
+          "deep": 44.4
+        },
+        {
+          "offset": 280,
+          "minutes": 413.4,
+          "awake": 18.9,
+          "rem": 131.2,
+          "deep": 47.9
+        },
+        {
+          "offset": 281,
+          "minutes": 544.5,
+          "awake": 12.5,
+          "rem": 156.6,
+          "deep": 44.9
+        },
+        {
+          "offset": 282,
+          "minutes": 503.2,
+          "awake": 15.9,
+          "rem": 122.2,
+          "deep": 38.9
+        },
+        {
+          "offset": 283,
+          "minutes": 404.4,
+          "awake": 6.5,
+          "rem": 110.2,
+          "deep": 47.4
+        },
+        {
+          "offset": 284,
+          "minutes": 437.3,
+          "awake": 16.4,
+          "rem": 155.6,
+          "deep": 36.4
+        },
+        {
+          "offset": 285,
+          "minutes": 448.3,
+          "awake": 18.9,
+          "rem": 133.2,
+          "deep": 57.8
+        },
+        {
+          "offset": 286,
+          "minutes": 438.8,
+          "awake": 10.5,
+          "rem": 123.2,
+          "deep": 38.4
+        },
+        {
+          "offset": 287,
+          "minutes": 389.0,
+          "awake": 4.5,
+          "rem": 130.2,
+          "deep": 49.4
+        },
+        {
+          "offset": 288,
+          "minutes": 518.1,
+          "awake": 11.5,
+          "rem": 153.1,
+          "deep": 58.8
+        },
+        {
+          "offset": 289,
+          "minutes": 472.7,
+          "awake": 25.4,
+          "rem": 119.7,
+          "deep": 57.3
+        },
+        {
+          "offset": 290,
+          "minutes": 293.7,
+          "awake": 23.9,
+          "rem": 69.3,
+          "deep": 72.8
+        },
+        {
+          "offset": 291,
+          "minutes": 513.1,
+          "awake": 5.5,
+          "rem": 153.1,
+          "deep": 58.3
+        },
+        {
+          "offset": 292,
+          "minutes": 405.9,
+          "awake": 11.0,
+          "rem": 117.7,
+          "deep": 56.4
+        },
+        {
+          "offset": 293,
+          "minutes": 457.8,
+          "awake": 61.8,
+          "rem": 111.2,
+          "deep": 64.3
+        },
+        {
+          "offset": 294,
+          "minutes": 442.3,
+          "awake": 25.4,
+          "rem": 121.7,
+          "deep": 43.4
+        },
+        {
+          "offset": 295,
+          "minutes": 513.2,
+          "awake": 8.5,
+          "rem": 143.3,
+          "deep": 52.1
+        },
+        {
+          "offset": 296,
+          "minutes": 539.1,
+          "awake": 42.9,
+          "rem": 133.1,
+          "deep": 36.9
+        },
+        {
+          "offset": 297,
+          "minutes": 320.6,
+          "awake": 184.9,
+          "rem": 45.4,
+          "deep": 54.9
+        },
+        {
+          "offset": 298,
+          "minutes": 456.3,
+          "awake": 79.8,
+          "rem": 135.6,
+          "deep": 40.4
+        },
+        {
+          "offset": 299,
+          "minutes": 408.9,
+          "awake": 57.3,
+          "rem": 120.7,
+          "deep": 52.4
+        },
+        {
+          "offset": 300,
+          "minutes": 503.2,
+          "awake": 51.3,
+          "rem": 167.6,
+          "deep": 48.9
+        },
+        {
+          "offset": 301,
+          "minutes": 485.2,
+          "awake": 21.4,
+          "rem": 127.2,
+          "deep": 29.9
+        },
+        {
+          "offset": 302,
+          "minutes": 520.7,
+          "awake": 68.3,
+          "rem": 138.6,
+          "deep": 27.4
+        },
+        {
+          "offset": 303,
+          "minutes": 414.9,
+          "awake": 4.5,
+          "rem": 115.2,
+          "deep": 78.3
+        },
+        {
+          "offset": 304,
+          "minutes": 465.8,
+          "awake": 27.9,
+          "rem": 131.7,
+          "deep": 43.4
+        },
+        {
+          "offset": 305,
+          "minutes": 438.8,
+          "awake": 8.0,
+          "rem": 144.1,
+          "deep": 30.4
+        },
+        {
+          "offset": 306,
+          "minutes": 386.5,
+          "awake": 108.6,
+          "rem": 73.8,
+          "deep": 62.8
+        },
+        {
+          "offset": 307,
+          "minutes": 417.9,
+          "awake": 105.6,
+          "rem": 102.7,
+          "deep": 43.9
+        },
+        {
+          "offset": 308,
+          "minutes": 497.7,
+          "awake": 54.3,
+          "rem": 148.1,
+          "deep": 40.4
+        },
+        {
+          "offset": 309,
+          "minutes": 441.8,
+          "awake": 74.2,
+          "rem": 105.7,
+          "deep": 61.8
+        },
+        {
+          "offset": 310,
+          "minutes": 469.2,
+          "awake": 15.9,
+          "rem": 117.2,
+          "deep": 34.9
+        },
+        {
+          "offset": 311,
+          "minutes": 384.4,
+          "awake": 3.0,
+          "rem": 91.2,
+          "deep": 51.4
+        },
+        {
+          "offset": 312,
+          "minutes": 361.0,
+          "awake": 23.9,
+          "rem": 100.7,
+          "deep": 43.9
+        },
+        {
+          "offset": 313,
+          "minutes": 450.8,
+          "awake": 14.4,
+          "rem": 145.6,
+          "deep": 32.4
+        },
+        {
+          "offset": 314,
+          "minutes": 429.4,
+          "awake": 11.5,
+          "rem": 118.7,
+          "deep": 48.4
+        },
+        {
+          "offset": 315,
+          "minutes": 407.9,
+          "awake": 30.1,
+          "rem": 106.2,
+          "deep": 35.6
+        },
+        {
+          "offset": 316,
+          "minutes": 406.9,
+          "awake": 121.1,
+          "rem": 106.7,
+          "deep": 52.9
+        },
+        {
+          "offset": 317,
+          "minutes": 302.2,
+          "awake": 11.5,
+          "rem": 76.8,
+          "deep": 42.4
+        },
+        {
+          "offset": 318,
+          "minutes": 472.7,
+          "awake": 43.4,
+          "rem": 121.2,
+          "deep": 47.4
+        },
+        {
+          "offset": 319,
+          "minutes": 516.1,
+          "awake": 61.8,
+          "rem": 129.7,
+          "deep": 61.8
+        },
+        {
+          "offset": 320,
+          "minutes": 368.0,
+          "awake": 86.7,
+          "rem": 76.3,
+          "deep": 39.4
+        },
+        {
+          "offset": 321,
+          "minutes": 528.1,
+          "awake": 14.0,
+          "rem": 159.6,
+          "deep": 69.3
+        },
+        {
+          "offset": 322,
+          "minutes": 418.4,
+          "awake": 12.0,
+          "rem": 111.7,
+          "deep": 50.9
+        },
+        {
+          "offset": 323,
+          "minutes": 454.3,
+          "awake": 11.5,
+          "rem": 174.5,
+          "deep": 54.4
+        },
+        {
+          "offset": 324,
+          "minutes": 445.3,
+          "awake": 31.4,
+          "rem": 134.6,
+          "deep": 35.4
+        },
+        {
+          "offset": 325,
+          "minutes": 452.3,
+          "awake": 42.9,
+          "rem": 111.7,
+          "deep": 37.4
+        },
+        {
+          "offset": 326,
+          "minutes": 392.9,
+          "awake": 73.8,
+          "rem": 102.7,
+          "deep": 47.4
+        },
+        {
+          "offset": 327,
+          "minutes": 512.6,
+          "awake": 21.9,
+          "rem": 118.2,
+          "deep": 45.4
+        },
+        {
+          "offset": 328,
+          "minutes": 471.2,
+          "awake": 18.4,
+          "rem": 102.7,
+          "deep": 39.4
+        },
+        {
+          "offset": 329,
+          "minutes": 509.1,
+          "awake": 32.9,
+          "rem": 155.1,
+          "deep": 46.4
+        },
+        {
+          "offset": 330,
+          "minutes": 509.1,
+          "awake": 16.9,
+          "rem": 130.6,
+          "deep": 36.4
+        },
+        {
+          "offset": 331,
+          "minutes": 425.8,
+          "awake": 53.8,
+          "rem": 116.7,
+          "deep": 39.9
+        },
+        {
+          "offset": 332,
+          "minutes": 446.8,
+          "awake": 15.9,
+          "rem": 129.2,
+          "deep": 27.9
+        },
+        {
+          "offset": 333,
+          "minutes": 492.1,
+          "awake": 25.4,
+          "rem": 138.6,
+          "deep": 82.3
+        },
+        {
+          "offset": 334,
+          "minutes": 361.0,
+          "awake": 25.9,
+          "rem": 82.3,
+          "deep": 51.4
+        },
+        {
+          "offset": 335,
+          "minutes": 479.7,
+          "awake": 16.9,
+          "rem": 128.1,
+          "deep": 32.9
+        },
+        {
+          "offset": 336,
+          "minutes": 397.4,
+          "awake": 32.4,
+          "rem": 96.2,
+          "deep": 51.9
+        },
+        {
+          "offset": 337,
+          "minutes": 497.1,
+          "awake": 18.4,
+          "rem": 145.6,
+          "deep": 35.9
+        },
+        {
+          "offset": 338,
+          "minutes": 438.3,
+          "awake": 34.9,
+          "rem": 129.6,
+          "deep": 30.9
+        },
+        {
+          "offset": 339,
+          "minutes": 435.3,
+          "awake": 127.1,
+          "rem": 93.2,
+          "deep": 40.4
+        },
+        {
+          "offset": 340,
+          "minutes": 460.2,
+          "awake": 26.4,
+          "rem": 119.7,
+          "deep": 37.4
+        },
+        {
+          "offset": 341,
+          "minutes": 465.3,
+          "awake": 41.8,
+          "rem": 105.4,
+          "deep": 37.3
+        },
+        {
+          "offset": 342,
+          "minutes": 503.6,
+          "awake": 23.9,
+          "rem": 156.1,
+          "deep": 58.7
+        },
+        {
+          "offset": 343,
+          "minutes": 444.5,
+          "awake": 7.5,
+          "rem": 148.7,
+          "deep": 53.2
+        },
+        {
+          "offset": 344,
+          "minutes": 527.5,
+          "awake": 18.4,
+          "rem": 147.7,
+          "deep": 49.7
+        },
+        {
+          "offset": 345,
+          "minutes": 476.3,
+          "awake": 13.4,
+          "rem": 150.6,
+          "deep": 31.8
+        },
+        {
+          "offset": 346,
+          "minutes": 515.6,
+          "awake": 21.4,
+          "rem": 141.2,
+          "deep": 41.8
+        },
+        {
+          "offset": 347,
+          "minutes": 512.6,
+          "awake": 22.9,
+          "rem": 128.3,
+          "deep": 47.2
+        },
+        {
+          "offset": 348,
+          "minutes": 478.3,
+          "awake": 21.9,
+          "rem": 102.9,
+          "deep": 79.0
+        },
+        {
+          "offset": 349,
+          "minutes": 499.2,
+          "awake": 12.4,
+          "rem": 124.3,
+          "deep": 30.3
+        },
+        {
+          "offset": 350,
+          "minutes": 415.6,
+          "awake": 135.7,
+          "rem": 76.6,
+          "deep": 45.2
+        },
+        {
+          "offset": 351,
+          "minutes": 436.5,
+          "awake": 68.6,
+          "rem": 123.3,
+          "deep": 43.8
+        },
+        {
+          "offset": 352,
+          "minutes": 446.0,
+          "awake": 25.9,
+          "rem": 146.7,
+          "deep": 56.2
+        }
+      ]
+    }
+  ]
+}
