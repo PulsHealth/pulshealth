@@ -104,10 +104,6 @@ const SleepPoster = forwardRef<
           </text>
         </g>
       ))}
-      <text x="72" y="1250" fill="#a9bdd2" fontSize="21">
-        {before.summary.count}/{before.summary.available} before ·{" "}
-        {after.summary.count}/{after.summary.available} after nights recorded
-      </text>
       <text x="72" y="1300" fill="#a9bdd2" fontSize="18">
         Made with PulsHealth
       </text>
@@ -137,59 +133,8 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
   if (compact) return <SleepPoster overview={overview} window={window} />;
   return (
     <div className={styles.demo}>
-      <div className={styles.demoToolbar}>
-        <span className={styles.dataBadge}>Inspiration</span>
-        <button
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(
-                "https://pulshealth.com/examples/sleep-and-parenthood/",
-              );
-              setStatus("Link copied");
-            } catch {
-              setStatus("Could not copy link.");
-            }
-          }}
-        >
-          Copy link
-        </button>
-        <details className={styles.importDetails}>
-          <summary>Use your data</summary>
-          <div>
-            <label>
-              Open relative sleep JSON
-              <input
-                type="file"
-                accept=".json"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  try {
-                    if (file.size > 5000000)
-                      throw new Error("Use a file smaller than 5 MB.");
-                    setReport(parseSleepReport(await file.text()));
-                    setStatus("");
-                  } catch (error) {
-                    setStatus(
-                      error instanceof Error
-                        ? error.message
-                        : "Could not read file.",
-                    );
-                  }
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            <p>Your file stays in this browser.</p>
-            <button onClick={() => setReport(initialReport)}>
-              Reset example
-            </button>
-          </div>
-        </details>
-      </div>
       <header className={styles.sleepOverviewHero}>
         <div>
-          <h2>Sleep changes with a newborn</h2>
           <p>The overall pattern around a new arrival.</p>
         </div>
         <div className={styles.segment} aria-label="Comparison period">
@@ -258,10 +203,6 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
             </strong>
           </div>
         </div>
-        <p className={styles.micro}>
-          Each curve shows the spread of recorded sleep durations; dashed lines
-          mark the medians.
-        </p>
       </section>
       <section className={styles.reportSection}>
         <div className={styles.sectionTitle}>
@@ -283,12 +224,6 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
         </div>
         <PhaseLegend />
         <PairedBuckets overview={overview} mode={interruptionMode} />
-        <p className={styles.micro}>
-          Share of recorded nights ·{" "}
-          {interruptionMode === "awake"
-            ? "total recorded awake time within sleep sessions"
-            : "recorded awake periods lasting at least one minute"}
-        </p>
         <div className={styles.overviewSmallStats}>
           <div>
             <span>Typical recorded awake time / night</span>
@@ -319,9 +254,6 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
           <span>Share of recorded stage time</span>
         </div>
         <StageMix overview={overview} />
-        <p className={styles.micro}>
-          Stage proportions include recorded awake periods; gaps are excluded.
-        </p>
       </section>
       <section className={styles.reportSection}>
         <div className={styles.sectionTitle}>
@@ -348,9 +280,6 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
           </div>
         </div>
         <SleepProgression overview={overview} mode={trendMode} />
-        <p className={styles.micro}>
-          Medians for broad periods; the dashed line is the before baseline.
-        </p>
       </section>
       <div className={styles.raceFooter}>
         {[false, true].map((share) => (
@@ -377,11 +306,41 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
         ))}
         <p role="status">{status}</p>
       </div>
-      <p className={styles.micro}>
-        {before.summary.count}/{before.summary.available} before nights and{" "}
-        {after.summary.count}/{after.summary.available} after nights recorded.
-        Awake periods reflect recorded stages, not every possible interruption.
-      </p>
+      <div className={styles.demoToolbar}>
+        <details className={styles.importDetails}>
+          <summary>Use your data</summary>
+          <div>
+            <label>
+              Open relative sleep JSON
+              <input
+                type="file"
+                accept=".json"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    if (file.size > 5000000)
+                      throw new Error("Use a file smaller than 5 MB.");
+                    setReport(parseSleepReport(await file.text()));
+                    setStatus("");
+                  } catch (error) {
+                    setStatus(
+                      error instanceof Error
+                        ? error.message
+                        : "Could not read file.",
+                    );
+                  }
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <p>Your file stays in this browser.</p>
+            <button onClick={() => setReport(initialReport)}>
+              Reset example
+            </button>
+          </div>
+        </details>
+      </div>
       <div className={styles.exportOnly} aria-hidden="true">
         <SleepPoster ref={poster} overview={overview} window={window} />
       </div>

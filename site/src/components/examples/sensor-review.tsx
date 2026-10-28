@@ -136,72 +136,6 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
   if (compact) return <SensorPoster report={report} />;
   return (
     <div className={styles.demo}>
-      <div className={styles.demoToolbar}>
-        <span className={styles.dataBadge}>Inspiration</span>
-        <button
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(
-                "https://pulshealth.com/examples/heart-rate-sensors/",
-              );
-              setStatus("Link copied");
-            } catch {
-              setStatus("Could not copy link.");
-            }
-          }}
-        >
-          Copy link
-        </button>
-        <details className={styles.importDetails}>
-          <summary>Use your data</summary>
-          <div>
-            <label>
-              Open comparison JSON
-              <input
-                type="file"
-                accept=".json"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  try {
-                    if (file.size > 2000000)
-                      throw new Error("Use a file smaller than 2 MB.");
-                    setReport(parseSensorReport(await file.text()));
-                    setWatchIndex(0);
-                    setStatus("");
-                  } catch (error) {
-                    setStatus(
-                      error instanceof Error
-                        ? error.message
-                        : "Could not read file.",
-                    );
-                  }
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            <p>
-              Your file stays in this browser. Recordings contain elapsed timing
-              only.
-            </p>
-            <button
-              onClick={() => {
-                setReport(recorded);
-                setWatchIndex(0);
-              }}
-            >
-              Reset example
-            </button>
-          </div>
-        </details>
-      </div>
-      <header className={styles.analysisHero}>
-        <h2>
-          Comparing heart
-          <br />
-          <span>rate sensors.</span>
-        </h2>
-      </header>
       {report.monitor && (
         <section className={styles.sensorMonitor}>
           <div>
@@ -364,7 +298,7 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
       )}
       <section className={styles.reportSection}>
         <div className={styles.sectionTitle}>
-          <h2>How the recordings unfold</h2>
+          <h2>Heart rate across separate runs</h2>
           <div className={styles.segment}>
             <button
               aria-pressed={mode === "readings"}
@@ -456,9 +390,6 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
             </svg>
           </div>
         ))}
-        <p className={styles.micro}>
-          Shared elapsed-time scale · recorded on separate runs.
-        </p>
       </section>
       <section className={styles.reportSection}>
         <div className={styles.sectionTitle}>
@@ -528,10 +459,6 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
           </table>
         </div>
       </section>
-      <p className={styles.micro}>
-        Recorded cadence across separate runs; heart-rate differences may
-        reflect different efforts and conditions.
-      </p>
       <div className={styles.raceFooter}>
         {[false, true].map((share) => (
           <button
@@ -556,6 +483,50 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
           </button>
         ))}
         <p role="status">{status}</p>
+      </div>
+      <div className={styles.demoToolbar}>
+        <details className={styles.importDetails}>
+          <summary>Use your data</summary>
+          <div>
+            <label>
+              Open comparison JSON
+              <input
+                type="file"
+                accept=".json"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    if (file.size > 2000000)
+                      throw new Error("Use a file smaller than 2 MB.");
+                    setReport(parseSensorReport(await file.text()));
+                    setWatchIndex(0);
+                    setStatus("");
+                  } catch (error) {
+                    setStatus(
+                      error instanceof Error
+                        ? error.message
+                        : "Could not read file.",
+                    );
+                  }
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <p>
+              Your file stays in this browser. Recordings contain elapsed timing
+              only.
+            </p>
+            <button
+              onClick={() => {
+                setReport(recorded);
+                setWatchIndex(0);
+              }}
+            >
+              Reset example
+            </button>
+          </div>
+        </details>
       </div>
       <div className={styles.exportOnly} aria-hidden="true">
         <SensorPoster ref={poster} report={report} />

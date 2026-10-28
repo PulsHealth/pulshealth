@@ -91,6 +91,11 @@ Product policy content lives in `content/watchworkoutpro/`. Marketing screenshot
 are resized from the app's approved dark source captures. App Store availability
 must be verified before replacing the launch notice with a download action.
 
+Example pages lead with one title and an “All examples” link. Local file import
+lives below each interactive example; chart labels and units stay with the visuals.
+Example sharing cards use the PulsHealth name without an Inspiration label.
+Regenerate them with `bun scripts/gen-inspiration-cards.tsx` from `site/`.
+
 ## Sharing preview
 
 The default sharing card uses the website's navy card color (`#111b28`), the

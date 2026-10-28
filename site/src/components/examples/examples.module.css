@@ -72,15 +72,17 @@
 }
 .detailHeader {
   display: flex;
-  gap: 24px;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0 0 22px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 0 0 32px;
 }
 .detailHeader h1 {
-  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-size: clamp(2.2rem, 5vw, 4.2rem);
+  line-height: 1.08;
   font-weight: 550;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.045em;
+  overflow-wrap: anywhere;
 }
 .back {
   font-size: 0.9rem;
@@ -92,17 +94,9 @@
 .demoToolbar {
   display: flex;
   gap: 12px;
-  align-items: center;
-  margin-bottom: 16px;
-  position: relative;
-  z-index: 2;
-}
-.dataBadge {
-  font-size: 0.76rem;
-  color: #a9bdd2;
-  border: 1px solid #30465e;
-  padding: 5px 9px;
-  border-radius: 30px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
 .demo button,
 .methodNotes button,
@@ -143,7 +137,7 @@
   background: transparent;
 }
 .importDetails {
-  margin-left: auto;
+  width: min(100%, 440px);
   font-size: 0.85rem;
   color: #b9c9dc;
 }
@@ -151,10 +145,8 @@
   cursor: pointer;
 }
 .importDetails > div {
-  position: absolute;
-  right: 0;
-  top: 38px;
-  max-width: min(340px, 100%);
+  margin-top: 12px;
+  width: 100%;
   padding: 20px;
   background: #16263a;
   border: 1px solid #3b536d;
@@ -774,10 +766,6 @@
   .detailHeader {
     align-items: start;
     gap: 15px;
-  }
-  .detailHeader h1 {
-    font-size: 1.25rem;
-    text-align: right;
   }
   .studio {
     grid-template-columns: 1fr;
