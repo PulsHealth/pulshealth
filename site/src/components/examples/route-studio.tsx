@@ -555,6 +555,7 @@ export function RouteAtlas({
         >
           Save image
         </button>
+        <button onClick={async () => {try {if (svg.current) setStatus(await exportImage(svg.current, `activity-atlas-${report.year}`, true));} catch {setStatus("Could not share the atlas.");}}}>Share image</button>
       </div>
       <p role="status" className={styles.status}>
         {status}

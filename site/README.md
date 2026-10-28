@@ -324,9 +324,9 @@ previous fingerprints and retry after the next verified deployment (including
 an unchanged republish); no tight automatic retry loop is used. Each accepted batch is checkpointed; a later deployment retries unacknowledged
 changes. A failed state write may repeat a previously accepted batch.
 
-## Cool Examples
+## Inspiration
 
-`/cool-examples/` showcases five projects, with detail routes generated from
+`/inspiration/` showcases five projects, with detail routes generated from
 `src/lib/examples.ts`. Default demos use reviewed recorded summaries and normalized route paths in
 `src/lib/example-recorded.json`. Raw source records stay private. Generated data
 from `src/lib/example-data.ts` is optional; user-selected showcase JSON is held
@@ -337,3 +337,5 @@ The examples lead with clickable previews and titles; AI briefs are collapsed. D
 Discovery links live in the footer, homepage and docs landing page, outside the top navigation.
 Share images contain no personal attribution. The year report includes optional
 daily health summaries, and the route tools support interactive styling and exploration.
+
+Each Inspiration project has a 1200×630 Open Graph/X link-preview card. Regenerate these reviewed display-only images with `bun scripts/gen-inspiration-cards.tsx` from `site/` (same licensed local font setup as the default social-card generator). All five projects offer local PNG downloads and native file sharing where supported; the year has post, square and story formats. The copy-link control shares only the public project URL.

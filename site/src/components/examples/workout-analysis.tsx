@@ -364,6 +364,7 @@ export function WorkoutAnalysis({
         >
           Save comparison image
         </button>
+        <button onClick={async () => { try { if (poster.current) setStatus(await exportImage(poster.current, "same-route-analysis", true)); } catch { setStatus("Could not share comparison."); } }}>Share comparison</button>
         <p role="status">{status}</p>
       </div>
       <p className={styles.micro}>

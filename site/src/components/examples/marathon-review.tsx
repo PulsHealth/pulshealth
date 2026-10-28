@@ -246,6 +246,7 @@ export function MarathonReview({
         >
           Save training poster
         </button>
+        <button onClick={async () => { try { if (svg.current) setStatus(await exportImage(svg.current, "marathon-training", true)); } catch { setStatus("Could not share training poster."); } }}>Share poster</button>
         <p role="status" className={styles.status}>
           {status}
         </p>

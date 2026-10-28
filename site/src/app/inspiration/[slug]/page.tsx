@@ -18,9 +18,11 @@ export async function generateMetadata({
   const e = EXAMPLES.find((e) => e.slug === slug);
   return e
     ? {
-        title: `${e.title} | PulsHealth Cool Examples`,
+        title: `${e.title} | PulsHealth Inspiration`,
         description: e.description,
-        alternates: { canonical: `/cool-examples/${slug}/` },
+        alternates: { canonical: `/inspiration/${slug}/` },
+        openGraph: {title:`${e.title} | PulsHealth`,description:e.description,url:`/inspiration/${slug}/`,images:[{url:`/inspiration-cards/${slug}.png`,width:1200,height:630,alt:e.title}]},
+        twitter: {card:"summary_large_image",title:`${e.title} | PulsHealth`,description:e.description,images:[`/inspiration-cards/${slug}.png`]},
       }
     : {};
 }
@@ -35,8 +37,8 @@ export default async function ExamplePage({
   return (
     <main className={styles.page}>
       <header className={styles.detailHeader}>
-        <Link href="/cool-examples/" className={styles.back}>
-          All cool examples
+        <Link href="/inspiration/" className={styles.back}>
+          All inspiration
         </Link>
         <h1>{example.title}</h1>
       </header>

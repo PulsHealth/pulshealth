@@ -20,7 +20,8 @@ export function ExampleDemo({
   const [report, setReport] = useState<Report>(recorded as Report),
     [isExample, setIsExample] = useState(true),
     [revision, setRevision] = useState(0),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [linkStatus, setLinkStatus] = useState("");
   const content =
     slug === "year-in-review" ? (
       <YearReview report={report} compact={compact} />
@@ -38,7 +39,24 @@ export function ExampleDemo({
     <div className={styles.demo}>
       <div className={styles.demoToolbar}>
         <span className={styles.dataBadge}>
-          {isExample ? "Cool Examples" : "Your file"}
+          {isExample ? "Inspiration" : "Your file"}
+        </span>
+        <button
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(
+                `https://pulshealth.com/inspiration/${slug}/`,
+              );
+              setLinkStatus("Link copied");
+            } catch {
+              setLinkStatus("Could not copy link");
+            }
+          }}
+        >
+          Copy link
+        </button>
+        <span role="status" className={styles.micro}>
+          {linkStatus}
         </span>
         <details className={styles.importDetails}>
           <summary>Use your data</summary>

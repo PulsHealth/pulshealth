@@ -662,14 +662,21 @@ export const MarathonPoster = forwardRef<
           unit={unit}
         />
       </g>
-      <text x="74" y="1180" fill="#a5bbd1" fontSize="25">
-        {number(total * factor)} {unit} of training · Gold marks the longest run
-      </text>
-      <text x="74" y="1230" fill="#a5bbd1" fontSize="22">
-        {report.raceExcluded
-          ? "Race workout excluded. Gaps mean no recorded runs."
-          : "No race selected; totals may include the race."}
-      </text>
+      {report.race ? <>
+        <text x="74" y="1170" fill="#f5c985" fontSize="40">
+          {Math.floor(report.race.minutes / 60)}:{String(Math.floor(report.race.minutes % 60)).padStart(2,"0")}:{String(Math.round(report.race.minutes * 60) % 60).padStart(2,"0")} · race workout time
+        </text>
+        <text x="74" y="1220" fill="#eef4fc" fontSize="27">
+          {number(report.race.km === null ? null : report.race.km * factor,2)} recorded {unit} · {number(total * factor)} {unit} of training
+        </text>
+        <text x="74" y="1260" fill="#a5bbd1" fontSize="22">
+          {report.race.metrics?.heartRate !== undefined ? `${number(report.race.metrics.heartRate)} bpm average heart rate` : "Watch-recorded duration and distance"}
+          {report.race.metrics?.powerW !== undefined ? ` · ${number(report.race.metrics.powerW)} W average power` : ""}
+        </text>
+      </> : <>
+        <text x="74" y="1180" fill="#a5bbd1" fontSize="25">{number(total * factor)} {unit} of training · Gold marks the longest run</text>
+        <text x="74" y="1230" fill="#a5bbd1" fontSize="22">No race selected; totals may include the race.</text>
+      </>}
       <text x="74" y="1305" fill="#a5bbd1" fontSize="18">
         Made with PulsHealth
       </text>

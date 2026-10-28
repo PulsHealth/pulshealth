@@ -2,8 +2,8 @@ import { SearchItem } from './types';
 import { EXAMPLES } from './examples';
 
 export const STATIC_PAGES: SearchItem[] = [
-  { id: 'page-examples', type: 'page', title: 'Apple Health Data Cool Examples', description: 'Interactive year in review, marathon training, activity art and route atlas projects with recorded workouts and local files.', href: '/cool-examples/', icon: 'Activity' },
-  ...EXAMPLES.map(example => ({ id: `example-${example.slug}`, type: 'page' as const, title: example.title, description: example.description, href: `/cool-examples/${example.slug}/`, icon: 'Activity' })),
+  { id: 'page-examples', type: 'page', title: 'Apple Health Data Inspiration', description: 'Interactive year in review, marathon training, activity art and route atlas projects with recorded workouts and local files.', href: '/inspiration/', icon: 'Activity' },
+  ...EXAMPLES.map(example => ({ id: `example-${example.slug}`, type: 'page' as const, title: example.title, description: example.description, href: `/inspiration/${example.slug}/`, icon: 'Activity' })),
   { id: 'page-friend-flex', type: 'page', title: 'Friend Flex', description: 'Create fitness challenges with friends, compete on personal improvement, track progress, and share results in iMessage.', href: '/friend-flex/', icon: 'Activity' },
   { id: 'page-friend-flex-support', type: 'page', title: 'Friend Flex Support', description: 'Help with joining challenges, logging results, optional Apple Health, and deleting your data.', href: '/friend-flex/support/', icon: 'HelpCircle' },
   { id: 'page-friend-flex-privacy', type: 'page', title: 'Friend Flex Privacy Policy', description: 'What Friend Flex stores, who can see it, and how to delete your data.', href: '/friend-flex/privacy/', icon: 'Shield' },
