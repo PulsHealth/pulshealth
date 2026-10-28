@@ -1,6 +1,6 @@
 # Make something with your Apple Health history
 
-Five interactive projects at [pulshealth.com/inspiration](https://pulshealth.com/inspiration/):
+Interactive projects at [pulshealth.com/examples](https://pulshealth.com/examples/):
 
 - **Your health year in review:** monthly workout distances by activity, workout count and recorded time.
 - **The road to race day:** 16 calendar weeks of running, with total distance and longest run. The selected race workout stays separate.
@@ -145,7 +145,7 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
-Open `/inspiration/`. Rendering and browser interactions live in
+Open `/examples/`. Rendering and browser interactions live in
 `site/src/components/examples/`; sample generation, validation, training
 aggregation and projection live in `site/src/lib/example-data.ts`.
 

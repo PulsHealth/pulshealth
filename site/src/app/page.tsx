@@ -94,7 +94,7 @@ export default function HomePage() {
       <section className={styles.section}>
         <div className={styles.sectionHeading}>
           <div><h2>What will you make<br />with your health data?</h2><p>A year in review, a marathon training story, or artwork made from your walks, runs, and rides. Explore interactive projects and inspiration, then make them your own.</p></div>
-          <Link href="/inspiration/" className={styles.secondaryButton}>Explore cool examples <ArrowRight size={17} aria-hidden /></Link>
+          <Link href="/examples/" className={styles.secondaryButton}>Explore cool examples <ArrowRight size={17} aria-hidden /></Link>
         </div>
       </section>
 

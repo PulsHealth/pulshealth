@@ -152,7 +152,7 @@ export default function DocsPage() {
             {" · "}<a href="/docs/setup.md" className={textLink}>setup guide as Markdown</a>
           </p>
         </div>
-        <Link href="/inspiration/" className="group mb-14 block">
+        <Link href="/examples/" className="group mb-14 block">
           <Card className="transition-colors hover:border-brand/40">
             <CardHeader>
               <CardTitle className="transition-colors group-hover:text-brand">Explore cool examples</CardTitle>

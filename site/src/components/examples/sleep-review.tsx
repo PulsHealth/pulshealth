@@ -143,7 +143,7 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(
-                "https://pulshealth.com/inspiration/sleep-and-parenthood/",
+                "https://pulshealth.com/examples/sleep-and-parenthood/",
               );
               setStatus("Link copied");
             } catch {

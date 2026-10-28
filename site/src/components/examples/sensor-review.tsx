@@ -142,7 +142,7 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(
-                "https://pulshealth.com/inspiration/heart-rate-sensors/",
+                "https://pulshealth.com/examples/heart-rate-sensors/",
               );
               setStatus("Link copied");
             } catch {
