@@ -1284,3 +1284,67 @@
     max-height: 220px;
   }
 }
+.sleepHighlights {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin: 32px 0;
+}
+.sleepHighlights > div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  background: #152638;
+  border-radius: 12px;
+}
+.sleepHighlights strong {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  color: #f5c985;
+  font-variant-numeric: tabular-nums;
+}
+.sleepHighlights span {
+  font-size: 0.8rem;
+  color: #a9bdd2;
+}
+.sleepTimeline {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-top: 24px;
+}
+.sleepTimeline h3 {
+  font-size: 1.3rem;
+  margin-bottom: 24px;
+}
+.sleepPeriod {
+  display: grid;
+  grid-template-columns: 105px 1fr 85px;
+  gap: 8px;
+  align-items: center;
+  margin: 20px 0;
+  font-size: 0.8rem;
+}
+.sleepPeriod > div {
+  background: #253a50;
+  border-radius: 4px;
+  height: 10px;
+}
+.sleepPeriod i {
+  display: block;
+  height: 10px;
+  border-radius: 4px;
+}
+.sleepPeriod small {
+  grid-column: 2 / -1;
+  color: #a9bdd2;
+}
+@media (max-width: 800px) {
+  .sleepHighlights {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .sleepTimeline {
+    grid-template-columns: 1fr;
+  }
+}

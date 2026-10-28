@@ -326,7 +326,7 @@ changes. A failed state write may repeat a previously accepted batch.
 
 ## Inspiration
 
-`/inspiration/` showcases five projects, with detail routes generated from
+`/inspiration/` showcases interactive projects, with detail routes generated from
 `src/lib/examples.ts`. Default demos use reviewed recorded summaries and normalized route paths in
 `src/lib/example-recorded.json`. Raw source records stay private. Generated data
 from `src/lib/example-data.ts` is optional; user-selected showcase JSON is held
@@ -339,3 +339,5 @@ Share images contain no personal attribution. The year report includes optional
 daily health summaries, and the route tools support interactive styling and exploration.
 
 Each Inspiration project has a 1200×630 Open Graph/X link-preview card. Regenerate these reviewed display-only images with `bun scripts/gen-inspiration-cards.tsx` from `site/` (same licensed local font setup as the default social-card generator). All five projects offer local PNG downloads and native file sharing where supported; the year has post, square and story formats. The copy-link control shares only the public project URL.
+
+The sleep-through-parenthood project uses `sleep-recorded.json`, containing relative offsets and main-session measurements only. Rebuild it with `../examples/showcase/prepare-sleep.py` from private source responses; exact milestone dates stay outside the tree. Sleep durations remain in hours/minutes.

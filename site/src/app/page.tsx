@@ -66,13 +66,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className={styles.section}>
-        <div className={styles.sectionHeading}>
-          <div><h2>What will you make<br />with your health data?</h2><p>A year in review, a marathon training story, or artwork made from your walks, runs, and rides. Explore five interactive projects, then make them your own.</p></div>
-          <Link href="/inspiration/" className={styles.secondaryButton}>Explore cool examples <ArrowRight size={17} aria-hidden /></Link>
-        </div>
-      </section>
-
       <section id="sync" className={styles.ownershipSection}>
         <div className={`${styles.section} ${styles.ownershipGrid}`}>
           <div>
@@ -95,6 +88,13 @@ export default function HomePage() {
             <AiSetupPrompt />
             <div className={styles.setupSteps} aria-label="Setup steps"><span>Deploy your server</span><ArrowRight size={14} aria-hidden /><span>Pair your iPhone</span><ArrowRight size={14} aria-hidden /><span>Start syncing</span></div>
           </div>
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeading}>
+          <div><h2>What will you make<br />with your health data?</h2><p>A year in review, a marathon training story, or artwork made from your walks, runs, and rides. Explore interactive projects and inspiration, then make them your own.</p></div>
+          <Link href="/inspiration/" className={styles.secondaryButton}>Explore cool examples <ArrowRight size={17} aria-hidden /></Link>
         </div>
       </section>
 
