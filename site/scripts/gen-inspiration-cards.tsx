@@ -48,7 +48,7 @@ for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
   ).toLocaleString("en-US");
   const subtitle =
     example.slug === "heart-rate-sensors"
-      ? "Recording cadence, density and gaps"
+      ? "Apple Watch vs. Polar H10"
       : example.slug === "sleep-and-parenthood"
         ? "Sleep length, interruptions and the overall pattern"
         : example.slug === "year-in-review"

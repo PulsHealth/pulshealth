@@ -109,7 +109,13 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
   const activeWatch = Math.min(watchIndex, watchRuns.length - 1);
   const report: SensorReport = {
     ...data,
-    recordings: [watchRuns[activeWatch], data.recordings[1]],
+    recordings: [
+      watchRuns[activeWatch],
+      {
+        ...data.recordings[1],
+        label: data.monitor?.name ?? "Bluetooth sensor",
+      },
+    ],
   };
   const poster = useRef<SVGSVGElement>(null),
     end = Math.max(...report.recordings.map((run) => run.seconds)),
@@ -344,7 +350,7 @@ export function SensorReview({ compact = false }: { compact?: boolean }) {
                 </span>
                 <span>
                   <i style={{ background: colors[1] }} />
-                  External monitor
+                  {report.monitor?.name ?? "External monitor"}
                 </span>
               </div>
               <p>

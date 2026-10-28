@@ -11496,7 +11496,11 @@
     }
   ],
   "monitor": {
-    "name": "Bluetooth heart-rate monitor",
-    "connection": "Bluetooth Low Energy"
+    "name": "Polar H10",
+    "connection": "Bluetooth Low Energy",
+    "position": "Chest strap",
+    "sensing": "Electrical (ECG)",
+    "description": "A chest-strap heart-rate sensor that measures the heart’s electrical activity. This recording was captured over Bluetooth.",
+    "sourceUrl": "https://www.polar.com/us-en/sensors/h10-heart-rate-sensor"
   }
 }
