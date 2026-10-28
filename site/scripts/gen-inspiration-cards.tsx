@@ -1,3 +1,4 @@
+import { SLEEP_COLORS, type SleepStage } from "../src/lib/sleep-report";
 /** Render public link-preview cards from the same display-only data as the demos. */
 import { ImageResponse } from "next/og";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -41,7 +42,7 @@ for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
     example.slug === "heart-rate-sensors"
       ? "Recording cadence, density and gaps"
       : example.slug === "sleep-and-parenthood"
-        ? "Sleep before and after family milestones"
+        ? "Sleep stages, awakenings and nightly duration"
         : example.slug === "year-in-review"
           ? `${recorded.totals.workouts} workouts · ${totalMiles} miles`
           : example.slug === "marathon-training"
@@ -95,19 +96,27 @@ for (const example of [{ slug: "index", title: "Inspiration" }, ...EXAMPLES]) {
       <svg width="470" height="450" viewBox="0 0 720 420">
         {example.slug === "sleep-and-parenthood"
           ? sleepRecorded.milestones[0].days
-              .filter(
-                (day) =>
-                  day.offset >= -90 && day.offset < 90 && day.minutes !== null,
-              )
+              .filter((day) => day.offset >= -14 && day.offset < 14)
               .map((day) => (
-                <rect
-                  key={day.offset}
-                  x={20 + ((day.offset + 90) / 180) * 680}
-                  y={360 - Math.min(day.minutes! / 720, 1) * 300}
-                  width="3"
-                  height={Math.min(day.minutes! / 720, 1) * 300}
-                  fill={day.offset < 0 ? "#74c9ff" : "#f5c985"}
-                />
+                <g key={day.offset}>
+                  <rect
+                    x="20"
+                    y={(day.offset + 14) * 14}
+                    width="680"
+                    height="10"
+                    fill="#223449"
+                  />
+                  {(day.segments ?? []).map((segment, i) => (
+                    <rect
+                      key={i}
+                      x={20 + (segment.start / 720) * 680}
+                      y={(day.offset + 14) * 14}
+                      width={((segment.end - segment.start) / 720) * 680}
+                      height="10"
+                      fill={SLEEP_COLORS[segment.stage as SleepStage]}
+                    />
+                  ))}
+                </g>
               ))
           : routes.map((path, i) => (
               <path

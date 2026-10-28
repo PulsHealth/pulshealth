@@ -3,101 +3,163 @@ import { forwardRef, useRef, useState } from "react";
 import recorded from "@/lib/sleep-recorded.json";
 import {
   parseSleepReport,
+  relativeNight,
+  sleepNight,
   sleepPeriod,
   sleepTime,
+  SLEEP_COLORS,
+  type SleepDay,
   type SleepMilestone,
   type SleepReport,
+  type SleepStage,
 } from "@/lib/sleep-report";
 import { number } from "./report-visuals";
 import { exportImage } from "./export-image";
 import styles from "./examples.module.css";
-const blue = "#74c9ff",
-  gold = "#f5c985";
-const periods = [
-  { label: "Before", start: -90, end: 0 },
-  { label: "First month", start: 0, end: 30 },
-  { label: "Months 2–3", start: 30, end: 90 },
-  { label: "Months 4–6", start: 90, end: 180 },
-  { label: "Months 7–12", start: 180, end: 365 },
+const stages: SleepStage[] = [
+  "awake",
+  "rem",
+  "core",
+  "deep",
+  "unspecified",
+  "unknown",
 ];
+const stageNames: Record<SleepStage, string> = {
+  awake: "Awake",
+  rem: "REM",
+  core: "Core",
+  deep: "Deep",
+  unspecified: "Asleep · unstaged",
+  unknown: "Unrecorded / unclear",
+};
+const duration = (minutes: number | null) =>
+  minutes === null
+    ? "—"
+    : minutes >= 60
+      ? sleepTime(minutes)
+      : `${number(minutes, 1)} min`;
+const windows = [1, 3, 7, 14, 30, 60, 90];
+const initialReport = parseSleepReport(JSON.stringify(recorded));
+function ribbon(day: SleepDay, width: number, height: number, domain: number) {
+  return (day.segments ?? []).map((segment, i) => (
+    <rect
+      key={i}
+      x={(segment.start / domain) * width}
+      y="0"
+      width={((segment.end - segment.start) / domain) * width}
+      height={height}
+      fill={SLEEP_COLORS[segment.stage]}
+    >
+      <title>
+        {stageNames[segment.stage]} · {duration(segment.end - segment.start)}
+      </title>
+    </rect>
+  ));
+}
 const SleepPoster = forwardRef<
   SVGSVGElement,
-  { milestone: SleepMilestone; before: number; after: number }
->(function SleepPoster({ milestone, before, after }, ref) {
-  const a = sleepPeriod(milestone, -before, 0),
-    b = sleepPeriod(milestone, 0, after);
+  { milestone: SleepMilestone; before: number; after: number; minimum: number }
+>(function SleepPoster({ milestone, before, after, minimum }, ref) {
+  const a = sleepPeriod(milestone, -before, 0, minimum),
+    b = sleepPeriod(milestone, 0, after, minimum);
+  const groups = [
+    milestone.days.filter((day) => day.offset >= -before && day.offset < 0),
+    milestone.days.filter((day) => day.offset >= 0 && day.offset < after),
+  ];
+  const domain = Math.max(
+    720,
+    ...groups.flat().map((day) => day.segments?.at(-1)?.end ?? 0),
+  );
   return (
     <svg
       ref={ref}
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 1080 1350"
       role="img"
-      aria-label="Sleep before and after a family milestone"
+      aria-label="Sleep stages, duration and recorded awakenings before and after"
       style={{ fontFamily: "Arial, sans-serif" }}
     >
       <rect width="1080" height="1350" fill="#101d2e" />
       <text x="72" y="100" fill="#a9bdd2" fontSize="25">
-        A NEW CHAPTER · {milestone.label.toUpperCase()}
+        SLEEP · BEFORE &amp; AFTER
       </text>
-      <text x="64" y="235" fill="#eef4fc" fontSize="94" fontWeight="600">
-        Different days.
+      <text x="64" y="225" fill="#eef4fc" fontSize="87" fontWeight="600">
+        A new chapter.
       </text>
-      <text x="64" y="343" fill={gold} fontSize="94" fontWeight="600">
-        Different nights.
+      <text x="64" y="326" fill="#74c9ff" fontSize="87" fontWeight="600">
+        Night by night.
       </text>
       {[
-        { x: 72, summary: a, color: blue, label: `${before} days before` },
-        { x: 570, summary: b, color: gold, label: `${after} days after` },
-      ].map((item) => (
+        { x: 72, summary: a, n: before, label: "Before" },
+        { x: 570, summary: b, n: after, label: "After" },
+      ].map((item, i) => (
         <g key={item.x}>
-          <text x={item.x} y="530" fill={item.color} fontSize="66">
+          <text
+            x={item.x}
+            y="435"
+            fill={i ? "#f5c985" : "#74c9ff"}
+            fontSize="28"
+          >
+            {item.label} · {item.n} {item.n === 1 ? "night" : "nights"}
+          </text>
+          <text x={item.x} y="528" fill="#eef4fc" fontSize="64">
             {sleepTime(item.summary.median)}
           </text>
-          <text x={item.x} y="585" fill="#a9bdd2" fontSize="27">
-            {item.label}
+          <text x={item.x} y="573" fill="#a9bdd2" fontSize="23">
+            median sleep / night
           </text>
-          <text x={item.x} y="630" fill="#a9bdd2" fontSize="22">
-            {item.summary.count}/{item.summary.available} nights recorded
+          <text x={item.x} y="638" fill="#eef4fc" fontSize="33">
+            {number(item.summary.episodes, 1)} {item.summary.episodes === 1 ? "awake episode" : "awake episodes"} / night
+          </text>
+          <text x={item.x} y="682" fill="#a9bdd2" fontSize="23">
+            {duration(item.summary.awakeDuringSleep)} recorded awake / night
           </text>
         </g>
       ))}
-      {milestone.days
-        .filter(
-          (d) =>
-            d.offset >= -before &&
-            d.offset < Math.min(after, milestone.availableThrough + 1),
-        )
-        .map((day) => {
-          const x = 72 + ((day.offset + before) / (before + after)) * 936,
-            h = day.minutes === null ? 0 : Math.min(day.minutes / 720, 1) * 260;
-          return (
-            <rect
+      {groups.map((days, i) => (
+        <g key={i} transform={`translate(${72 + i * 498} 750)`}>
+          {days.map((day, row) => (
+            <g
               key={day.offset}
-              x={x}
-              y={1000 - h}
-              width={Math.max(1, 936 / (before + after) - 1)}
-              height={h}
-              fill={day.offset < 0 ? blue : gold}
-              opacity=".8"
-            />
-          );
-        })}
-      <line
-        x1={72 + (before / (before + after)) * 936}
-        x2={72 + (before / (before + after)) * 936}
-        y1="710"
-        y2="1020"
-        stroke="#eef4fc"
-        strokeDasharray="6 6"
-      />
-      <text x="72" y="1090" fill="#a9bdd2" fontSize="25">
-        Each bar is one recorded main sleep session.
+              transform={`translate(0 ${(row * 280) / Math.max(days.length, 1)})`}
+            >
+              <rect
+                width="438"
+                height={Math.min(16, 250 / Math.max(days.length, 1))}
+                fill="#223449"
+              />
+              {ribbon(
+                day,
+                438,
+                Math.min(16, 250 / Math.max(days.length, 1)),
+                domain,
+              )}
+            </g>
+          ))}
+        </g>
+      ))}
+      {["awake", "rem", "core", "deep"].map((stage, i) => (
+        <g key={stage} transform={`translate(${72 + i * 230} 1100)`}>
+          <rect
+            width="16"
+            height="16"
+            rx="3"
+            fill={SLEEP_COLORS[stage as SleepStage]}
+          />
+          <text x="26" y="16" fill="#a9bdd2" fontSize="22">
+            {stageNames[stage as SleepStage]}
+          </text>
+        </g>
+      ))}
+      <text x="72" y="1162" fill="#a9bdd2" fontSize="22">
+        One row per night · stages aligned by elapsed sleep-session time
       </text>
-      <text x="72" y="1150" fill="#eef4fc" fontSize="30">
-        Median sleep before and after a family milestone.
-      </text>
-      <text x="72" y="1205" fill="#a9bdd2" fontSize="23">
-        Missing nights stay missing. Timing alone does not establish cause.
+      <text x="72" y="1212" fill="#a9bdd2" fontSize="22">
+        {minimum === 0
+          ? "All recorded awake episodes"
+          : `Awake episodes ≥ ${minimum} min`}{" "}
+        · {a.count}/{a.available} before and {b.count}/{b.available} after
+        recorded
       </text>
       <text x="72" y="1300" fill="#a9bdd2" fontSize="18">
         Made with PulsHealth
@@ -106,19 +168,51 @@ const SleepPoster = forwardRef<
   );
 });
 export function SleepReview({ compact = false }: { compact?: boolean }) {
-  const [report, setReport] = useState<SleepReport>(recorded),
-    [index, setIndex] = useState(0),
-    [before, setBefore] = useState(90),
-    [after, setAfter] = useState(90),
+  const [report, setReport] = useState<SleepReport>(initialReport),
+    [before, setBefore] = useState(14),
+    [after, setAfter] = useState(14),
+    [minimum, setMinimum] = useState(1),
+    [chosen, setChosen] = useState(0),
     [status, setStatus] = useState("");
+  const detailRef = useRef<HTMLElement>(null);
+  const inspectNight = (offset: number) => {
+    setChosen(offset);
+    requestAnimationFrame(() =>
+      detailRef.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      }),
+    );
+  };
   const poster = useRef<SVGSVGElement>(null),
-    milestone = report.milestones[index],
-    a = sleepPeriod(milestone, -before, 0),
-    b = sleepPeriod(milestone, 0, after),
-    difference =
-      a.median === null || b.median === null ? null : b.median - a.median;
+    milestone = report.milestones[0],
+    a = sleepPeriod(milestone, -before, 0, minimum),
+    b = sleepPeriod(milestone, 0, after, minimum);
+  const visible = milestone.days.filter(
+      (day) => day.offset >= -before && day.offset < after,
+    ),
+    selected =
+      visible.find((day) => day.offset === chosen && day.minutes !== null) ??
+      visible.find((day) => day.offset >= 0 && day.minutes !== null) ??
+      visible.find((day) => day.minutes !== null),
+    detail = selected ? sleepNight(selected, minimum) : null;
+  const domain = Math.max(
+    720,
+    ...visible.map((day) => day.segments?.at(-1)?.end ?? 0),
+  );
+  const dayAt = (offset: number) =>
+    milestone.days.find((day) => day.offset === offset);
   if (compact)
-    return <SleepPoster milestone={milestone} before={before} after={after} />;
+    return (
+      <SleepPoster
+        milestone={milestone}
+        before={before}
+        after={after}
+        minimum={minimum}
+      />
+    );
   return (
     <div className={styles.demo}>
       <div className={styles.demoToolbar}>
@@ -149,10 +243,10 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
                   const file = e.target.files?.[0];
                   if (!file) return;
                   try {
-                    if (file.size > 1000000)
-                      throw new Error("Use a file smaller than 1 MB.");
+                    if (file.size > 5000000)
+                      throw new Error("Use a file smaller than 5 MB.");
                     setReport(parseSleepReport(await file.text()));
-                    setIndex(0);
+                    setChosen(0);
                     setStatus("");
                   } catch (error) {
                     setStatus(
@@ -171,8 +265,8 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
             </a>
             <button
               onClick={() => {
-                setReport(recorded);
-                setIndex(0);
+                setReport(initialReport);
+                setChosen(0);
               }}
             >
               Reset example
@@ -182,9 +276,9 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
       </div>
       <header className={styles.analysisHero}>
         <h2>
-          New chapters.
+          A new chapter.
           <br />
-          <span>Different nights.</span>
+          <span>Night by night.</span>
         </h2>
         <div className={styles.sectionStats}>
           <div>
@@ -192,243 +286,390 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
             <span>median sleep before</span>
           </div>
           <div>
-            <strong style={{ color: gold }}>{sleepTime(b.median)}</strong>
+            <strong style={{ color: "#f5c985" }}>{sleepTime(b.median)}</strong>
             <span>median sleep after</span>
           </div>
         </div>
       </header>
       <div className={styles.traceOptions}>
-        <div className={styles.segment}>
-          {report.milestones.map((m, i) => (
-            <button
-              key={i}
-              aria-pressed={index === i}
-              onClick={() => setIndex(i)}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
         <label className={styles.baseline}>
-          Baseline
+          Before
           <select
+            aria-label="Nights before"
             value={before}
             onChange={(e) => setBefore(Number(e.target.value))}
           >
-            {[30, 90, 180].map((n) => (
+            {windows.map((n) => (
               <option key={n} value={n}>
-                {n} days before
+                {n} {n === 1 ? "night" : "nights"}
               </option>
             ))}
           </select>
         </label>
         <label className={styles.baseline}>
-          Compare
+          After
           <select
+            aria-label="Nights after"
             value={after}
             onChange={(e) => setAfter(Number(e.target.value))}
           >
-            {[30, 90, 180, 365].map((n) => (
+            {windows.map((n) => (
               <option key={n} value={n}>
-                {n} days after
+                {n} {n === 1 ? "night" : "nights"}
               </option>
             ))}
           </select>
         </label>
-      </div>
-      <div className={styles.sleepHighlights}>
-        <div>
-          <strong>
-            {difference === null
-              ? "—"
-              : Math.round(difference) === 0
-                ? "0 min"
-                : `${difference > 0 ? "+" : "−"}${number(Math.abs(difference))} min`}
-          </strong>
-          <span>change in median main sleep</span>
-        </div>
-        <div>
-          <strong>
-            {number(a.short)}% → {number(b.short)}%
-          </strong>
-          <span>recorded nights under 6 hours</span>
-        </div>
-        <div>
-          <strong>
-            {a.count} / {a.available} → {b.count} / {b.available}
-          </strong>
-          <span>nights recorded in each window</span>
-        </div>
-      </div>
-      <section className={styles.reportSection}>
-        <div className={styles.sectionTitle}>
-          <h2>Every night tells part of it</h2>
-          <span>{milestone.label} · daily sleep</span>
-        </div>
-        <svg
-          viewBox="0 0 960 340"
-          role="img"
-          aria-label="Daily main sleep duration before and after the selected milestone"
-        >
-          {[0, 3, 6, 9, 12].map((h) => (
-            <g key={h}>
-              <line
-                x1="50"
-                x2="930"
-                y1={270 - (h / 12) * 230}
-                y2={270 - (h / 12) * 230}
-                stroke="#2b4056"
-              />
-              <text
-                x="40"
-                y={274 - (h / 12) * 230}
-                textAnchor="end"
-                fill="#a9bdd2"
-                fontSize="12"
-              >
-                {h}h
-              </text>
-            </g>
-          ))}
-          {milestone.days
-            .filter((day) => day.offset >= -before && day.offset < after)
-            .map((day) => {
-              const x = 50 + ((day.offset + before) / (before + after)) * 880;
-              return day.minutes === null ? (
-                <line
-                  key={day.offset}
-                  x1={x}
-                  x2={x}
-                  y1="274"
-                  y2="278"
-                  stroke="#5d7084"
-                />
-              ) : (
-                <rect
-                  key={day.offset}
-                  x={x}
-                  y={270 - Math.min(day.minutes / 720, 1) * 230}
-                  width={Math.max(0.7, 880 / (before + after) - 0.7)}
-                  height={Math.min(day.minutes / 720, 1) * 230}
-                  fill={day.offset < 0 ? blue : gold}
-                  opacity=".8"
-                >
-                  <title>
-                    {day.offset < 0
-                      ? `${-day.offset} days before`
-                      : `Day ${day.offset} after`}
-                    : {sleepTime(day.minutes)}
-                  </title>
-                </rect>
-              );
-            })}
-          <line
-            x1={50 + (before / (before + after)) * 880}
-            x2={50 + (before / (before + after)) * 880}
-            y1="20"
-            y2="280"
-            stroke="#eef4fc"
-            strokeDasharray="4 4"
-          />
-          <text x="50" y="310" fill={blue} fontSize="14">
-            {before} days before
-          </text>
-          <text
-            x={50 + (before / (before + after)) * 880 + 8}
-            y="32"
-            fill="#eef4fc"
-            fontSize="13"
+        <label className={styles.baseline}>
+          Count awake episodes
+          <select
+            aria-label="Minimum awake episode"
+            value={minimum}
+            onChange={(e) => setMinimum(Number(e.target.value))}
           >
-            Arrival
-          </text>
-          <text x="930" y="310" fill={gold} fontSize="14" textAnchor="end">
-            {after} days after
-          </text>
-        </svg>
-        <p className={styles.micro}>
-          Main sleep session per wake-up day. Missing nights appear as gaps;
-          chart height is capped at 12 hours.
-        </p>
-      </section>
+            <option value="0">Any duration</option>
+            <option value="1">1+ minute</option>
+            <option value="5">5+ minutes</option>
+          </select>
+        </label>
+      </div>
       <section className={styles.reportSection}>
         <div className={styles.sectionTitle}>
-          <h2>More than the average</h2>
-          <span>Before and after, side by side</span>
+          <h2>See how each night unfolded</h2>
+          <span>Select a night for the stage detail</span>
         </div>
-        <div className={styles.headToHead}>
-          {[
-            { label: "Before", summary: a, color: blue },
-            { label: "After", summary: b, color: gold },
-          ].map((item) => (
-            <article key={item.label} style={{ borderTopColor: item.color }}>
-              <h3>{item.label}</h3>
-              <strong className={styles.headPace} style={{ color: item.color }}>
-                {sleepTime(item.summary.median)}
-              </strong>
-              <dl>
-                <div>
-                  <dt>Middle half of nights</dt>
-                  <dd>
-                    {sleepTime(item.summary.lower)}–
-                    {sleepTime(item.summary.upper)}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Nights under 6h</dt>
-                  <dd>{number(item.summary.short)}%</dd>
-                </div>
-                <div>
-                  <dt>Median recorded awake time</dt>
-                  <dd>{number(item.summary.awake)} min</dd>
-                </div>
-                <div>
-                  <dt>Awake-time coverage</dt>
-                  <dd>{item.summary.awakeCount} nights</dd>
-                </div>
-              </dl>
-            </article>
+        <div className={styles.sleepStageLegend}>
+          {stages.map((stage) => (
+            <span key={stage}>
+              <i style={{ background: SLEEP_COLORS[stage] }} />
+              {stageNames[stage]}
+            </span>
           ))}
         </div>
-        <p className={styles.micro}>
-          Awake time covers recorded wakefulness within the main session. It
-          does not capture every overnight interruption.
-        </p>
-      </section>
-      <section className={styles.reportSection}>
-        <div className={styles.sectionTitle}>
-          <h2>The months that followed</h2>
-          <span>Median main sleep · matched relative windows</span>
-        </div>
-        <div className={styles.sleepTimeline}>
-          {report.milestones.map((m) => (
-            <div key={m.label}>
-              <h3>{m.label}</h3>
-              {periods.map((period) => {
-                const summary = sleepPeriod(
-                  m,
-                  period.start < 0 ? -before : period.start,
-                  period.end,
-                );
+        <div className={styles.sleepNightGrid}>
+          {[
+            {
+              title: "Before",
+              offsets: Array.from({ length: before }, (_, i) => i - before),
+            },
+            {
+              title: "After",
+              offsets: Array.from({ length: after }, (_, i) => i),
+            },
+          ].map((group) => (
+            <div key={group.title}>
+              <h3>{group.title}</h3>
+              <div className={styles.nightScale}>
+                <span>Night</span>
+                <span>0 → {number(domain / 60)} elapsed hours</span>
+                <span>Sleep · wakes</span>
+              </div>
+              {group.offsets.map((offset) => {
+                const day = dayAt(offset),
+                  stats = day ? sleepNight(day, minimum) : null;
                 return (
-                  <div className={styles.sleepPeriod} key={period.label}>
-                    <span>{period.label}</span>
-                    <div>
-                      <i
-                        style={{
-                          width: `${Math.min((summary.median ?? 0) / 600, 1) * 100}%`,
-                          background: period.start < 0 ? blue : gold,
-                        }}
-                      />
-                    </div>
-                    <strong>{sleepTime(summary.median)}</strong>
-                    <small>
-                      {summary.count}/{summary.available} nights
-                    </small>
-                  </div>
+                  <button
+                    className={styles.sleepNightRow}
+                    key={offset}
+                    disabled={!day || day.minutes === null}
+                    aria-pressed={selected?.offset === offset}
+                    aria-label={`${relativeNight(offset)}, ${sleepTime(day?.minutes ?? null)}, ${number(stats?.episodes ?? null)} counted awake episodes`}
+                    onClick={() => inspectNight(offset)}
+                  >
+                    <span>{offset < 0 ? -offset : offset + 1}</span>
+                    <svg
+                      viewBox="0 0 720 24"
+                      role="img"
+                      aria-label={`${relativeNight(offset)} sleep stages`}
+                    >
+                      <rect width="720" height="24" fill="#223449" />
+                      {day && ribbon(day, 720, 24, domain)}
+                    </svg>
+                    <span>
+                      {sleepTime(day?.minutes ?? null)}
+                      <small>{number(stats?.episodes ?? null)} wakes</small>
+                    </span>
+                  </button>
                 );
               })}
             </div>
           ))}
+        </div>
+      </section>
+      {selected && detail && (
+        <section
+          ref={detailRef}
+          className={`${styles.reportSection} ${styles.sleepNightDetail}`}
+        >
+          <div className={styles.sectionTitle}>
+            <h2>{relativeNight(selected.offset)}</h2>
+            <span>{sleepTime(selected.minutes)} recorded sleep</span>
+          </div>
+          <svg
+            viewBox="0 0 960 270"
+            role="img"
+            aria-label="Selected night sleep stage timeline, elapsed hours"
+          >
+            {stages.map((stage, i) => (
+              <g key={stage}>
+                <text
+                  x="4"
+                  y={42 + i * 32}
+                  fill={SLEEP_COLORS[stage]}
+                  fontSize="12"
+                >
+                  {stageNames[stage]}
+                </text>
+                <line
+                  x1="145"
+                  x2="930"
+                  y1={38 + i * 32}
+                  y2={38 + i * 32}
+                  stroke="#2b4056"
+                />
+              </g>
+            ))}
+            {(selected.segments ?? []).map((segment, i) => (
+              <rect
+                key={i}
+                x={
+                  145 +
+                  (segment.start / (selected.segments?.at(-1)?.end || 720)) *
+                    785
+                }
+                y={25 + stages.indexOf(segment.stage) * 32}
+                width={Math.max(
+                  0.6,
+                  ((segment.end - segment.start) /
+                    (selected.segments?.at(-1)?.end || 720)) *
+                    785,
+                )}
+                height="23"
+                fill={SLEEP_COLORS[segment.stage]}
+              >
+                <title>
+                  {stageNames[segment.stage]} ·{" "}
+                  {duration(segment.end - segment.start)}
+                </title>
+              </rect>
+            ))}
+            {[0, 0.25, 0.5, 0.75, 1].map((t) => (
+              <text
+                key={t}
+                x={145 + t * 785}
+                y="244"
+                textAnchor="middle"
+                fill="#a9bdd2"
+                fontSize="12"
+              >
+                {number((t * (selected.segments?.at(-1)?.end ?? 0)) / 60, 1)} h
+              </text>
+            ))}
+          </svg>
+          {!selected.segments?.length && (
+            <p className={styles.shortNote}>
+              No stage intervals recorded for this night.
+            </p>
+          )}
+          <div className={styles.nightDetailStats}>
+            {[
+              {
+                label: "Counted awake episodes",
+                value: number(detail.episodes),
+              },
+              {
+                label: "Recorded awake time",
+                value: duration(detail.awakeMinutes),
+              },
+              {
+                label: "Longest counted awake episode",
+                value: duration(detail.longestWake),
+              },
+              {
+                label: "Longest recorded sleep stretch",
+                value: sleepTime(detail.longestSleep),
+              },
+              { label: "REM", value: sleepTime(detail.rem) },
+              { label: "Deep", value: sleepTime(detail.deep) },
+            ].map((item) => (
+              <div key={item.label}>
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      <div className={styles.sleepHighlights}>
+        <div>
+          <strong>
+            {number(a.episodes, 1)} → {number(b.episodes, 1)}
+          </strong>
+          <span>median counted awake episodes / night</span>
+        </div>
+        <div>
+          <strong>
+            {duration(a.awakeDuringSleep)} → {duration(b.awakeDuringSleep)}
+          </strong>
+          <span>median recorded awake time / night</span>
+        </div>
+        <div>
+          <strong>
+            {sleepTime(a.longestSleep)} → {sleepTime(b.longestSleep)}
+          </strong>
+          <span>median longest recorded sleep stretch</span>
+        </div>
+      </div>
+      <section className={styles.reportSection}>
+        <div className={styles.sectionTitle}>
+          <h2>Before &amp; after, side by side</h2>
+          <span>Medians across recorded nights</span>
+        </div>
+        <div className={styles.intervalTable}>
+          <table>
+            <thead>
+              <tr>
+                <th>Per-night measure</th>
+                <th>Before</th>
+                <th>After</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                {
+                  label: "Sleep duration",
+                  values: [sleepTime(a.median), sleepTime(b.median)],
+                },
+                {
+                  label: "Middle half of sleep durations",
+                  values: [
+                    `${sleepTime(a.lower)}–${sleepTime(a.upper)}`,
+                    `${sleepTime(b.lower)}–${sleepTime(b.upper)}`,
+                  ],
+                },
+                {
+                  label: "Counted awake episodes",
+                  values: [number(a.episodes, 1), number(b.episodes, 1)],
+                },
+                {
+                  label: "Recorded awake time",
+                  values: [
+                    duration(a.awakeDuringSleep),
+                    duration(b.awakeDuringSleep),
+                  ],
+                },
+                {
+                  label: "Typical counted episode length",
+                  values: [
+                    duration(a.episodeLength),
+                    duration(b.episodeLength),
+                  ],
+                },
+                {
+                  label: "Longest counted awake episode",
+                  values: [duration(a.longestWake), duration(b.longestWake)],
+                },
+                {
+                  label: "Longest recorded sleep stretch",
+                  values: [
+                    sleepTime(a.longestSleep),
+                    sleepTime(b.longestSleep),
+                  ],
+                },
+                {
+                  label: "Core sleep",
+                  values: [sleepTime(a.core), sleepTime(b.core)],
+                },
+                {
+                  label: "REM sleep",
+                  values: [sleepTime(a.rem), sleepTime(b.rem)],
+                },
+                {
+                  label: "Deep sleep",
+                  values: [sleepTime(a.deep), sleepTime(b.deep)],
+                },
+                {
+                  label: "Nights under 6 hours",
+                  values: [`${number(a.short)}%`, `${number(b.short)}%`],
+                },
+                {
+                  label: "Recorded nights / window",
+                  values: [
+                    `${a.count}/${a.available}`,
+                    `${b.count}/${b.available}`,
+                  ],
+                },
+                {
+                  label: "Nights with interruption records",
+                  values: [
+                    number(a.episodeCoverage),
+                    number(b.episodeCoverage),
+                  ],
+                },
+              ].map((row) => (
+                <tr key={row.label}>
+                  <td>{row.label}</td>
+                  <td>{row.values[0]}</td>
+                  <td>{row.values[1]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className={styles.micro}>
+          Typical episode length is the median of all counted episodes; other
+          measures summarize each night first.
+        </p>
+      </section>
+      <section className={styles.reportSection}>
+        <h2>Compare night by night</h2>
+        <div className={styles.intervalTable}>
+          <table>
+            <thead>
+              <tr>
+                <th>Night from arrival</th>
+                <th>Before sleep</th>
+                <th>After sleep</th>
+                <th>Before wakes</th>
+                <th>After wakes</th>
+                <th>Before awake</th>
+                <th>After awake</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: Math.max(before, after) }, (_, i) => {
+                const pre = i < before ? dayAt(-i - 1) : undefined,
+                  post = i < after ? dayAt(i) : undefined,
+                  preStats = pre ? sleepNight(pre, minimum) : null,
+                  postStats = post ? sleepNight(post, minimum) : null;
+                return (
+                  <tr key={i}>
+                    <td>{i + 1}</td>
+                    <td>
+                      <button
+                        disabled={!pre || pre.minutes === null}
+                        onClick={() => inspectNight(-i - 1)}
+                      >
+                        {sleepTime(pre?.minutes ?? null)}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        disabled={!post || post.minutes === null}
+                        onClick={() => inspectNight(i)}
+                      >
+                        {sleepTime(post?.minutes ?? null)}
+                      </button>
+                    </td>
+                    <td>{number(preStats?.episodes ?? null)}</td>
+                    <td>{number(postStats?.episodes ?? null)}</td>
+                    <td>{duration(preStats?.awakeMinutes ?? null)}</td>
+                    <td>{duration(postStats?.awakeMinutes ?? null)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </section>
       <div className={styles.raceFooter}>
@@ -442,7 +683,7 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
                   setStatus(
                     await exportImage(
                       poster.current,
-                      "sleep-new-chapters",
+                      "sleep-before-after",
                       share,
                     ),
                   );
@@ -457,8 +698,10 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
         <p role="status">{status}</p>
       </div>
       <p className={styles.micro}>
-        Changes coincide with family milestones. Other routines, recording
-        coverage and life changes may also affect the pattern.
+        Awake episodes count recorded wakefulness between sleep periods.
+        Unrecorded gaps are not counted as awakenings. Each night uses one
+        consistent sleep source. Calendar dates and identifying details are
+        omitted.
       </p>
       <div className={styles.exportOnly} aria-hidden="true">
         <SleepPoster
@@ -466,6 +709,7 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
           milestone={milestone}
           before={before}
           after={after}
+          minimum={minimum}
         />
       </div>
     </div>
