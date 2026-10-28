@@ -241,7 +241,9 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
           <strong>
             {difference === null
               ? "—"
-              : `${difference > 0 ? "+" : "−"}${number(Math.abs(difference))} min`}
+              : Math.round(difference) === 0
+                ? "0 min"
+                : `${difference > 0 ? "+" : "−"}${number(Math.abs(difference))} min`}
           </strong>
           <span>change in median main sleep</span>
         </div>
@@ -340,8 +342,7 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
             Arrival
           </text>
           <text x="930" y="310" fill={gold} fontSize="14" textAnchor="end">
-            {Math.min(after, milestone.availableThrough + 1)} days observed
-            after
+            {after} days after
           </text>
         </svg>
         <p className={styles.micro}>
@@ -403,7 +404,11 @@ export function SleepReview({ compact = false }: { compact?: boolean }) {
             <div key={m.label}>
               <h3>{m.label}</h3>
               {periods.map((period) => {
-                const summary = sleepPeriod(m, period.start, period.end);
+                const summary = sleepPeriod(
+                  m,
+                  period.start < 0 ? -before : period.start,
+                  period.end,
+                );
                 return (
                   <div className={styles.sleepPeriod} key={period.label}>
                     <span>{period.label}</span>
