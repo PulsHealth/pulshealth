@@ -4274,7 +4274,16 @@
   "raceExcluded": true,
   "race": {
     "km": 42.77902833408821,
-    "minutes": 287.717396213611
+    "minutes": 287.717396213611,
+    "metrics": {
+      "heartRate": 154.46043771043767,
+      "powerW": 255.73315323427877,
+      "steps": 43342,
+      "activeKcal": 4146.39599999991,
+      "strideM": 1.0111782477341382,
+      "groundContactMs": 315.89150032195715,
+      "verticalCm": 10.875382653061218
+    }
   },
   "routes": [
     {

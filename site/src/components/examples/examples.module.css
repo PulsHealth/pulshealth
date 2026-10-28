@@ -435,6 +435,8 @@
   margin-top: 15px;
 }
 .trainingHero h2 > span {
+  font-size: .6em;
+  letter-spacing: -.04em;
   color: #83ceff;
 }
 .trainingHero .sectionStats {
@@ -887,5 +889,107 @@
   }
   .artwork {
     border-radius: 9px;
+  }
+}
+.racePerformance {
+  margin-top: 28px;
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid #5b503e;
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at top right, #51402a55, transparent 65%), #111e2d;
+}
+.raceFinish {
+  display: grid;
+  grid-template-columns: 1fr minmax(180px, 300px);
+  gap: 24px;
+  align-items: center;
+}
+.raceFinish h2 {
+  font-size: clamp(2.8rem, 7vw, 6.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.06em;
+  margin: 16px 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+.raceFinish p,
+.racePace span {
+  color: #a9bdd2;
+  font-size: 0.85rem;
+}
+.raceFinish svg {
+  width: 100%;
+  max-width: 300px;
+  justify-self: center;
+}
+.racePace {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 24px;
+}
+.racePace strong {
+  font-size: 2.3rem;
+  color: #f5c985;
+}
+.raceMetrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px 18px;
+  padding: 32px 0;
+  margin-top: 24px;
+  border-top: 1px solid #39434a;
+}
+.raceMetrics > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.raceMetrics strong {
+  font-size: 1.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.raceMetrics small {
+  font-size: 0.8rem;
+  color: #a9bdd2;
+}
+.raceMetrics span {
+  font-size: 0.8rem;
+  color: #a9bdd2;
+}
+.raceComparison {
+  max-width: 720px;
+  margin: 16px 0 28px;
+}
+.raceComparison h3 {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+.raceComparison > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 0.85rem;
+}
+.raceComparison i {
+  display: block;
+  height: 9px;
+  border-radius: 5px;
+  grid-column: 1 / -1;
+}
+@media (max-width: 700px) {
+  .raceFinish {
+    grid-template-columns: 1fr;
+  }
+  .raceFinish svg {
+    max-width: 240px;
+  }
+  .raceMetrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .trainingHero h2 > span {
+    font-size: 0.62em;
+    letter-spacing: -0.04em;
   }
 }

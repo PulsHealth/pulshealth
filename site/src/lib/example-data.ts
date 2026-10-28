@@ -1,10 +1,20 @@
 /** Generated fallback fixtures and validation for local health exports. */
 export type Activity = "Running" | "Walking" | "Cycling" | "Other";
+export type RaceMetrics = {
+  heartRate?: number;
+  powerW?: number;
+  steps?: number;
+  activeKcal?: number;
+  strideM?: number;
+  groundContactMs?: number;
+  verticalCm?: number;
+};
 export type ExampleWorkout = {
   id: string;
   date: string;
   activity: Activity;
   sport?: string;
+  metrics?: RaceMetrics;
   distanceM: number | null;
   durationS: number;
   route?: { lat: number; lon: number }[];
@@ -178,6 +188,30 @@ export function parseExampleData(text: string): ExampleData {
       throw new Error(
         "Check workout IDs, dates, activity names, distances, and durations. IDs must be unique; missing distance must be null.",
       );
+    if (w.metrics !== undefined) {
+      if (
+        !w.metrics ||
+        typeof w.metrics !== "object" ||
+        Array.isArray(w.metrics)
+      )
+        throw new Error("Workout metrics must be an object.");
+      for (const key of [
+        "heartRate",
+        "powerW",
+        "steps",
+        "activeKcal",
+        "strideM",
+        "groundContactMs",
+        "verticalCm",
+      ])
+        if (
+          w.metrics[key] !== undefined &&
+          (!Number.isFinite(w.metrics[key]) || w.metrics[key] < 0)
+        )
+          throw new Error(
+            "Workout metrics must be nonnegative finite numbers.",
+          );
+    }
     ids.add(w.id);
     if (w.route !== undefined) {
       if (

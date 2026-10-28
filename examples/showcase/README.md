@@ -169,3 +169,5 @@ geometry. Check the year, reporting calendar, route coverage, and race exclusion
 against the private source before placing reviewed display data into the site.
 Never put the input health export in the repository. Existing output files are
 preserved. Update these recorded-example counts when replacing the fixture.
+
+Race workout records can include optional `metrics`: `heartRate` (bpm), `powerW` (W), `steps`, `activeKcal`, `strideM` (m), `groundContactMs` (ms), and `verticalCm` (cm). Supply only measured values. The display defaults to miles, feet and inches; the training view can switch to metric. Raw source units remain canonical.

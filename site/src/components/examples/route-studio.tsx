@@ -424,7 +424,7 @@ export function RouteAtlas({
               }
             >
               <title>
-                {r.activity} · {MONTH_NAMES[r.month - 1]} · {number(r.km, 1)} km
+                {r.activity} · {MONTH_NAMES[r.month - 1]} · {number(r.km === null ? null : r.km * 0.621371192, 1)} mi
               </title>
             </path>
           ))}
@@ -506,8 +506,8 @@ export function RouteAtlas({
             <span>routes shown</span>
           </div>
           <div>
-            <strong>{number(km)}</strong>
-            <span>recorded km</span>
+            <strong>{number(km * 0.621371192)}</strong>
+            <span>recorded miles</span>
           </div>
           <div>
             <strong>{hours(routes.reduce((n, r) => n + r.minutes, 0))}</strong>
@@ -521,7 +521,7 @@ export function RouteAtlas({
             <strong>
               {chosen.activity} · {MONTH_NAMES[chosen.month - 1]}
             </strong>
-            <span>{number(chosen.km, 1)} km</span>
+            <span>{number(chosen.km === null ? null : chosen.km * 0.621371192, 1)} mi</span>
             <span>{hours(chosen.minutes)}</span>
             <button onClick={() => setSelected(null)}>Show all</button>
           </>

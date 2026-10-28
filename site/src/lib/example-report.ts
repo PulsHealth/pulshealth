@@ -4,6 +4,7 @@ import {
   trainingWeeks,
   type Activity,
   type ExampleData,
+  type RaceMetrics,
 } from "./example-data";
 export const MONTH_NAMES = [
   "Jan",
@@ -70,7 +71,7 @@ export type Report = {
   days: ReportDay[];
   weeks: ReportWeek[];
   runs: ReportRun[];
-  race: { km: number | null; minutes: number } | null;
+  race: { km: number | null; minutes: number; metrics?: RaceMetrics } | null;
   raceExcluded: boolean;
   routes: ReportRoute[];
   routeCoverage: { workouts: number; withRoutes: number; localRoutes: number };
@@ -240,6 +241,29 @@ export function buildReport(data: ExampleData, localOnly = false): Report {
       ? {
           km: race.distanceM === null ? null : race.distanceM / 1000,
           minutes: race.durationS / 60,
+          ...(race.metrics
+            ? {
+                metrics: Object.fromEntries(
+                  [
+                    "heartRate",
+                    "powerW",
+                    "steps",
+                    "activeKcal",
+                    "strideM",
+                    "groundContactMs",
+                    "verticalCm",
+                  ]
+                    .filter(
+                      (key) =>
+                        race.metrics![key as keyof RaceMetrics] !== undefined,
+                    )
+                    .map((key) => [
+                      key,
+                      race.metrics![key as keyof RaceMetrics],
+                    ]),
+                ),
+              }
+            : {}),
         }
       : null,
     routes: paths.map((p, i) => ({

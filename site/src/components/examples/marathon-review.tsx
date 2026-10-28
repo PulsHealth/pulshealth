@@ -1,13 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
 import type { Report } from "@/lib/example-report";
-import {
-  WeekChart,
-  MarathonPoster,
-  number,
-  hours,
-  duration,
-} from "./report-visuals";
+import { WeekChart, MarathonPoster, number, hours } from "./report-visuals";
+import { RacePerformance } from "./race-performance";
 import { exportImage } from "./export-image";
 import styles from "./examples.module.css";
 export function MarathonReview({
@@ -23,7 +18,7 @@ export function MarathonReview({
         0,
       ),
     ),
-    [unit, setUnit] = useState<"km" | "mi">("km"),
+    [unit, setUnit] = useState<"km" | "mi">("mi"),
     [status, setStatus] = useState("");
   const svg = useRef<SVGSVGElement>(null),
     factor = unit === "mi" ? 0.621371192 : 1,
@@ -43,12 +38,17 @@ export function MarathonReview({
           <h2>
             16 weeks.
             <br />
-            <span>
-              {number(total * factor)} {unit}.
-            </span>
+            <span>to marathon day.</span>
           </h2>
         </div>
         <div className={styles.sectionStats}>
+          <div>
+            <strong>
+              {number(total * factor)}
+              <small> {unit}</small>
+            </strong>
+            <span>training distance</span>
+          </div>
           <div>
             <strong>{report.runs.length}</strong>
             <span>training runs</span>
@@ -229,21 +229,10 @@ export function MarathonReview({
           ))}
         </div>
       </section>
+      {report.race && (
+        <RacePerformance race={report.race} longest={longest} unit={unit} />
+      )}
       <div className={styles.raceFooter}>
-        {report.race && (
-          <div>
-            <span className={styles.micro}>Race workout · kept separate</span>
-            <strong>{duration(report.race.minutes)}</strong>
-            <span>
-              recorded duration ·{" "}
-              {number(
-                report.race.km === null ? null : report.race.km * factor,
-                2,
-              )}{" "}
-              {unit}
-            </span>
-          </div>
-        )}
         <button
           className={styles.primaryButton}
           onClick={async () => {

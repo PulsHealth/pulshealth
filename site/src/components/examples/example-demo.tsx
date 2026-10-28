@@ -98,16 +98,6 @@ export function ExampleDetails({ slug }: { slug: ExampleSlug }) {
   return (
     <div className={styles.methodNotes}>
       <details>
-        <summary>Data notes</summary>
-        <p>
-          {slug === "year-in-review"
-            ? "Steps and daily health metrics use the database’s daily summary surfaces. Sleep uses the longest recorded session on each wake-up day. Monthly heart values are means of daily values. Missing observations remain missing; totals describe recorded coverage."
-            : slug === "marathon-training"
-              ? "Sixteen Monday-starting calendar weeks. The selected race workout is separate from training. Gaps mean no recorded runs, rather than confirmed rest. Distances and durations are watch measurements. This is a retrospective, not a training prescription."
-              : "Recorded route shapes with location labels and original coordinates omitted. Collection and orbit modes scale routes independently; orbit also rotates them. Atlas and layers preserve a shared local projection. The example selects a local area and retains its original input sampling. Shapes can still reveal recognizable places."}
-        </p>
-      </details>
-      <details>
         <summary>Make one with AI</summary>
         <p className={styles.prompt}>{example.prompt}</p>
         <button

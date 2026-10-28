@@ -314,7 +314,7 @@ export const YearPoster = forwardRef<
               .join(" / ")}
           </text>
           <text x="74" y="1178" fill={muted} fontSize="24">
-            {number(report.totals.km)} recorded workout km
+            {number(report.totals.km * 0.621371192)} recorded workout miles
           </text>
           <text x="74" y="1220" fill={muted} fontSize="22">
             {number(metrics.eightHours)} nights with 8+ hours of recorded sleep
@@ -599,7 +599,7 @@ export function WeekChart({
 export const MarathonPoster = forwardRef<
   SVGSVGElement,
   { report: Report; unit?: "km" | "mi" }
->(function MarathonPoster({ report, unit = "km" }, ref) {
+>(function MarathonPoster({ report, unit = "mi" }, ref) {
   const factor = unit === "mi" ? 0.621371192 : 1;
   const total = report.weeks.reduce((n, w) => n + w.km, 0),
     peak = Math.max(0, ...report.weeks.map((w) => w.km)),
@@ -624,7 +624,7 @@ export const MarathonPoster = forwardRef<
         16 weeks.
       </text>
       <text x="74" y="370" fill="#74c9ff" fontSize="64">
-        {number(total * factor)} {unit} of preparation.
+        to marathon day.
       </text>
       {[
         { v: report.runs.length, l: "recorded training runs" },
@@ -663,7 +663,7 @@ export const MarathonPoster = forwardRef<
         />
       </g>
       <text x="74" y="1180" fill="#a5bbd1" fontSize="25">
-        Weekly distance · Gold marks the longest run
+        {number(total * factor)} {unit} of training · Gold marks the longest run
       </text>
       <text x="74" y="1230" fill="#a5bbd1" fontSize="22">
         {report.raceExcluded

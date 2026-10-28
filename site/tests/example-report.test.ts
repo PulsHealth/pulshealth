@@ -94,3 +94,13 @@ test("recorded report retains complete coverage and relative training consistenc
     ),
   );
 });
+
+test("race metrics retain only measured display fields and reject invalid values", () => {
+  const data = sampleData();
+  const race = data.workouts.find((w) => w.id === data.raceId)!;
+  race.metrics = { heartRate: 154, strideM: 1.01, steps: 43342 };
+  const report = buildReport(parseExampleData(JSON.stringify(data)));
+  assert.deepEqual(report.race?.metrics, race.metrics);
+  race.metrics.heartRate = -1;
+  assert.throws(() => parseExampleData(JSON.stringify(data)), /metrics/);
+});
