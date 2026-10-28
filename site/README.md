@@ -324,9 +324,9 @@ previous fingerprints and retry after the next verified deployment (including
 an unchanged republish); no tight automatic retry loop is used. Each accepted batch is checkpointed; a later deployment retries unacknowledged
 changes. A failed state write may repeat a previously accepted batch.
 
-## Interactive examples
+## Inspiration
 
-`/examples/` showcases four projects, with detail routes generated from
+`/inspiration/` showcases four projects, with detail routes generated from
 `src/lib/examples.ts`. Default demos use reviewed recorded summaries and normalized route paths in
 `src/lib/example-recorded.json`. Raw source records stay private. Generated data
 from `src/lib/example-data.ts` is optional; user-selected showcase JSON is held

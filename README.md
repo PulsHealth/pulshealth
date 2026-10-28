@@ -15,7 +15,7 @@ protocol. Everything in this repository is [Apache-2.0](LICENSE).
 
 ## Make something with your data
 
-Explore [interactive examples](https://pulshealth.com/examples/): a health year
+Explore [health data inspiration](https://pulshealth.com/inspiration/): a health year
 in review, marathon training, activity as art, and an atlas of walks, runs and
 rides. Explore recorded examples, then use your own files with the
 [local adapter and instructions](examples/showcase/README.md).

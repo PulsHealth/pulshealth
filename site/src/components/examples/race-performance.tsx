@@ -66,7 +66,7 @@ export function RacePerformance({
         <div>
           <span className={styles.micro}>Marathon day</span>
           <h2>{clock(race.minutes * 60)}</h2>
-          <p>Recorded finish time</p>
+          <p>Recorded workout duration</p>
           <div className={styles.racePace}>
             <strong>
               {distance && distance > 0 ? pace(race.minutes / distance) : "—"}

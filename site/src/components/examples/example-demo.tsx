@@ -34,7 +34,7 @@ export function ExampleDemo({
     <div className={styles.demo}>
       <div className={styles.demoToolbar}>
         <span className={styles.dataBadge}>
-          {isExample ? "Example" : "Your file"}
+          {isExample ? "Inspiration" : "Your file"}
         </span>
         <details className={styles.importDetails}>
           <summary>Use your data</summary>
@@ -79,7 +79,7 @@ export function ExampleDemo({
               setError("");
             }}
           >
-            Reset example
+            Reset inspiration
           </button>
         )}
       </div>
