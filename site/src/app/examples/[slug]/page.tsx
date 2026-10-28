@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { EXAMPLES } from "@/lib/examples";
 import {
@@ -37,10 +38,11 @@ export default async function ExamplePage({
   return (
     <main className={styles.page}>
       <header className={styles.detailHeader}>
-        <h1>{example.title}</h1>
         <Link href="/examples/" className={styles.back}>
-          All examples
+          <ChevronLeft size={16} aria-hidden="true" />
+          Back
         </Link>
+        <h1>{example.title}</h1>
       </header>
       <ExampleDemo slug={example.slug} />
       <ExampleDetails slug={example.slug} />
