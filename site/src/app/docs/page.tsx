@@ -152,6 +152,14 @@ export default function DocsPage() {
             {" · "}<a href="/docs/setup.md" className={textLink}>setup guide as Markdown</a>
           </p>
         </div>
+        <Link href="/inspiration/" className="group mb-14 block">
+          <Card className="transition-colors hover:border-brand/40">
+            <CardHeader>
+              <CardTitle className="transition-colors group-hover:text-brand">Explore cool examples</CardTitle>
+              <CardDescription className="text-base">What could you build with your health data freed from your phone?</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
         {getDocLinksByGroup().map(({ group, links }) => (
           <div key={group} className="mb-14">
             <h2 className="text-2xl font-bold tracking-tight">{group}</h2>

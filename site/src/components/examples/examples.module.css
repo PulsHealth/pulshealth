@@ -1,0 +1,1286 @@
+.page {
+  max-width: 1280px;
+  width: 100%;
+  margin: auto;
+  padding: 34px 28px 72px;
+  color: #eef4fc;
+}
+.galleryHeader {
+  margin: 14px 0 35px;
+}
+.galleryHeader h1 {
+  font-size: clamp(2rem, 4.5vw, 3.3rem);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  font-weight: 600;
+}
+.galleryHeader p {
+  color: #a9bdd2;
+  margin-top: 14px;
+  font-size: 1.05rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 42px 30px;
+}
+.project {
+  min-width: 0;
+}
+.project h2 {
+  font-size: 1.4rem;
+  font-weight: 550;
+  letter-spacing: -0.025em;
+  margin: 17px 0 9px;
+}
+.project p {
+  color: #a9bdd2;
+  font-size: 0.95rem;
+}
+.link,
+.back,
+.textLink {
+  color: #83ceff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.project .link {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 0.9rem;
+}
+.preview {
+  display: block;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #101d2e;
+  border: 1px solid #2a3d53;
+  height: 500px;
+}
+.preview > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.preview:hover {
+  border-color: #83ceff;
+}
+.detailHeader {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 22px;
+}
+.detailHeader h1 {
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 550;
+  letter-spacing: -0.035em;
+}
+.back {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.demo {
+  min-width: 0;
+}
+.demoToolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 2;
+}
+.dataBadge {
+  font-size: 0.76rem;
+  color: #a9bdd2;
+  border: 1px solid #30465e;
+  padding: 5px 9px;
+  border-radius: 30px;
+}
+.demo button,
+.methodNotes button,
+.demo input,
+.demo select {
+  font: inherit;
+}
+.demo button,
+.methodNotes button {
+  border: 1px solid #3b536d;
+  border-radius: 7px;
+  background: #17283d;
+  color: #eff6ff;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 0.87rem;
+}
+.demo button:hover,
+.methodNotes button:hover {
+  border-color: #83ceff;
+}
+.demo button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.demo button[aria-pressed="true"] {
+  background: #d9ecff;
+  color: #122338;
+  border-color: #d9ecff;
+}
+.demo button.primaryButton {
+  background: #d9ecff;
+  color: #122338;
+  border-color: #d9ecff;
+  font-weight: 550;
+}
+.demo button.quietButton {
+  background: transparent;
+}
+.importDetails {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: #b9c9dc;
+}
+.importDetails summary {
+  cursor: pointer;
+}
+.importDetails > div {
+  position: absolute;
+  right: 0;
+  top: 38px;
+  max-width: min(340px, 100%);
+  padding: 20px;
+  background: #16263a;
+  border: 1px solid #3b536d;
+  border-radius: 10px;
+  color: #d7e4f2;
+}
+.importDetails label {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.importDetails input {
+  max-width: 100%;
+}
+.importDetails p {
+  font-size: 0.82rem;
+  margin: 12px 0;
+}
+.importDetails a,
+.methodNotes a {
+  color: #83ceff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.studio {
+  display: grid;
+  grid-template-columns: minmax(0, 760px) minmax(230px, 1fr);
+  gap: 34px;
+  align-items: start;
+}
+.artwork {
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid #2c4057;
+  min-width: 0;
+  background: #101d2e;
+}
+.artwork > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.editor {
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  position: sticky;
+  top: 95px;
+}
+.editor h2 {
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+  font-weight: 500;
+}
+.shortNote {
+  color: #a9bdd2;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  max-width: 360px;
+}
+.editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: #bacbde;
+  font-size: 0.85rem;
+}
+.editor input:not([type="range"]),
+.editor select {
+  background: #15263b;
+  border: 1px solid #3b536d;
+  color: #edf5ff;
+  border-radius: 7px;
+  padding: 11px;
+  width: 100%;
+}
+.editor input[type="range"],
+.atlasBottom input,
+.weekSlider input {
+  accent-color: #83ceff;
+  width: 100%;
+  cursor: pointer;
+}
+.editor fieldset {
+  border: 0;
+  min-width: 0;
+}
+.editor legend {
+  color: #bacbde;
+  font-size: 0.85rem;
+  margin-bottom: 9px;
+}
+.segment {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.segment button {
+  padding: 8px 11px;
+  font-size: 0.82rem;
+}
+.exportButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.micro {
+  color: #9fb4cb;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+.status {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #b9d6ee;
+  min-height: 0;
+}
+.status:empty {
+  display: none;
+}
+.reportGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 34px;
+  scroll-margin-top: 95px;
+}
+.reportSection {
+  border: 1px solid #2b4057;
+  border-radius: 12px;
+  padding: 27px;
+  background: #101d2e;
+  min-width: 0;
+}
+.reportSection h2 {
+  font-size: 1.35rem;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+  font-weight: 500;
+  margin-bottom: 25px;
+}
+.wideSection {
+  grid-column: 1/-1;
+}
+.sectionTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 15px;
+}
+.sectionTitle > span {
+  color: #9fb4cb;
+  font-size: 0.85rem;
+}
+.sectionStats {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 23px;
+}
+.sectionStats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 80px;
+}
+.sectionStats strong {
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  line-height: 1.1;
+}
+.sectionStats small {
+  font-size: 0.9rem;
+  letter-spacing: normal;
+  color: #b4c7dc;
+}
+.sectionStats span {
+  color: #a9bdd2;
+  font-size: 0.79rem;
+  line-height: 1.5;
+}
+.reportSection > svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.reportSection > .micro {
+  margin-top: 15px;
+}
+.heatmap > svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.heatmap > span {
+  color: #9fb4cb;
+  font-size: 0.72rem;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.heatmap i {
+  display: inline-block;
+  width: 55px;
+  height: 8px;
+  background: #74c9ff;
+}
+.sportList {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+.sportList > div > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.sportList strong {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.sportList span {
+  font-size: 0.78rem;
+  color: #a9bdd2;
+}
+.sportList i {
+  display: block;
+  height: 7px;
+  border-radius: 3px;
+}
+.methodNotes {
+  border-top: 1px solid #2b4057;
+  margin-top: 35px;
+  padding-top: 8px;
+  color: #a9bdd2;
+  font-size: 0.85rem;
+  line-height: 1.8;
+}
+.methodNotes details {
+  border-bottom: 1px solid #21364e;
+  padding: 16px 0;
+}
+.methodNotes summary {
+  cursor: pointer;
+  color: #cfdfef;
+}
+.methodNotes p {
+  max-width: 850px;
+  margin: 12px 0;
+}
+.methodNotes button,
+.methodNotes a {
+  margin-right: 20px;
+}
+.prompt {
+  white-space: pre-wrap;
+  font-family: inherit;
+}
+.error {
+  color: #ffbdb5;
+  margin: 10px 0 20px;
+}
+.trainingHero {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 35px;
+  align-items: end;
+  margin-bottom: 30px;
+  padding: 25px 4px;
+}
+.trainingHero h2 {
+  font-size: clamp(3.6rem, 8vw, 6.2rem);
+  line-height: 0.96;
+  letter-spacing: -0.065em;
+  font-weight: 500;
+  margin-top: 15px;
+}
+.trainingHero h2 > span {
+  font-size: 0.6em;
+  letter-spacing: -0.04em;
+  color: #83ceff;
+}
+.trainingHero .sectionStats {
+  margin-bottom: 5px;
+  gap: 16px;
+}
+.trainingGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(250px, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  color: #a9bdd2;
+  font-size: 0.74rem;
+  margin-top: 16px;
+}
+.legend span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.weekSlider {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 15px;
+  color: #a9bdd2;
+  font-size: 0.85rem;
+  margin-top: 25px;
+}
+.weekSlider input {
+  grid-column: 1/-1;
+}
+.weekDetail {
+  padding: 27px;
+  background: #132439;
+  border: 1px solid #30475f;
+  border-radius: 12px;
+}
+.weekDetail h2 {
+  font-size: 1.8rem;
+  letter-spacing: -0.04em;
+  margin-bottom: 25px;
+}
+.dayStrip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+  margin: 24px 0;
+}
+.dayStrip > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  height: 105px;
+  gap: 10px;
+}
+.dayStrip span {
+  color: #a9bdd2;
+  font-size: 0.75rem;
+}
+.dayStrip i {
+  display: block;
+  width: 100%;
+  max-width: 20px;
+  border-radius: 4px;
+}
+.runList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.runList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 13px 0;
+  border-top: 1px solid #30475f;
+  font-size: 0.78rem;
+  color: #a9bdd2;
+}
+.runList strong {
+  color: #e7f2ff;
+  font-weight: 500;
+}
+.trainingCalendar {
+  display: grid;
+  grid-template-columns: 24px repeat(16, minmax(24px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.calendarLabels,
+.calendarWeek {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+.demo button.calendarWeek {
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  padding: 4px 0;
+  min-width: 24px;
+}
+.calendarWeek > span,
+.calendarLabels > span {
+  color: #a9bdd2;
+  font-size: 0.68rem;
+  height: 16px;
+}
+.calendarWeek i {
+  display: block;
+  width: 100%;
+  height: 20px;
+  border-radius: 3px;
+}
+.calendarLabels > span:not(:first-child) {
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+.demo button.calendarWeek[aria-pressed="true"] {
+  outline: 1px solid #83ceff;
+  background: #20384f;
+  color: #eef5ff;
+}
+.raceFooter {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32px 4px;
+}
+.raceFooter > div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.raceFooter strong {
+  font-size: 2.5rem;
+  letter-spacing: -0.04em;
+  font-weight: 500;
+}
+.raceFooter > div > span:last-child {
+  font-size: 0.82rem;
+  color: #a9bdd2;
+}
+.exportOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  pointer-events: none;
+}
+.atlas {
+  border: 1px solid #2b4057;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #101d2e;
+}
+.atlasToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+}
+.filterChips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.filterChips button {
+  font-size: 0.8rem;
+  padding: 8px 11px;
+}
+.zoomButtons {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.zoomButtons button {
+  padding: 7px 11px;
+}
+.zoomButtons span {
+  font-size: 0.76rem;
+  min-width: 40px;
+  text-align: center;
+  color: #a9bdd2;
+}
+.atlasSurface {
+  padding: 0 15px;
+}
+.atlasSurface > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: grab;
+  max-height: 640px;
+}
+.atlasSurface > svg:active {
+  cursor: grabbing;
+}
+.atlasBottom {
+  padding: 15px 25px 25px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+.atlasBottom label {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  color: #a9bdd2;
+  font-size: 0.84rem;
+}
+.atlasBottom input {
+  grid-column: 1/-1;
+}
+.miniStats {
+  display: flex;
+  gap: 22px;
+  justify-content: space-between;
+}
+.miniStats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.miniStats strong {
+  font-size: 1.6rem;
+  letter-spacing: -0.04em;
+  font-weight: 500;
+}
+.miniStats span {
+  font-size: 0.73rem;
+  color: #a9bdd2;
+}
+.routeInspector {
+  padding: 20px 25px;
+  border-top: 1px solid #2b4057;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: #a9bdd2;
+  font-size: 0.83rem;
+}
+.routeInspector strong {
+  color: #eef5ff;
+  font-weight: 500;
+}
+.routeInspector button:first-of-type {
+  margin-left: auto;
+}
+.atlas > .status {
+  padding: 0 25px 15px;
+}
+.atlas > p:not(.status) {
+  padding: 15px 25px;
+}
+.page a:focus-visible,
+.demo button:focus-visible,
+.demo input:focus-visible,
+.demo select:focus-visible,
+.methodNotes summary:focus-visible {
+  outline: 2px solid #83ceff;
+  outline-offset: 4px;
+}
+@media (min-width: 1400px) {
+  .preview {
+    height: 540px;
+  }
+}
+@media (max-width: 900px) {
+  .studio {
+    grid-template-columns: minmax(0, 1.7fr) minmax(200px, 1fr);
+    gap: 24px;
+  }
+  .trainingGrid {
+    grid-template-columns: 1fr;
+  }
+  .trainingHero {
+    grid-template-columns: 1fr;
+  }
+  .editor {
+    gap: 17px;
+  }
+  .editor h2 {
+    font-size: 2rem;
+  }
+  .reportSection {
+    padding: 21px;
+  }
+  .sectionStats {
+    gap: 17px;
+  }
+}
+@media (max-width: 700px) {
+  .page {
+    padding: 24px 16px 50px;
+  }
+  .galleryHeader {
+    margin: 8px 0 28px;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+  .preview {
+    height: 480px;
+  }
+  .detailHeader {
+    align-items: start;
+    gap: 15px;
+  }
+  .detailHeader h1 {
+    font-size: 1.25rem;
+    text-align: right;
+  }
+  .studio {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .editor {
+    position: static;
+    padding: 2px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .editor h2 {
+    font-size: 1.7rem;
+    grid-column: 1/-1;
+  }
+  .editor .shortNote,
+  .editor .exportButtons,
+  .editor .status,
+  .editor > .micro,
+  .editor > .textLink {
+    grid-column: 1/-1;
+  }
+  .editor label,
+  .editor fieldset {
+    min-width: 0;
+  }
+  .editor .quietButton {
+    align-self: end;
+  }
+  .reportGrid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-top: 25px;
+  }
+  .wideSection {
+    grid-column: auto;
+  }
+  .reportSection {
+    padding: 19px 15px;
+  }
+  .reportSection h2 {
+    font-size: 1.2rem;
+    margin-bottom: 22px;
+  }
+  .sectionStats {
+    gap: 20px 12px;
+  }
+  .sectionStats strong {
+    font-size: 1.9rem;
+  }
+  .sectionStats > div {
+    min-width: 40%;
+  }
+  .trainingHero {
+    gap: 25px;
+    padding: 10px 0;
+  }
+  .trainingHero h2 {
+    font-size: 4rem;
+  }
+  .trainingHero .sectionStats > div {
+    min-width: 28%;
+  }
+  .trainingHero .sectionStats strong {
+    font-size: 1.6rem;
+  }
+  .weekDetail {
+    padding: 22px 18px;
+  }
+  .atlasToolbar {
+    padding: 15px;
+    gap: 12px;
+  }
+  .filterChips button {
+    padding: 8px 10px;
+  }
+  .atlasSurface {
+    padding: 0;
+  }
+  .atlasBottom {
+    padding: 10px 18px 22px;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .routeInspector {
+    padding: 18px;
+    gap: 14px;
+  }
+  .miniStats strong {
+    font-size: 1.3rem;
+  }
+  .miniStats {
+    gap: 14px;
+  }
+  .routeInspector button:first-of-type {
+    margin-left: 0;
+  }
+  .methodNotes {
+    margin-top: 25px;
+  }
+  .trainingCalendar {
+    grid-template-columns: 20px repeat(16, 26px);
+    gap: 6px;
+  }
+  .raceFooter {
+    padding: 25px 0;
+    gap: 20px;
+  }
+  .editor .segment button {
+    font-size: 0.75rem;
+    padding: 9px;
+  }
+  .artwork {
+    border-radius: 9px;
+  }
+}
+.racePerformance {
+  margin-top: 28px;
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid #5b503e;
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at top right, #51402a55, transparent 65%), #111e2d;
+}
+.raceFinish {
+  display: grid;
+  grid-template-columns: 1fr minmax(180px, 300px);
+  gap: 24px;
+  align-items: center;
+}
+.raceFinish h2 {
+  font-size: clamp(2.8rem, 7vw, 6.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.06em;
+  margin: 16px 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+.raceFinish p,
+.racePace span {
+  color: #a9bdd2;
+  font-size: 0.85rem;
+}
+.raceFinish svg {
+  width: 100%;
+  max-width: 300px;
+  justify-self: center;
+}
+.racePace {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 24px;
+}
+.racePace strong {
+  font-size: 2.3rem;
+  color: #f5c985;
+}
+.raceMetrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px 18px;
+  padding: 32px 0;
+  margin-top: 24px;
+  border-top: 1px solid #39434a;
+}
+.raceMetrics > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.raceMetrics strong {
+  font-size: 1.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.raceMetrics small {
+  font-size: 0.8rem;
+  color: #a9bdd2;
+}
+.raceMetrics span {
+  font-size: 0.8rem;
+  color: #a9bdd2;
+}
+.raceComparison {
+  max-width: 720px;
+  margin: 16px 0 28px;
+}
+.raceComparison h3 {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+.raceComparison > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 0.85rem;
+}
+.raceComparison i {
+  display: block;
+  height: 9px;
+  border-radius: 5px;
+  grid-column: 1 / -1;
+}
+@media (max-width: 700px) {
+  .raceFinish {
+    grid-template-columns: 1fr;
+  }
+  .raceFinish svg {
+    max-width: 240px;
+  }
+  .raceMetrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .trainingHero h2 > span {
+    font-size: 0.62em;
+    letter-spacing: -0.04em;
+  }
+}
+.analysisHero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 28px 0 40px;
+}
+.analysisHero h2 {
+  font-size: clamp(2.6rem, 6vw, 5.3rem);
+  line-height: 1.03;
+  letter-spacing: -0.055em;
+}
+.analysisHero h2 span {
+  color: #74c9ff;
+}
+.groupChoices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.groupChoices button {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 6px;
+  min-width: 120px;
+  padding: 14px 20px;
+}
+.groupChoices small {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+.analysisGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.analysisGrid svg {
+  width: 100%;
+}
+.analysisGrid .raceMetrics {
+  grid-template-columns: 1fr 1fr;
+}
+.analysisGrid .raceMetrics strong {
+  font-size: 1.3rem;
+}
+.selectedPace {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 22px 0;
+}
+.selectedPace strong {
+  font-size: 4rem;
+  letter-spacing: -0.06em;
+  color: #f5c985;
+}
+.selectedPace span {
+  color: #a9bdd2;
+}
+.baseline {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.baseline select {
+  padding: 9px;
+  border: 1px solid #3b5269;
+  border-radius: 7px;
+  background: #13263a;
+  color: #eef4fc;
+  max-width: 180px;
+}
+.paceDelta {
+  color: #f5c985;
+  font-size: 1.15rem;
+  margin-top: 20px;
+}
+.effortChart {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  overflow-x: auto;
+  padding: 24px 0;
+}
+.demo .effortChart button {
+  display: flex;
+  flex: 1 0 52px;
+  min-width: 52px;
+  align-items: center;
+  flex-direction: column;
+  justify-content: end;
+  padding: 8px 2px;
+  border: 0;
+  background: transparent;
+  gap: 10px;
+  font-size: 0.7rem;
+}
+.effortChart i {
+  width: 24px;
+  border-radius: 4px 4px 0 0;
+}
+.effortChart small {
+  color: #a9bdd2;
+}
+.attemptTable {
+  overflow-x: auto;
+  margin-top: 24px;
+}
+.attemptTable table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.attemptTable th,
+.attemptTable td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #2a4056;
+  font-size: 0.8rem;
+}
+.attemptTable th {
+  color: #a9bdd2;
+  font-weight: 400;
+}
+.attemptTable tr[data-selected="true"] {
+  background: #283546;
+}
+@media (max-width: 800px) {
+  .analysisGrid {
+    grid-template-columns: 1fr;
+  }
+  .analysisHero {
+    align-items: start;
+    flex-direction: column;
+  }
+}
+.demo .effortChart button[aria-pressed="true"] {
+  color: #f5c985;
+}
+.headToHead {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+.headToHead article {
+  background: #152638;
+  border: 1px solid #2b4157;
+  border-top-width: 4px;
+  padding: 24px;
+  border-radius: 12px;
+  min-width: 0;
+}
+.headToHead h3 {
+  font-size: 1.4rem;
+  margin: 12px 0;
+}
+.headPace {
+  display: block;
+  font-size: clamp(2.1rem, 5vw, 3.8rem);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+}
+.headPace small {
+  font-size: 1rem;
+  color: #a9bdd2;
+  letter-spacing: 0;
+}
+.headToHead dl {
+  margin-top: 20px;
+}
+.headToHead dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid #304459;
+  padding: 12px 0;
+  font-size: 0.9rem;
+}
+.headToHead dt {
+  color: #a9bdd2;
+}
+.headToHead dd {
+  font-variant-numeric: tabular-nums;
+}
+.traceOptions,
+.replayControls {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 22px 0;
+}
+.traceOptions label,
+.replayControls label {
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.replayControls select {
+  background: #13263a;
+  border: 1px solid #3b5269;
+  padding: 9px;
+  border-radius: 6px;
+}
+.replayControls input[type="range"] {
+  flex: 1 1 250px;
+  accent-color: #f5c985;
+}
+.replayLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  font-size: 0.75rem;
+  margin: 12px 0 20px;
+}
+.replayLegend span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.replayLegend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.replayClock {
+  color: #f5c985;
+  font-size: 1.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.replayGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+.replayGrid svg {
+  width: 100%;
+  align-self: center;
+}
+.replayStandings {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 12px;
+}
+.replayStandings > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 0.8rem;
+}
+.replayStandings i {
+  height: 4px;
+  border-radius: 3px;
+  grid-column: 1 / -1;
+}
+.reportSection + .reportSection {
+  margin-top: 24px;
+}
+@media (max-width: 600px) {
+  .headToHead {
+    gap: 10px;
+  }
+  .headToHead article {
+    padding: 15px 12px;
+  }
+  .headToHead dl > div {
+    font-size: 0.75rem;
+  }
+  .headToHead h3 {
+    font-size: 1.05rem;
+  }
+  .replayGrid {
+    grid-template-columns: 1fr;
+  }
+  .replayStandings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    max-height: 220px;
+  }
+}

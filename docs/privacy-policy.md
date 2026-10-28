@@ -627,6 +627,14 @@ Website statistics stay separate from the iPhone app and hosted health viewer.
 Authorized AI assistants can read aggregate reports for the operator. The website's
 sign-in links open the separate service at `app.pulshealth.com`, described above.
 
+The interactive examples can open a health-data file you select. Its contents
+are processed in memory in your browser, without uploading the file or storing
+it in browser storage. The examples do not automatically send records to AI or map services.
+Choosing Share opens your device’s sharing controls with the rendered image;
+its destination depends on what you select.
+Downloaded artwork is saved only when you choose to download it. Reloading or
+resetting an example discards the loaded records.
+
 Two forms on the site — "Sign up for updates" and the consulting contact
 form — send exactly what you type into them (a name, an email address, and
 for the consulting form an optional organisation and a message) to a form

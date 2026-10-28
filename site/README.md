@@ -6,7 +6,7 @@ thing from [`web/`](../web/README.md), which is the self-hosted viewer that
 reads your own Postgres.
 
 The desktop and mobile navigation list Dashboard (the hosted viewer at
-app.pulshealth.com), Knowledge Base, Docs, and Consulting in that order.
+app.pulshealth.com), Knowledge Base, Examples, Docs, and Consulting in that order.
 Sign-in lives in the dashboard demo banner rather than the public navigation.
 Blog remains linked from the footer. The navbar uses a centered 1280 px content row, 72 px high on desktop and
 64 px on phones, with 32 px desktop / 24 px mobile edge padding (20 px on narrow phones), matching the dashboard. Both switch to a dropdown
@@ -323,3 +323,19 @@ neither proves indexing or an AI recommendation. Failed submissions preserve
 previous fingerprints and retry after the next verified deployment (including
 an unchanged republish); no tight automatic retry loop is used. Each accepted batch is checkpointed; a later deployment retries unacknowledged
 changes. A failed state write may repeat a previously accepted batch.
+
+## Inspiration
+
+`/inspiration/` showcases five projects, with detail routes generated from
+`src/lib/examples.ts`. Default demos use reviewed recorded summaries and normalized route paths in
+`src/lib/example-recorded.json`. Raw source records stay private. Generated data
+from `src/lib/example-data.ts` is optional; user-selected showcase JSON is held
+only in memory.
+No health file upload, browser persistence, map provider or AI request is made.
+The local CSV/JSONL adapter and route SQL live in `../examples/showcase/`.
+The examples lead with clickable previews and titles; AI briefs are collapsed. Distances default to miles.
+The navbar labels the section Examples after Knowledge Base. Footer, homepage and docs landing links also lead to Inspiration.
+Share images contain no personal attribution. The year report includes optional
+daily health summaries, and the route tools support interactive styling and exploration.
+
+Each Inspiration project has a 1200×630 Open Graph/X link-preview card. Regenerate these reviewed display-only images with `bun scripts/gen-inspiration-cards.tsx` from `site/` (same licensed local font setup as the default social-card generator). All five projects offer local PNG downloads and native file sharing where supported; the year has post, square and story formats. The copy-link control shares only the public project URL.

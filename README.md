@@ -13,6 +13,13 @@ protocol. Everything in this repository is [Apache-2.0](LICENSE).
   <img src="docs/images/overview/data-flow.png" alt="Unlock your health data: export CSV, JSON, or JSONL files from PulsHealth, or sync Apple Health to your own PostgreSQL database" width="100%">
 </p>
 
+## Make something with your data
+
+Explore [cool examples](https://pulshealth.com/inspiration/): a health year
+in review, marathon training, activity as art, and an atlas of walks, runs and
+rides. Explore recorded examples, then use your own files with the
+[local adapter and instructions](examples/showcase/README.md).
+
 ## Get started
 
 - **Export files:** install the app, grant Health access, and choose the types,
