@@ -49,7 +49,7 @@ export function ExampleDemo({
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(
-                `https://pulshealth.com/inspiration/${slug}/`,
+                `https://pulshealth.com/examples/${slug}/`,
               );
               setLinkStatus("Link copied");
             } catch {

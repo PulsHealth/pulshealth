@@ -20,8 +20,8 @@ export async function generateMetadata({
     ? {
         title: `${e.title} | PulsHealth Inspiration`,
         description: e.description,
-        alternates: { canonical: `/inspiration/${slug}/` },
-        openGraph: {title:`${e.title} | PulsHealth`,description:e.description,url:`/inspiration/${slug}/`,images:[{url:`/inspiration-cards/${slug}.png`,width:1200,height:630,alt:e.title}]},
+        alternates: { canonical: `/examples/${slug}/` },
+        openGraph: {title:`${e.title} | PulsHealth`,description:e.description,url:`/examples/${slug}/`,images:[{url:`/inspiration-cards/${slug}.png`,width:1200,height:630,alt:e.title}]},
         twitter: {card:"summary_large_image",title:`${e.title} | PulsHealth`,description:e.description,images:[`/inspiration-cards/${slug}.png`]},
       }
     : {};
@@ -37,7 +37,7 @@ export default async function ExamplePage({
   return (
     <main className={styles.page}>
       <header className={styles.detailHeader}>
-        <Link href="/inspiration/" className={styles.back}>
+        <Link href="/examples/" className={styles.back}>
           All inspiration
         </Link>
         <h1>{example.title}</h1>

@@ -326,7 +326,7 @@ changes. A failed state write may repeat a previously accepted batch.
 
 ## Inspiration
 
-`/inspiration/` showcases interactive projects, with detail routes generated from
+`/examples/` is the canonical showcase URL; legacy `/inspiration/` and `/cool-examples/` URLs redirect directly to the matching example. It showcases interactive projects, with detail routes generated from
 `src/lib/examples.ts`. Default demos use reviewed recorded summaries and normalized route paths in
 `src/lib/example-recorded.json`. Raw source records stay private. Generated data
 from `src/lib/example-data.ts` is optional; user-selected showcase JSON is held

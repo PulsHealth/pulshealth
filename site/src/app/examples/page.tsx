@@ -6,8 +6,8 @@ export const metadata = {
   title: "Inspiration | PulsHealth",
   description:
     "Make a health year in review, explore marathon training, compare repeated running routes, turn activity into art, and visualize your walks, runs and rides. Interactive demos using recorded workouts and local examples.",
-  alternates: { canonical: "/inspiration/" },
-  openGraph: { title: "Inspiration | PulsHealth", description: "What could you build with your health data freed from your phone?", url: "/inspiration/", images: [{url:"/inspiration-cards/index.png",width:1200,height:630,alt:"PulsHealth health data inspiration"}] },
+  alternates: { canonical: "/examples/" },
+  openGraph: { title: "Inspiration | PulsHealth", description: "What could you build with your health data freed from your phone?", url: "/examples/", images: [{url:"/inspiration-cards/index.png",width:1200,height:630,alt:"PulsHealth health data inspiration"}] },
   twitter: {card:"summary_large_image",title:"Inspiration | PulsHealth",images:["/inspiration-cards/index.png"]},
 };
 export default function ExamplesPage() {
@@ -23,7 +23,7 @@ export default function ExamplesPage() {
             <h2>{example.title}</h2>
             <Link
               className={styles.preview}
-              href={`/inspiration/${example.slug}/`}
+              href={`/examples/${example.slug}/`}
               aria-label={`View ${example.title}`}
             >
               <ExampleDemo slug={example.slug} compact />
