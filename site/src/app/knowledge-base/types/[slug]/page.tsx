@@ -11,6 +11,8 @@ import { ClinicalRangesTable } from "@/components/clinical-ranges-table";
 import { PageHero } from "@/components/page-hero";
 import type { Metadata } from "next";
 import { serializeJsonLd } from "@/lib/json-ld";
+import { TypeDataLinks } from "@/components/type-data-links";
+import { personalDashboardHref, publicDemoHref } from "@/lib/public-demo-types";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -105,6 +107,7 @@ export default async function TypeDetailPage({ params }: PageProps) {
           </>
         }
       >
+        <div className="flex flex-col items-center gap-3">
         <ul className="flex flex-wrap justify-center gap-2 text-sm">
           {facts.map((fact) => (
             <li key={fact.label} className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1">
@@ -113,6 +116,11 @@ export default async function TypeDetailPage({ params }: PageProps) {
             </li>
           ))}
         </ul>
+        <TypeDataLinks
+          exampleHref={publicDemoHref(data.identifier)}
+          dashboardHref={personalDashboardHref(data.identifier)}
+        />
+        </div>
       </PageHero>
 
       <main className="container mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-10 lg:grid-cols-[minmax(0,44rem)_minmax(12rem,1fr)] lg:gap-12">

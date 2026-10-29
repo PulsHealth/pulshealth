@@ -163,6 +163,18 @@ of the sitemap; Search Console exclusions for these stubs and the private
 Related metrics on a type page link only to types with a knowledge-base
 page; other related concepts remain visible as text cards.
 
+Knowledge-base type titles include quiet links to real example data and to
+personal exploration. `src/lib/public-demo-types.ts` is an explicit public-demo
+coverage allowlist, checked in a fresh signed-out browser; it is not inferred
+from private data or article figures. Review it when replacing the demo pack.
+Example links enter `/demo?type=<identifier>` and open that metric with All Time
+selected so sparse records remain visible. The viewer change must be released
+before deploying these links. “Explore your own” opens an accessible dialog
+offering the iPhone app (no account or server needed) and an existing-account
+dashboard sign-in that preserves the metric destination. Unsupported viewer
+kinds use the dashboard catalog instead. No personal health data enters the
+static site.
+
 `.env.production` carries public build-time values for the form endpoint and
 optional self-hosted aggregate collector URL/site ID. They are tracked because
 the static export publishes them; never put analytics API keys here.
