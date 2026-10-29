@@ -31,7 +31,6 @@ export function RecordExample({ records, categories }: {
   return (
     <>
       <div className={styles.toolbar}>
-        <p>{records.length} fixed example records · newest first · UTC demo timeline</p>
         <button type="button" onClick={() => copy(true)}>Copy all records as JSON</button>
       </div>
       <div className={styles.grid}>
