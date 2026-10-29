@@ -18,8 +18,26 @@ export interface ExampleRecord {
   metadata?: Record<string, unknown>;
 }
 
-export const RECORD_EXAMPLES = snapshot as { version: number; provenance: string; samples: Record<string, ExampleRecord[]> };
-export const EXAMPLE_TYPES = new Set(Object.keys(RECORD_EXAMPLES.samples));
+export const RECORD_EXAMPLES = snapshot as {
+  version: number;
+  provenance: string;
+  samples: Record<string, ExampleRecord[]>;
+  groups: Record<string, { components: string[] }>;
+  dashboardTypes: string[];
+};
+export const EXAMPLE_TYPES = new Set([...Object.keys(RECORD_EXAMPLES.samples), ...Object.keys(RECORD_EXAMPLES.groups)]);
+const DASHBOARD_EXAMPLE_TYPES = new Set(RECORD_EXAMPLES.dashboardTypes);
+
+export function exampleRecords(identifier: string): ExampleRecord[] | null {
+  if (Object.hasOwn(RECORD_EXAMPLES.samples, identifier)) return RECORD_EXAMPLES.samples[identifier];
+  const group = Object.hasOwn(RECORD_EXAMPLES.groups, identifier) ? RECORD_EXAMPLES.groups[identifier] : null;
+  if (!group || !group.components.length) return null;
+  // Components remain independent records: never infer correlation membership
+  // from matching timestamps or invent a combined systolic/diastolic object.
+  const perComponent = Math.floor(30 / group.components.length);
+  return group.components.flatMap(type => (RECORD_EXAMPLES.samples[type] ?? []).slice(0, perComponent))
+    .sort((a, b) => b.start - a.start || a.type.localeCompare(b.type) || a.uuid.localeCompare(b.uuid));
+}
 
 export function publicExampleHref(identifier: string): string | null {
   return EXAMPLE_TYPES.has(identifier)
@@ -28,7 +46,7 @@ export function publicExampleHref(identifier: string): string | null {
 }
 
 export function exampleDashboardHref(identifier: string, env: Record<string, string | undefined> = process.env): string | null {
-  if (!EXAMPLE_TYPES.has(identifier)) return null;
+  if (!DASHBOARD_EXAMPLE_TYPES.has(identifier)) return null;
   const local = localViewerOrigin(env);
   return local
     ? `${local}/type/${encodeURIComponent(identifier)}?range=ALL`

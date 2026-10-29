@@ -169,12 +169,20 @@ with at most 30 uploaded quantity/category records per type. Measurement values
 and intervals are retained; UUIDs are replaced, dates shifted onto a fixed demo
 timeline, and source/device names generalized. Account and identity metadata are
 excluded. Never add private raw exports or personal identifiers to this file.
+Coverage is based on offline, owner-authorized source snapshots rather than the
+smaller public dashboard demo pack. New excerpts must go through the same
+identity/date/source/metadata filtering and 30-record cap. The Blood Pressure
+page shows separately labeled systolic and diastolic quantity records, with up
+to 15 from each component. It never invents correlation membership or combines
+independent component values into a paired reading.
 
 Example links open `/knowledge-base/types/<identifier>/example/` on this static
 site, with a selectable record list, full example JSON, copy actions and category
 labels. The sample view contains no introductory or explanatory prose. Loading
 samples makes no viewer/API/database requests and has no account dependency.
-An optional “View in dashboard” link above the JSON opens that metric's chart:
+An optional “View in dashboard” link above the JSON opens that metric's chart
+only when the public demo contains data for it (`dashboardTypes` in the frozen
+fixture, independently of static-example coverage):
 the local viewer during development, or `/demo?type=<identifier>` in production.
 The hosted viewer must support metric-specific demo entry before shipping this
 link. These illustrative excerpts are marked noindex; the main
