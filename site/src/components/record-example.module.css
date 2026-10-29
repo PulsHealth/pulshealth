@@ -1,5 +1,4 @@
-.toolbar { display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin:24px 0 16px;font-size:13px;color:var(--muted-foreground); }
-.toolbar p { margin:0; }
+.toolbar { display:flex;justify-content:flex-end;align-items:center;gap:16px;flex-wrap:wrap;margin:24px 0 16px;font-size:13px;color:var(--muted-foreground); }
 .toolbar button,.inspectorHeader button { border:1px solid var(--border);background:var(--card);color:var(--foreground);border-radius:7px;padding:10px 14px;font:inherit;font-size:12px;cursor:pointer; }
 .toolbar button:hover,.inspectorHeader button:hover { background:var(--muted); }
 .grid { display:grid;grid-template-columns:minmax(280px,.9fr) minmax(0,1.1fr);gap:24px;align-items:start; }
