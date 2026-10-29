@@ -34,18 +34,9 @@ export default async function RawExamplePage({ params }: { params: Promise<{ slu
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">A fixed excerpt of recorded Apple Health data. Select a row to see its complete example JSON, including any source, device and metadata fields present.</p>
       </header>
       <RecordExample records={records} categories={type.category_values ?? []} />
-      <section aria-labelledby="reading-these-records" className="mt-10 grid gap-8 border-t pt-8 md:grid-cols-2">
+      <section aria-labelledby="example-fields" className="mt-10 max-w-3xl border-t pt-8">
         <div>
-          <h2 id="reading-these-records" className="text-lg font-medium">What you’re looking at</h2>
-          <dl className="mt-4 space-y-4 text-sm leading-relaxed">
-            <div><dt className="font-medium">One record</dt><dd className="mt-1 text-muted-foreground">{quantity ? `An individual sample in ${type.default_unit ?? "the type’s canonical unit"}. A sample can describe an interval; it is not necessarily one instant.` : "An interval or event with an integer category code. The code describes a state; it is not a measurement or duration."}</dd></div>
-            {type.unit_description && <div><dt className="font-medium">Unit</dt><dd className="mt-1 text-muted-foreground">{type.unit_description}</dd></div>}
-            <div><dt className="font-medium">Time and identity</dt><dd className="mt-1 text-muted-foreground">Sample IDs are replaced and timestamps are shifted onto a fixed demo timeline. Start and end use epoch milliseconds, including fractions. Values and intervals are retained; these are not someone’s current dates or device names.</dd></div>
-            <div><dt className="font-medium">Coverage</dt><dd className="mt-1 text-muted-foreground">Only {records.length} selected records are included. This is a static example, not complete history, a live database feed, or a reference range.</dd></div>
-          </dl>
-        </div>
-        <div>
-          <h2 className="text-lg font-medium">Fields in the JSON</h2>
+          <h2 id="example-fields" className="text-lg font-medium">Fields in the JSON</h2>
           <dl className="mt-4 space-y-3 text-sm leading-relaxed">
             <div><dt className="font-mono text-xs">uuid · type · kind</dt><dd className="mt-1 text-muted-foreground">The example sample’s ID, its HealthKit identifier and whether it is a quantity or category.</dd></div>
             <div><dt className="font-mono text-xs">start · end</dt><dd className="mt-1 text-muted-foreground">The sample’s time interval. Equal timestamps represent a point in time.</dd></div>
