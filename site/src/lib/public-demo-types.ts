@@ -27,6 +27,14 @@ export function publicExampleHref(identifier: string): string | null {
     : null;
 }
 
+export function exampleDashboardHref(identifier: string, env: Record<string, string | undefined> = process.env): string | null {
+  if (!EXAMPLE_TYPES.has(identifier)) return null;
+  const local = localViewerOrigin(env);
+  return local
+    ? `${local}/type/${encodeURIComponent(identifier)}?range=ALL`
+    : `https://app.pulshealth.com/demo?type=${encodeURIComponent(identifier)}`;
+}
+
 // Local open-mode viewers need no account bootstrap. Ignore this setting in
 // production so a local preview can never leak into an exported website.
 export function localViewerOrigin(env: Record<string, string | undefined> = process.env): string | null {

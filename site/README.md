@@ -171,9 +171,13 @@ timeline, and source/device names generalized. Account and identity metadata are
 excluded. Never add private raw exports or personal identifiers to this file.
 
 Example links open `/knowledge-base/types/<identifier>/example/` on this static
-site, with a selectable record list, full example JSON, copy actions, category
-labels and a field guide. They make no viewer/API/database requests and have no
-account dependency. These illustrative excerpts are marked noindex; the main
+site, with a selectable record list, full example JSON, copy actions and category
+labels. The sample view contains no introductory or explanatory prose. Loading
+samples makes no viewer/API/database requests and has no account dependency.
+An optional “View in dashboard” link above the JSON opens that metric's chart:
+the local viewer during development, or `/demo?type=<identifier>` in production.
+The hosted viewer must support metric-specific demo entry before shipping this
+link. These illustrative excerpts are marked noindex; the main
 knowledge-base article remains the search destination. Coverage comes from the
 frozen file, not current database availability. Database-generated fields are
 not fabricated for upload examples.
