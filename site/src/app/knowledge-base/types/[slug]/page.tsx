@@ -2,7 +2,7 @@ import { getAllTypes, getTypeById } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ExternalLink, Calendar, Database, ArrowRight } from "lucide-react";
+import { ExternalLink, Database, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArticleContents, TypeArticle } from "@/components/type-article";
@@ -129,10 +129,7 @@ export default async function TypeDetailPage({ params }: PageProps) {
 
         {/* Main Content Column */}
         <article className="min-w-0 space-y-12 lg:col-start-1 lg:row-start-1">
-          <div className="border-b pb-5 text-sm text-muted-foreground">
-            <p>By PulsHealth. Updated <time dateTime={data.last_updated}>{data.last_updated}</time></p>
-            {data.data_research && <p className="mt-2">{!!data.figures?.length && <Badge variant="secondary" className="mr-2">Real data example</Badge>}Research reviewed <time dateTime={data.data_research.reviewed_on}>{data.data_research.reviewed_on}</time>.{!!data.figures?.length && <> Figures use example Apple Health data.</>}</p>}
-          </div>
+          {data.data_research && !!data.figures?.length && <p className="border-b pb-5 text-sm text-muted-foreground"><Badge variant="secondary" className="mr-2">Real data example</Badge>Figures use example Apple Health data.</p>}
           <TypeArticle data={data} />
 
           <section aria-labelledby="recording-behavior" className="rounded-xl border bg-card p-6 space-y-5">
@@ -280,10 +277,6 @@ export default async function TypeDetailPage({ params }: PageProps) {
             </Card>
           )}
 
-          <div className="text-xs text-muted-foreground flex items-center justify-center pt-4">
-            <Calendar className="h-3 w-3 mr-1" />
-            Last updated: {data.last_updated}
-          </div>
 
         </div>
 
