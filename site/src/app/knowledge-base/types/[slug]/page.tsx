@@ -129,7 +129,6 @@ export default async function TypeDetailPage({ params }: PageProps) {
 
         {/* Main Content Column */}
         <article className="min-w-0 space-y-12 lg:col-start-1 lg:row-start-1">
-          {data.data_research && !!data.figures?.length && <p className="border-b pb-5 text-sm text-muted-foreground"><Badge variant="secondary" className="mr-2">Real data example</Badge>Figures use example Apple Health data.</p>}
           <TypeArticle data={data} />
 
           <section aria-labelledby="recording-behavior" className="rounded-xl border bg-card p-6 space-y-5">
