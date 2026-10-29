@@ -29,7 +29,7 @@ export function TypeDataLinks({ exampleHref, dashboardHref, localPreview = false
           </DialogHeader>
           <div className="py-2"><AppStoreBadge /></div>
           <div className="border-t pt-4 text-sm">
-            <p className="mb-2 text-muted-foreground">{localPreview ? "Local development viewer · recorded example data" : "Already syncing to the PulsHealth dashboard?"}</p>
+            {!localPreview && <p className="mb-2 text-muted-foreground">Already syncing to the PulsHealth dashboard?</p>}
             <a href={dashboardHref} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 text-brand underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4">
               {localPreview ? "Open local dashboard" : "Sign in to your dashboard"} <ArrowUpRight aria-hidden className="h-3.5 w-3.5" />
             </a>
