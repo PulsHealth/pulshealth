@@ -483,7 +483,8 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   `auth.accounts` row is the demo (`make web-demo`: an `.invalid` address,
   a hash of discarded random bytes); no schema or grant is involved. `GET
   /demo` (`app/demo/route.ts`, public in `policy.ts`) never replaces a live
-  session (any cookie naming one → 303 `/`), refuses an account that is
+  session (any cookie naming one → 303 to the requested catalog metric,
+  or `/` by default), refuses an account that is
   disabled, an administrator's or in `auth.self_service_users` (503), and
   starts sessions of 2 h that never slide (`findSession` skips the UPDATE)
   with no IP or user agent, 20/h per address from its own bucket — never the

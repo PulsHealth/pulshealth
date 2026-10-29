@@ -467,8 +467,13 @@ second one. What the viewer does with it:
   "Demo · sample data", both with Create your account when `WEB_SIGNUPS` is
   on, and `/login` offers Explore the demo.
 - **Never someone's real session.** A browser whose cookie names a live
-  session, the demo's or anyone's, is sent to `/` untouched, so another site
-  cannot link a signed-in person out of their own account.
+  session, the demo's or anyone's, keeps it untouched, so another site
+  cannot link a signed-in person out of their own account. `/demo` normally
+  opens `/`; `/demo?type=<catalog identifier>` opens the supported metric or
+  workout page with All Time selected. Unknown identifiers and unsupported
+  viewer kinds fall back to `/`. Redirect destinations are constructed from
+  the catalog, never accepted as URLs. Existing personal sessions see their
+  own data at that destination.
 - **Sessions for strangers.** Two hours from the visit, never sliding, with
   no IP address or browser name stored. `/demo` starts at most 20 an hour
   per client address, from its own bucket (never the sign-in failure
