@@ -171,8 +171,8 @@ timeline, and source/device names generalized. Account and identity metadata are
 excluded. Never add private raw exports or personal identifiers to this file.
 
 Example links open `/knowledge-base/types/<identifier>/example/` on this static
-site, with a selectable record list, full example JSON, copy actions, category
-labels and a field guide. They make no viewer/API/database requests and have no
+site, with a selectable record list, full example JSON, copy actions and category
+labels. The sample view contains no introductory or explanatory prose. They make no viewer/API/database requests and have no
 account dependency. These illustrative excerpts are marked noindex; the main
 knowledge-base article remains the search destination. Coverage comes from the
 frozen file, not current database availability. Database-generated fields are

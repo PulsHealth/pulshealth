@@ -18,8 +18,6 @@ export function RecordExample({ records, categories }: {
   const record = records[selected];
   const json = JSON.stringify(record, null, 2);
   const origin = Math.min(...records.map(r => r.start));
-  const category = categories.find(c => c.value === record.category);
-  const metadataCount = Object.keys(record.metadata ?? {}).length;
   async function copy(all: boolean) {
     try { await navigator.clipboard.writeText(all ? JSON.stringify(records, null, 2) : json); setStatus(all ? `Copied ${records.length} example records` : "Copied record"); }
     catch { setStatus("Copy unavailable. You can select and copy the JSON below."); }
@@ -45,13 +43,6 @@ export function RecordExample({ records, categories }: {
         </section>
         <section className={styles.inspector} id="example-inspector" aria-label="Selected example record">
           <div className={styles.inspectorHeader}><h2>Record {selected + 1}</h2><button type="button" onClick={() => copy(false)}>Copy JSON</button></div>
-          <dl className={styles.facts}>
-            <div><dt>Start → end</dt><dd>{exampleTime(record.start, origin)}<br />{exampleTime(record.end, origin)}</dd></div>
-            <div><dt>Duration</dt><dd>{record.end === record.start ? "Point in time" : `${new Intl.NumberFormat("en", { maximumFractionDigits: 6 }).format((record.end - record.start) / 1000)} seconds`}</dd></div>
-            <div><dt>Source / device</dt><dd>{record.sourceName ?? "Not included"} / {record.device ?? "Not included"}</dd></div>
-            <div><dt>Metadata</dt><dd>{record.metadata ? `${metadataCount} ${metadataCount === 1 ? "field" : "fields"}, shown below` : "Not included on this sample"}</dd></div>
-          </dl>
-          {category?.description && <p className={styles.categoryNote}>{category.description}</p>}
           <p className={styles.status} role="status" aria-live="polite">{status}</p>
           <pre className={styles.json} aria-label="Full example record JSON"><code>{json}</code></pre>
         </section>
