@@ -9,9 +9,10 @@ function exampleTime(timestamp: number, origin: number): string {
   return `Day ${day} · ${new Date(timestamp).toISOString().slice(11, 23)}`;
 }
 
-export function RecordExample({ records, categories }: {
+export function RecordExample({ records, categories, dashboardHref }: {
   records: ExampleRecord[];
   categories: { value: number; name: string; description?: string }[];
+  dashboardHref: string;
 }) {
   const [selected, setSelected] = useState(0);
   const [status, setStatus] = useState("");
@@ -43,6 +44,7 @@ export function RecordExample({ records, categories }: {
         </section>
         <section className={styles.inspector} id="example-inspector" aria-label="Selected example record">
           <div className={styles.inspectorHeader}><h2>Record {selected + 1}</h2><button type="button" onClick={() => copy(false)}>Copy JSON</button></div>
+          <a className={styles.dashboardLink} href={dashboardHref} target="_blank" rel="noopener noreferrer">View in dashboard ↗</a>
           <p className={styles.status} role="status" aria-live="polite">{status}</p>
           <pre className={styles.json} aria-label="Full example record JSON"><code>{json}</code></pre>
         </section>

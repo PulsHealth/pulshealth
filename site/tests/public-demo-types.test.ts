@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { EXAMPLE_TYPES, personalDashboardHref, publicExampleHref, RECORD_EXAMPLES, localViewerOrigin } from "../src/lib/public-demo-types";
+import { EXAMPLE_TYPES, personalDashboardHref, publicExampleHref, exampleDashboardHref, RECORD_EXAMPLES, localViewerOrigin } from "../src/lib/public-demo-types";
 import { getAllTypes } from "../src/lib/api";
 
 test("static example coverage has knowledge-base articles and supported catalog types", async () => {
@@ -63,4 +63,11 @@ test("development viewer overrides stay loopback-only and cannot affect producti
   for (const value of ["https://example.com", "http://example.com", "http://localhost:3015/path", "http://name:secret@localhost:3015"]) {
     assert.throws(() => localViewerOrigin({ NODE_ENV: "development", PULS_DEV_VIEWER_ORIGIN: value }));
   }
+});
+
+test("dashboard links preserve the sample's metric locally and through public demo entry", () => {
+  const id = "HKQuantityTypeIdentifierRestingHeartRate";
+  assert.equal(exampleDashboardHref(id, { NODE_ENV: "development", PULS_DEV_VIEWER_ORIGIN: "http://localhost:3015" }), `http://localhost:3015/type/${id}?range=ALL`);
+  assert.equal(exampleDashboardHref(id, { NODE_ENV: "production", PULS_DEV_VIEWER_ORIGIN: "http://localhost:3015" }), `https://app.pulshealth.com/demo?type=${id}`);
+  assert.equal(exampleDashboardHref("not-an-example"), null);
 });
