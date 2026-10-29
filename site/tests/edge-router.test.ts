@@ -13,6 +13,9 @@ test("edge redirects only known routes, preserve repeated parameters, and collap
       "index.html": "Home", "docs/database/index.html": "Database",
       "knowledge-base/types/HKQuantityTypeIdentifierStepCount/index.html": "Steps",
       "knowledge-base/types/HKQuantityTypeIdentifierStepCount/example/index.html": "Step records",
+      "knowledge-base/types/HKQuantityTypeIdentifierHeartRate/index.html": "Heart rate without examples",
+      "knowledge-base/types/HKCorrelationTypeIdentifierBloodPressure/index.html": "Blood pressure",
+      "knowledge-base/types/HKCorrelationTypeIdentifierBloodPressure/example/index.html": "Separate components",
       "app/index.html": '<meta http-equiv="refresh" content="0;url=/">',
       "license/index.html": '<meta http-equiv="refresh" content="0;url=https://github.com/PulsHealth/pulshealth/blob/main/LICENSE">',
     })) {
@@ -26,9 +29,10 @@ test("edge redirects only known routes, preserve repeated parameters, and collap
     assert.equal(invoke(request("/docs/database/index.html", "www.pulshealth.com")).headers.location.value, "https://pulshealth.com/docs/database/");
     assert.equal(invoke(request("/knowledge-base/types/HKQuantityTypeIdentifierStepCount")).statusCode, 301);
     assert.equal(invoke(request("/knowledge-base/types/HKQuantityTypeIdentifierStepCount/example")).headers.location.value, "https://pulshealth.com/knowledge-base/types/HKQuantityTypeIdentifierStepCount/example/");
+    assert.equal(invoke(request("/knowledge-base/types/HKCorrelationTypeIdentifierBloodPressure/example")).headers.location.value, "https://pulshealth.com/knowledge-base/types/HKCorrelationTypeIdentifierBloodPressure/example/");
     assert.equal(invoke(request("/app/", "www.pulshealth.com")).headers.location.value, "https://pulshealth.com/");
     assert.equal(invoke(request("/license")).headers.location.value, "https://github.com/PulsHealth/pulshealth/blob/main/LICENSE");
-    for (const uri of ["/missing", "/knowledge-base/types/HKQuantityTypeIdentifierMissing/example", "/api/user", "/r/example", "/docs/database/", "/_next/static/file.js"]) {
+    for (const uri of ["/missing", "/knowledge-base/types/HKQuantityTypeIdentifierMissing/example", "/knowledge-base/types/HKQuantityTypeIdentifierHeartRate/example", "/api/user", "/r/example", "/docs/database/", "/_next/static/file.js"]) {
       const req = request(uri); assert.equal(invoke(req), req);
     }
     const post = request("/app", "pulshealth.com", "POST"); assert.equal(invoke(post), post);
