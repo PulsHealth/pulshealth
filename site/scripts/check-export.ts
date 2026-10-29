@@ -7,6 +7,7 @@ import { renderMachineMarkdown } from "../src/lib/llms";
 import { STATIC_PAGES } from "../src/lib/pages";
 import { campaigns } from "../src/lib/campaigns";
 import type { BlogPost } from "../src/lib/types";
+import { EXAMPLE_TYPES } from "../src/lib/public-demo-types";
 
 export function filesIn(directory: string): string[] {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
@@ -24,6 +25,14 @@ function sameSet(actual: string[], expected: string[], label: string): void {
   if (JSON.stringify([...actual].sort()) !== JSON.stringify([...expected].sort())) {
     throw new Error(`${label}: expected ${expected.join(", ")}; got ${actual.join(", ")}`);
   }
+}
+
+export function checkKnowledgeTypePaths(outDir: string, identifiers: string[], exampleIds: string[]): void {
+  const directory = path.join(outDir, "knowledge-base/types");
+  const actual = filesIn(directory).filter(file => file.endsWith(`${path.sep}index.html`))
+    .map(file => path.relative(directory, path.dirname(file)).split(path.sep).join("/"))
+    .filter(route => route !== "HKCategoryTypeIdentifierToothbrushing");
+  sameSet(actual, [...identifiers, ...exampleIds.map(id => `${id}/example`)], "Knowledge-base article and example pages");
 }
 
 function decode(value: string): string {
@@ -145,7 +154,15 @@ export function checkExport(siteDir = process.cwd()): void {
   const legacyHtml = requireFile(path.join(outDir, "knowledge-base/types", legacyType, "index.html"));
   if (!legacyHtml.includes('content="0;url=/knowledge-base/types/HKCategoryTypeIdentifierToothbrushingEvent/"')) throw new Error("Missing legacy Toothbrushing redirect");
   checkLocalLinks(legacyHtml, `/knowledge-base/types/${legacyType}/`, outDir);
-  sameSet(filesIn(path.join(outDir, "knowledge-base/types")).filter(file => file.endsWith(`${path.sep}index.html`)).map(file => path.basename(path.dirname(file))).filter(identifier => identifier !== legacyType), identifiers, "Knowledge-base pages");
+  checkKnowledgeTypePaths(outDir, identifiers, [...EXAMPLE_TYPES]);
+  for (const identifier of EXAMPLE_TYPES) {
+    const route = `/knowledge-base/types/${identifier}/example/`;
+    const html = requireFile(path.join(outDir, route, "index.html"));
+    if (!html.includes('content="noindex, follow"')) throw new Error(`Sample example must be noindex: ${identifier}`);
+    const article = requireFile(path.join(outDir, "knowledge-base/types", identifier, "index.html"));
+    if (!article.includes(`href="${route}"`)) throw new Error(`Article missing sample link: ${identifier}`);
+    checkLocalLinks(html, route, outDir);
+  }
   const docs = filesIn(path.join(outDir, "docs")).filter(file => file.endsWith(`${path.sep}index.html`)).map(file => path.relative(path.join(outDir, "docs"), path.dirname(file))).filter(slug => slug !== "" && slug !== "self-hosting");
   sameSet(docs, DOCS.map(doc => doc.slug), "Documentation pages");
   for (const doc of DOCS) requireFile(path.join(root, doc.repoPath));
