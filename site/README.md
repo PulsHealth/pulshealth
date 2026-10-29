@@ -164,16 +164,26 @@ Related metrics on a type page link only to types with a knowledge-base
 page; other related concepts remain visible as text cards.
 
 Knowledge-base type titles include quiet links to real example data and to
-personal exploration. `src/lib/public-demo-types.ts` is an explicit public-demo
-coverage allowlist, checked in a fresh signed-out browser; it is not inferred
-from private data or article figures. Review it when replacing the demo pack.
-Example links enter `/demo?type=<identifier>` and open that metric with All Time
-selected so sparse records remain visible. The viewer change must be released
-before deploying these links. “Explore your own” opens an accessible dialog
-offering the iPhone app (no account or server needed) and an existing-account
-dashboard sign-in that preserves the metric destination. Unsupported viewer
-kinds use the dashboard catalog instead. No personal health data enters the
-static site.
+personal exploration. `src/lib/record-examples.json` contains frozen excerpts
+with at most 30 uploaded quantity/category records per type. Measurement values
+and intervals are retained; UUIDs are replaced, dates shifted onto a fixed demo
+timeline, and source/device names generalized. Account and identity metadata are
+excluded. Never add private raw exports or personal identifiers to this file.
+
+Example links open `/knowledge-base/types/<identifier>/example/` on this static
+site, with a selectable record list, full example JSON, copy actions, category
+labels and a field guide. They make no viewer/API/database requests and have no
+account dependency. These illustrative excerpts are marked noindex; the main
+knowledge-base article remains the search destination. Coverage comes from the
+frozen file, not current database availability. Database-generated fields are
+not fabricated for upload examples.
+
+“Explore your own” offers the iPhone app (no account/server needed) and an
+existing-account dashboard sign-in. Unsupported viewer kinds use the dashboard
+catalog. For local viewer work, set `PULS_DEV_VIEWER_ORIGIN=http://localhost:<port>`
+in ignored `site/.env.local`; the dialog then labels its local-preview action.
+Only loopback HTTP origins are accepted, and production ignores this setting.
+The static sample-data links stay local to the site in every environment.
 
 `.env.production` carries public build-time values for the form endpoint and
 optional self-hosted aggregate collector URL/site ID. They are tracked because

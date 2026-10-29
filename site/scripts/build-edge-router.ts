@@ -17,7 +17,12 @@ export function buildEdgeRouter(out: string, template: string): string {
       routes.push(route.replace("/knowledge-base/types/HKQuantityTypeIdentifier", "/q/").replace("/knowledge-base/types/HKCategoryTypeIdentifier", "/c/"));
     }
   }
-  const source = template.replace("/* REDIRECTS */ {}", JSON.stringify(redirects)).replace("/* ROUTES */ []", JSON.stringify(routes));
+  // The static sample pages add known routes. A delimited literal avoids the
+  // repeated JSON array punctuation under CloudFront's hard 10 KB ceiling.
+  if (routes.some(route => route.includes("|"))) throw new Error("Unsupported pipe in exported route");
+  const source = template.replace("/* REDIRECTS */ {}", JSON.stringify(redirects))
+    .replace("/* ROUTES */ []", `${JSON.stringify(routes.join("|"))}.split("|")`)
+    .replace(/^\/\/[^\n]*\n/gm, "");
   if (Buffer.byteLength(source) > 10000) throw new Error("CloudFront router exceeds the 10 KB function limit");
   return source;
 }

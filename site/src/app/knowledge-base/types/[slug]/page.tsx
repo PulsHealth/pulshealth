@@ -12,7 +12,7 @@ import { PageHero } from "@/components/page-hero";
 import type { Metadata } from "next";
 import { serializeJsonLd } from "@/lib/json-ld";
 import { TypeDataLinks } from "@/components/type-data-links";
-import { personalDashboardHref, publicDemoHref } from "@/lib/public-demo-types";
+import { localViewerOrigin, personalDashboardHref, publicExampleHref } from "@/lib/public-demo-types";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -117,8 +117,9 @@ export default async function TypeDetailPage({ params }: PageProps) {
           ))}
         </ul>
         <TypeDataLinks
-          exampleHref={publicDemoHref(data.identifier)}
+          exampleHref={publicExampleHref(data.identifier)}
           dashboardHref={personalDashboardHref(data.identifier)}
+          localPreview={Boolean(localViewerOrigin())}
         />
         </div>
       </PageHero>
