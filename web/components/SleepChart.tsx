@@ -1,10 +1,11 @@
 "use client";
 
+import { SleepDailyChart } from "./SleepDailyChart";
 import { useState } from "react";
 import { SLEEP_STAGES, STAGE_COLOR, STAGE_LABEL, sleepDuration, type SleepSession } from "@/lib/sleep";
 import styles from "./SleepChart.module.css";
 
-export function SleepChart({ sessions, timeZone }: { sessions: SleepSession[]; timeZone: string }) {
+export function SleepChart({ sessions, timeZone, through }: { sessions: SleepSession[]; timeZone: string; through: number }) {
   const [sessionStart, setSessionStart] = useState<number | null>(null);
   const foundIndex = sessions.findIndex((s) => s.start === sessionStart);
   const sessionIndex = foundIndex < 0 ? sessions.length - 1 : foundIndex;
@@ -21,7 +22,6 @@ export function SleepChart({ sessions, timeZone }: { sessions: SleepSession[]; t
   const start = Math.min(...intervals.map((s) => s.start));
   const end = Math.max(...intervals.map((s) => s.end));
   const x = (t: number) => ((t - start) / Math.max(1, end - start)) * 100;
-  const maxMinutes = Math.max(60, ...sessions.map((s) => s.sources[0].asleep));
   const hasStages = source.minutes.core + source.minutes.deep + source.minutes.rem > 0;
 
   return <section className={`panel ${styles.panel}`} aria-labelledby="sleep-title">
@@ -75,19 +75,8 @@ export function SleepChart({ sessions, timeZone }: { sessions: SleepSession[]; t
         <small>{!["awake", "inBed"].includes(stage) && source.asleep > 0 && source.minutes[stage] > 0 ? `${Math.round(source.minutes[stage] / source.asleep * 100)}% of sleep` : stage === "inBed" ? "Separate coverage" : "Recorded time"}</small>
       </div>)}
     </div>
-    <h3 className={styles.compareTitle}>Compare recent sessions</h3>
-    <p>Each bar shows time asleep, split by stage. Select a session to explore it above.</p>
-    <div className={styles.comparisons}>
-      {sessions.map((s, i) => {
-        const primary = s.sources[0];
-        return <button key={s.start} className={styles.comparison} aria-pressed={sessionIndex === i} onClick={() => choose(i)}
-          aria-label={`${date(s.end)}, ${time(s.start)}: ${primary.asleep > 0 ? `${sleepDuration(primary.asleep)} asleep` : "Sleep duration not recorded"}. ${["rem", "core", "deep", "unspecified"].map((stage) => `${STAGE_LABEL[stage as keyof typeof STAGE_LABEL]} ${(primary.minutes[stage as keyof typeof primary.minutes] > 0 ? sleepDuration(primary.minutes[stage as keyof typeof primary.minutes]) : "not recorded")}`).join(", ")}`}>
-          <span>{new Intl.DateTimeFormat("en", { timeZone, month: "short", day: "numeric" }).format(s.end)}</span>
-          <span className={styles.bar} aria-hidden="true">{(["rem", "core", "deep", "unspecified"] as const).map((stage) => <i key={stage} style={{ background: STAGE_COLOR[stage], width: `${primary.minutes[stage] / maxMinutes * 100}%` }} />)}</span>
-          <span>{primary.asleep > 0 ? sleepDuration(primary.asleep) : "—"}</span>
-        </button>;
-      }).reverse()}
-    </div>
+    <SleepDailyChart sessions={sessions} timeZone={timeZone} through={through} selected={session}
+      onSelect={(selected) => choose(sessions.findIndex((s) => s.start === selected.start))} />
     <details className={styles.details}><summary>Recorded intervals</summary>
       <div className={styles.tableWrap}><table><thead><tr><th>Stage</th><th>Start</th><th>End</th><th>Duration</th></tr></thead>
         <tbody>{intervals.map((s) => <tr key={`${s.start}-${s.stage}`}><td>{STAGE_LABEL[s.stage]}</td><td>{date(s.start)} {time(s.start)}</td><td>{date(s.end)} {time(s.end)}</td><td>{sleepDuration((s.end - s.start) / 60_000)}</td></tr>)}</tbody>
