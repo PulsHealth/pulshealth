@@ -1,3 +1,4 @@
+import { MetricValue } from "@/components/MetricValue";
 import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -11,7 +12,7 @@ import { GROUP_COLOR } from "@/lib/colors";
 import { isCumulative, parseRange, RANGES } from "@/lib/metrics";
 import { getLatestMany, getSeries, getStats, getTodayTotals } from "@/lib/queries";
 import { viewerUser } from "@/lib/viewer";
-import { displayUnit, formatCompact, formatFull, formatValue, relativeTime } from "@/lib/format";
+import { formatCompact, formatFull, relativeTime } from "@/lib/format";
 
 // Always render live from the DB — no build-time demo snapshot, no stale cache.
 export const dynamic = "force-dynamic";
@@ -38,7 +39,7 @@ async function AllTimeSamples({ user, id }: { user: string; id: string }) {
   );
 }
 
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
     <div className="panel panel-tight" style={{ padding: "14px 16px" }}>
       <div className="eyebrow" style={{ fontSize: 10 }}>{label}</div>
@@ -116,8 +117,7 @@ export default async function TypePage({
           <div>
             <div className="eyebrow" style={{ marginBottom: 8 }}>{headlineLabel}</div>
             <div className="metric-num" style={{ fontSize: "clamp(40px, 8vw, 64px)", fontWeight: 600 }}>
-              {headlineValue == null ? "—" : formatCompact(headlineValue)}
-              {unit && <span style={{ fontSize: 20, color: "var(--muted)", fontWeight: 400, marginLeft: 8 }}>{displayUnit(unit)}</span>}
+              <MetricValue identifier={id} value={headlineValue} unit={unit} compact unitStyle={{ fontSize: 20, color: "var(--muted)", fontWeight: 400, marginLeft: 8 }} />
             </div>
           </div>
           {latest && (
@@ -135,11 +135,11 @@ export default async function TypePage({
 
       {/* Stats over selected range */}
       <div className="rise" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, animationDelay: "80ms" }}>
-        <Stat label={`Average · ${RANGES[range].label}`} value={avg == null ? "—" : `${formatValue(avg)} ${displayUnit(unit)}`} />
-        <Stat label="Minimum" value={min == null ? "—" : `${formatValue(min)} ${displayUnit(unit)}`} />
-        <Stat label="Maximum" value={max == null ? "—" : `${formatValue(max)} ${displayUnit(unit)}`} />
+        <Stat label={`Average · ${RANGES[range].label}`} value={<MetricValue identifier={id} value={avg} unit={unit} />} />
+        <Stat label="Minimum" value={<MetricValue identifier={id} value={min} unit={unit} />} />
+        <Stat label="Maximum" value={<MetricValue identifier={id} value={max} unit={unit} />} />
         {cumulative ? (
-          <Stat label={`Total · ${RANGES[range].label}`} value={sum == null ? "—" : `${formatCompact(sum)} ${displayUnit(unit)}`} />
+          <Stat label={`Total · ${RANGES[range].label}`} value={<MetricValue identifier={id} value={sum} unit={unit} compact />} />
         ) : (
           <Stat label="Buckets" value={`${series.points.length}`} />
         )}

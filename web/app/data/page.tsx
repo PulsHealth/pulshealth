@@ -1,3 +1,4 @@
+import { MetricUnit } from "@/components/MetricValue";
 import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
@@ -65,7 +66,7 @@ export default async function DataPage() {
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div className="data-row-name">
                           {type.name}
-                          {type.unit && <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: 8 }}>{type.unit}</span>}
+                          {type.unit && <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: 8 }}><MetricUnit identifier={type.identifier} unit={type.unit} /></span>}
                         </div>
                       </div>
                       <div className="data-row-meta">

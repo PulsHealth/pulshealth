@@ -1,7 +1,8 @@
+import { MetricValue } from "@/components/MetricValue";
 import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ActivityRings, type RingDatum } from "@/components/ActivityRings";
+import { ActivityRings, RingHighlights, type RingDatum } from "@/components/ActivityRings";
 import { Distance } from "@/components/Distance";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
@@ -95,19 +96,7 @@ export default async function Dashboard() {
               <ActivityRings rings={rings} />
             </div>
             <div className="overview-metrics">
-              {rings.map((r) => (
-                <div key={r.label}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <span className="dot" style={{ background: r.color }} />
-                    <span className="eyebrow" style={{ color: "var(--muted)" }}>{r.label}</span>
-                  </div>
-                  <div className="metric-num" style={{ fontSize: 34, fontWeight: 600, marginTop: 8 }}>
-                    {formatCompact(r.value)}
-                    <span style={{ fontSize: 14, color: "var(--muted)", fontWeight: 400 }}> / {formatCompact(r.goal)}</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--faint)", marginTop: 3 }}>{r.unit}</div>
-                </div>
-              ))}
+              <RingHighlights rings={rings} />
             </div>
           </div>
         </section>
@@ -154,7 +143,7 @@ export default async function Dashboard() {
                 </div>
                 <div className="metric-num" style={{ fontSize: 26, fontWeight: 600, marginTop: 12 }}>{formatDuration(w.durationS)}</div>
                 <div style={{ display: "flex", gap: 14, marginTop: 10, color: "var(--muted)", fontSize: 12.5 }} className="mono">
-                  {w.energyKcal != null && <span>{formatCompact(w.energyKcal)} Cal</span>}
+                  {w.energyKcal != null && <span><MetricValue identifier="" value={w.energyKcal} unit="kcal" compact /></span>}
                   {w.distanceM != null && <span><Distance meters={w.distanceM} /></span>}
                 </div>
                 <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 8 }}>{formatFull(w.start, timeZone)}</div>
