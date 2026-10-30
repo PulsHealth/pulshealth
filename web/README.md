@@ -689,6 +689,30 @@ horizontal drag on a zoomed chart pans. The y axis follows the visible window.
 The time arithmetic (clamp, zoom, pan, nearest bucket, wheel normalisation) is
 `lib/chartDomain.ts`, pure and covered by `lib/chartDomain.test.ts`.
 
+## Sleep stages
+
+The Sleep Stages metric page keeps its duration trend and adds a recent-session
+explorer above it. A bounded raw read loads sessions ending in the last 30 days,
+independently of the trend range. Sessions separated by more than three hours
+are separate entries (including naps), labeled by their wake date in the account's
+reporting time zone.
+
+Select a session for its Awake, REM, Core, Deep, unspecified sleep and separate
+in-bed timeline, duration breakdown, and recorded-interval table. Hover/tap an
+interval or focus the chart and use arrow keys to read it. Stacked comparison
+bars show time asleep; clicking one selects that session. Missing stages remain
+unrecorded. Unspecified sleep is never inferred into Core, Deep or REM.
+
+Each source is normalized to remove overlapping/duplicate duration. Detailed
+stages override unspecified sleep; conflicting detailed stages use the fixed
+priority Awake, Deep, REM, Core. In-bed coverage is unioned independently and
+never added to asleep time. The default source has the most asleep time (ties
+prefer more staged time); the source selector exposes other recordings. Comparison
+bars use that default source. The existing duration trend retains its bucketed
+source-total semantics, so its totals can differ from normalized session totals.
+All reads use the existing per-user read-only transaction and failure handling;
+no sync, schema, permissions or outbound connections change.
+
 ## Map tiles
 
 The workout route map (`lib/mapStyles.ts`) draws its basemap from free public
