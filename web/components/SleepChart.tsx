@@ -81,7 +81,7 @@ export function SleepChart({ sessions, timeZone }: { sessions: SleepSession[]; t
       {sessions.map((s, i) => {
         const primary = s.sources[0];
         return <button key={s.start} className={styles.comparison} aria-pressed={sessionIndex === i} onClick={() => choose(i)}
-          aria-label={`${date(s.end)}, ${time(s.start)}: ${primary.asleep > 0 ? `${sleepDuration(primary.asleep)} asleep` : "Sleep duration not recorded"}. ${["rem", "core", "deep", "unspecified"].map((stage) => `${STAGE_LABEL[stage as keyof typeof STAGE_LABEL]} ${sleepDuration(primary.minutes[stage as keyof typeof primary.minutes])}`).join(", ")}`}>
+          aria-label={`${date(s.end)}, ${time(s.start)}: ${primary.asleep > 0 ? `${sleepDuration(primary.asleep)} asleep` : "Sleep duration not recorded"}. ${["rem", "core", "deep", "unspecified"].map((stage) => `${STAGE_LABEL[stage as keyof typeof STAGE_LABEL]} ${(primary.minutes[stage as keyof typeof primary.minutes] > 0 ? sleepDuration(primary.minutes[stage as keyof typeof primary.minutes]) : "not recorded")}`).join(", ")}`}>
           <span>{new Intl.DateTimeFormat("en", { timeZone, month: "short", day: "numeric" }).format(s.end)}</span>
           <span className={styles.bar} aria-hidden="true">{(["rem", "core", "deep", "unspecified"] as const).map((stage) => <i key={stage} style={{ background: STAGE_COLOR[stage], width: `${primary.minutes[stage] / maxMinutes * 100}%` }} />)}</span>
           <span>{primary.asleep > 0 ? sleepDuration(primary.asleep) : "—"}</span>
