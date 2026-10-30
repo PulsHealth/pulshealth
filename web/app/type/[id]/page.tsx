@@ -67,6 +67,7 @@ export default async function TypePage({
   const color = GROUP_COLOR[type.group];
   const cumulative = isCumulative(id);
 
+  const through = new Date().getTime();
   const user = await viewerUser();
   const timeZone = await reportingTimeZone(user);
   const [series, latestMap, todays, sleep] = await Promise.all([
@@ -113,7 +114,7 @@ export default async function TypePage({
         right={<RangeSelector value={range} />}
       />
 
-      {sleep && <SleepChart sessions={sleep} timeZone={timeZone} />}
+      {sleep && <SleepChart sessions={sleep} timeZone={timeZone} through={through} />}
 
       {/* Headline */}
       <section className="panel rise" style={{ padding: "26px 28px", marginBottom: 18, animationDelay: "40ms" }}>

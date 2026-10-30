@@ -699,16 +699,20 @@ reporting time zone.
 
 Select a session for its Awake, REM, Core, Deep, unspecified sleep and separate
 in-bed timeline, duration breakdown, and recorded-interval table. Hover/tap an
-interval or focus the chart and use arrow keys to read it. Stacked comparison
-bars show time asleep; clicking one selects that session. Missing stages remain
+interval or focus the chart and use arrow keys to read it. Vertical stacked columns compare 7 or 30 reporting-calendar wake dates,
+with one bar per day combining separate sessions and naps. Columns include
+Core, Deep, REM, unspecified sleep and recorded Awake; in-bed coverage does
+not increase their height. Missing dates remain empty. Hover/focus reads a
+day’s breakdown; clicking opens that day’s latest session. The session selector
+still opens individual nights and naps. The 30-day view scrolls horizontally
+on phones to keep columns readable. Missing stages remain
 unrecorded. Unspecified sleep is never inferred into Core, Deep or REM.
 
 Each source is normalized to remove overlapping/duplicate duration. Detailed
 stages override unspecified sleep; conflicting detailed stages use the fixed
 priority Awake, Deep, REM, Core. In-bed coverage is unioned independently and
 never added to asleep time. The default source has the most asleep time (ties
-prefer more staged time); the source selector exposes other recordings. Comparison
-bars use that default source. The existing duration trend retains its bucketed
+prefer more staged time); the source selector exposes other recordings. Daily columns use that default source for each session. The existing duration trend retains its bucketed
 source-total semantics, so its totals can differ from normalized session totals.
 All reads use the existing per-user read-only transaction and failure handling;
 no sync, schema, permissions or outbound connections change.

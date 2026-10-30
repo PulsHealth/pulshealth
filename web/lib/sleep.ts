@@ -76,3 +76,35 @@ export function sleepSessions(samples: SleepSample[], timeZone: string): SleepSe
     return { start, end, date: date.format(end), sources };
   });
 }
+
+/** Reporting-calendar wake date; no browser-local calendar or UTC day shifting. */
+export function sleepDateKey(t: number, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(t);
+}
+export const SLEEP_STACK_STAGES = ["deep", "core", "rem", "unspecified", "awake"] as const;
+export interface SleepDay {
+  date: string; sessions: SleepSession[]; minutes: Record<SleepStage, number>; asleep: number; total: number;
+}
+
+// Attribute whole sessions (including naps) to their wake date, then combine
+// only each session's primary recording. In-bed coverage overlaps stages and
+// therefore never increases the stacked bar's height. Missing dates stay empty.
+export function dailySleep(sessions: SleepSession[], timeZone: string, through: number, days: number): SleepDay[] {
+  const last = sleepDateKey(through, timeZone);
+  const calendarEnd = Date.parse(`${last}T00:00:00Z`);
+  const byDate = new Map<string, SleepDay>();
+  for (let offset = days - 1; offset >= 0; offset--) {
+    const date = new Date(calendarEnd - offset * 86400_000).toISOString().slice(0, 10);
+    byDate.set(date, { date, sessions: [], minutes: Object.fromEntries(SLEEP_STAGES.map((s) => [s, 0])) as Record<SleepStage, number>, asleep: 0, total: 0 });
+  }
+  for (const session of sessions) {
+    const day = byDate.get(sleepDateKey(session.end, timeZone));
+    const primary = session.sources[0];
+    if (!day || !primary) continue;
+    day.sessions.push(session);
+    for (const stage of SLEEP_STAGES) day.minutes[stage] += primary.minutes[stage];
+    day.asleep += primary.asleep;
+    day.total += primary.asleep + primary.minutes.awake;
+  }
+  return [...byDate.values()];
+}

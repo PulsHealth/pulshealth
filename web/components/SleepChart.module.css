@@ -24,13 +24,6 @@
 .breakdown i { width: 8px; height: 8px; border-radius: 3px; }
 .breakdown strong { display: block; font-size: 19px; margin-top: 8px; font-weight: 600; }
 .breakdown small { color: var(--muted); font-size: 11px; }
-.compareTitle { margin: 28px 0 0; font-size: 16px; font-weight: 600; }
-.comparisons { max-height: 360px; overflow-y: auto; }
-.comparison { width: 100%; display: grid; grid-template-columns: 62px minmax(0, 1fr) 65px; align-items: center; gap: 12px; padding: 9px 6px; border-radius: 6px; color: var(--muted); font-size: 12px; text-align: left; }
-.comparison[aria-pressed="true"] { background: var(--bg); color: var(--fg); outline: 1px solid var(--border); outline-offset: -1px; }
-.comparison:hover { color: var(--fg); }
-.bar { display: flex; height: 19px; overflow: hidden; border-radius: 4px; }
-.bar i { display: block; height: 100%; }
 .details { margin-top: 20px; font-size: 13px; color: var(--muted); }
 .details summary { cursor: pointer; padding: 8px 0; }
 .tableWrap { overflow-x: auto; }
@@ -41,5 +34,4 @@
   .panel h2 { font-size: 19px; }
   .trackRow { grid-template-columns: 70px minmax(0, 1fr); }
   .axis { margin-left: 78px; font-size: 10px; }
-  .comparison { gap: 6px; grid-template-columns: 48px minmax(0, 1fr) 58px; font-size: 11px; }
 }
