@@ -566,7 +566,7 @@ detection, revocation and the prune against a real database as `web_app`.
 | `/data` | **Catalog** — quantity, category, and workout types with supported viewer routes, grouped with per-user sample counts and last-seen |
 | `/workouts` | Latest 120 sessions with duration / energy / distance totals |
 | `/workouts/[uuid]` | **Workout detail** — route map, heart rate and zones, splits, intra-workout streams, elevation, sub-activities |
-| `/settings` | Whose data is on screen and its profile (age, sex, heart-rate figures behind the zones); display preferences, saved in this browser |
+| `/settings` | Whose data is on screen and its profile (age, sex, heart-rate figures behind the zones); display units for cards, charts, and workouts, saved in this browser |
 | `/account` | Accounts mode: connect or disconnect your iPhones, the AI assistants connected over OAuth (with Revoke), change the reporting time zone or password, the browsers signed in, delete the account. The demo account sees only what it is |
 | `/oauth/authorize` | Accounts mode with OAuth on: the consent page an AI assistant sends you to |
 | `/admin` | Accounts mode, administrators: approve or decline access requests (one, the ticked ones, or all shown); disable non-administrator accounts, purge a disabled user's data |
@@ -766,3 +766,17 @@ current password and invalidate pending recovery/invitation links. The account
 UUID is fixed. No device sync token is issued and no Health upload is enabled.
 Apply migrations 029 and 100 before deploying this viewer; ship the iOS client
 after the viewer is available. These endpoints require accounts mode and HTTPS.
+
+### Display units
+
+Settings applies Metric or Imperial across dashboard/category cards, metric
+headlines, trend charts (including axes, min/max bands and readouts), range
+summaries, and workouts. The existing browser selection is preserved. Imperial
+uses miles, mph, feet for elevation/gait lengths, pounds, inches for height/waist,
+Fahrenheit, and US fluid ounces. Independent selectors cover body weight,
+height/waist, temperature, energy (Cal/kJ), water, glucose, and blood pressure.
+Choosing a system resets these overrides to its defaults. Energy and clinical
+units default to Cal, mg/dL and mmHg in both systems. Nutrition (g/mg), durations,
+heart rates, percentages, and specialized units retain their standard units.
+Preferences are local to the browser, update across tabs, and only change display;
+stored values, queries and exports remain canonical.

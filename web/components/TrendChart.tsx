@@ -1,5 +1,7 @@
 "use client";
 
+import { useUnits } from "./UnitsProvider";
+import { convertMetric } from "@/lib/units";
 import { useTimeZone } from "./TimeZoneProvider";
 
 // The metric detail chart: a hand-drawn SVG line (with a min–max band) or bar
@@ -92,10 +94,15 @@ export function TrendChart({
     return () => ro.disconnect();
   }, []);
 
-  const pts = series.points;
+  const { preferences } = useUnits();
+  const pts = useMemo(() => {
+    const convert = (value: number) => convertMetric(series.identifier, value, series.unit, preferences).value;
+    return series.points.map((p) => ({ ...p, value: convert(p.value),
+      min: p.min == null ? p.min : convert(p.min), max: p.max == null ? p.max : convert(p.max) }));
+  }, [series, preferences]);
   const bucketMs = series.bucketMs;
   const isBar = series.agg === "sum";
-  const unit = displayUnit(series.unit);
+  const unit = displayUnit(convertMetric(series.identifier, 0, series.unit, preferences).unit);
   const n = pts.length;
 
   const times = useMemo(() => pts.map((p) => p.t), [pts]);

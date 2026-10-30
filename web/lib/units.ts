@@ -4,6 +4,50 @@
 
 export type UnitSystem = "metric" | "imperial";
 
+// Independent choices default to the selected system; clinical/nutrition units
+// keep their conventional defaults unless the viewer explicitly changes them.
+export const UNIT_OPTIONS = {
+  mass: { label: "Body weight", options: ["kg", "lb"] },
+  bodyLength: { label: "Height and waist", options: ["cm", "in"] },
+  temperature: { label: "Temperature", options: ["degC", "degF"] },
+  energy: { label: "Energy", options: ["kcal", "kJ"] },
+  volume: { label: "Water", options: ["mL", "fl oz"] },
+  glucose: { label: "Blood glucose", options: ["mg/dL", "mmol/L"] },
+  pressure: { label: "Blood pressure", options: ["mmHg", "kPa"] },
+} as const;
+export type UnitCategory = keyof typeof UNIT_OPTIONS;
+export type UnitOverrides = { [K in UnitCategory]?: (typeof UNIT_OPTIONS)[K]["options"][number] };
+export type UnitPreferences = UnitOverrides & { system: UnitSystem };
+export function defaultUnits(system: UnitSystem): Required<UnitOverrides> {
+  return { mass: system === "imperial" ? "lb" : "kg",
+    bodyLength: system === "imperial" ? "in" : "cm",
+    temperature: system === "imperial" ? "degF" : "degC",
+    volume: system === "imperial" ? "fl oz" : "mL",
+    energy: "kcal", glucose: "mg/dL", pressure: "mmHg" };
+}
+export function parseUnitOverrides(raw: string | null): UnitOverrides {
+  try {
+    const parsed = JSON.parse(raw ?? "{}");
+    if (!parsed || typeof parsed !== "object") return {};
+    return Object.fromEntries(Object.entries(UNIT_OPTIONS).flatMap(([key, config]) =>
+      (config.options as readonly unknown[]).includes(parsed[key]) ? [[key, parsed[key]]] : [])) as UnitOverrides;
+  } catch { return {}; }
+}
+
+export function convertMetric(identifier: string, value: number, unit: string | null, preferences: UnitPreferences): ConvertedWorkoutMetric {
+  const choices = { ...defaultUnits(preferences.system), ...preferences };
+  if (unit === "kg" && choices.mass === "lb") return { value: value / 0.45359237, unit: "lb" };
+  if (unit === "degC" && choices.temperature === "degF") return { value: value * 1.8 + 32, unit: "degF" };
+  if (unit === "kcal" && choices.energy === "kJ") return { value: value * 4.184, unit: "kJ" };
+  if (unit === "mL" && choices.volume === "fl oz") return { value: value / 29.5735295625, unit: "fl oz" };
+  if (unit === "mg/dL" && choices.glucose === "mmol/L") return { value: value / 18.01559, unit: "mmol/L" };
+  if (unit === "mmHg" && choices.pressure === "kPa") return { value: value * 0.133322387415, unit: "kPa" };
+  if (unit === "m" && /(?:Height|WaistCircumference)$/.test(identifier)) {
+    return choices.bodyLength === "in" ? { value: value / 0.0254, unit: "in" } : { value: value * 100, unit: "cm" };
+  }
+  return convertWorkoutMetric(identifier, value, unit, preferences.system);
+}
+
 const M_PER_MI = 1609.344;
 const M_PER_FT = 0.3048;
 const CM_PER_IN = 2.54;

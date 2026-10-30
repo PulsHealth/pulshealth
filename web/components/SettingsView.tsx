@@ -6,23 +6,24 @@
 
 import { useUnits } from "./UnitsProvider";
 import { userLabel } from "./UserSwitcher";
-import type { UnitSystem } from "@/lib/units";
+import { UNIT_OPTIONS, defaultUnits, type UnitCategory, type UnitSystem, type UnitOverrides } from "@/lib/units";
+import { displayUnit } from "@/lib/format";
 import { hrZones, type HrZone } from "@/lib/zones";
 import type { Profile, User } from "@/lib/types";
 
 export function SettingsView({ profile, user }: { profile: Profile; user: User }) {
-  const { system, setSystem } = useUnits();
+  const { system, setSystem, preferences, setOverrides } = useUnits();
   const zones = hrZones(profile.maxHr, profile.restingHr);
 
   return (
     <>
       <section style={{ marginTop: 8 }}>
-        <div className="eyebrow" style={{ marginBottom: 12 }}>Workout units</div>
+        <div className="eyebrow" style={{ marginBottom: 12 }}>Display units</div>
         <div className="panel" style={{ padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 550 }}>Distance measurement system</div>
+            <div style={{ fontSize: 14, fontWeight: 550 }}>Measurement system</div>
             <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>
-              Controls workout distance, pace, speed, splits, and elevation. Data stays metric. Saved on this device.
+              Applies across the dashboard, metrics, charts, and workouts. Choosing a system resets the choices below. Saved in this browser.
             </div>
           </div>
           <div style={{ display: "inline-flex", background: "var(--border)", borderRadius: 9, padding: 3 }}>
@@ -50,6 +51,20 @@ export function SettingsView({ profile, user }: { profile: Profile; user: User }
             ))}
           </div>
         </div>
+        <div className="panel" style={{ marginTop: 12, padding: "4px 20px" }}>
+          {Object.entries(UNIT_OPTIONS).map(([key, config]) => {
+            const category = key as UnitCategory;
+            return <label key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: "12px 0" }}>
+              <span style={{ fontSize: 14 }}>{config.label}</span>
+              <select aria-label={config.label} value={preferences[category] ?? defaultUnits(system)[category]}
+                onChange={(event) => { const { system: _system, ...overrides } = preferences; void _system; setOverrides({ ...overrides, [key]: event.target.value } as UnitOverrides); }}
+                style={{ background: "var(--panel)", color: "var(--fg)", border: "1px solid var(--border)", borderRadius: 7, padding: "7px 12px" }}>
+                {config.options.map((unit) => <option key={unit} value={unit}>{unit === "fl oz" ? "US fl oz" : displayUnit(unit)}</option>)}
+              </select>
+            </label>;
+          })}
+        </div>
+        <p style={{ fontSize: 12.5, color: "var(--muted)" }}>Distance, speed, pace, elevation, and gait lengths follow the measurement system. Nutrition uses grams and milligrams; heart rate, durations, percentages, and other specialized readings keep their standard units.</p>
       </section>
 
       <section style={{ marginTop: 24 }}>
