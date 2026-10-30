@@ -1,3 +1,4 @@
+import { SleepChart } from "@/components/SleepChart";
 import { MetricValue } from "@/components/MetricValue";
 import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import Link from "next/link";
@@ -10,7 +11,7 @@ import { ChevronRight } from "@/components/Icons";
 import { GROUP_LABELS, typeByIdentifier } from "@/lib/catalog";
 import { GROUP_COLOR } from "@/lib/colors";
 import { isCumulative, parseRange, RANGES } from "@/lib/metrics";
-import { getLatestMany, getSeries, getStats, getTodayTotals } from "@/lib/queries";
+import { getLatestMany, getSeries, getSleepSessions, getStats, getTodayTotals } from "@/lib/queries";
 import { viewerUser } from "@/lib/viewer";
 import { formatCompact, formatFull, relativeTime } from "@/lib/format";
 
@@ -68,10 +69,11 @@ export default async function TypePage({
 
   const user = await viewerUser();
   const timeZone = await reportingTimeZone(user);
-  const [series, latestMap, todays] = await Promise.all([
+  const [series, latestMap, todays, sleep] = await Promise.all([
     getSeries(user, id, range),
     getLatestMany(user, [id]),
     cumulative ? getTodayTotals(user, [id]) : Promise.resolve(new Map<string, number>()),
+    id === "HKCategoryTypeIdentifierSleepAnalysis" ? getSleepSessions(user) : Promise.resolve(null),
   ]);
 
   const vals = series.points.map((p) => p.value).filter(Number.isFinite);
@@ -110,6 +112,8 @@ export default async function TypePage({
         }
         right={<RangeSelector value={range} />}
       />
+
+      {sleep && <SleepChart sessions={sleep} timeZone={timeZone} />}
 
       {/* Headline */}
       <section className="panel rise" style={{ padding: "26px 28px", marginBottom: 18, animationDelay: "40ms" }}>

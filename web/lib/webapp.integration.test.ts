@@ -380,6 +380,11 @@ describe.skipIf(!WEB_URL || !ADMIN_URL)("web_app role (integration)", () => {
       expect(series.points.reduce((sum, p) => sum + p.value, 0)).toBe(300);
       const sleep = await queries.getSeries(A, SLEEP, "30D");
       expect(sleep.points.length).toBeGreaterThan(0);
+      const sessions = await queries.getSleepSessions(A);
+      expect(sessions).toHaveLength(1);
+      expect(sessions[0].sources).toHaveLength(1);
+      expect(sessions[0].sources[0].id).toBe(String(sourceIds[0]));
+      expect(sessions[0].sources[0].minutes.core).toBeCloseTo(420, 0);
       const spark = await queries.getDailySparklines(A, [STEPS]);
       expect(spark.get(STEPS)?.length).toBeGreaterThan(0);
       expect((await queries.getProfile(A)).dob).toBeNull();
