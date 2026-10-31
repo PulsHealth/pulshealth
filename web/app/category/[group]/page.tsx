@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { MetricCard } from "@/components/MetricCard";
 import { PageHeader } from "@/components/PageHeader";
@@ -44,18 +45,17 @@ export default async function CategoryPage({ params }: { params: Promise<{ group
   const otherTypes = types.filter((t) => t.kind !== "quantity");
 
   const user = await viewerUser();
-  const [sparks, todays, latest, stats, otherSeries] = await Promise.all([
+  const [sparks, todays, latest, otherSeries] = await Promise.all([
     getDailySparklines(user, quantityIds),
     getTodayTotals(user, cumIds),
     getLatestMany(user, discIds),
-    getStats(user),
     Promise.all(otherTypes.map((t) => getSeries(user, t.identifier, "30D"))),
   ]);
   const otherById = new Map(otherSeries.map((s) => [s.identifier, s]));
 
-  // Most-populated types first.
-  const ordered = [...types].sort((a, b) => (stats.get(b.identifier)?.rows ?? 0) - (stats.get(a.identifier)?.rows ?? 0));
-  const totalRows = types.reduce((s, t) => s + (stats.get(t.identifier)?.rows ?? 0), 0);
+  // Keep the page's first render independent of the all-samples count query.
+  // The catalog order is stable; the count is streamed into the header below.
+  const ordered = [...types];
 
   return (
     <>
@@ -70,10 +70,14 @@ export default async function CategoryPage({ params }: { params: Promise<{ group
         }
         subtitle={GROUP_BLURB[g]}
         right={
-          <div className="chip">
-            <span className="dot" style={{ background: color }} />
-            {types.length} types · {formatCompact(totalRows)} samples
-          </div>
+          <Suspense fallback={<div className="chip"><span className="dot" style={{ background: color }} />{types.length} types</div>}>
+            <CategorySampleCount
+              userId={user}
+              identifiers={types.map((type) => type.identifier)}
+              typeCount={types.length}
+              color={color}
+            />
+          </Suspense>
         }
       />
 
@@ -104,5 +108,28 @@ export default async function CategoryPage({ params }: { params: Promise<{ group
         })}
       </div>
     </>
+  );
+}
+
+
+async function CategorySampleCount({
+  userId,
+  identifiers,
+  typeCount,
+  color,
+}: {
+  userId: string;
+  identifiers: string[];
+  typeCount: number;
+  color: string;
+}) {
+  const stats = await getStats(userId);
+  const totalRows = identifiers.reduce((sum, id) => sum + (stats.get(id)?.rows ?? 0), 0);
+
+  return (
+    <div className="chip">
+      <span className="dot" style={{ background: color }} />
+      {typeCount} types · {formatCompact(totalRows)} samples
+    </div>
   );
 }
