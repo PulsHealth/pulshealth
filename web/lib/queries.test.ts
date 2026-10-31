@@ -327,6 +327,7 @@ describe("query semantics", () => {
     calls.push(["getWorkoutDetail", "workout", (x) => x.getWorkoutDetail(USER_ID, WORKOUT)]);
     calls.push(["getWorkoutSeries", "workout series", (x) => x.getWorkoutSeries(USER_ID, WORKOUT)]);
     calls.push(["getUser", "user", (x) => x.getUser(USER_ID)]);
+    calls.push(["getSleepSessions", "sleep all time", (x) => x.getSleepSessions(USER_ID, "ALL")]);
     calls.push(["getSleepSessions", "sleep sessions", (x) => x.getSleepSessions(USER_ID)]);
     calls.push(["getProfile", "profile", (x) => x.getProfile(USER_ID)]);
     // Not health data, read outside any scope: the source probe and Basic

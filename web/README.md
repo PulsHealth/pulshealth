@@ -691,31 +691,31 @@ The time arithmetic (clamp, zoom, pan, nearest bucket, wheel normalisation) is
 
 ## Sleep stages
 
-The Sleep Stages metric page keeps its duration trend and adds a recent-session
-explorer above it. A bounded raw read loads sessions ending in the last 30 days,
-independently of the trend range. Sessions separated by more than three hours
-are separate entries (including naps), labeled by their wake date in the account's
-reporting time zone.
+The Sleep Stages metric page uses its existing D/7D/30D/90D/6M/Y/2Y/5Y/ALL
+range selector for one integrated sleep chart. Multi-day views place wake dates
+on the horizontal axis and reporting-zone clock time on the vertical axis.
+Colors show each recorded interval at its actual time; gaps and missing dates
+stay empty. Long ranges scroll horizontally and render only visible dates,
+keeping stage blocks readable without building thousands of offscreen columns.
 
-Select a session for its Awake, REM, Core, Deep, unspecified sleep and separate
-in-bed timeline, duration breakdown, and recorded-interval table. Hover/tap an
-interval or focus the chart and use arrow keys to read it. Vertical stacked columns compare 7 or 30 reporting-calendar wake dates,
-with one bar per day combining separate sessions and naps. Columns include
-Core, Deep, REM, unspecified sleep and recorded Awake; in-bed coverage does
-not increase their height. Missing dates remain empty. Hover/focus reads a
-day’s breakdown; clicking opens that day’s latest session. The session selector
-still opens individual nights and naps. The 30-day view scrolls horizontally
-on phones to keep columns readable. Missing stages remain
-unrecorded. Unspecified sleep is never inferred into Core, Deep or REM.
+Select a date for its connected single-night stage timeline, or choose D to
+open the current day directly. The single-night chart connects only adjacent
+recorded intervals. Arrow keys explore stages; the interval table gives exact
+start/end times and durations. A session picker handles nights and naps on the
+same date, and a recording picker exposes other sources. Back returns to the
+selected multi-day range. There is no second range selector or duration chart.
 
-Each source is normalized to remove overlapping/duplicate duration. Detailed
-stages override unspecified sleep; conflicting detailed stages use the fixed
-priority Awake, Deep, REM, Core. In-bed coverage is unioned independently and
-never added to asleep time. The default source has the most asleep time (ties
-prefer more staged time); the source selector exposes other recordings. Daily columns use that default source for each session. The existing duration trend retains its bucketed
-source-total semantics, so its totals can differ from normalized session totals.
-All reads use the existing per-user read-only transaction and failure handling;
-no sync, schema, permissions or outbound connections change.
+Raw reads follow the selected range, with two days of padding for complete
+sessions and a start_ts bound for chunk pruning. ALL resolves the type’s
+per-user earliest sample before entering the scoped transaction. Sessions more
+than three hours apart remain separate. Each session’s default source has the
+most asleep time (ties prefer staged detail). Same-source overlap is normalized;
+in-bed coverage remains separate. Unspecified sleep is never inferred into
+Core, Deep or REM. Clock plots split intervals at UTC-offset changes; repeated
+clock hours may overlap, while durations retain actual elapsed time.
+
+Read failures use the existing Database unavailable boundary. No sync, schema,
+permissions or outbound connections change.
 
 ## Map tiles
 
