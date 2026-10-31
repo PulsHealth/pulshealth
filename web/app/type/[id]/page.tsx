@@ -1,3 +1,4 @@
+import type { Latest, Series } from "@/lib/types";
 import { SleepChart } from "@/components/SleepChart";
 import { MetricValue } from "@/components/MetricValue";
 import { reportingTimeZone } from "@/lib/reportingTimeZone";
@@ -64,6 +65,7 @@ export default async function TypePage({
   if (type.kind !== "quantity" && type.kind !== "category") notFound();
 
   const range = parseRange((await searchParams).range);
+  const isSleep = id === "HKCategoryTypeIdentifierSleepAnalysis";
   const color = GROUP_COLOR[type.group];
   const cumulative = isCumulative(id);
 
@@ -71,10 +73,10 @@ export default async function TypePage({
   const user = await viewerUser();
   const timeZone = await reportingTimeZone(user);
   const [series, latestMap, todays, sleep] = await Promise.all([
-    getSeries(user, id, range),
-    getLatestMany(user, [id]),
+    isSleep ? Promise.resolve<Series>({ identifier: id, agg: "sum", unit: "h", bucketMs: 0, points: [] }) : getSeries(user, id, range),
+    isSleep ? Promise.resolve(new Map<string, Latest>()) : getLatestMany(user, [id]),
     cumulative ? getTodayTotals(user, [id]) : Promise.resolve(new Map<string, number>()),
-    id === "HKCategoryTypeIdentifierSleepAnalysis" ? getSleepSessions(user) : Promise.resolve(null),
+    id === "HKCategoryTypeIdentifierSleepAnalysis" ? getSleepSessions(user, range, through) : Promise.resolve(null),
   ]);
 
   const vals = series.points.map((p) => p.value).filter(Number.isFinite);
@@ -106,7 +108,7 @@ export default async function TypePage({
 
       <PageHeader
         title={type.name}
-        subtitle={
+        subtitle={isSleep ? "Sleep stages and timing" :
           <span className="mono" style={{ fontSize: 12.5 }}>
             {id}
           </span>
@@ -114,8 +116,9 @@ export default async function TypePage({
         right={<RangeSelector value={range} />}
       />
 
-      {sleep && <SleepChart sessions={sleep} timeZone={timeZone} through={through} />}
+      {sleep && <SleepChart sessions={sleep} timeZone={timeZone} through={through} range={range} key={range} />}
 
+      {!isSleep && <>
       {/* Headline */}
       <section className="panel rise" style={{ padding: "26px 28px", marginBottom: 18, animationDelay: "40ms" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
@@ -152,6 +155,7 @@ export default async function TypePage({
           <AllTimeSamples user={user} id={id} />
         </Suspense>
       </div>
+      </>}
     </>
   );
 }

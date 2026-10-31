@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dailySleep, sleepSessions, type SleepSample, type SleepStage } from "./sleep";
+import { sleepSessions, type SleepSample, type SleepStage } from "./sleep";
 const base = Date.parse("2026-10-01T23:00:00Z");
 const sample = (start: number, end: number, stage: SleepStage, source = "1"): SleepSample => ({ start: base + start * 60_000, end: base + end * 60_000, stage, source, sourceName: source });
 
@@ -42,38 +42,5 @@ describe("sleep sessions", () => {
     const [night] = sleepSessions([sample(0, 60, "core"), sample(90, 120, "rem"), sample(5, 4, "deep"), sample(NaN, 10, "awake")], "UTC");
     expect(night.sources[0].asleep).toBe(90);
     expect(night.sources[0].intervals).toHaveLength(2);
-  });
-});
-
-describe("daily sleep columns", () => {
-  it("combines naps on one wake date without adding alternate sources", () => {
-    const sessions = sleepSessions([
-      sample(0, 120, "core"), sample(120, 180, "rem"), sample(180, 190, "awake"),
-      sample(0, 180, "unspecified", "2"), sample(0, 240, "inBed"),
-      sample(600, 630, "deep"),
-    ], "UTC");
-    const days = dailySleep(sessions, "UTC", base + 86400_000, 2);
-    expect(days).toHaveLength(2);
-    expect(days[1].date).toBe("2026-10-02");
-    expect(days[1].sessions).toHaveLength(2);
-    expect(days[1].minutes).toMatchObject({ core: 120, rem: 60, deep: 30, awake: 10, unspecified: 0, inBed: 240 });
-    expect(days[1].asleep).toBe(210);
-    expect(days[1].total).toBe(220);
-  });
-  it("keeps missing dates empty and in-bed-only dates distinct from zero sleep", () => {
-    const sessions = sleepSessions([sample(0, 90, "inBed")], "UTC");
-    const days = dailySleep(sessions, "UTC", base + 86400_000, 3);
-    expect(days.map((d) => d.date)).toEqual(["2026-09-30", "2026-10-01", "2026-10-02"]);
-    expect(days[0].sessions).toEqual([]);
-    expect(days[2].sessions).toHaveLength(1);
-    expect(days[2].total).toBe(0);
-    expect(days[2].minutes.inBed).toBe(90);
-  });
-  it("uses reporting wake dates and includes every calendar day across DST", () => {
-    const t = Date.parse("2026-11-02T01:00:00Z"); // still Nov 1 in California
-    const sessions = sleepSessions([{ start: t - 3600_000, end: t, stage: "core", source: "1", sourceName: "Watch" }], "UTC");
-    const days = dailySleep(sessions, "America/Los_Angeles", t, 3);
-    expect(days.map((d) => d.date)).toEqual(["2026-10-30", "2026-10-31", "2026-11-01"]);
-    expect(days[2].asleep).toBe(60);
   });
 });
