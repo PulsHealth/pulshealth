@@ -6,7 +6,7 @@ thing from [`web/`](../web/README.md), which is the self-hosted viewer that
 reads your own Postgres.
 
 The desktop and mobile navigation list Dashboard (the hosted viewer at
-app.pulshealth.com), Knowledge Base, Docs, and Consulting in that order.
+app.pulshealth.com), Knowledge Base, Examples, Docs, and Consulting in that order.
 Sign-in lives in the dashboard demo banner rather than the public navigation.
 Blog remains linked from the footer. The navbar uses a centered 1280 px content row, 72 px high on desktop and
 64 px on phones, with 32 px desktop / 24 px mobile edge padding (20 px on narrow phones), matching the dashboard. Both switch to a dropdown
@@ -91,6 +91,11 @@ Product policy content lives in `content/watchworkoutpro/`. Marketing screenshot
 are resized from the app's approved dark source captures. App Store availability
 must be verified before replacing the launch notice with a download action.
 
+Example pages show a “Back” link to the gallery above their title. Local file import
+lives below each interactive example; chart labels and units stay with the visuals.
+Example sharing cards use the PulsHealth name without an Inspiration label.
+Regenerate them with `bun scripts/gen-inspiration-cards.tsx` from `site/`.
+
 ## Sharing preview
 
 The default sharing card uses the website's navy card color (`#111b28`), the
@@ -157,6 +162,40 @@ of the sitemap; Search Console exclusions for these stubs and the private
 `app.pulshealth.com` viewer are intentional.
 Related metrics on a type page link only to types with a knowledge-base
 page; other related concepts remain visible as text cards.
+
+Knowledge-base type titles include quiet links to real example data and to
+personal exploration. `src/lib/record-examples.json` contains frozen excerpts
+with at most 30 uploaded quantity/category records per type. Measurement values
+and intervals are retained; UUIDs are replaced, dates shifted onto a fixed demo
+timeline, and source/device names generalized. Account and identity metadata are
+excluded. Never add private raw exports or personal identifiers to this file.
+Coverage is based on offline, owner-authorized source snapshots rather than the
+smaller public dashboard demo pack. New excerpts must go through the same
+identity/date/source/metadata filtering and 30-record cap. The Blood Pressure
+page shows separately labeled systolic and diastolic quantity records, with up
+to 15 from each component. It never invents correlation membership or combines
+independent component values into a paired reading.
+
+Example links open `/knowledge-base/types/<identifier>/example/` on this static
+site, with a selectable record list, full example JSON, copy actions and category
+labels. The sample view contains no introductory or explanatory prose. Loading
+samples makes no viewer/API/database requests and has no account dependency.
+An optional “View in dashboard” link above the JSON opens that metric's chart
+only when the public demo contains data for it (`dashboardTypes` in the frozen
+fixture, independently of static-example coverage):
+the local viewer during development, or `/demo?type=<identifier>` in production.
+The hosted viewer must support metric-specific demo entry before shipping this
+link. These illustrative excerpts are marked noindex; the main
+knowledge-base article remains the search destination. Coverage comes from the
+frozen file, not current database availability. Database-generated fields are
+not fabricated for upload examples.
+
+“Explore your own” offers the iPhone app (no account/server needed) and an
+existing-account dashboard sign-in. Unsupported viewer kinds use the dashboard
+catalog. For local viewer work, set `PULS_DEV_VIEWER_ORIGIN=http://localhost:<port>`
+in ignored `site/.env.local`; the dialog then labels its local-preview action.
+Only loopback HTTP origins are accepted, and production ignores this setting.
+The static sample-data links stay local to the site in every environment.
 
 `.env.production` carries public build-time values for the form endpoint and
 optional self-hosted aggregate collector URL/site ID. They are tracked because
@@ -323,3 +362,25 @@ neither proves indexing or an AI recommendation. Failed submissions preserve
 previous fingerprints and retry after the next verified deployment (including
 an unchanged republish); no tight automatic retry loop is used. Each accepted batch is checkpointed; a later deployment retries unacknowledged
 changes. A failed state write may repeat a previously accepted batch.
+
+## Inspiration
+
+`/examples/` is the canonical showcase URL; legacy `/inspiration/` and `/cool-examples/` URLs redirect directly to the matching example. It showcases interactive projects, with detail routes generated from
+`src/lib/examples.ts`. Default demos use reviewed recorded summaries and normalized route paths in
+`src/lib/example-recorded.json`. Raw source records stay private. Generated data
+from `src/lib/example-data.ts` is optional; user-selected showcase JSON is held
+only in memory.
+No health file upload, browser persistence, map provider or AI request is made.
+The local CSV/JSONL adapter and route SQL live in `../examples/showcase/`.
+The examples lead with clickable previews and titles; AI briefs are collapsed. Distances default to miles.
+The navbar labels the section Examples after Knowledge Base. Footer, homepage and docs landing links also lead to Inspiration.
+Share images contain no personal attribution. The year report includes optional
+daily health summaries, and the route tools support interactive styling and exploration.
+
+Each Inspiration project has a 1200×630 Open Graph/X link-preview card. Regenerate these reviewed display-only images with `bun scripts/gen-inspiration-cards.tsx` from `site/` (same licensed local font setup as the default social-card generator). All projects offer local PNG downloads and native file sharing where supported; the year has post, square and story formats. The copy-link control shares only the public project URL.
+
+The sleep-through-parenthood project uses `sleep-recorded.json`, containing relative offsets and main-session measurements only. Rebuild it with `../examples/showcase/prepare-sleep.py` from private source responses; exact milestone dates stay outside the tree. Sleep durations remain in hours/minutes.
+
+The sleep view compares aggregate duration distributions, recorded awakenings, stage proportions and broad post-arrival periods. Period controls select equal windows before and after; missing recordings never count as zero. A one-minute awake threshold defines interruption episodes. PNG sharing uses the same aggregate model, without individual nights or calendar dates.
+
+The sensor comparison includes four nearby Watch runs matched to the external-monitor route. Normalized shared-frame paths and bidirectional sampled point-to-track metrics are display-only; absolute coordinates, workout IDs and dates remain private. Recordings are separate runs, so the charts compare recorded cadence and density rather than paired accuracy. The optional monitor profile supports verified hardware details; the featured monitor is a contributor-confirmed Polar H10, with chest-strap, ECG and Bluetooth details linked to Polar’s official product reference. The synced writer itself identifies only a Bluetooth device.

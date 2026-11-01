@@ -17,7 +17,7 @@ import { typeByIdentifier } from "@/lib/catalog";
 import { GROUP_COLOR } from "@/lib/colors";
 import { routeProfile, routeSummary } from "@/lib/geo";
 import { formatCompact, formatDuration, formatFull } from "@/lib/format";
-import { convertWorkoutMetric, fmtDistance, fmtElevation, fmtPace, fmtSpeed } from "@/lib/units";
+import { convertMetric, fmtDistance, fmtElevation, fmtPace, fmtSpeed } from "@/lib/units";
 import { hrZones, timeInZones } from "@/lib/zones";
 import type { Profile, WorkoutDetail, WorkoutSeries } from "@/lib/types";
 
@@ -52,7 +52,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function WorkoutDetailView({ w, series, profile }: { w: WorkoutDetail; series: WorkoutSeries[]; profile: Profile }) {
-  const { system } = useUnits();
+  const { system, preferences } = useUnits();
   const timeZone = useTimeZone();
   const color = GROUP_COLOR.workouts;
   const summary = routeSummary(w.route);
@@ -69,7 +69,10 @@ export function WorkoutDetailView({ w, series, profile }: { w: WorkoutDetail; se
     { label: "Duration", value: formatDuration(w.durationS) },
   ];
   if (distance != null) cards.push({ label: "Distance", value: fmtDistance(distance, system) });
-  if (w.energyKcal != null) cards.push({ label: "Active energy", value: `${formatCompact(w.energyKcal)} Cal` });
+  if (w.energyKcal != null) {
+    const energy = convertMetric("", w.energyKcal, "kcal", preferences);
+    cards.push({ label: "Active energy", value: `${formatCompact(energy.value)} ${energy.unit === "kcal" ? "Cal" : energy.unit}` });
+  }
   if (summary.avgSpeedMps != null) {
     cards.push(foot
       ? { label: "Avg pace", value: fmtPace(summary.avgSpeedMps, system) }
@@ -131,9 +134,9 @@ export function WorkoutDetailView({ w, series, profile }: { w: WorkoutDetail; se
         const t = typeByIdentifier(s.type);
         const pts = downsample(s.points).map((p) => ({
           t: p.t,
-          value: convertWorkoutMetric(s.type, p.value, s.unit, system).value,
+          value: convertMetric(s.type, p.value, s.unit, preferences).value,
         }));
-        const unit = convertWorkoutMetric(s.type, 0, s.unit, system).unit ?? "";
+        const unit = convertMetric(s.type, 0, s.unit, preferences).unit ?? "";
         return (
           <Section key={s.type} title={t?.name ?? s.type}>
             <div className="panel" style={{ padding: "16px 18px" }}>
@@ -164,13 +167,13 @@ export function WorkoutDetailView({ w, series, profile }: { w: WorkoutDetail; se
               const t = typeByIdentifier(id);
               const primary = stat.avg ?? stat.sum ?? stat.max ?? stat.min;
               if (primary == null) return null;
-              const converted = convertWorkoutMetric(id, primary, t?.unit ?? null, system);
+              const converted = convertMetric(id, primary, t?.unit ?? null, preferences);
               const unit = converted.unit ? ` ${converted.unit}` : "";
               const isDiscrete = stat.sum == null;
               let sub: string | undefined;
               if (isDiscrete && stat.min != null && stat.max != null) {
-                const lo = convertWorkoutMetric(id, stat.min, t?.unit ?? null, system).value;
-                const hi = convertWorkoutMetric(id, stat.max, t?.unit ?? null, system).value;
+                const lo = convertMetric(id, stat.min, t?.unit ?? null, preferences).value;
+                const hi = convertMetric(id, stat.max, t?.unit ?? null, preferences).value;
                 sub = `${formatCompact(lo)}–${formatCompact(hi)}${unit}`;
               }
               return <Stat key={id} label={t?.name ?? id} value={`${formatCompact(converted.value)}${unit}`} sub={sub} />;

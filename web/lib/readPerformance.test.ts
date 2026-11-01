@@ -1,6 +1,7 @@
 // Opt-in, read-only production-sized regression checks. Never writes fixtures.
 import { afterAll, describe, expect, it } from "vitest";
 import { getHealthPool, getPool, healthQuery, poolSize, query, scoped } from "./db";
+import { getSleepSessions } from "./data/sleep";
 import { getSeries } from "./data/series";
 
 const enabled = process.env.PULS_READ_PERF === "1";
@@ -46,6 +47,16 @@ describe.skipIf(!enabled)("populated viewer read performance", () => {
       expect(ms).toBeLessThan(10_000);
     }
   }, 25_000);
+
+  it("loads sleep stage intervals for short and long ranges within 10 seconds each", async () => {
+    for (const range of ["30D", "Y", "ALL"] as const) {
+      const start = performance.now();
+      const sessions = await getSleepSessions(user, range);
+      const ms = performance.now() - start;
+      expect(Array.isArray(sessions)).toBe(true);
+      expect(ms).toBeLessThan(10_000);
+    }
+  }, 35_000);
 
   it("probes successfully while every chart connection is occupied", async () => {
     let unblock!: () => void;

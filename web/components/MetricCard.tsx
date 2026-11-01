@@ -1,3 +1,7 @@
+"use client";
+
+import { useUnits } from "./UnitsProvider";
+import { convertMetric } from "@/lib/units";
 import Link from "next/link";
 import { typeHref, type HealthType } from "@/lib/catalog";
 import { GROUP_COLOR } from "@/lib/colors";
@@ -18,8 +22,10 @@ export function MetricCard({
   spark: number[];
   t?: number | null;
 }) {
+  const { preferences } = useUnits();
+  const converted = convertMetric(type.identifier, value ?? 0, unit ?? type.unit, preferences);
   const color = GROUP_COLOR[type.group];
-  const u = displayUnit(unit ?? type.unit);
+  const u = displayUnit(converted.unit);
   const href = typeHref(type);
   if (!href) return null;
 
@@ -62,7 +68,7 @@ export function MetricCard({
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginTop: 14 }}>
         <div>
           <div className="metric-num" style={{ fontSize: 30, fontWeight: 600 }}>
-            {formatCompact(value)}
+            {formatCompact(value == null ? null : converted.value)}
             {u && <span style={{ fontSize: 13, fontWeight: 400, color: "var(--muted)", marginLeft: 4 }}>{u}</span>}
           </div>
           {t != null && (

@@ -2,7 +2,7 @@ import { getAllTypes, getTypeById } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ExternalLink, Calendar, Database, ArrowRight } from "lucide-react";
+import { ExternalLink, Database, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArticleContents, TypeArticle } from "@/components/type-article";
@@ -11,6 +11,8 @@ import { ClinicalRangesTable } from "@/components/clinical-ranges-table";
 import { PageHero } from "@/components/page-hero";
 import type { Metadata } from "next";
 import { serializeJsonLd } from "@/lib/json-ld";
+import { TypeDataLinks } from "@/components/type-data-links";
+import { localViewerOrigin, personalDashboardHref, publicExampleHref } from "@/lib/public-demo-types";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -105,6 +107,7 @@ export default async function TypeDetailPage({ params }: PageProps) {
           </>
         }
       >
+        <div className="flex flex-col items-center gap-3">
         <ul className="flex flex-wrap justify-center gap-2 text-sm">
           {facts.map((fact) => (
             <li key={fact.label} className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1">
@@ -113,6 +116,12 @@ export default async function TypeDetailPage({ params }: PageProps) {
             </li>
           ))}
         </ul>
+        <TypeDataLinks
+          exampleHref={publicExampleHref(data.identifier)}
+          dashboardHref={personalDashboardHref(data.identifier)}
+          localPreview={Boolean(localViewerOrigin())}
+        />
+        </div>
       </PageHero>
 
       <main className="container mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-10 lg:grid-cols-[minmax(0,44rem)_minmax(12rem,1fr)] lg:gap-12">
@@ -120,10 +129,6 @@ export default async function TypeDetailPage({ params }: PageProps) {
 
         {/* Main Content Column */}
         <article className="min-w-0 space-y-12 lg:col-start-1 lg:row-start-1">
-          <div className="border-b pb-5 text-sm text-muted-foreground">
-            <p>By PulsHealth. Updated <time dateTime={data.last_updated}>{data.last_updated}</time></p>
-            {data.data_research && <p className="mt-2">{!!data.figures?.length && <Badge variant="secondary" className="mr-2">Real data example</Badge>}Research reviewed <time dateTime={data.data_research.reviewed_on}>{data.data_research.reviewed_on}</time>.{!!data.figures?.length && <> Figures use example Apple Health data.</>}</p>}
-          </div>
           <TypeArticle data={data} />
 
           <section aria-labelledby="recording-behavior" className="rounded-xl border bg-card p-6 space-y-5">
@@ -271,10 +276,6 @@ export default async function TypeDetailPage({ params }: PageProps) {
             </Card>
           )}
 
-          <div className="text-xs text-muted-foreground flex items-center justify-center pt-4">
-            <Calendar className="h-3 w-3 mr-1" />
-            Last updated: {data.last_updated}
-          </div>
 
         </div>
 

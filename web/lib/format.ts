@@ -10,6 +10,7 @@ const UNIT_DISPLAY: Record<string, string> = {
   "m": "m",
   "%": "%",
   "degC": "°C",
+  "degF": "°F",
   "mmHg": "mmHg",
   "ms": "ms",
   "min": "min",

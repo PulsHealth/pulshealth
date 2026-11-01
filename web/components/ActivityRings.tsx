@@ -1,3 +1,35 @@
+"use client";
+
+import { useUnits } from "./UnitsProvider";
+import { convertMetric } from "@/lib/units";
+import { displayUnit, formatCompact } from "@/lib/format";
+
+function useDisplayRings(rings: RingDatum[]): RingDatum[] {
+  const { preferences } = useUnits();
+  return rings.map((ring) => {
+    if (ring.unit !== "Cal") return ring;
+    const converted = convertMetric("", ring.value, "kcal", preferences);
+    return { ...ring, value: converted.value, goal: convertMetric("", ring.goal, "kcal", preferences).value, unit: displayUnit(converted.unit) };
+  });
+}
+
+export function RingHighlights({ rings }: { rings: RingDatum[] }) {
+  const displayRings = useDisplayRings(rings);
+  return <>{displayRings.map((r) => (
+    <div key={r.label}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <span className="dot" style={{ background: r.color }} />
+        <span className="eyebrow" style={{ color: "var(--muted)" }}>{r.label}</span>
+      </div>
+      <div className="metric-num" style={{ fontSize: 34, fontWeight: 600, marginTop: 8 }}>
+        {formatCompact(r.value)}
+        <span style={{ fontSize: 14, color: "var(--muted)", fontWeight: 400 }}> / {formatCompact(r.goal)}</span>
+      </div>
+      <div style={{ fontSize: 12, color: "var(--faint)", marginTop: 3 }}>{r.unit}</div>
+    </div>
+  ))}</>;
+}
+
 export interface RingDatum {
   label: string;
   value: number;
@@ -13,7 +45,8 @@ export function ActivityRings({ rings, size = 188 }: { rings: RingDatum[]; size?
   const stroke = size * 0.082;
   const gap = stroke * 0.42;
   const outer = cx - stroke / 2 - 2;
-  const label = rings.map((ring) => `${ring.label}: ${ring.value} of ${ring.goal} ${ring.unit}`).join(", ");
+  const displayRings = useDisplayRings(rings);
+  const label = displayRings.map((ring) => `${ring.label}: ${ring.value} of ${ring.goal} ${ring.unit}`).join(", ");
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="fadein" role="img" aria-label={label}>

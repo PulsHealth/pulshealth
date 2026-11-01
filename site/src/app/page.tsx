@@ -91,6 +91,13 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className={`${styles.section} ${styles.examplesSection}`}>
+        <div className={styles.sectionHeading}>
+          <div><h2>What will you make<br />with your health data?</h2><p>A year in review, a marathon training story, or artwork made from your walks, runs, and rides. Explore interactive projects and inspiration, then make them your own.</p></div>
+          <Link href="/examples/" className={styles.secondaryButton}>Explore cool examples <ArrowRight size={17} aria-hidden /></Link>
+        </div>
+      </section>
+
       <section id="iphone" className={`${styles.section} ${styles.appDetails}`}>
         <div className={styles.appDetailsIcon}><Smartphone size={32} strokeWidth={1.5} aria-hidden /></div>
         <div><h2>There’s more in the app.</h2><p>Make one-time exports with individual readings or custom summaries. Share export requests with multiple people for programs, studies, and other groups.</p></div>

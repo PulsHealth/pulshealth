@@ -17,10 +17,12 @@ const ACCOUNT = { id: "00000000-0000-4000-8000-000000000001", disabled: false, h
 const NEW_TOKEN = "N".repeat(43);
 const OLD_TOKEN = "O".repeat(43);
 
-function visit(ip: string, cookie?: string, extra: Record<string, string> = {}): NextRequest {
+function visit(ip: string, cookie?: string, extra: Record<string, string> = {}, type?: string): NextRequest {
   const headers = new Headers({ host: "viewer.example", "x-forwarded-proto": "https", "x-forwarded-for": ip, "user-agent": "Mozilla/5.0 (Macintosh)", ...extra });
   if (cookie) headers.set("cookie", `__Host-puls-session=${cookie}`);
-  return new NextRequest(new URL("/demo", "http://web:3000"), { method: "GET", headers });
+  const url = new URL("/demo", "http://web:3000");
+  if (type !== undefined) url.searchParams.set("type", type);
+  return new NextRequest(url, { method: "GET", headers });
 }
 
 const saved = { ...process.env };
@@ -86,6 +88,30 @@ describe("GET /demo", () => {
     }
     expect(sessions.findSession).toHaveBeenCalledWith(OLD_TOKEN);
     expect(sessions.createDemoSession).not.toHaveBeenCalled();
+  });
+
+  it("opens a catalog metric after creating a demo session", async () => {
+    const res = await GET(visit(freshIp(), undefined, {}, "HKQuantityTypeIdentifierRestingHeartRate"));
+    expect(res.headers.get("location")).toBe("/type/HKQuantityTypeIdentifierRestingHeartRate?range=ALL");
+    expect(res.cookies.get("__Host-puls-session")?.value).toBe(NEW_TOKEN);
+  });
+
+  it("keeps personal and demo sessions intact when opening a metric", async () => {
+    for (const demo of [false, true]) {
+      sessions.findSession.mockResolvedValueOnce({ demo });
+      const res = await GET(visit(freshIp(), OLD_TOKEN, {}, "HKCategoryTypeIdentifierSleepAnalysis"));
+      expect(res.headers.get("location")).toBe("/type/HKCategoryTypeIdentifierSleepAnalysis?range=ALL");
+      expect(res.cookies.get("__Host-puls-session")).toBeUndefined();
+    }
+    expect(sessions.createDemoSession).not.toHaveBeenCalled();
+    expect(store.findDemoAccount).not.toHaveBeenCalled();
+  });
+
+  it("never treats a metric identifier as a URL or unsupported viewer page", async () => {
+    for (const type of ["https://example.com", "//example.com", "/demo", "../login", "HKQuantityTypeIdentifierNotAType", "HKCharacteristicTypeIdentifierBloodType"]) {
+      const res = await GET(visit(freshIp(), undefined, {}, type));
+      expect(res.headers.get("location"), type).toBe("/");
+    }
   });
 
   it("refuses an account unfit for strangers, naming no one in the log", async () => {

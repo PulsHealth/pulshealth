@@ -467,8 +467,13 @@ second one. What the viewer does with it:
   "Demo · sample data", both with Create your account when `WEB_SIGNUPS` is
   on, and `/login` offers Explore the demo.
 - **Never someone's real session.** A browser whose cookie names a live
-  session, the demo's or anyone's, is sent to `/` untouched, so another site
-  cannot link a signed-in person out of their own account.
+  session, the demo's or anyone's, keeps it untouched, so another site
+  cannot link a signed-in person out of their own account. `/demo` normally
+  opens `/`; `/demo?type=<catalog identifier>` opens the supported metric or
+  workout page with All Time selected. Unknown identifiers and unsupported
+  viewer kinds fall back to `/`. Redirect destinations are constructed from
+  the catalog, never accepted as URLs. Existing personal sessions see their
+  own data at that destination.
 - **Sessions for strangers.** Two hours from the visit, never sliding, with
   no IP address or browser name stored. `/demo` starts at most 20 an hour
   per client address, from its own bucket (never the sign-in failure
@@ -561,7 +566,7 @@ detection, revocation and the prune against a real database as `web_app`.
 | `/data` | **Catalog** — quantity, category, and workout types with supported viewer routes, grouped with per-user sample counts and last-seen |
 | `/workouts` | Latest 120 sessions with duration / energy / distance totals |
 | `/workouts/[uuid]` | **Workout detail** — route map, heart rate and zones, splits, intra-workout streams, elevation, sub-activities |
-| `/settings` | Whose data is on screen and its profile (age, sex, heart-rate figures behind the zones); display preferences, saved in this browser |
+| `/settings` | Whose data is on screen and its profile (age, sex, heart-rate figures behind the zones); display units for cards, charts, and workouts, saved in this browser |
 | `/account` | Accounts mode: connect or disconnect your iPhones, the AI assistants connected over OAuth (with Revoke), change the reporting time zone or password, the browsers signed in, delete the account. The demo account sees only what it is |
 | `/oauth/authorize` | Accounts mode with OAuth on: the consent page an AI assistant sends you to |
 | `/admin` | Accounts mode, administrators: approve or decline access requests (one, the ticked ones, or all shown); disable non-administrator accounts, purge a disabled user's data |
@@ -684,6 +689,34 @@ horizontal drag on a zoomed chart pans. The y axis follows the visible window.
 The time arithmetic (clamp, zoom, pan, nearest bucket, wheel normalisation) is
 `lib/chartDomain.ts`, pure and covered by `lib/chartDomain.test.ts`.
 
+## Sleep stages
+
+The Sleep Stages metric page uses its existing D/7D/30D/90D/6M/Y/2Y/5Y/ALL
+range selector for one integrated sleep chart. Multi-day views place wake dates
+on the horizontal axis and reporting-zone clock time on the vertical axis.
+Colors show each recorded interval at its actual time; gaps and missing dates
+stay empty. Long ranges scroll horizontally and render only visible dates,
+keeping stage blocks readable without building thousands of offscreen columns.
+
+Select a date for its connected single-night stage timeline, or choose D to
+open the current day directly. The single-night chart connects only adjacent
+recorded intervals. Arrow keys explore stages; the interval table gives exact
+start/end times and durations. A session picker handles nights and naps on the
+same date, and a recording picker exposes other sources. Back returns to the
+selected multi-day range. There is no second range selector or duration chart.
+
+Raw reads follow the selected range, with two days of padding for complete
+sessions and a start_ts bound for chunk pruning. ALL resolves the type’s
+per-user earliest sample before entering the scoped transaction. Sessions more
+than three hours apart remain separate. Each session’s default source has the
+most asleep time (ties prefer staged detail). Same-source overlap is normalized;
+in-bed coverage remains separate. Unspecified sleep is never inferred into
+Core, Deep or REM. Clock plots split intervals at UTC-offset changes; repeated
+clock hours may overlap, while durations retain actual elapsed time.
+
+Read failures use the existing Database unavailable boundary. No sync, schema,
+permissions or outbound connections change.
+
 ## Map tiles
 
 The workout route map (`lib/mapStyles.ts`) draws its basemap from free public
@@ -761,3 +794,17 @@ current password and invalidate pending recovery/invitation links. The account
 UUID is fixed. No device sync token is issued and no Health upload is enabled.
 Apply migrations 029 and 100 before deploying this viewer; ship the iOS client
 after the viewer is available. These endpoints require accounts mode and HTTPS.
+
+### Display units
+
+Settings applies Metric or Imperial across dashboard/category cards, metric
+headlines, trend charts (including axes, min/max bands and readouts), range
+summaries, and workouts. The existing browser selection is preserved. Imperial
+uses miles, mph, feet for elevation/gait lengths, pounds, inches for height/waist,
+Fahrenheit, and US fluid ounces. Independent selectors cover body weight,
+height/waist, temperature, energy (Cal/kJ), water, glucose, and blood pressure.
+Choosing a system resets these overrides to its defaults. Energy and clinical
+units default to Cal, mg/dL and mmHg in both systems. Nutrition (g/mg), durations,
+heart rates, percentages, and specialized units retain their standard units.
+Preferences are local to the browser, update across tabs, and only change display;
+stored values, queries and exports remain canonical.

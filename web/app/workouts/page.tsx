@@ -1,3 +1,4 @@
+import { MetricValue } from "@/components/MetricValue";
 import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
@@ -7,7 +8,7 @@ import { formatActivity } from "@/lib/activity";
 import { GROUP_COLOR } from "@/lib/colors";
 import { getWorkouts } from "@/lib/queries";
 import { viewerUser } from "@/lib/viewer";
-import { formatCompact, formatDuration, formatFull } from "@/lib/format";
+import { formatDuration, formatFull } from "@/lib/format";
 
 // Always render live from the DB — no build-time demo snapshot, no stale cache.
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ export default async function WorkoutsPage() {
   const summary: { label: string; value: React.ReactNode }[] = [
     { label: "Sessions", value: `${workouts.length}` },
     { label: "Total time", value: formatDuration(totalDur) },
-    { label: "Energy", value: `${formatCompact(totalEnergy)} Cal` },
+    { label: "Energy", value: <MetricValue identifier="" value={totalEnergy} unit="kcal" compact /> },
     { label: "Distance", value: <Distance meters={totalDist} /> },
   ];
 
@@ -69,7 +70,7 @@ export default async function WorkoutsPage() {
             </div>
             <div className="mono tabular workout-row-metrics">
               <span >{formatDuration(w.durationS)}</span>
-              {w.energyKcal != null && <span >{formatCompact(w.energyKcal)} Cal</span>}
+              {w.energyKcal != null && <span ><MetricValue identifier="" value={w.energyKcal} unit="kcal" compact /></span>}
               {w.distanceM != null && <span ><Distance meters={w.distanceM} /></span>}
             </div>
             <ChevronRight size={16} />

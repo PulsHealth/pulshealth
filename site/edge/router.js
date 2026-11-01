@@ -7,12 +7,14 @@ function handler(event) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return request;
   var redirects = /* REDIRECTS */ {};
   var routes = /* ROUTES */ [];
+  var examples = /* EXAMPLES */ [];
   var uri = request.uri;
   var normalized = uri.replace(/\/index\.html$/, '/');
   if (normalized.slice(-1) !== '/') normalized += '/';
   var key = normalized.replace('/knowledge-base/types/HKQuantityTypeIdentifier', '/q/').replace('/knowledge-base/types/HKCategoryTypeIdentifier', '/c/');
   var target = redirects[normalized];
-  if (!target && routes.indexOf(key) !== -1 && uri !== normalized) target = normalized;
+  var known = routes.indexOf(key) !== -1 || (key.slice(-8) === 'example/' && examples.indexOf(routes.indexOf(key.slice(0, -8))) !== -1);
+  if (!target && known && uri !== normalized) target = normalized;
   if (!target && request.headers.host.value === 'www.pulshealth.com') target = uri;
   if (!target) return request;
   if (target.charAt(0) === '/') target = 'https://pulshealth.com' + target;

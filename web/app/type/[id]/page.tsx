@@ -1,3 +1,6 @@
+import type { Latest, Series } from "@/lib/types";
+import { SleepChart } from "@/components/SleepChart";
+import { MetricValue } from "@/components/MetricValue";
 import { reportingTimeZone } from "@/lib/reportingTimeZone";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -9,9 +12,9 @@ import { ChevronRight } from "@/components/Icons";
 import { GROUP_LABELS, typeByIdentifier } from "@/lib/catalog";
 import { GROUP_COLOR } from "@/lib/colors";
 import { isCumulative, parseRange, RANGES } from "@/lib/metrics";
-import { getLatestMany, getSeries, getStats, getTodayTotals } from "@/lib/queries";
+import { getLatestMany, getSeries, getSleepSessions, getStats, getTodayTotals } from "@/lib/queries";
 import { viewerUser } from "@/lib/viewer";
-import { displayUnit, formatCompact, formatFull, formatValue, relativeTime } from "@/lib/format";
+import { formatCompact, formatFull, relativeTime } from "@/lib/format";
 
 // Always render live from the DB — no build-time demo snapshot, no stale cache.
 export const dynamic = "force-dynamic";
@@ -38,7 +41,7 @@ async function AllTimeSamples({ user, id }: { user: string; id: string }) {
   );
 }
 
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
     <div className="panel panel-tight" style={{ padding: "14px 16px" }}>
       <div className="eyebrow" style={{ fontSize: 10 }}>{label}</div>
@@ -62,15 +65,18 @@ export default async function TypePage({
   if (type.kind !== "quantity" && type.kind !== "category") notFound();
 
   const range = parseRange((await searchParams).range);
+  const isSleep = id === "HKCategoryTypeIdentifierSleepAnalysis";
   const color = GROUP_COLOR[type.group];
   const cumulative = isCumulative(id);
 
+  const through = new Date().getTime();
   const user = await viewerUser();
   const timeZone = await reportingTimeZone(user);
-  const [series, latestMap, todays] = await Promise.all([
-    getSeries(user, id, range),
-    getLatestMany(user, [id]),
+  const [series, latestMap, todays, sleep] = await Promise.all([
+    isSleep ? Promise.resolve<Series>({ identifier: id, agg: "sum", unit: "h", bucketMs: 0, points: [] }) : getSeries(user, id, range),
+    isSleep ? Promise.resolve(new Map<string, Latest>()) : getLatestMany(user, [id]),
     cumulative ? getTodayTotals(user, [id]) : Promise.resolve(new Map<string, number>()),
+    id === "HKCategoryTypeIdentifierSleepAnalysis" ? getSleepSessions(user, range, through) : Promise.resolve(null),
   ]);
 
   const vals = series.points.map((p) => p.value).filter(Number.isFinite);
@@ -102,7 +108,7 @@ export default async function TypePage({
 
       <PageHeader
         title={type.name}
-        subtitle={
+        subtitle={isSleep ? "Sleep stages and timing" :
           <span className="mono" style={{ fontSize: 12.5 }}>
             {id}
           </span>
@@ -110,14 +116,16 @@ export default async function TypePage({
         right={<RangeSelector value={range} />}
       />
 
+      {sleep && <SleepChart sessions={sleep} timeZone={timeZone} through={through} range={range} key={range} />}
+
+      {!isSleep && <>
       {/* Headline */}
       <section className="panel rise" style={{ padding: "26px 28px", marginBottom: 18, animationDelay: "40ms" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
           <div>
             <div className="eyebrow" style={{ marginBottom: 8 }}>{headlineLabel}</div>
             <div className="metric-num" style={{ fontSize: "clamp(40px, 8vw, 64px)", fontWeight: 600 }}>
-              {headlineValue == null ? "—" : formatCompact(headlineValue)}
-              {unit && <span style={{ fontSize: 20, color: "var(--muted)", fontWeight: 400, marginLeft: 8 }}>{displayUnit(unit)}</span>}
+              <MetricValue identifier={id} value={headlineValue} unit={unit} compact unitStyle={{ fontSize: 20, color: "var(--muted)", fontWeight: 400, marginLeft: 8 }} />
             </div>
           </div>
           {latest && (
@@ -135,11 +143,11 @@ export default async function TypePage({
 
       {/* Stats over selected range */}
       <div className="rise" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, animationDelay: "80ms" }}>
-        <Stat label={`Average · ${RANGES[range].label}`} value={avg == null ? "—" : `${formatValue(avg)} ${displayUnit(unit)}`} />
-        <Stat label="Minimum" value={min == null ? "—" : `${formatValue(min)} ${displayUnit(unit)}`} />
-        <Stat label="Maximum" value={max == null ? "—" : `${formatValue(max)} ${displayUnit(unit)}`} />
+        <Stat label={`Average · ${RANGES[range].label}`} value={<MetricValue identifier={id} value={avg} unit={unit} />} />
+        <Stat label="Minimum" value={<MetricValue identifier={id} value={min} unit={unit} />} />
+        <Stat label="Maximum" value={<MetricValue identifier={id} value={max} unit={unit} />} />
         {cumulative ? (
-          <Stat label={`Total · ${RANGES[range].label}`} value={sum == null ? "—" : `${formatCompact(sum)} ${displayUnit(unit)}`} />
+          <Stat label={`Total · ${RANGES[range].label}`} value={<MetricValue identifier={id} value={sum} unit={unit} compact />} />
         ) : (
           <Stat label="Buckets" value={`${series.points.length}`} />
         )}
@@ -147,6 +155,7 @@ export default async function TypePage({
           <AllTimeSamples user={user} id={id} />
         </Suspense>
       </div>
+      </>}
     </>
   );
 }
