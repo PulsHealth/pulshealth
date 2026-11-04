@@ -1,0 +1,74 @@
+name: Experimental hosting
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/hosting/**'
+      - 'PulsHealthSync/Sources/PulsHealthSync/Experimental/**'
+      - 'examples/receivers/python-sqlite/**'
+      - 'docs/protocol/fixtures/**'
+      - '.github/workflows/experimental-hosting.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: disposable-test-password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd 'pg_isready -U postgres'
+          --health-interval 2s
+          --health-retries 30
+    defaults:
+      run:
+        working-directory: experiments/hosting
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.27.3
+          cache-dependency-path: experiments/hosting/go.sum
+      - name: Apply schema to separate disposable database
+        env:
+          PGPASSWORD: disposable-test-password
+        run: |
+          psql -h 127.0.0.1 -U postgres -v ON_ERROR_STOP=1 -f schema.sql
+          psql -h 127.0.0.1 -U postgres -v ON_ERROR_STOP=1 -c "ALTER ROLE experiment_app PASSWORD 'disposable-app-password'"
+      - name: Verify, vet and test with race detector and real receiver import
+        env:
+          EXPERIMENT_TEST_DATABASE_URL: postgres://experiment_app:disposable-app-password@127.0.0.1:5432/postgres
+        run: go mod verify && go vet ./... && go test -race -count=1 ./...
+      - name: Validate isolated Compose configuration
+        env:
+          EXPERIMENT_DB_PASSWORD: validation-only
+          EXPERIMENT_APP_PASSWORD: validation-only
+          EXPERIMENT_PROVISION_TOKEN: validation-only-long-random-token
+        run: docker compose -f compose.yml config --quiet
+      - name: Build isolated gateway image
+        run: docker build -t puls-vault-experiment:test .
+  native-crypto:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.27.3
+          cache-dependency-path: experiments/hosting/go.sum
+      - name: Check actual native cipher against Go fixture
+        run: |
+          swiftc PulsHealthSync/Sources/PulsHealthSync/Experimental/VaultCipher.swift experiments/hosting/tests/CipherAcceptance.swift -o /tmp/vault-cipher-test
+          /tmp/vault-cipher-test experiments/hosting/testdata/cipher.json /tmp/vault-swift-envelope.bin
+      - name: Verify Go opens native ciphertext
+        working-directory: experiments/hosting
+        env:
+          VAULT_SWIFT_ENVELOPE: /tmp/vault-swift-envelope.bin
+        run: go test -run TestSwiftCipherAcceptance -count=1

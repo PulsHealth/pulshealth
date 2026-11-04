@@ -1,0 +1,47 @@
+# Isolated synthetic-data experiment. Never attach the production database volume.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: ${EXPERIMENT_DB_PASSWORD:?set a disposable database password}
+    volumes:
+      - experiment-db:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres']
+      interval: 2s
+      retries: 30
+  migrate:
+    image: postgres:17-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${EXPERIMENT_DB_PASSWORD:?}
+      APP_PASSWORD: ${EXPERIMENT_APP_PASSWORD:?set a separate application password}
+    volumes:
+      - ./schema.sql:/schema.sql:ro
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        psql -h db -U postgres -v ON_ERROR_STOP=1 -f /schema.sql
+        psql -h db -U postgres -v ON_ERROR_STOP=1 --set=app_password="$$APP_PASSWORD" <<'SQL'
+        ALTER ROLE experiment_app PASSWORD :'app_password';
+        SQL
+  gateway:
+    build: .
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://experiment_app:${EXPERIMENT_APP_PASSWORD:?}@db/postgres
+      PROVISION_TOKEN: ${EXPERIMENT_PROVISION_TOKEN:?use at least 32 random characters}
+      LISTEN_ADDR: 0.0.0.0:8099
+      INGEST_URL: ${EXPERIMENT_INGEST_URL:-}
+      INGEST_TOKEN: ${EXPERIMENT_INGEST_TOKEN:-}
+    ports:
+      - 127.0.0.1:8099:8099
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+volumes:
+  experiment-db:

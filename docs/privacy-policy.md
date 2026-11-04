@@ -659,3 +659,31 @@ as commits, so the full history is visible at
   <https://github.com/PulsHealth/pulshealth/security/advisories/new>, as
   described in [`SECURITY.md`](../SECURITY.md). Do not file a public issue for a
   security problem.
+
+## Development-only private hosting and program experiment
+
+The experimental branch includes a Debug-only enrollment/collection flow and
+an isolated service under `experiments/hosting/`. It is not offered by the
+released app or deployed hosted service. The [experiment guide](../experiments/hosting/README.md)
+is the authority for its synthetic-data testing limits.
+
+If deliberately enabled in that development build, the app connects to the
+explicitly reviewed gateway and collects the consented raw HealthKit types
+using independent sync state. Its enrollment credential is stored in a separate
+device-only Keychain item, with no disk fallback. Progress and diagnostics use
+protected, backup-excluded local files; private uploads additionally stage
+ciphertext and retry manifests there. They are separate from ordinary database
+sync and export state. Camera scanning also accepts experimental invitations;
+frames are not retained.
+
+Private-mode pages are encrypted on the phone for the individual's or program's
+recipient key. The gateway still sees the collection policy, membership, sizes,
+publication/access times and network metadata. Traditional-mode pages are
+readable by the configured database operator. Program recipients retain
+collected copies under their stated terms after withdrawal; pausing locally
+and confirming remote revocation are distinct operations. The customer-side
+reader/connector decrypts on its own machine and can import into a readable
+customer database. Recovery, erasure/retention and independent security review
+are incomplete, so this branch must not be used to promise production private
+hosting or research readiness. Existing deployed privacy promises above remain
+unchanged.

@@ -27,6 +27,9 @@ extension HealthSyncEngine: HealthAccessRequesting, ServerCapabilitiesReading {}
 @Observable
 final class AppModel {
     let engine: HealthSyncEngine
+    #if DEBUG
+    let experimentalHosting = HostedProgramModel()
+    #endif
     let scheduler: BackgroundSyncScheduler
     /// Where the durable launch flags live (`onboardingCompleted`,
     /// `authorizationRequested`, …): `.standard` in the app.
@@ -218,6 +221,9 @@ final class AppModel {
         subscriptions: SubscriptionStore = SubscriptionStore()
     ) {
         self.subscriptions = subscriptions
+        #if DEBUG
+        experimentalHosting.accessPolicy = { [subscriptions] in await subscriptions.currentPolicy() }
+        #endif
         self.engine = engine
         self.scheduler = scheduler ?? BackgroundSyncScheduler(engine: engine)
         self.defaults = defaults

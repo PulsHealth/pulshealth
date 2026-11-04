@@ -71,3 +71,11 @@ AI tools share the records they read with your chosen AI provider.
 - [Sync troubleshooting](https://pulshealth.com/blog/apple-health-not-syncing/)
 - [Contributing and tests](CONTRIBUTING.md) · [Roadmap](docs/roadmap.md)
 - [Security](SECURITY.md) · [Privacy](docs/privacy-policy.md) · [License](LICENSE) · [Trademarks](TRADEMARK.md)
+
+### Development experiment: private hosting and programs
+
+An isolated [hosting/program experiment](experiments/hosting/README.md) explores
+individual and group collection with traditional databases or client-encrypted
+pages and customer-held decryption keys. Its app flow is Debug-only, uses separate
+sync state, and is restricted to synthetic testing pending security and lifecycle
+acceptance. It is not part of the released hosting service.

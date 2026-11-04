@@ -430,3 +430,13 @@ recovery and invitation links. Account UUIDs cannot be edited. Deploy migration
   content using the existing SES sender, with no health database access.
   Private state records review IDs rather than bodies; failed sends retry.
   Keep configuration, state and credentials outside Git with restricted modes.
+
+### Private-hosting experiment
+
+`experiments/hosting/` and the Debug-only program enrollment flow are an isolated,
+synthetic-data experiment. The [experiment guide](experiments/hosting/README.md)
+describes ciphertext storage, endpoint key custody, metadata exposure, local
+protected outboxes, participant authorization, and unresolved writer integrity,
+recovery, rotation and operational gates. This does not change the production
+hosted service's readable-database trust boundary. Never put recipient private
+keys or customer connector credentials on the hosting service.

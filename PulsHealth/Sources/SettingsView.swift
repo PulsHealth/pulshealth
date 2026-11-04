@@ -66,6 +66,12 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
 
+            #if DEBUG
+            Section("Experiments") {
+                NavigationLink("Private Hosting & Programs") { HostedProgramView(model: model.experimentalHosting) }
+            }
+            #endif
+
             Section {
                 NavigationLink { CreateDataRequestView() } label: { Label("Create Request", systemImage: "qrcode") }
                 NavigationLink { OpenDataRequestView() } label: { Label("Open or Scan Request", systemImage: "qrcode.viewfinder") }

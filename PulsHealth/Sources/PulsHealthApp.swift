@@ -4,6 +4,10 @@ import PulsHealthSync
 @main
 struct PulsHealthApp: App {
     @State private var model: AppModel
+    #if DEBUG
+    @State private var showsExperimentalHosting = false
+    @State private var hasExperimentalInvitation = false
+    #endif
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -37,7 +41,12 @@ struct PulsHealthApp: App {
         // never runs — so the observer query the delivery is meant for would not
         // exist in the launched process and the wake would be wasted. `start()`
         // is idempotent, so the view's `.task` stays as the foreground path.
-        Task { await model.start() }
+        Task {
+            await model.start()
+            #if DEBUG
+            await model.experimentalHosting.load()
+            #endif
+        }
     }
 
     var body: some Scene {
@@ -48,11 +57,33 @@ struct PulsHealthApp: App {
                 // `puls://pair?…` — a tapped link, or the server's QR code read
                 // by the iOS Camera app. Untrusted by definition: the model
                 // only ever turns it into a prompt (`handleIncomingURL`).
-                .onOpenURL { model.handleIncomingURL($0) }
+                .onOpenURL { url in
+                    #if DEBUG
+                    if url.scheme == "puls", url.host == "program" {
+                        model.experimentalHosting.openLink(url.absoluteString)
+                        hasExperimentalInvitation = true
+                        if !model.showsOnboarding { showsExperimentalHosting = true; hasExperimentalInvitation = false }
+                        return
+                    }
+                    #endif
+                    model.handleIncomingURL(url)
+                }
+                #if DEBUG
+                .onChange(of: model.showsOnboarding) { _, showing in
+                    if !showing, hasExperimentalInvitation { showsExperimentalHosting = true; hasExperimentalInvitation = false }
+                }
+                .sheet(isPresented: $showsExperimentalHosting) {
+                    NavigationStack { HostedProgramView(model: model.experimentalHosting)
+                        .toolbar { Button("Done") { showsExperimentalHosting = false } } }
+                }
+                #endif
         }
         .onChange(of: scenePhase, initial: true) { previous, phase in
             switch phase {
             case .active:
+                #if DEBUG
+                Task { await model.experimentalHosting.foregroundSync() }
+                #endif
                 model.reviews.beginSession()
                 let catchup = model.reviews.beginForegroundSync()
                 // Catch up whenever the user opens the app — the most reliable
