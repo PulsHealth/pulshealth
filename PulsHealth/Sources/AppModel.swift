@@ -43,6 +43,9 @@ final class AppModel {
     var proContext: ProContext = .plan
     let export = ExportModel()
     let dataRequests = DataRequestModel()
+    #if DEBUG
+    let groupsPreview = GroupPreviewModel(initialCode: UserDefaults.standard.string(forKey: "PulsGroupPreview"))
+    #endif
     /// Shared on-device review timing, independent of sync and export state.
     let reviews: ReviewRequests
     /// The Explore tab: what HealthKit holds per type, and the analyses
@@ -1139,6 +1142,9 @@ final class AppModel {
     /// values go nowhere until the user accepts, and then only as far as a scan
     /// would take them: into the server fields, tested, not applied.
     func handleIncomingURL(_ url: URL) {
+        #if DEBUG
+        if groupsPreview.open(url) { return }
+        #endif
         if url.scheme == "puls", url.host == "request" {
             dataRequests.open(url.absoluteString)
             return

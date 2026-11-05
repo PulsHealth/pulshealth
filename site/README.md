@@ -388,3 +388,11 @@ The sensor comparison includes four nearby Watch runs matched to the external-mo
 Dependency security: `package.json` overrides transitive Zod to `^4.6.6`
 until the lint dependency tree resolves a patched release without it.
 Keep `bun audit --audit-level=high` clean when updating the lockfile.
+
+## Groups concept preview
+
+`/groups/preview/` is a noindex, unlisted interaction preview for member
+invitations, joining, sharing controls and organizer setup. It uses synthetic
+fixtures and in-memory state only; it publishes no groups or grants. See
+[the walkthrough and diagrams](../docs/groups-preview.md). Do not deploy it as
+an operational enrollment service.
