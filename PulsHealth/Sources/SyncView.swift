@@ -81,6 +81,13 @@ struct SyncView: View {
                 rawSamplesSection
                 aggregatesSection
             }
+            #if DEBUG
+            Section {
+                NavigationLink { GroupsPreviewView() } label: {
+                    Label("Groups preview", systemImage: "person.2")
+                }
+            }
+            #endif
             linksSection
         }
         .navigationTitle("Sync")

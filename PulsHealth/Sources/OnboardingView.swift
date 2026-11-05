@@ -61,6 +61,17 @@ struct OnboardingView: View {
         // This flow covers RootView, so the prompt for an incoming `puls://`
         // link has to come from here. Not over the iOS Health sheet, and not
         // during the final Apply.
+        #if DEBUG
+        .sheet(item: Binding(get: { model.groupsPreview.pending }, set: { model.groupsPreview.pending = $0 })) { group in
+            NavigationStack { GroupJoinPreviewView(group: group) }.environment(model)
+        }
+        .alert("Invitation unavailable", isPresented: Binding(
+            get: { model.groupsPreview.error != nil },
+            set: { if !$0 { model.groupsPreview.error = nil } }
+        )) { Button("OK") { model.groupsPreview.error = nil } } message: {
+            Text(model.groupsPreview.error ?? "")
+        }
+        #endif
         .pairingLinkPrompt(canPresent: !requestingHealthAccess && !finishing)
         .task {
             // Waits for the stored configuration and the preselected starter

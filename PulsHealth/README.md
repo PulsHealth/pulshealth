@@ -677,3 +677,10 @@ hosting and other services are separate. Lifetime has no renewal, restores throu
 the Apple Account and takes priority over subscription status. An existing
 subscription must be cancelled separately through Apple subscription management.
 Production setup and device acceptance: [Pro purchases](../docs/appstore/subscriptions.md).
+
+## Groups interaction preview (Debug only)
+
+This branch includes **Sync → Groups preview**, a synthetic invitation review,
+Health-step simulation, per-type sharing controls and leave flow. It uses no
+HealthKit data, credentials, persistence or upload engine, and is excluded from
+Release builds. See [the walkthrough and integration boundaries](../docs/groups-preview.md).

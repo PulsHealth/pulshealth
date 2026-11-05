@@ -179,6 +179,17 @@ struct RootView: View {
         // first-run flow covers this view the prompt is OnboardingView's; and
         // it waits its turn behind the server-change prompt, which can be up
         // from launch.
+        #if DEBUG
+        .sheet(item: Binding(get: { model.showsOnboarding ? nil : model.groupsPreview.pending }, set: { model.groupsPreview.pending = $0 })) { group in
+            NavigationStack { GroupJoinPreviewView(group: group) }.environment(model)
+        }
+        .alert("Invitation unavailable", isPresented: Binding(
+            get: { model.groupsPreview.error != nil && !model.showsOnboarding },
+            set: { if !$0 { model.groupsPreview.error = nil } }
+        )) { Button("OK") { model.groupsPreview.error = nil } } message: {
+            Text(model.groupsPreview.error ?? "")
+        }
+        #endif
         .pairingLinkPrompt(canPresent: !model.showsOnboarding && model.pendingServerChange == nil)
         // Accepted: take the user to the fields the link filled in, the same
         // place a scan from the Database screen would have left them.
