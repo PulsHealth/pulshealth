@@ -155,7 +155,7 @@ function GroupPreviewSession({ initialCode }: { initialCode: string | null }) {
 
     {view === "member" && <section className={styles.memberLayout}>
       <div className={styles.memberContext}>
-        <h1 ref={heading} tabIndex={-1}>Your sharing,<br />in one place.</h1>
+        <h1 ref={heading} tabIndex={-1}>Your sharing,<br /> in one place.</h1>
         <p>Join once. Change your mind whenever you need to.</p>
         <ol className={styles.steps}>
           <li data-active={screen === "review"}><span>1</span><div><strong>Review the invitation</strong><p>The group, the data, the dates.</p></div></li>

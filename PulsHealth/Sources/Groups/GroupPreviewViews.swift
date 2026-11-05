@@ -133,11 +133,17 @@ private struct GroupSummaryPreview: View {
     let group: PreviewGroup
     var body: some View {
         Section {
-            Image(systemName: "person.2.circle.fill").font(.system(size: 48)).foregroundStyle(.tint)
-                .accessibilityHidden(true)
-            Text(group.name).font(.title.bold())
-            Text(group.organizer).font(.headline)
-            Text(group.purpose).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.2.circle.fill").font(.system(size: 38)).foregroundStyle(.tint)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(group.name).font(.title2.bold())
+                        Text(group.organizer).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                }
+                Text(group.purpose).font(.subheadline).foregroundStyle(.secondary)
+            }.padding(.vertical, 6)
         }
         Section("Sharing details") {
             LabeledContent("Data dates", value: group.window)
