@@ -198,18 +198,19 @@ Only loopback HTTP origins are accepted, and production ignores this setting.
 The static sample-data links stay local to the site in every environment.
 
 `.env.production` carries public build-time values for the form endpoint and
-optional self-hosted aggregate collector URL/site ID. They are tracked because
+optional self-hosted Umami collector URL/site ID. They are tracked because
 the static export publishes them; never put analytics API keys here.
 `.env.example` documents local configuration. Unset both analytics values
 to disable collection. The tracker runs only on the production marketing
 hostname, respects Do Not Track/Global Privacy Control, excludes URL query
 strings/fragments, referrer paths, titles, form values and identity data,
-and sends only fixed page groups, source categories, action names, App Store button placements and Web Vitals rating buckets. No visitor/session IDs or raw URLs/timing values are sent or stored. Counters are UTC daily sums in Observatory, not Umami event records.
+and sends page paths, referring origins, fixed action names, App Store button
+placements and bounded numeric Web Vitals to Umami. Anonymous visitor/session
+identifiers rotate daily; raw IP addresses are not stored in analytics tables.
 `form-dialog` distinguishes attempts, success and errors without sending
-the contents. App Store clicks indicate intent, not installations. No
-analytics cookies, replay, heatmaps or health-viewer tracking are enabled.
-Optional audience requests abort after five seconds and are never retried:
-an unknown delivery outcome must not create a duplicate counter increment.
+contents. App Store clicks indicate intent, not installations. No analytics
+cookies, replay, heatmaps or health-viewer tracking are enabled. The website
+explanation and browser exclusion control appear at the bottom of `/privacy/`.
 Keep this aligned with the website section of `docs/privacy-policy.md` and
 the `/privacy` summary. The native app's analytics-free claims still apply.
 
@@ -264,7 +265,7 @@ data, spend or keys.
 with a homepage canonical and noindex. No campaign is persisted or carried
 to the App Store.
 
-Homepage statistics count page groups, broad source categories and fixed actions,
+Homepage statistics count page paths, referring origins, visitors, sessions and fixed actions,
 respecting DNT/GPC. Query parameters remain discarded. Overall homepage traffic
 cannot be assigned to individual ads or creative variants. Ad-platform clicks,
 website visits, App Store clicks, Apple downloads and Apple purchases remain

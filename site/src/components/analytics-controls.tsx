@@ -22,7 +22,7 @@ export function AnalyticsControls() {
   }
   return <section aria-labelledby="analytics-controls-heading" className="mb-8 rounded-xl border p-6">
     <h2 id="analytics-controls-heading" className="text-xl font-semibold">Website statistics</h2>
-    <p className="mt-2 text-sm text-muted-foreground">Anonymous daily totals help improve this website. You can exclude this browser; the choice saves only an on/off preference.</p>
+    <p className="mt-2 text-sm text-muted-foreground">Self-hosted website analytics help improve this website. You can exclude this browser; the choice saves only an on/off preference.</p>
     <p role="status" className="mt-3 text-sm">{excluded === null ? "Checking this browser…" : excluded ? "Your visits are excluded in this browser." : "Your visits are included when analytics is available. Do Not Track and Global Privacy Control still apply."}</p>
     <button type="button" disabled={excluded === null} onClick={toggle} className="mt-3 rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50">{excluded ? "Include my visits" : "Exclude my visits"}</button>
     <p className="mt-3 text-xs text-muted-foreground">Applies to this browser until changed or site data is cleared. Referral redirects can count before the page opens.</p>

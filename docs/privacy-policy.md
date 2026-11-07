@@ -595,25 +595,44 @@ opens the form), or the developer invites you. What happens to your data:
   Do not send health data or credentials in URLs; infrastructure providers may
   also retain their own operational records under their policies.
 
+## Changes to this policy
+
+This document is versioned in the project's public repository. Changes arrive
+as commits, so the full history is visible at
+<https://github.com/PulsHealth/pulshealth/commits/main/docs/privacy-policy.md>.
+
+## Contact
+
+- **Privacy, access, deletion and support:** contact Sean Wade, the individual
+  operator, at support@pulshealth.com. Do not post health records, credentials
+  or private account details in public GitHub issues.
+- **General software questions:** <https://github.com/PulsHealth/pulshealth/issues>.
+- **Security problems:** please use GitHub's private vulnerability reporting at
+  <https://github.com/PulsHealth/pulshealth/security/advisories/new>, as
+  described in [`SECURITY.md`](../SECURITY.md). Do not file a public issue for a
+  security problem.
+
 ## The website
 
-Everything above is about the app and, in the section just before this one,
-the developer's own viewer. This section is about pulshealth.com,
+The preceding sections cover the app and the developer's own viewer. This section is about pulshealth.com,
 which is a separate thing.
 
-We use self-hosted, anonymous daily totals to improve this website: page groups,
-broad traffic-source categories, fixed actions (such as App Store button clicks
-and successful form responses), button locations and performance ratings. We do
-not store individual event records, visitor or session identifiers, IP-derived
-identities, raw URLs, form contents or health data in these counters, or join
-visits into a journey. Daily totals are kept for about 13 months; expired totals are removed during routine checks. Network
-providers still process connection addresses to deliver and secure requests.
+We use self-hosted Umami to understand page traffic, anonymous visitor and
+session estimates, referring websites, browser/device characteristics, fixed
+actions (such as App Store clicks and form results), button locations and
+browser performance. Technical browser information and connection addresses
+are processed to derive anonymous identifiers that rotate daily. Raw IP
+addresses are not stored in the analytics database. Network providers can
+process connection addresses to deliver and secure requests.
 
-You can exclude this browser using the control above. It saves only an on/off
-preference until you change it or clear site data. Do Not Track and Global
-Privacy Control are also respected. No analytics or referral cookies are set;
-old campaign cookies are removed. Historical website analytics collected before
-this change used daily rotating identifiers and remain separate from these totals.
+No analytics cookies, advertising identifiers, cross-site IDs, session recordings
+or heatmaps are used. URL query strings and fragments, referrer paths, page
+titles, identities, form contents and health data are excluded. You can exclude
+this browser using the control below; it saves only an on/off preference until
+you change it or clear site data. Do Not Track and Global Privacy Control are
+respected. Old referral campaign cookies are removed. Previously collected
+anonymous daily counters remain separate from Umami visitor/session reports;
+periods when visitor tracking was disabled cannot be reconstructed.
 
 Referral links count aggregate clicks before opening the normal homepage, without
 remembering the campaign on your device. Separate, direct App Store campaign
@@ -642,20 +661,3 @@ endpoint the maintainer runs on Amazon Web Services, tagged with which form it
 came from. Form contents are sent only when you press the button and are
 never included in analytics. The updates list is used for the occasional
 project announcement and nothing else.
-
-## Changes to this policy
-
-This document is versioned in the project's public repository. Changes arrive
-as commits, so the full history is visible at
-<https://github.com/PulsHealth/pulshealth/commits/main/docs/privacy-policy.md>.
-
-## Contact
-
-- **Privacy, access, deletion and support:** contact Sean Wade, the individual
-  operator, at support@pulshealth.com. Do not post health records, credentials
-  or private account details in public GitHub issues.
-- **General software questions:** <https://github.com/PulsHealth/pulshealth/issues>.
-- **Security problems:** please use GitHub's private vulnerability reporting at
-  <https://github.com/PulsHealth/pulshealth/security/advisories/new>, as
-  described in [`SECURITY.md`](../SECURITY.md). Do not file a public issue for a
-  security problem.

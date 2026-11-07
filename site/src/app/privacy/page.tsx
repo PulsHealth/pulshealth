@@ -35,7 +35,7 @@ const claims = [
 export const metadata = {
   title: "Privacy Policy - PulsHealth",
   description:
-    "Where your health data goes and where it does not. Sync goes to your configured database. One-time exports go through the share sheet or to a request destination you approve. The public website uses anonymous daily totals without visitor tracking.",
+    "Where your health data goes and where it does not. Sync goes to your configured database. One-time exports go through the share sheet or to a request destination you approve.",
   alternates: {
     canonical: "/privacy/",
   },
@@ -60,7 +60,6 @@ export default function PrivacyPage() {
         <h1 className="text-4xl font-bold tracking-tight mb-4">Privacy Policy</h1>
         {updated && <p className="text-muted-foreground mb-8">Last updated: {updated}</p>}
 
-        <AnalyticsControls />
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Privacy at a glance</CardTitle>
@@ -78,7 +77,6 @@ export default function PrivacyPage() {
               <li>Each saved database’s bearer token normally lives in its own iOS Keychain item. Only the active database receives sync uploads. Unpairing removes its local connection and progress; data already uploaded remains on the server. The app does not retain synced health samples: an export you ask for is staged in temporary storage until you share it or confirm request delivery, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
               <li>Medication exports and sync include random aliases that stay consistent within this app installation. A protected, backup-excluded registry stores opaque Apple concept identifiers and their aliases without dose events or names; Apple archives stay on the phone. Removing the app creates new aliases.</li>
               <li>Interactive examples process files you select in browser memory, without uploading or saving the records. They do not automatically send your data to AI or map providers. Share opens your device’s sharing controls with the image you choose.</li>
-              <li>This website counts anonymous daily page, action and performance totals without visitor IDs or analytics cookies. Referral clicks and Apple reports stay separate. You can exclude this browser using the control above; no health data enters website statistics.</li>
             </ul>
           </CardContent>
         </Card>
@@ -118,6 +116,7 @@ export default function PrivacyPage() {
           </p>
           <RepoMarkdown source={content} docRepoPath={POLICY_PATH} />
         </div>
+        <AnalyticsControls />
       </div>
     </main>
   );
