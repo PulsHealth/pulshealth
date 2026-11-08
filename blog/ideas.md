@@ -50,3 +50,5 @@ the repository. Schematics and illustrative inputs are labeled.
 Before adding a follow-up, check whether it belongs in an existing guide. Keep
 content useful on its own rather than repeating setup steps from the canonical
 documentation.
+
+- Published 2026-11-07: Flights Climbed meaning, with a source-aware comparison of indoor stairs and hiking. Answer the definition query first; never infer indoor setting from absence of a workout. Sources: Apple Flights Climbed definition and activity measurement paper. Expand the existing step mismatch article with overlapping versus complementary source coverage.
