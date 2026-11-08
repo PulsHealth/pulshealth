@@ -22,6 +22,9 @@ rides. Explore recorded examples, then use your own files with the
 
 ## Get started
 
+[Choose a workflow](docs/choose-a-workflow.md) to compare file exports, database sync
+and AI access, including setup, data destinations and limitations.
+
 - **Export files:** install the app, grant Health access, and choose the types,
   dates, and format in Export. [Export guide](docs/export.md#on-device-export-no-server).
 - **Sync to your database:** run the Docker stack and pair your phone. It

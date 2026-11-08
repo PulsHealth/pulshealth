@@ -34,6 +34,14 @@ export const DOC_GROUPS: DocGroup[] = ["Getting started", "Reference", "Project"
 
 export const DOCS: DocEntry[] = [
   {
+    slug: "choose-a-workflow",
+    title: "Choose an export or sync workflow",
+    repoPath: "docs/choose-a-workflow.md",
+    description:
+      "Compare Apple Health XML, on-device files, hosted or self-hosted dashboards, and AI access by setup, data destination and limitations.",
+    group: "Getting started",
+  },
+  {
     slug: "setup",
     title: "Set up your server",
     repoPath: "docs/setup.md",

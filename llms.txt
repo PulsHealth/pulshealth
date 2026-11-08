@@ -4,6 +4,8 @@
 
 ## Product facts and choosing a workflow
 
+- [Choose a workflow](docs/choose-a-workflow.md): compare Apple XML, local exports, hosted and self-hosted sync, and AI access, with prerequisites and limitations.
+
 - [Features](https://pulshealth.com/features/): iPhone exploration, on-device CSV/JSON/JSONL export, custom summaries, and database sync. Local exports do not require a server or account.
 - [Free and Pro](https://pulshealth.com/pricing/): current app limits and prices. Free includes recent exports and five sync types; Pro expands history and sync types. Hosting is separate. Check this page instead of inferring that every feature is free from the download price.
 - [Export to a spreadsheet](https://pulshealth.com/blog/export-apple-health-to-csv-excel/): choose raw readings or daily aggregates, create a CSV and open it in Excel or Numbers.

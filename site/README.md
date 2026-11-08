@@ -96,6 +96,10 @@ lives below each interactive example; chart labels and units stay with the visua
 Example sharing cards use the PulsHealth name without an Inspiration label.
 Regenerate them with `bun scripts/gen-inspiration-cards.tsx` from `site/`.
 
+The workflow guide at `/docs/choose-a-workflow/` compares file exports, database
+sync and AI access. Its source is `docs/choose-a-workflow.md`; the docs registry
+also includes it in search, sitemap and generated Markdown.
+
 ## Sharing preview
 
 The default sharing card uses the website's navy card color (`#111b28`), the
