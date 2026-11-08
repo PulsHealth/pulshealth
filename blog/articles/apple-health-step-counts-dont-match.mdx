@@ -1,7 +1,7 @@
 ---
 title: "Why Your Apple Health Step Counts Don't Match"
 date: "2026-04-12"
-updated: "2026-10-25"
+updated: "2026-11-07"
 draft: false
 author: "Sean Wade"
 tags: ["apple-health", "steps", "data-quality", "export"]
@@ -14,7 +14,7 @@ That disagreement does not automatically mean your steps are duplicated or your 
 
 **Start by comparing one completed day, using the same time zone, and identifying how each total was calculated.** Today's moving total makes a poor debugging target.
 
-*Updated October 25, 2026: replaced repeated checklists with a diagnostic table and simplified the export-calculation explanation. The September data comparison is unchanged.*
+*Updated November 7, 2026: added a worked example of overlapping and complementary sources, and clarified how HealthKit aggregates differ from raw sums. The September data comparison is unchanged.*
 
 ## Start with the shape of the mismatch
 
@@ -67,6 +67,31 @@ For an everyday spreadsheet, use a **daily, all-device HealthKit sum** if you wa
 PulsHealth's server can also provide a daily value through `metric_daily`. It prefers that canonical HealthKit aggregate. When the aggregate is unavailable, its cumulative fallback uses the highest single-source daily sum. That avoids blindly adding overlapping devices, but can miss complementary activity, such as a phone recording the morning and a Watch recording the evening. Check the returned `source`: `aggregate` means a phone aggregate; `rollup` means the fallback. The [daily metric rules](/docs/database/) describe eligibility and boundaries.
 
 An aggregate is not guaranteed to match a screenshot of Health taken at another time. Permissions, query boundaries, and newly arrived records still matter. When comparing, record both the calculation method and the time you checked it.
+
+## Why neither “add everything” nor “take the larger total” works
+
+Consider this deliberately invented day. The values illustrate source coverage; they are not an Apple algorithm test or measured personal data.
+
+| Part of the day | Watch records | Phone records | What happened in this example |
+| --- | ---: | ---: | --- |
+| Morning | 1,000 | 900 | Both devices observed the same walk |
+| Afternoon | No records | 600 | Only the phone recorded this walk |
+| Evening | 800 | No records | Only the Watch recorded this walk |
+| Source total | 1,800 | 1,500 | Coverage overlaps in the morning only |
+
+Adding every record gives **3,300 steps** and includes both observations of the morning walk. Taking the larger daily source total gives **1,800**, but discards the phone-only afternoon.
+
+A toy rule that chooses the Watch's morning value and keeps the two non-overlapping walks would give **2,400**. That number demonstrates the accounting problem; it is **not a prediction of HealthKit's result**. Actual records have different interval boundaries, source priorities and availability. Neither these observations nor the toy rule supplies a ground-truth count of physical steps.
+
+<BlogFlow title="Three calculations over the same records" caption="Conceptual workflow. The merged value must be obtained from HealthKit; it is not calculated by this diagram.">
+  <FlowRow label="Raw export" steps="Individual device observations | Add every row | Overlap remains in the sum" note="Useful for inspecting provenance, but not automatically a combined activity total." />
+  <FlowRow label="HealthKit aggregate" steps="Matching samples | HealthKit merges sources | Cumulative statistic for the interval" note="Keep the query interval, source filters and calculation time with the result." />
+  <FlowRow label="Per-source statistics" steps="Matching samples | Separate calculations by source | Compare device coverage" note="Adding these source totals can reintroduce the overlap." />
+</BlogFlow>
+
+For developers, the distinction is explicit: `.cumulativeSum` requests a sum for a cumulative quantity; adding `.separateBySource` lets you inspect source-specific statistics. `HKStatisticsCollectionQuery` partitions the calculation into intervals such as calendar days. Use its returned statistics rather than reconstructing a merged result by adding source sums. Apple's documentation describes these options, but does not provide a complete recipe for reproducing Health's source-merging algorithm in a spreadsheet. [Statistics options](https://developer.apple.com/documentation/healthkit/hkstatisticsoptions), [collection queries](https://developer.apple.com/documentation/healthkit/hkstatisticscollectionquery)
+
+Keep a daily aggregate as a separate series. Do not append it to the raw rows and sum both: the aggregate summarizes observations already represented in the raw data. Likewise, a newly computed value for the same bucket replaces the previous result; it is not extra activity to add.
 
 ## What happened in my own export
 

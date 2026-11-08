@@ -1,9 +1,10 @@
 export const EXAMPLES = [
   {
     slug: "year-in-review",
+    searchTitle: "Apple Health Year in Review",
     title: "Your year in health",
     intro: "A year of movement, told in your own numbers.",
-    description: "A shareable portrait of movement, sleep, and heart trends.",
+    description: "Explore an Apple Health year in review with recorded steps, sleep, workouts and resting heart rate in a shareable dashboard.",
     input: "Workout export",
     action: "Explore a year",
     prompt:
@@ -11,9 +12,10 @@ export const EXAMPLES = [
   },
   {
     slug: "marathon-training",
+    searchTitle: "Apple Watch Marathon Training Dashboard",
     title: "The road to race day",
     intro: "See the training behind the finish line.",
-    description: "Sixteen weeks of effort, all the way to race day.",
+    description: "Explore 16 weeks of recorded marathon training: weekly running distance, longest runs, missing weeks and the race workout.",
     input: "Workout export + race date",
     action: "Explore the training",
     prompt:
@@ -21,6 +23,7 @@ export const EXAMPLES = [
   },
   {
     slug: "activity-art",
+    searchTitle: "Workout Route Art from Apple Health",
     title: "Activity as art",
     intro: "Your movement makes its own signature.",
     description: "Familiar paths, made into something worth keeping.",
@@ -31,6 +34,7 @@ export const EXAMPLES = [
   },
   {
     slug: "deep-workout-analysis",
+    searchTitle: "Compare Apple Watch Runs on the Same Route",
     title: "Deep workout analysis",
     intro: "Same route. A different run.",
     description: "Compare repeated runs on geographically matched routes.",
@@ -41,6 +45,7 @@ export const EXAMPLES = [
   },
   {
     slug: "activity-atlas",
+    searchTitle: "Apple Health Workout Route Atlas",
     title: "Your activity atlas",
     intro: "All the places your feet and wheels have taken you.",
     description: "A year of walks, runs, and rides in one place.",
@@ -52,6 +57,7 @@ export const EXAMPLES = [
 
   {
     slug: "sleep-and-parenthood",
+    searchTitle: "Apple Watch Sleep Before and After Parenthood",
     title: "Sleep changes with a newborn",
     intro: "Sleep before and after becoming a parent.",
     description: "Sleep stages, nightly duration, and recorded awakenings before and after a new arrival.",
@@ -62,6 +68,7 @@ export const EXAMPLES = [
   },
   {
     slug: "heart-rate-sensors",
+    searchTitle: "Apple Watch and Polar H10 Heart Rate Recordings",
     title: "Comparing heart rate sensors",
     intro: "Find what the recordings actually show.",
     description: "Compare matched five-mile routes and heart-rate recordings from an Apple Watch and an external monitor.",
