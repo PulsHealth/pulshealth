@@ -1,7 +1,7 @@
 ---
 title: "Why Your Apple Health Step Counts Don't Match"
 date: "2026-04-12"
-updated: "2026-11-07"
+updated: "2026-11-08"
 draft: false
 author: "Sean Wade"
 tags: ["apple-health", "steps", "data-quality", "export"]
@@ -14,7 +14,7 @@ That disagreement does not automatically mean your steps are duplicated or your 
 
 **Start by comparing one completed day, using the same time zone, and identifying how each total was calculated.** Today's moving total makes a poor debugging target.
 
-*Updated November 7, 2026: added a worked example of overlapping and complementary sources, and clarified how HealthKit aggregates differ from raw sums. The September data comparison is unchanged.*
+*Updated November 8, 2026: added a comparison worksheet. November 7: added a worked example of overlapping and complementary sources, and clarified how HealthKit aggregates differ from raw sums. The September data comparison is unchanged.*
 
 ## Start with the shape of the mismatch
 
@@ -137,3 +137,19 @@ Changing source priority is useful when you have deliberately chosen which devic
 Label each result as a **raw sum**, **single-source sum**, **HealthKit aggregate**, or **server fallback**, with its date boundary and refresh time. That small amount of bookkeeping makes a later discrepancy much easier to trace.
 
 For a spreadsheet you intend to use every week, export a defined daily series and retain raw records for investigation. The [export guide](/blog/export-apple-health-to-csv-excel/) shows how to choose between them.
+
+## A worksheet for comparing two totals
+
+Copy this table into your notes before changing source priority or deleting records. It describes the comparison; it does not calculate a replacement step count.
+
+| Field | Result A | Result B |
+| --- | --- | --- |
+| Completed local date and time zone | | |
+| Start and exclusive end of the query | | |
+| Raw sum, single-source sum, HealthKit aggregate or fallback | | |
+| Source/device filter | | |
+| Value and unit | | |
+| When this specific result was refreshed, if known | | |
+| Coverage or permission limitations, if known | | |
+
+If the boundaries or methods differ, reconcile those first. If they agree but the values do not, keep the raw evidence and investigate freshness and source coverage. Unknown freshness stays unknown; a recent account-wide sync does not prove that every daily bucket was recomputed.

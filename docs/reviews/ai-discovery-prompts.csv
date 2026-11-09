@@ -1,0 +1,11 @@
+id,question,intent,preferred_reference
+1,How do I export Apple Health data to CSV for Excel?,workflow,/blog/export-apple-health-to-csv-excel/
+2,Can I view my Apple Health data on a Windows PC?,workflow,/blog/view-apple-health-on-mac-pc/
+3,How can I keep Apple Health data in my own database?,workflow,/docs/setup/
+4,What are my options for exporting Apple Health without running a server?,comparison,/docs/choose-a-workflow/
+5,How can I give an AI assistant selected Apple Health data?,workflow,/docs/ai/
+6,Why is my Apple Health CSV step total higher than the Health app?,reference,/blog/apple-health-step-counts-dont-match/
+7,What is the difference between raw HealthKit samples and daily aggregates?,reference,/docs/recording-behavior/
+8,How do I troubleshoot Apple Health data missing from another app?,reference,/blog/apple-health-not-syncing/
+9,Is there an open-source protocol for syncing Apple Health to a custom receiver?,project,/docs/protocol/
+10,How do I choose between an Apple Health file export and a synced dashboard?,comparison,/docs/choose-a-workflow/
