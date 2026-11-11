@@ -88,8 +88,10 @@ These pages are included in search and the sitemap; the footer links to the
 product. Both `/watchworkoutpro/` and `/workout-to-watch/` (including their
 support/privacy routes) retain noindex redirect stubs with destination canonicals.
 Product policy content lives in `content/watchworkoutpro/`. Marketing screenshots
-are resized from the app's approved dark source captures. App Store availability
-must be verified before replacing the launch notice with a download action.
+are resized from the app's approved dark source captures. The product and support
+pages link to the live App Store listing (`6822902745`), verified against Apple's
+US lookup API and public listing on November 10, 2026. Product copy reflects the
+36-workout starter library; support covers monthly and Lifetime Pro purchases.
 
 Example pages show a “Back” link to the gallery above their title. Local file import
 lives below each interactive example; chart labels and units stay with the visuals.

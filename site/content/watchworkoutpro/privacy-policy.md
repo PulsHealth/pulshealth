@@ -1,6 +1,6 @@
 # Watch Workout Pro Privacy Policy
 
-**Updated October 14, 2026**
+**Updated November 10, 2026**
 
 This policy describes Watch Workout Pro, its workout-sharing service, and its optional AI connector, operated by Sean Wade. Watch Workout Pro is a separate product, **Powered by Puls**. The relationship does not give it access to a PulsHealth account or health database, or share your permissions between the products.
 
@@ -34,7 +34,7 @@ Shared snapshots are separate from connector accounts and are not deleted by dis
 
 ## Purchases
 
-Apple processes Pro subscription payments. We do not receive your card or bank account details. The app checks StoreKit purchase information, such as product identifier, transaction status, and subscription expiration, to enable Pro features. Manage or cancel subscriptions in your Apple account.
+Apple processes Pro purchases, including monthly subscriptions and one-time Lifetime purchases. We do not receive your card or bank account details. The app checks StoreKit purchase information, such as product identifier, transaction status, and subscription expiration, to enable Pro features. Manage or cancel subscriptions in your Apple account.
 
 ## App and website infrastructure
 
