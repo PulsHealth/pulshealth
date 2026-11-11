@@ -92,6 +92,8 @@ are resized from the app's approved dark source captures. The product and suppor
 pages link to the live App Store listing (`6822902745`), verified against Apple's
 US lookup API and public listing on November 10, 2026. Product copy reflects the
 36-workout starter library; support covers monthly and Lifetime Pro purchases.
+Download actions use the same official Apple badge component as PulsHealth,
+with the Watch Workout Pro listing and accessible app name.
 
 Example pages show a “Back” link to the gallery above their title. Local file import
 lives below each interactive example; chart labels and units stay with the visuals.

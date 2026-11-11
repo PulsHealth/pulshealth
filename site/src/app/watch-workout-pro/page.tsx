@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays, Share2, Sparkles, Activity, Bike, Dumbbell, Footprints } from "lucide-react";
+import { AppStoreBadge } from "@/components/app-store-badge";
 import { Button } from "@/components/ui/button";
 import styles from "./workouts.module.css";
 
@@ -33,8 +34,8 @@ export default function WatchWorkoutProPage() {
           <h1 className={styles.name}>Watch Workout Pro</h1>
           <p className={styles.headline}>Create custom workouts. Use them on your Apple Watch.</p>
           <p className="mt-7 max-w-lg text-xl leading-relaxed text-muted-foreground">Build a workout on your iPhone. Save the ones you love. Have your next session ready in Apple’s Workout app on your watch.</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg"><a href={appStoreURL}>Download on the App Store</a></Button>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <AppStoreBadge href={appStoreURL} appName="Watch Workout Pro" placement="hero" className="[&_img]:h-12" />
             <Button asChild size="lg" variant="outline"><Link href="/watch-workout-pro/support/">Get support</Link></Button>
           </div>
         </div>
@@ -63,7 +64,7 @@ export default function WatchWorkoutProPage() {
       <div>
         <h2 className={styles.sectionTitle}>Your next workout starts here.</h2>
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">Start free on iPhone. Create, save, and schedule workouts for your paired Apple Watch.</p>
-        <Button asChild size="lg" className="mt-8"><a href={appStoreURL}>Download on the App Store</a></Button>
+        <AppStoreBadge href={appStoreURL} appName="Watch Workout Pro" placement="closing_cta" className="mt-8 [&_img]:h-12" />
         <p className="mt-4 text-sm text-muted-foreground">Requires iOS 18 or later and a compatible paired Apple Watch for scheduling. Optional Pro monthly or Lifetime purchase.</p>
       </div>
 
