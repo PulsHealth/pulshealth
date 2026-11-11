@@ -2,6 +2,8 @@
 
 Create, save, import, and schedule structured workouts on your iPhone for Apple Workout on your paired Apple Watch. Watch Workout Pro is a separate app, **Powered by Puls**; it does not require or automatically connect to a PulsHealth account.
 
+[Download Watch Workout Pro on the App Store](https://apps.apple.com/us/app/watch-workout-pro/id6822902745)
+
 ## Contact
 
 Email [support@pulshealth.com](mailto:support@pulshealth.com?subject=Watch%20Workout%20Pro%20support) with “Watch Workout Pro” in the subject. Include your iOS version and the action that failed. Do not send connection keys, payment details, or private health information.
@@ -16,13 +18,13 @@ Free includes:
 
 These are lifetime allowances. Deleting workouts, completing sessions, or starting a new month does not restore them.
 
-The optional Pro monthly subscription removes these app limits and adds weekly repeat scheduling. The app shows Apple's current localized price and purchase terms before you subscribe. You can continue viewing, editing, exporting, and deleting existing workouts after Pro expires.
+Pro removes these app limits and adds weekly repeat scheduling. Choose a monthly subscription or a one-time Lifetime purchase. The app shows Apple's current localized price and purchase terms before payment. You can continue viewing, editing, exporting, and deleting existing workouts after a monthly subscription expires.
 
 Apple Intelligence requires iOS 26 or later, a supported device, and available on-device models. Manual creation works on iOS 18 or later. Pro does not change device compatibility or Apple's Watch scheduling capacity. The optional assistant connector currently requires private enrollment and is not a promised subscription benefit.
 
 ## Restore or cancel
 
-Open Settings in the app and find the **Pro** section. Open the Pro screen to restore purchases, or use **Manage Pro subscription** to manage an active subscription. You can also [manage subscriptions with Apple](https://apps.apple.com/account/subscriptions). Canceling stops the next renewal; Pro remains available through the paid subscription period. Deleting the app does not cancel a subscription.
+Open Settings in the app and find the **Pro** section. Open the Pro screen to restore purchases, or use **Manage Pro subscription** to manage an active subscription. You can also [manage subscriptions with Apple](https://apps.apple.com/account/subscriptions). Lifetime Pro is a one-time purchase with no subscription to cancel. For monthly Pro, canceling stops the next renewal; Pro remains available through the paid subscription period. Deleting the app does not cancel a subscription.
 
 ## Watch scheduling
 

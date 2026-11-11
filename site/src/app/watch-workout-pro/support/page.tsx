@@ -3,7 +3,7 @@ import { RepoMarkdown, readRepoFile, stripLeadingH1 } from "@/lib/markdown";
 
 const CONTENT_PATH = "site/content/watchworkoutpro/support.md";
 const socialImage = { url: "/watch-workout-pro/workout-library.jpg", width: 396, height: 860, alt: "Watch Workout Pro workout library on iPhone" };
-const description = "Help with Watch Workout Pro, Apple Intelligence, Apple Watch scheduling, sharing, and the Pro monthly subscription.";
+const description = "Help with Watch Workout Pro, Apple Intelligence, Apple Watch scheduling, sharing, and Pro monthly and Lifetime purchases.";
 
 export const metadata = {
   title: "Watch Workout Pro Support",

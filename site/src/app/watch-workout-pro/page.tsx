@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import styles from "./workouts.module.css";
 
 const description = "Create running, cycling, strength, swimming, and interval workouts on iPhone. Save, share, and schedule structured workouts for Apple’s Workout app on Apple Watch.";
+const appStoreURL = "https://apps.apple.com/us/app/watch-workout-pro/id6822902745";
 const socialImage = { url: "/watch-workout-pro/workout-library.jpg", width: 396, height: 860, alt: "Watch Workout Pro workout library on iPhone" };
 export const metadata = {
   title: "Watch Workout Pro — Create custom workouts. Use them on your Apple Watch.", description,
@@ -33,7 +34,7 @@ export default function WatchWorkoutProPage() {
           <p className={styles.headline}>Create custom workouts. Use them on your Apple Watch.</p>
           <p className="mt-7 max-w-lg text-xl leading-relaxed text-muted-foreground">Build a workout on your iPhone. Save the ones you love. Have your next session ready in Apple’s Workout app on your watch.</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg"><a href="#workouts">Explore the app</a></Button>
+            <Button asChild size="lg"><a href={appStoreURL}>Download on the App Store</a></Button>
             <Button asChild size="lg" variant="outline"><Link href="/watch-workout-pro/support/">Get support</Link></Button>
           </div>
         </div>
@@ -48,7 +49,7 @@ export default function WatchWorkoutProPage() {
     <div className="container mx-auto max-w-6xl space-y-24 px-5 py-20 md:space-y-32 md:py-28">
       <section id="workouts" className="scroll-mt-24">
         <h2 className={styles.sectionTitle}>A single session.<br />So many ways to make it yours.</h2>
-        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">Start from scratch or explore ten ready-made workouts for running, cycling, strength, HIIT, core, rowing, and swimming. Add warmups, work and recovery intervals, repeats, and cooldowns. Edit and reuse your favorites whenever you need them.</p>
+        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">Start from scratch or explore 36 ready-made workouts for running, cycling, strength, HIIT, core, rowing, and swimming. Add warmups, work and recovery intervals, repeats, and cooldowns. Edit and reuse your favorites whenever you need them.</p>
       </section>
       {features.map(({ icon: Icon, title, text, name, alt, color }, i) => <section key={name} id={["build", "apple-intelligence", "schedule", "sharing"][i]} className={styles.feature}>
         <div className={i % 2 === 0 ? styles.copyAfter : undefined}><Icon className="mb-5 h-8 w-8 text-brand" aria-hidden /><h2 className={styles.sectionTitle}>{title}</h2><p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">{text}</p>{name === "apple-intelligence" && <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground">Requires iOS 26 or later, a supported device, and available Apple Intelligence.</p>}{name === "workout-sharing" && <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground">Public links include workout notes. Anyone with the link can view and download the session.</p>}</div>
@@ -58,6 +59,13 @@ export default function WatchWorkoutProPage() {
           <p className={styles.examplesCaption}>Plus swimming, HIIT, core, rowing, and more.</p>
         </div> : <Phone name={name} alt={alt} />}</div>
       </section>)}
+
+      <div>
+        <h2 className={styles.sectionTitle}>Your next workout starts here.</h2>
+        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">Start free on iPhone. Create, save, and schedule workouts for your paired Apple Watch.</p>
+        <Button asChild size="lg" className="mt-8"><a href={appStoreURL}>Download on the App Store</a></Button>
+        <p className="mt-4 text-sm text-muted-foreground">Requires iOS 18 or later and a compatible paired Apple Watch for scheduling. Optional Pro monthly or Lifetime purchase.</p>
+      </div>
 
       <div className="flex flex-wrap gap-x-8 gap-y-4 font-medium text-brand">
         <Link href="/watch-workout-pro/privacy/" className="hover:underline">Read the privacy policy</Link>
