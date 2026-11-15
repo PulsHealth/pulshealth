@@ -85,6 +85,45 @@ describe.skipIf(!webUrl||!adminUrl)("collection authorization (real web_app role
    expect(await cmd('export',0,{id:ids[1]})).toHaveLength(1);
   } finally {for(const id of ids)await admin.query('DELETE FROM collections.requests WHERE id=$1',[id]);}
  });
+ it('keeps fixed windows for late joiners and bounds uploads and resumed sharing',async()=>{
+  const now=Date.now(),startAt=now-60*86400000,endAt=now+730*86400000;
+  const r=await cmd('create',0,{definition:{...def,startAt,endAt},inviteHash:invite.toString('hex')});
+  try {
+   const datedToken=tokenHash(newToken())!;
+   const join={id:r.id,inviteHash:invite.toString('hex'),accepted:true,version:1,metrics:[metric],tokenHash:datedToken.toString('hex')};
+   await expect(cmd('join',1,join)).rejects.toMatchObject({code:'22023'});
+   await expect(cmd('join',1,{...join,startAt:startAt+1,endAt})).rejects.toMatchObject({code:'22023'});
+   const e=await cmd('join',1,{...join,startAt,endAt});
+   expect(e.start).toBe(startAt);expect(e.end).toBe(endAt);
+   const row={key:randomUUID(),type:metric.type,function:'raw',unit:'count',start:startAt,end:startAt+1000,value:12};
+   const upload=(records:unknown[])=>web.query('SELECT collections.upload($1,$2,$3,$4,$5)',[datedToken,randomUUID(),'d'.repeat(64),JSON.stringify(records),'[]']);
+   await expect(upload([{...row,start:startAt-1}])).rejects.toMatchObject({code:'22023'});
+   await expect(upload([{...row,end:endAt+1}])).rejects.toMatchObject({code:'22023'});
+   await upload([row]);
+   await cmd('pause',1,{id:e.id});
+   const resumed=await cmd('resume',1,{id:e.id,tokenHash:tokenHash(newToken())!.toString('hex')});
+   expect(resumed.start).toBeGreaterThan(startAt);expect(resumed.end).toBe(endAt);
+  }finally{await admin.query('DELETE FROM collections.requests WHERE id=$1',[r.id]);}
+ });
+ it('allows advance enrollment without collecting before the scheduled start',async()=>{
+  const startAt=Date.now()+86400000,endAt=startAt+86400000;
+  const r=await cmd('create',0,{definition:{...def,startAt,endAt},inviteHash:invite.toString('hex')});
+  try{
+   const scheduledToken=tokenHash(newToken())!;
+   const e=await cmd('join',1,{id:r.id,inviteHash:invite.toString('hex'),accepted:true,version:1,metrics:[metric],startAt,endAt,tokenHash:scheduledToken.toString('hex')});
+   await expect(web.query('SELECT collections.upload($1,$2,$3,$4,$5)',[scheduledToken,randomUUID(),'e'.repeat(64),'[]','[]'])).rejects.toMatchObject({code:'42501'});
+   await cmd('pause',1,{id:e.id});
+   const resumed=await cmd('resume',1,{id:e.id,tokenHash:tokenHash(newToken())!.toString('hex')});
+   expect(resumed.start).toBe(startAt);expect(resumed.end).toBe(endAt);
+   await admin.query("UPDATE collections.requests SET definition=jsonb_set(definition,'{endAt}',to_jsonb($2::bigint)) WHERE id=$1",[r.id,Date.now()-1000]);
+   await expect(cmd('join',2,{id:r.id,inviteHash:invite.toString('hex'),accepted:true,version:1,metrics:[metric],startAt,endAt,tokenHash:scheduledToken.toString('hex')})).rejects.toMatchObject({code:'22023'});
+  }finally{await admin.query('DELETE FROM collections.requests WHERE id=$1',[r.id]);}
+ });
+ it('rejects incomplete or invalid dates at the database boundary',async()=>{
+  const now=Date.now();
+  for(const change of [{startAt:now},{startAt:null,endAt:now+1000},{startAt:now,endAt:now},{startAt:now-1000,endAt:now-1},{startAt:1.5,endAt:now+1000},{startAt:0,endAt:253402300800000},{startAt:now,endAt:now+1000,mode:'once'}])
+   await expect(cmd('create',0,{definition:{...def,...change},inviteHash:invite.toString('hex')})).rejects.toMatchObject({code:'22023'});
+ });
  it('enforces retention on reads before the hourly purge and prevents private-role cleanup',async()=>{
   await admin.query("UPDATE collections.records SET received_at=now()-interval '31 days' WHERE enrollment_id=$1",[grant]);
   expect(await cmd('export',0,{id:request})).toEqual([]);

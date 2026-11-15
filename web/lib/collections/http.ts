@@ -34,6 +34,10 @@ export async function manage(request: NextRequest, native: boolean) {
     if (["join", "resume", "credential"].includes(action)) { token = newToken(); data.tokenHash = tokenHash(token)!.toString("hex"); }
     if (action === "join") {
       if (input.accepted !== true || input.version !== 1) throw new Error("Review and accept this request.");
+      if (input.startAt !== undefined || input.endAt !== undefined) {
+        if (![input.startAt,input.endAt].every(n => typeof n === "number" && Number.isSafeInteger(n))) throw new Error("Review this request’s start and end dates.");
+        data.startAt = input.startAt; data.endAt = input.endAt;
+      }
       data.accepted = true; data.version = 1; data.metrics = metrics(input.metrics);
       data.inviteHash = tokenHash(typeof input.invite === "string" ? input.invite : null)?.toString("hex") ?? "";
     }

@@ -14,7 +14,8 @@ quantity or category data. They share one Requests feature with one-time
   is available in both the app and the website. Name the
   organizer/contact and explain the purpose. Hosted delivery also asks for
   consent, required/optional metrics, individual records or daily aggregates,
-  history, duration and retention. File delivery asks for dates, metrics,
+  a fixed start/end window for ongoing sharing, history for one-time sharing,
+  and retention. File delivery asks for dates, metrics,
   file format and an optional receiver. Share the generated invitation link.
 - **Participant:** use Open or scan request in Settings or Sharing for either
   file-export links or hosted invitations. Hosted requests require sign-in:
@@ -22,7 +23,10 @@ quantity or category data. They share one Requests feature with one-time
   and affirm consent. File requests need no account: review the data, dates
   and destination, then generate and share or send the file. Both delivery
   methods require Health permissions; Free/Pro history/type limits still apply.
-- **Sharing:** each enrollment has independent status, credentials and local
+- **Sharing:** the start page offers Open or scan request and secondary browsing,
+  with no general sign-in prompt. Only hosted request review asks for a PulsHealth
+  account; file requests, including compatible external receivers, remain account-free.
+  Each enrollment has independent status, credentials and local
   anchors. Send available data, pause an ongoing request, resume with new data
   from now, or stop. One-time requests have a fixed data cutoff at approval;
   Finish contribution ends retries, including unsent records. Health permission
@@ -41,10 +45,29 @@ changed scope needs a new request and new consent. The creator is the sole
 organizer with access; organization labels do not create shared administrator
 accounts or a multi-user organization workspace.
 
+## Ongoing request dates
+
+New ongoing requests specify an exact start and end date/time, displayed in the
+creator’s local time zone and stored as epoch milliseconds (`startAt`, `endAt`).
+The same instants apply to every participant, regardless of when or where they
+join. A past start includes history (subject to plan and Health permissions);
+a future start allows enrollment now and collection later. The end must follow
+the start and be in the future when creating or joining. Fixed windows are not
+limited to the previous 365-day relative duration.
+
+Joining must acknowledge the exact dates shown in review; earlier clients that
+do not support those dates cannot silently join a wider window. Both the phone
+and server reject uploads before the start and records outside the approved
+window. After the end, the existing seven-day retry allowance can deliver only
+data from inside that window. Pausing and resuming starts at the later of now
+or the original start, without extending the end. iOS controls delivery timing;
+future scheduling is not a promise of an upload at an exact time. Older requests
+without explicit dates retain their original history/duration behavior.
+
 ## Isolation and collection protocol
 
 Hosted delivery uses a separate JSON protocol at the viewer, not a change to Puls Sync v1.
-It requires accounts mode and migration 032, privilege reset 098 and repeatable role grants 102.
+It requires accounts mode and migrations 032–033, privilege reset 098 and repeatable role grants 102.
 The native client uses the existing PulsHealth account service. Custom personal
 sync destinations do not affect it. A separate self-hosted native account/service
 selector is not implemented.

@@ -26,6 +26,14 @@ struct CollectionRequest: Codable, Identifiable, Sendable {
     var version: Int
     var status: String
     var listing: String
+    var startAt: Int64? = nil
+    var endAt: Int64? = nil
+    var sharingStart: Date? { startAt.map { Date(timeIntervalSince1970: Double($0) / 1000) } }
+    var sharingEnd: Date? { endAt.map { Date(timeIntervalSince1970: Double($0) / 1000) } }
+    func allowsHistory(_ policy: SyncAccessPolicy, now: Date = Date(), calendar: Calendar = .current) -> Bool {
+        if let start = sharingStart { return policy.allowsExport(start: start, now: now, calendar: calendar) }
+        return policy.historyDays.map { historyDays <= $0 } ?? true
+    }
 }
 struct CollectionEnrollment: Codable, Identifiable, Sendable {
     var id: UUID
@@ -47,6 +55,8 @@ struct CollectionCommand: Encodable {
     var accepted: Bool?
     var version: Int?
     var metrics: [CollectionMetric]?
+    var startAt: Int64?
+    var endAt: Int64?
 }
 struct CollectionInvitation: Identifiable {
     var id: UUID

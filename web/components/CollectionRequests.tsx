@@ -10,16 +10,22 @@ async function command(action: string, fields: Record<string, unknown> = {}) {
   if (!response.ok) throw new Error(data.error ?? "Unable to save changes.");
   return data;
 }
+function localDateTime(value: number) {
+  const d = new Date(value), pad = (n: number) => String(n).padStart(2, "0");
+  return `${String(d.getFullYear()).padStart(4, "0")}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 const initial: RequestDefinition = { title: "", organizer: "", kind: "general", purpose: "", contact: "", consentText: "", mode: "ongoing", historyDays: 30, durationDays: 90, retentionDays: 90, metrics: [] };
 export function RequestSummary({ request: r }: { request: CollectionRequest }) {
   return <><div className="eyebrow">{r.kind === "study" ? "Research study" : r.kind === "group" ? "Group program" : "Collection request"} · {r.organizer}</div>
     <h2>{r.title}</h2><p>{r.purpose}</p>
-    <div className="collection-facts"><span>{r.mode === "once" ? "One-time contribution" : `${r.durationDays} days of ongoing sharing`}</span><span>{r.historyDays} days of history</span><span>Retained for {r.retentionDays} days after receipt</span></div>
+    <div className="collection-facts"><span>{r.mode === "once" ? "One-time contribution" : r.startAt != null ? "Ongoing · fixed dates" : `${r.durationDays} days of ongoing sharing`}</span><span>{r.startAt != null && r.endAt != null ? `From ${new Date(r.startAt).toLocaleString()} to ${new Date(r.endAt).toLocaleString()}` : `${r.historyDays} days of history`}</span><span>Retained for {r.retentionDays} days after receipt</span></div>
     <ul className="collection-metrics">{r.metrics.map(m => <li key={`${m.type}:${m.function}`}><strong>{typeByIdentifier(m.type)?.name}</strong><span>{m.function === "raw" ? "Individual records" : `Daily ${m.function}`} · {m.required ? "Required" : "Optional"}</span></li>)}</ul>
     <p className="collection-small">{r.consentText}</p><p className="collection-small">Contact: {r.contact}</p></>;
 }
 function CreateRequest({ onCreated }: { onCreated: (r: CollectionRequest, invite: string) => void }) {
   const [draft, setDraft] = useState(initial), [search, setSearch] = useState("");
+  const [startAt, setStartAt] = useState(() => localDateTime(Date.now()));
+  const [endAt, setEndAt] = useState(() => localDateTime(Date.now() + 90 * 86400000));
   const [listed, setListed] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState("");
   const set = <K extends keyof RequestDefinition>(key: K, value: RequestDefinition[K]) => setDraft(d => ({ ...d, [key]: value }));
   function add(type: string) {
@@ -27,13 +33,14 @@ function CreateRequest({ onCreated }: { onCreated: (r: CollectionRequest, invite
     const metric: CollectionMetric = { type, function: t.allowedAggregateFunctions[0] ?? "raw", required: true, unit: t.unit };
     set("metrics", [...draft.metrics, metric]);
   }
-  return <form className="collection-create panel" onSubmit={async e => { e.preventDefault(); setBusy(true); setError(""); try { const d = await command("create", { definition: draft, listed }); onCreated(d.result, d.invite); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }}>
+  return <form className="collection-create panel" onSubmit={async e => { e.preventDefault(); setBusy(true); setError(""); try { const d = await command("create", { definition: { ...draft, ...(draft.mode === "ongoing" ? { startAt: new Date(startAt).getTime(), endAt: new Date(endAt).getTime() } : {}) }, listed }); onCreated(d.result, d.invite); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }}>
     <div className="eyebrow">New request</div><h2>Ask for just what you need.</h2><p>People review the scope before sharing. Each request is independent of their personal database.</p>
     <div className="collection-grid">{([['title','Request name'],['organizer','Person or organization'],['contact','Contact email or URL']] as const).map(([key,label]) => <label key={key}>{label}<input required maxLength={key === 'contact' ? 254 : 120} value={draft[key]} onChange={e => set(key,e.target.value)} /></label>)}
     <label>Request type<select value={draft.kind} onChange={e => set("kind",e.target.value as RequestDefinition['kind'])}><option value="general">General request</option><option value="group">Group program</option><option value="study">Research study</option></select></label></div>
     <label>Purpose<textarea required maxLength={2000} value={draft.purpose} onChange={e => set("purpose",e.target.value)} placeholder="What are you collecting, and how will it be used?" /></label>
     <div className="collection-grid"><label>Schedule<select value={draft.mode} onChange={e => set("mode",e.target.value as RequestDefinition['mode'])}><option value="ongoing">Ongoing</option><option value="once">One time</option></select></label>
-    {([['historyDays','History to include',3650],['durationDays','Ongoing duration',365],['retentionDays','Retention after receipt',365]] as const).filter(([key]) => key !== 'durationDays' || draft.mode === 'ongoing').map(([key,label,max]) => <label key={key}>{label} (days)<input type="number" required min={1} max={max} value={draft[key]} onChange={e => set(key,Number(e.target.value))} /></label>)}</div>
+    {([['historyDays','History to include',3650],['durationDays','Ongoing duration',365],['retentionDays','Retention after receipt',365]] as const).filter(([key]) => key === 'retentionDays' || key === 'historyDays' && draft.mode === 'once').map(([key,label,max]) => <label key={key}>{label} (days)<input type="number" required min={1} max={max} value={draft[key]} onChange={e => set(key,Number(e.target.value))} /></label>)}</div>
+    {draft.mode === "ongoing" && <><div className="collection-grid"><label>Start date and time<input type="datetime-local" required min="1970-01-01T00:00" max="9999-12-31T23:59" value={startAt} onChange={e=>setStartAt(e.target.value)} /></label><label>End date and time<input type="datetime-local" required min={startAt || "1970-01-01T00:00"} max="9999-12-31T23:59" value={endAt} onChange={e=>setEndAt(e.target.value)} /></label></div><p className="collection-small">Times use {Intl.DateTimeFormat().resolvedOptions().timeZone}. All participants share this collection window. A past start includes history; a future start schedules collection. Joining later does not extend the end date.</p></>}
     <h3>Requested data</h3><p className="collection-small">Quantity and category types are supported. Daily summaries reduce detail. Device names, sources, profile and metadata are excluded.</p>
     {draft.metrics.map((m,i) => { const t = typeByIdentifier(m.type)!; return <div className="collection-metric-edit" key={m.type}><strong>{t.name}</strong><select aria-label={`${t.name} detail`} value={m.function} onChange={e => set("metrics",draft.metrics.map((v,j) => j === i ? { ...v,function:e.target.value,unit:e.target.value==='duration'?'s':t.unit } : v))}><option value="raw">Individual records</option>{t.allowedAggregateFunctions.map(f => <option value={f} key={f}>Daily {f}</option>)}</select><label><input type="checkbox" checked={m.required} onChange={e => set("metrics",draft.metrics.map((v,j)=>j===i?{...v,required:e.target.checked}:v))} />Required</label><button type="button" className="btn" onClick={()=>set("metrics",draft.metrics.filter((_,j)=>j!==i))} aria-label={`Remove ${t.name}`}>Remove</button></div>; })}
     <label>Find a metric<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search Health types" /></label>

@@ -134,7 +134,8 @@ final class SharingModel {
             try checkSession(generation)
             let policy = await accessPolicy()
             if let maximum = policy.maximumTypes, Set(metrics.map(\.type)).count > maximum { throw CollectionError("This request needs more than \(maximum) types. Choose fewer optional types or upgrade to Pro before joining.") }
-            if let days = policy.historyDays, request.historyDays > days { throw CollectionError("This request needs \(request.historyDays) days of history. Your plan allows \(days); upgrade to Pro before joining.") }
+            if let end = request.sharingEnd, end <= Date() { throw CollectionError("This request’s collection window has ended.") }
+            if !request.allowsHistory(policy) { throw CollectionError("This request includes history outside your plan. Upgrade to Pro before joining.") }
             for metric in metrics {
                 guard let descriptor = HealthTypeCatalog.descriptor(for: metric.type), [.quantity, .category].contains(descriptor.kind),
                       metric.function == "raw" || HealthTypeCatalog.allowedAggregateFunctions(for: metric.type).contains(where: { $0.rawValue == metric.function })
@@ -144,7 +145,7 @@ final class SharingModel {
             let authorization = HealthSyncEngine(store: SyncStateStore(directory: directory.appending(path: "authorization"), tokenStore: InMemoryTokenStore()), eventLog: SyncEventLog(directory: directory.appending(path: "authorization")), wakeLog: WakeLog(directory: directory.appending(path: "authorization")))
             _ = try await authorization.requestAuthorization(for: metrics.map(\.type))
             try checkSession(generation)
-            let response: CollectionResponse<CollectionEnrollment> = try await account.collectionCommand(CollectionCommand(action: "join", id: request.id, invite: invite.code, accepted: true, version: request.version, metrics: metrics))
+            let response: CollectionResponse<CollectionEnrollment> = try await account.collectionCommand(CollectionCommand(action: "join", id: request.id, invite: invite.code, accepted: true, version: request.version, metrics: metrics, startAt: request.startAt, endAt: request.endAt))
             try checkSession(generation)
             guard let token = response.token else { throw CollectionError("The server did not return a sharing credential.") }
             try credential(response.result.id).setToken(token)
@@ -232,6 +233,10 @@ final class SharingModel {
     }
     func send(_ id: UUID) {
         guard tasks[id] == nil, let engine = engines[id] else { return }
+        if let e = enrollments.first(where: { $0.id == id }), e.start > Date() {
+            notices[id] = "Scheduled to collect from \(e.start.formatted()). iOS controls background delivery."
+            return
+        }
         running.insert(id)
         let runID = UUID(); runIDs[id] = runID
         tasks[id] = Task {

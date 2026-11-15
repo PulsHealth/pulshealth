@@ -53,9 +53,9 @@ actor CollectionTransport: SyncTransport {
     private let token: String
     private let session: URLSession
     private var enabled = true
-    init(enrollment: CollectionEnrollment, token: String) {
+    init(enrollment: CollectionEnrollment, token: String, configuration: URLSessionConfiguration = .ephemeral) {
         self.enrollment = enrollment; self.token = token
-        let config = URLSessionConfiguration.ephemeral
+        let config = configuration
         config.httpCookieStorage = nil; config.urlCache = nil
         session = URLSession(configuration: config, delegate: CollectionNoRedirects(), delegateQueue: nil)
     }
@@ -63,6 +63,7 @@ actor CollectionTransport: SyncTransport {
     func upload(_ batch: SyncBatch) async throws -> UploadResult {
         guard enabled else { throw CancellationError() }
         try Task.checkCancellation()
+        guard Date() >= enrollment.start else { throw CollectionError("This request’s collection window has not started.") }
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(CollectionBatch(batch, enrollment: enrollment))
         let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()

@@ -6,6 +6,7 @@ export interface RequestDefinition {
   title: string; organizer: string; kind: "general" | "group" | "study";
   purpose: string; contact: string; consentText: string;
   mode: "once" | "ongoing"; historyDays: number; durationDays: number; retentionDays: number;
+  startAt?: number; endAt?: number;
   metrics: CollectionMetric[];
 }
 export interface CollectionRequest extends RequestDefinition { id: string; version: number; status: string; listing: string }
@@ -41,7 +42,13 @@ export function metrics(value: unknown): CollectionMetric[] {
 export function definition(value: unknown): RequestDefinition {
   const v = object(value);
   if (!["general", "group", "study"].includes(String(v.kind)) || !["once", "ongoing"].includes(String(v.mode))) throw new Error("Choose a request type and collection mode.");
+  const dated = v.startAt !== undefined || v.endAt !== undefined;
+  if (dated && (v.mode !== "ongoing" || ![v.startAt, v.endAt].every(n => typeof n === "number" && Number.isSafeInteger(n) && n >= 0 && n <= 253402300799999)
+    || Number(v.endAt) <= Number(v.startAt) || Number(v.endAt) <= Date.now())) {
+    throw new Error("Choose a start and end date, with the end after the start and in the future.");
+  }
   return {
+    ...(dated ? { startAt: Number(v.startAt), endAt: Number(v.endAt) } : {}),
     title: string(v.title, "title", 120), organizer: string(v.organizer, "organizer", 120),
     kind: v.kind as RequestDefinition["kind"], mode: v.mode as RequestDefinition["mode"],
     purpose: string(v.purpose, "purpose", 2000), contact: string(v.contact, "contact", 254),

@@ -23,6 +23,13 @@ describe("collection contract",()=>{
  it("requires purpose, consent and finite bounds",()=>{
   expect(()=>definition({title:"",metrics:[]})).toThrow();
  });
+ it("validates explicit ongoing windows without the relative duration limit",()=>{
+  const now=Date.now(), d={title:"Study",organizer:"Example",kind:"study",purpose:"Example purpose",contact:"contact@example.org",consentText:"Consent",mode:"ongoing",historyDays:30,durationDays:90,retentionDays:90,metrics:[{type:step,function:"raw",required:true}],startAt:now-1000,endAt:now+730*86400000};
+  expect(definition(d).endAt).toBe(d.endAt);
+  expect(definition({...d,startAt:now+86400000}).startAt).toBe(now+86400000);
+  for(const change of [{endAt:now-1},{startAt:d.endAt},{startAt:null},{endAt:undefined},{startAt:"123"},{startAt:1.5},{startAt:-1},{endAt:253402300800000},{mode:"once"}])
+   expect(()=>definition({...d,...change})).toThrow();
+ });
  it("keeps browser writes protected and exempts only exact machine paths",()=>{
   expect(classifyPath('/api/collections')).toBe('protected');
   expect(classifyPath('/api/native/collections')).toBe('oauth');

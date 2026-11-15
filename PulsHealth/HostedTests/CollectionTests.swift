@@ -30,6 +30,28 @@ final class CollectionTests: XCTestCase {
             XCTAssertThrowsError(try RequestInvitation(link))
         }
     }
+    func testFixedRequestDatesDecodeAndDetermineHistoryAccess() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let json = """
+        {"id":"70000000-0000-4000-8000-000000000001","title":"Study","organizer":"Example","kind":"study","purpose":"Test","contact":"contact@example.org","consentText":"Test","mode":"ongoing","historyDays":30,"durationDays":90,"retentionDays":90,"metrics":[],"version":1,"status":"open","listing":"private","startAt":1794816000000,"endAt":1863072000000}
+        """
+        var request = try JSONDecoder().decode(CollectionRequest.self, from: Data(json.utf8))
+        XCTAssertEqual(request.sharingStart, now.addingTimeInterval(-60 * 86400))
+        XCTAssertFalse(request.allowsHistory(.free, now: now))
+        XCTAssertTrue(request.allowsHistory(.unrestricted, now: now))
+        request.startAt = Int64(now.addingTimeInterval(86400).timeIntervalSince1970 * 1000)
+        XCTAssertTrue(request.allowsHistory(.free, now: now))
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        let midday = calendar.date(from: DateComponents(year: 2026, month: 11, day: 15, hour: 12))!
+        let boundary = SyncAccessPolicy.free.earliestDate(now: midday, calendar: calendar)!
+        request.startAt = Int64(boundary.timeIntervalSince1970 * 1000)
+        XCTAssertTrue(request.allowsHistory(.free, now: midday, calendar: calendar))
+        request.startAt! -= 1
+        XCTAssertFalse(request.allowsHistory(.free, now: midday, calendar: calendar))
+        request.startAt = nil; request.endAt = nil
+        XCTAssertTrue(request.allowsHistory(.free, now: now))
+    }
     func testCollectionEnvelopeStripsIdentityAndEnforcesDatesAndConsent() throws {
         let type = "HKQuantityTypeIdentifierStepCount", now = Date()
         let metric = CollectionMetric(type: type, function: "raw", required: true, unit: "count")
@@ -46,6 +68,21 @@ final class CollectionTests: XCTestCase {
         XCTAssertNotEqual(envelope.records[0].key, sample.uuid.uuidString.lowercased())
         XCTAssertNotEqual(CollectionBatch.key(sample.uuid,enrollment: e.id), CollectionBatch.key(sample.uuid,enrollment: UUID()))
         XCTAssertEqual(CollectionBatch.key(sample.uuid,enrollment: e.id), envelope.records[0].key)
+    }
+    func testScheduledTransportRefusesTransmissionBeforeStart() async throws {
+        let start = Date().addingTimeInterval(86400)
+        let request = CollectionRequest(id: UUID(), title: "Scheduled", organizer: "Example", kind: "study", purpose: "Test", contact: "contact@example.org", consentText: "Test", mode: "ongoing", historyDays: 30, durationDays: 90, retentionDays: 30, metrics: [], version: 1, status: "open", listing: "private")
+        let e = CollectionEnrollment(id: UUID(), request: request, status: "active", metrics: [], start: start, end: start.addingTimeInterval(86400), generation: 1, consentedAt: Date())
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [NoEarlyCollectionProtocol.self]
+        let transport = CollectionTransport(enrollment: e, token: "synthetic", configuration: configuration)
+        do {
+            _ = try await transport.upload(SyncBatch(deviceID: "Fixture", type: "HKQuantityTypeIdentifierStepCount", reason: .backfill, samples: [], deletions: []))
+            XCTFail("Scheduled upload must not be acknowledged")
+        } catch {
+            XCTAssertEqual(error.localizedDescription, "This request’s collection window has not started.")
+        }
+        await transport.disable()
     }
     func testRestartPreservesRawAndAggregateProgress() async throws {
         let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
@@ -71,4 +108,14 @@ final class CollectionTests: XCTestCase {
         XCTAssertEqual(config.aggregates[0].id, aggregate)
     }
 
+}
+
+private final class NoEarlyCollectionProtocol: URLProtocol, @unchecked Sendable {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        XCTFail("Scheduled collection reached the network before its start")
+        client?.urlProtocol(self, didFailWithError: URLError(.cancelled))
+    }
+    override func stopLoading() {}
 }

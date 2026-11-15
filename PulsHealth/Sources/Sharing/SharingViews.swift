@@ -7,21 +7,15 @@ struct SharingView: View {
         let sharing = model.sharing
         List {
             Section {
-                Text("Share on your terms").font(.title2.bold())
-                Text("Each request has its own data selection and schedule. You can take part in more than one.").foregroundStyle(.secondary)
+                NavigationLink { OpenDataRequestView() } label: { Label("Open or scan request", systemImage: "qrcode.viewfinder") }
+            } footer: {
+                if sharing.enrollments.isEmpty { Text("Review what’s requested before you share.") }
             }
             if let problem = sharing.problem { Section { Text(problem).foregroundStyle(.red) } }
-            if sharing.enrollments.isEmpty {
-                Section {
-                    Label("No sharing yet", systemImage: "person.2")
-                    Text("Open an invitation from an organizer to review a request.").foregroundStyle(.secondary)
-                    NavigationLink("Sign in to PulsHealth") { UserView(account: sharing.account) }
-                }
-            }
             ForEach(sharing.enrollments) { e in
                 NavigationLink { SharingDetailView(enrollmentID: e.id) } label: {
                     VStack(alignment: .leading, spacing: 7) {
-                        HStack { Text(e.request.title).font(.headline); Spacer(); Text(e.status.capitalized).font(.caption).foregroundStyle(e.status == "active" ? .green : .secondary) }
+                        HStack { Text(e.request.title).font(.headline); Spacer(); Text(e.status == "active" && e.start > Date() ? "Scheduled" : e.status.capitalized).font(.caption).foregroundStyle(e.status == "active" ? .green : .secondary) }
                         Text(e.request.organizer).foregroundStyle(.secondary)
                         Text("\(e.metrics.count) metrics · \(e.request.mode == "once" ? "One time" : "Ongoing")").font(.caption)
                         if let last = e.lastReceived { Text("Last receipt \(last.formatted(date: .abbreviated, time: .shortened))").font(.caption).foregroundStyle(.secondary) }
@@ -29,10 +23,7 @@ struct SharingView: View {
                     }.padding(.vertical, 6)
                 }
             }
-            Section {
-                NavigationLink { OpenDataRequestView() } label: { Label("Open or scan request", systemImage: "qrcode.viewfinder") }
-            }
-            Section { NavigationLink { CollectionDirectoryView() } label: { Label("Browse opportunities", systemImage: "magnifyingglass") } } footer: { Text("Optional studies and programs accepting volunteers.") }
+            Section { NavigationLink { CollectionDirectoryView() } label: { Label("Browse opportunities", systemImage: "magnifyingglass") } }
         }
         .navigationTitle("Sharing")
         .refreshable { await sharing.refresh() }
@@ -48,8 +39,15 @@ struct CollectionSummaryView: View {
             Text(request.purpose)
         }
         Section("Collection") {
-            LabeledContent("Schedule", value: request.mode == "once" ? "One time" : "\(request.durationDays) days")
-            LabeledContent("History", value: "\(request.historyDays) days")
+            LabeledContent("Schedule", value: request.mode == "once" ? "One time" : "Ongoing")
+            if let start = request.sharingStart, let end = request.sharingEnd {
+                LabeledContent("Start", value: start.formatted())
+                LabeledContent("End", value: end.formatted())
+                Text("Times shown in \(TimeZone.current.identifier). Only data within this window is requested; joining later does not extend it.").font(.footnote).foregroundStyle(.secondary)
+            } else {
+                LabeledContent("History", value: "\(request.historyDays) days")
+                if request.mode == "ongoing" { LabeledContent("Duration", value: "\(request.durationDays) days") }
+            }
             LabeledContent("Retention after receipt", value: "\(request.retentionDays) days")
             LabeledContent("Contact", value: request.contact)
         }
@@ -78,13 +76,20 @@ struct CollectionReviewView: View {
                     Text(request.consentText)
                     Text("Contributions go to this request’s organizer through PulsHealth. Account profile, source and device names are excluded. The organizer can download copies. Stopping sharing prevents future uploads; it does not recall previous downloads.").font(.footnote).foregroundStyle(.secondary)
                     Text("Health permissions may limit available records. Daily summaries include only complete daily buckets within the approved range.").font(.footnote).foregroundStyle(.secondary)
-                    Toggle("I agree to this request and its data use", isOn: $accepted)
-                    Button(request.mode == "once" ? "Agree & send available data" : "Agree & start sharing") {
-                        Task { await model.sharing.join(request, metrics: request.metrics.filter { selected.contains($0.id) }, invite: invitation) }
-                    }.disabled(!accepted || selected.isEmpty || model.sharing.busy)
-                    if model.sharing.busy { ProgressView() }
+                    if model.sharing.account.hasSession {
+                        Toggle("I agree to this request and its data use", isOn: $accepted)
+                        Button(request.mode == "once" ? "Agree & send available data" : "Agree & start sharing") {
+                            Task { await model.sharing.join(request, metrics: request.metrics.filter { selected.contains($0.id) }, invite: invitation) }
+                        }.disabled(!accepted || selected.isEmpty || model.sharing.busy)
+                        if model.sharing.busy { ProgressView() }
+                        if model.sharing.account.problem != nil || model.sharing.problem != nil {
+                            NavigationLink("Check account for this request") { UserView(account: model.sharing.account) }
+                        }
+                    } else {
+                        Text("This request collects through PulsHealth and requires an account.").font(.footnote).foregroundStyle(.secondary)
+                        NavigationLink("Sign in for this request") { UserView(account: model.sharing.account) }
+                    }
                 }
-                NavigationLink("Sign in or view account") { UserView(account: model.sharing.account) }
             } else if problem == nil { ProgressView("Loading request…") }
             if let error = problem ?? model.sharing.problem { Section { Text(error).foregroundStyle(.red) } }
         }
@@ -94,6 +99,7 @@ struct CollectionReviewView: View {
             do {
                 guard let r = try await model.sharing.discover(invitation).first else { throw CollectionError("This invitation has expired or was closed. Ask the organizer for a new link.") }
                 request = r; selected = Set(r.metrics.filter(\.required).map(\.id))
+                await model.sharing.account.restore()
             } catch { problem = error.localizedDescription }
         }
     }
@@ -191,7 +197,8 @@ struct CreateCollectionRequestView: View {
     @State private var mode = "ongoing"
     @State private var delivery = "hosted"
     @State private var history = 30
-    @State private var duration = 90
+    @State private var startDate = Date()
+    @State private var endDate = Calendar.current.date(byAdding: .day, value: 90, to: Date()) ?? Date()
     @State private var retention = 90
     @State private var metrics: [CollectionMetric] = []
     @State private var search = ""
@@ -203,6 +210,8 @@ struct CreateCollectionRequestView: View {
         var title, organizer, kind, purpose, contact, consentText, mode: String
         var historyDays, durationDays, retentionDays: Int
         var metrics: [CollectionMetric]
+        var startAt: Int64?
+        var endAt: Int64?
     }
     struct Create: Encodable { var action = "create"; var definition: Definition; var listed = false }
     var body: some View {
@@ -231,8 +240,11 @@ struct CreateCollectionRequestView: View {
                     FileRequestOptions(title: $title, requester: $organizer, purpose: $purpose, contact: $contact, link: $fileInvitation)
                 } else {
                     Section("Collection") {
-                        Stepper("\(history) days of history", value: $history, in: 1...3650)
-                        if mode == "ongoing" { Stepper("\(duration) days of sharing", value: $duration, in: 1...365) }
+                        if mode == "ongoing" {
+                            DatePicker("Start", selection: $startDate, in: Date(timeIntervalSince1970: 0)..., displayedComponents: [.date, .hourAndMinute])
+                            DatePicker("End", selection: $endDate, in: startDate..., displayedComponents: [.date, .hourAndMinute])
+                            Text("Times use \(TimeZone.current.identifier). A past start includes history; a future start schedules collection. Everyone shares the same end date.").font(.footnote).foregroundStyle(.secondary)
+                        } else { Stepper("\(history) days of history", value: $history, in: 1...3650) }
                         Stepper("Retain for \(retention) days after receipt", value: $retention, in: 1...365)
                     }
                     Section {
@@ -271,7 +283,8 @@ struct CreateCollectionRequestView: View {
     private func create() async {
         busy = true; defer { busy = false }
         do {
-            let d = Definition(title: title, organizer: organizer, kind: kind, purpose: purpose, contact: contact, consentText: consent, mode: mode, historyDays: history, durationDays: duration, retentionDays: retention, metrics: metrics)
+            if mode == "ongoing" && (endDate <= startDate || endDate <= Date()) { throw CollectionError("Choose an end date after the start and in the future.") }
+            let d = Definition(title: title, organizer: organizer, kind: kind, purpose: purpose, contact: contact, consentText: consent, mode: mode, historyDays: history, durationDays: 90, retentionDays: retention, metrics: metrics, startAt: mode == "ongoing" ? Int64(floor(startDate.timeIntervalSince1970 * 1000)) : nil, endAt: mode == "ongoing" ? Int64(floor(endDate.timeIntervalSince1970 * 1000)) : nil)
             let response: CollectionResponse<CollectionRequest> = try await model.sharing.account.collectionCommand(Create(definition: d))
             guard let code = response.invite else { throw CollectionError("Invitation unavailable. Open the website to create a new link.") }
             var url = URLComponents(url: PulsHealthDatabase.viewerURL.appending(path: "collect/" + response.result.id.uuidString.lowercased()), resolvingAgainstBaseURL: false)!
