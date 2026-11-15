@@ -163,7 +163,6 @@ struct ManageCollectionRequestsView: View {
         List {
             Section {
                 NavigationLink("Create request") { CreateCollectionRequestView() }
-                Link("Manage requests on the website", destination: PulsHealthDatabase.viewerURL.appending(path: "requests"))
             } footer: { Text("Request data once or on an ongoing basis for yourself, a group or a study. One-time requests can collect through PulsHealth or ask participants to export a file.") }
             ForEach(model.sharing.requests) { request in
                 Section { CollectionRequestRow(request: request) }
