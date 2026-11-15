@@ -1,13 +1,13 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-22**
+**Last updated: 2026-11-14**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
 developer's own (the PulsHealth database) — or, if you have
 no database, writes it to files you then save or send yourself. This policy
 describes how the app and hosted service handle your data: it reads Apple Health, it uploads to the one database you set
-up, it exports a file when you ask for one, and it can send a one-time export to a request destination you approve.
+up, it exports a file when you ask for one, and it can send a one-time export or collect data over time for a request you explicitly approve.
 
 Settings → User also offers optional account sign-in independently of database
 sync. It reads your account identity, name, date of birth and biological sex
@@ -312,6 +312,38 @@ background.
   files are not placed on the clipboard. Once a file has left the app it is an
   ordinary, unencrypted file: it is only as private as the place you put it,
   the app can no longer delete it, and the developer receives it only if you choose to send it to the developer.
+
+## Collection requests and ongoing sharing
+
+Collection requests are a separate, opt-in account feature. An organizer can
+create a request for a person, group or study, with a purpose, contact, consent
+text, specific quantity/category types, raw records or daily summaries, a
+history window, duration and retention period. Opening an invitation does not
+read or upload Health data. After you explicitly approve, the app sends only
+the selected scope to the PulsHealth account server for that organizer.
+
+Each enrollment has a separate upload credential in the device-bound Keychain
+and protected, backup-excluded local consent, anchors and diagnostic state.
+Uploads exclude account profiles, source/device names and arbitrary metadata.
+They include health values, timestamps and record keys scoped to that enrollment;
+these are sensitive health data, not a promise of anonymity. The server operator
+can read contributions. The organizer sees a participant code and can download
+contributions, without access to your personal database or account email.
+
+You may participate in multiple requests. Pause or stop disables this iPhone’s
+upload path immediately; an offline server update is retried when Sharing is
+opened online. Resume starts from now and does not fill the paused interval.
+Signing out stops sharing on this iPhone. Existing uploaded records remain
+subject to the request’s retention policy, and downloaded copies cannot be
+recalled. Contact the organizer about their copies. Account deletion removes
+your server contributions and any requests you own. Records beyond retention
+are excluded from exports and removed by hourly cleanup; operator backups have
+their separate retention. Background updates depend on iOS and Health access.
+
+Invitation links contain an access secret and should be shared only with intended
+participants. Public directory listing is optional and reviewed, shows request
+information only, and is not verification of identity or research approval.
+[Collection requests](collection-requests.md) describes the flows and safeguards.
 
 ## Data Requests
 

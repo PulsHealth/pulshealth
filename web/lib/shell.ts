@@ -5,7 +5,9 @@ export const PATH_HEADER = "x-puls-pathname";
 
 /** Authentication and connection flows stay focused, including from the demo. */
 export function isBarePage(pathname: string | null | undefined): boolean {
-  return pathname === "/login"
+  return pathname === "/opportunities"
+    || (pathname ?? "").startsWith("/collect/")
+    || pathname === "/login"
     || pathname === "/signup"
     || (pathname ?? "").startsWith("/invite/")
     || (pathname ?? "").startsWith("/deletion/")

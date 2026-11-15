@@ -19,6 +19,7 @@ final class UserAccount {
     private(set) var busy = false
     private(set) var hasSession = false
     var problem: String?
+    var onSessionEnding: (() async -> Void)?
     private let credentials: any TokenStore
     private let session: URLSession
     private var token: String?
@@ -63,7 +64,10 @@ final class UserAccount {
     }
 
     func restore() async {
-        guard !busy else { return }
+        while busy {
+            do { try await Task.sleep(for: .milliseconds(50)) } catch { return }
+        }
+        guard !Task.isCancelled else { return }
         busy = true
         defer { busy = false }
         do {
@@ -88,6 +92,7 @@ final class UserAccount {
             struct Credential: Decodable { let token: String }
             let credential: Credential = try await request("POST", body: Exchange(code: code, verifier: attempt.verifier))
             let loaded: AccountProfile = try await request("GET", token: credential.token)
+            await onSessionEnding?()
             try credentials.setToken(credential.token)
             token = credential.token
             hasSession = true
@@ -155,6 +160,7 @@ final class UserAccount {
         busy = true
         defer { busy = false }
         do {
+            await onSessionEnding?()
             // Remove the device credential even when the server is unreachable.
             try credentials.setToken(nil)
             let oldToken = token
@@ -168,6 +174,18 @@ final class UserAccount {
                 let _: Empty = try await request("DELETE", token: oldToken)
             }
         } catch { problem = error.localizedDescription }
+    }
+
+    func collectionSessionFingerprint() throws -> String? {
+        guard let credential = try credentials.token() else { return nil }
+        return SHA256.hash(data: Data(credential.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    func collectionCommand<Value: Decodable, Body: Encodable>(_ body: Body) async throws -> CollectionResponse<Value> {
+        guard !busy else { throw AccountError("Wait for account sign-in or sign-out to finish, then try again.") }
+        // Read Keychain anew so a sign-out in another screen cannot leave a stale session in use.
+        guard let credential = try credentials.token() else { throw AccountError("Sign in from Settings → User first.") }
+        return try await request("POST", token: credential, body: body, path: "collections")
     }
 
     private struct Failure: Decodable { let error: String }

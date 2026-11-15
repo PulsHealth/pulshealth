@@ -43,6 +43,7 @@ final class AppModel {
     var proContext: ProContext = .plan
     let export = ExportModel()
     let dataRequests = DataRequestModel()
+    let sharing = SharingModel()
     /// Shared on-device review timing, independent of sync and export state.
     let reviews: ReviewRequests
     /// The Explore tab: what HealthKit holds per type, and the analyses
@@ -225,6 +226,7 @@ final class AppModel {
         self.healthAccess = healthAccess ?? engine
         self.capabilitiesReader = capabilitiesReader ?? engine
         self.explore = ExploreModel(engine: engine)
+        sharing.accessPolicy = { [subscriptions] in await subscriptions.currentPolicy() }
         dataRequests.accessPolicy = { [subscriptions] in await subscriptions.currentPolicy() }
         // An analysis can show the permission sheet too; what it answered
         // for history (iOS 27) is recorded the same way as after Apply's.
@@ -252,7 +254,7 @@ final class AppModel {
     }
 
     var reviewRequestsBlocked: Bool {
-        subscriptions.showsGiftWelcome || showsPro || isSettingUpInitialSync || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
+        subscriptions.showsGiftWelcome || showsPro || isSettingUpInitialSync || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || sharing.invitation != nil || sharing.busy || !sharing.running.isEmpty || pendingServerChange != nil || pairingLinkPrompt != nil
             || pairingAwaitsSyncTab || lastErrorMessage != nil || stateFileUnreadable
             || needsAuthorization || isSyncingAll || backfillActive || export.isRunning
             || statuses.contains(where: { $0.activity == .syncing })
@@ -1139,6 +1141,11 @@ final class AppModel {
     /// values go nowhere until the user accepts, and then only as far as a scan
     /// would take them: into the server fields, tested, not applied.
     func handleIncomingURL(_ url: URL) {
+        if url.scheme == "puls", url.host == "collection" {
+            do { sharing.invitation = try CollectionInvitation(url: url) }
+            catch { sharing.problem = error.localizedDescription }
+            return
+        }
         if url.scheme == "puls", url.host == "request" {
             dataRequests.open(url.absoluteString)
             return

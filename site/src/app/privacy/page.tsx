@@ -12,12 +12,12 @@ const BLOB = `${GITHUB}/blob/main`;
 const claims = [
   {
     title: "Your exports go where you choose",
-    body: "Exploring and exporting need no account. An export goes where you choose in the share sheet, or to a request destination you review and approve with Generate & Send. Apple handles optional Pro purchase payments and verification, as well as any App Store rating or review you submit. Health data is not sent to Apple for purchase verification; review timing counters stay on your device.",
+    body: "Exporting needs no account. An export goes where you choose in the share sheet, or to a request destination you review and approve with Generate & Send. Apple handles optional Pro purchase payments and verification, as well as any App Store rating or review you submit. Health data is not sent to Apple for purchase verification; review timing counters stay on your device.",
     check: { label: "Export/", href: `${GITHUB}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Export` },
   },
   {
     title: "Your database, or ours: your choice",
-    body: "Regular sync uploads to the database you set up. One-time requests can send a ZIP to a separate HTTPS destination you approve. Run your own and the developer never sees your data. Choose the PulsHealth database and we hold it under your account, to show it back to you and to the assistants you connect. It is not sold. Account deletion disconnects access and automatically removes your account and stored records; a private status link confirms completion. A minimal deletion record prevents older backups from restoring deleted data.",
+    body: "Regular sync uploads to the database you set up. One-time requests can send a ZIP to a separate HTTPS destination you approve. For personal sync to your own server, the developer never sees that data. Separately approved collection requests send selected data to the PulsHealth account server for their organizer; you can pause or stop each request independently. Choose the PulsHealth database and we hold it under your account, to show it back to you and to the assistants you connect. It is not sold. Account deletion disconnects access and automatically removes your account and stored records; a private status link confirms completion. A minimal deletion record prevents older backups from restoring deleted data.",
     check: { label: "Transport/", href: `${GITHUB}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Transport` },
   },
   {
@@ -35,7 +35,7 @@ const claims = [
 export const metadata = {
   title: "Privacy Policy - PulsHealth",
   description:
-    "Where your health data goes and where it does not. Sync goes to your configured database. One-time exports go through the share sheet or to a request destination you approve.",
+    "Where your health data goes and where it does not. Sync goes to your configured database. Exports go where you choose. Collection requests share only the scope you approve with their organizer.",
   alternates: {
     canonical: "/privacy/",
   },

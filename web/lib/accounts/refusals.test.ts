@@ -53,7 +53,7 @@ const HTTP_METHODS: Method[] = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE",
 /** How a route is guarded in accounts mode. */
 type Guard =
   /** proxy.ts: 401 without a session. The handler: `noSession` without one, `forbidden` for these sessions. */
-  | { kind: "session"; noSession: string; forbidden?: { session: Partial<Session>; location: string }[] }
+  | { kind: "session"; noSession: string; status?: number; forbidden?: { session: Partial<Session>; location: string }[] }
   /** Reachable without a session by design (lib/accounts/policy.ts PUBLIC_API); `why` says why that is safe. */
   | { kind: "public"; why: string }
   /** The container health check: no session, any scheme. Returns no personal data. */
@@ -75,6 +75,9 @@ interface Session {
 }
 
 const ROUTES: Record<string, { methods: Method[]; guard: Guard }> = {
+  "/api/collections": { methods: ["GET", "POST"], guard: { kind: "session", noSession: "", status: 401 } },
+  "/api/native/collections": { methods: ["GET", "POST"], guard: { kind: "oauth" } },
+  "/api/sharing": { methods: ["GET", "POST"], guard: { kind: "oauth" } },
   "/api/app-store/notifications/[environment]": { methods: ["POST"], guard: { kind: "oauth" } },
   "/api/native/profile": { methods: ["GET", "POST", "PUT", "DELETE"], guard: { kind: "oauth" } },
   "/api/auth/connect-account": { methods: ["POST"], guard: { kind: "session", noSession: "/login?next=%2Faccount" } },
@@ -306,8 +309,8 @@ describe("the handlers themselves, should a request get past the proxy", () => {
   it.each(guarded)("$method $path without a session: 303 to $guard.noSession", async ({ path, method, guard }) => {
     findSession.mockResolvedValue(null);
     const res = await handle(path, method, request(path, method, SAME_ORIGIN));
-    expect(res.status).toBe(303);
-    expect(res.headers.get("location")).toBe(guard.noSession);
+    expect(res.status).toBe(guard.status ?? 303);
+    if (!guard.status) expect(res.headers.get("location")).toBe(guard.noSession);
     expect(res.cookies.get("__Host-puls-session")).toBeUndefined();
     expectNothingReached();
   });

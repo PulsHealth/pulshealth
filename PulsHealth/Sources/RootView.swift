@@ -3,18 +3,18 @@ import PulsHealthSync
 
 struct RootView: View {
     private enum Tab: String, Hashable {
-        case explore, export, sync, settings
+        case export, sync, sharing, settings
 
         /// Debug builds accept `-PulsInitialTab <name>` so a scripted
         /// simulator run can screenshot each tab without tapping; release
-        /// builds always start on Explore.
+        /// builds always start on Export.
         static var initial: Tab {
             #if DEBUG
             if let name = UserDefaults.standard.string(forKey: "PulsInitialTab"), let tab = Tab(rawValue: name) {
                 return tab
             }
             #endif
-            return .explore
+            return .export
         }
     }
     @State private var selection: Tab = Tab.initial
@@ -35,14 +35,6 @@ struct RootView: View {
         }
         #endif
         return []
-    }()
-    /// Debug builds accept `-PulsInitialType <identifier>` alongside
-    /// `-PulsInitialTab explore`, so a scripted run can screenshot a Type page.
-    @State private var exploredType: ExploreRoute? = {
-        #if DEBUG
-        if let id = UserDefaults.standard.string(forKey: "PulsInitialType") { return .type(id) }
-        #endif
-        return nil
     }()
     init(typeActions: TypeActions = TypeActions()) {
         _typeActions = State(initialValue: typeActions)
@@ -75,28 +67,6 @@ struct RootView: View {
                 .background(.regularMaterial)
             }
             TabView(selection: $selection) {
-                NavigationSplitView {
-                    ExploreView(selection: $exploredType)
-                        .reviewRequestOpportunity(.explore, blocked: exploredType != nil)
-                        .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 400)
-                } detail: {
-                    NavigationStack {
-                        if case .type(let id) = exploredType {
-                            TypePageView(identifier: id)
-                        } else {
-                            ContentUnavailableView(
-                                "Choose a Health Type", systemImage: "heart.text.square",
-                                description: Text("Select a type to explore its readings and trends."))
-                        }
-                    }
-                    // A different type starts at its own detail root; resizing
-                    // keeps this identity and any pushed analysis unchanged.
-                    .id(exploredType)
-                }
-                .navigationSplitViewStyle(.balanced)
-                    .safeAreaInset(edge: .bottom) { TypeActionNoticeView() }
-                    .tabItem { Label("Explore", systemImage: "heart.fill") }
-                    .tag(Tab.explore)
                 NavigationStack { ExportView() }
                     .id(exportNavigationID)
                     .tabItem { Label("Export", systemImage: "square.and.arrow.up") }
@@ -110,12 +80,19 @@ struct RootView: View {
                     .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
                     .badge(model.hasPendingChanges ? "•" : nil)
                     .tag(Tab.sync)
+                NavigationStack { SharingView() }
+                    .tabItem { Label("Sharing", systemImage: "person.2.fill") }
+                    .tag(Tab.sharing)
                 NavigationStack { SettingsView() }
                     .tabItem { Label("Settings", systemImage: "gearshape.fill") }
                     .tag(Tab.settings)
             }
         }
         .environment(typeActions)
+        .sheet(item: Binding(get: { model.showsOnboarding ? nil : model.sharing.invitation }, set: { model.sharing.invitation = $0 })) { invitation in
+            NavigationStack { CollectionReviewView(invitation: invitation) }.environment(model)
+        }
+        .onChange(of: model.sharing.invitation?.id) { _, id in if id != nil { selection = .sharing } }
         .onChange(of: typeActions.destination) { _, destination in
             guard let destination else { return }
             switch destination {
@@ -155,16 +132,6 @@ struct RootView: View {
             typeActions.notice = nil
         }
         .onChange(of: syncPath) { _, _ in model.reviews.cancelPending() }
-        .onChange(of: exploredType) { old, new in
-            model.reviews.cancelPending()
-            // Returning from a complete populated analysis is a natural pause;
-            // opening a chart, or returning from an empty/failed read, isn't.
-            guard selection == .explore, new == nil,
-                  case .type(let id) = old,
-                  let profile = model.explore.profiles[id], profile.isComplete,
-                  profile.sampleCount > 0 else { return }
-            model.reviews.offer(.explore)
-        }
         .onChange(of: model.wakeRecords) { _, _ in offerSyncReviewOnReturn() }
         .onChange(of: model.reviews.syncReturnReady) { _, ready in
             if ready { offerSyncReviewOnReturn() }

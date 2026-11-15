@@ -45,7 +45,7 @@ targets:
         CFBundleDisplayName: PulsHealth
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        NSHealthShareUsageDescription: PulsHealth reads your health data to show it to you, export or send a one-time request you approve, and, if you set one up, sync it to the database you choose.
+        NSHealthShareUsageDescription: PulsHealth reads your health data to export it, share the data you approve with request organizers, and sync it to the database you choose.
         NSHealthUpdateUsageDescription: PulsHealth does not write health data.
         # Sync → Database can read the pairing QR code a database's setup
         # prints instead of making the user type a URL, a token and a UUID.

@@ -14,7 +14,7 @@ enum SettingsRoute: Hashable {
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @AppStorage("settings.developerMode") private var developerMode = false
-    @State private var account = UserAccount()
+    private var account: UserAccount { model.sharing.account }
     @State private var confirmDeveloperMode = false
     @State private var confirmResetAll = false
     @State private var confirmBackfill = false
@@ -66,12 +66,16 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
 
+            Section("Requests & programs") {
+                NavigationLink { ManageCollectionRequestsView() } label: { Label("Create & manage requests", systemImage: "person.2.badge.gearshape") }
+            }
+
             Section {
-                NavigationLink { CreateDataRequestView() } label: { Label("Create Request", systemImage: "qrcode") }
-                NavigationLink { OpenDataRequestView() } label: { Label("Open or Scan Request", systemImage: "qrcode.viewfinder") }
+                NavigationLink { CreateDataRequestView() } label: { Label("Create Export Link", systemImage: "qrcode") }
+                NavigationLink { OpenDataRequestView() } label: { Label("Open or Scan Export Link", systemImage: "qrcode.viewfinder") }
             } header: {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Data Requests")
+                    Text("One-time Export Links")
                     Text("Create health data requests for research participants, teams, or other groups.")
                         .font(.footnote)
                         .fontWeight(.regular)

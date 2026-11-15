@@ -37,7 +37,7 @@ struct PulsHealthApp: App {
         // never runs — so the observer query the delivery is meant for would not
         // exist in the launched process and the wake would be wasted. `start()`
         // is idempotent, so the view's `.task` stays as the foreground path.
-        Task { await model.start() }
+        Task { await model.start(); await model.sharing.start() }
     }
 
     var body: some Scene {
@@ -59,6 +59,7 @@ struct PulsHealthApp: App {
                 // sync trigger on iOS. Review requests wait for it to settle.
                 Task {
                     await model.syncNow(trigger: "foreground")
+                    await model.sharing.catchUp()
                     model.reviews.finishForegroundSync(catchup)
                 }
             case .background:

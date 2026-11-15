@@ -36,6 +36,7 @@ export function Sidebar({
   const showSwitcher = users.length >= 2 || (users.length >= 1 && !users.some((u) => u.id === currentUserId));
 
   const primary = [
+    ...(account && !account.demo ? [{ href: "/requests", label: "Requests", icon: <UserIcon className="nav-icon" /> }] : []),
     { href: "/", label: "Today", icon: <HomeIcon className="nav-icon" /> },
     { href: "/workouts", label: "Workouts", icon: <WorkoutIcon className="nav-icon" /> },
     { href: "/data", label: "All Data", icon: <GridIcon className="nav-icon" /> },
