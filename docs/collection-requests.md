@@ -36,7 +36,7 @@ accounts or a multi-user organization workspace.
 ## Isolation and collection protocol
 
 This is a separate JSON protocol at the viewer, not a change to Puls Sync v1.
-It requires accounts mode and migration 032 plus repeatable role grants 102.
+It requires accounts mode and migration 032, privilege reset 098 and repeatable role grants 102.
 The native client uses the existing PulsHealth account service. Custom personal
 sync destinations do not affect it. A separate self-hosted native account/service
 selector is not implemented.
