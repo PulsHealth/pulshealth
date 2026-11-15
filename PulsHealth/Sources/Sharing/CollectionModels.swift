@@ -52,6 +52,19 @@ struct CollectionInvitation: Identifiable {
     var id: UUID
     var code: String?
     init(url: URL) throws {
+        if url.scheme == "https" {
+            guard url.host == PulsHealthDatabase.viewerURL.host, url.user == nil,
+                  url.password == nil, url.port == nil, url.query == nil,
+                  url.pathComponents.count == 3, url.pathComponents[1] == "collect",
+                  url.path == "/collect/" + url.lastPathComponent,
+                  let id = UUID(uuidString: url.lastPathComponent)
+            else { throw CollectionError("This request link is not valid.") }
+            if let code = url.fragment, code.range(of: "^[A-Za-z0-9_-]{43}$", options: .regularExpression) == nil {
+                throw CollectionError("This request link is not valid.")
+            }
+            self.id = id; self.code = url.fragment
+            return
+        }
         guard url.scheme == "puls", url.host == "collection", url.path.isEmpty,
               url.user == nil, url.password == nil, url.port == nil, url.fragment == nil,
               let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
@@ -69,3 +82,19 @@ struct CollectionInvitation: Identifiable {
     init(id: UUID, code: String? = nil) { self.id = id; self.code = code }
 }
 struct CollectionError: LocalizedError { var errorDescription: String?; init(_ message: String) { errorDescription = message } }
+
+/// Both delivery methods enter the same review flow; parsing never starts sharing.
+enum RequestInvitation {
+    case file(DataRequest)
+    case collection(CollectionInvitation)
+
+    init(_ text: String) throws {
+        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: text) else { throw CollectionError("Enter a valid request link.") }
+        if url.scheme == "puls", url.host == "request" {
+            self = .file(try DataRequest.parse(text))
+        } else {
+            self = .collection(try CollectionInvitation(url: url))
+        }
+    }
+}

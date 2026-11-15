@@ -11,6 +11,25 @@ final class CollectionTests: XCTestCase {
             XCTAssertThrowsError(try CollectionInvitation(url: URL(string: link)!))
         }
     }
+    func testUnifiedRequestLinksAcceptBothDeliveriesAndRejectOtherHosts() throws {
+        let id = UUID(), code = String(repeating: "a", count: 43)
+        let base = PulsHealthDatabase.viewerURL.appending(path: "collect/" + id.uuidString).absoluteString
+        guard case .collection(let invitation) = try RequestInvitation(base + "#" + code) else {
+            return XCTFail("Expected a hosted request")
+        }
+        XCTAssertEqual(invitation.id, id)
+        XCTAssertEqual(invitation.code, code)
+        let request = DataRequest(title: "One-time program", requester: "Example group", purpose: "Activity summary", contact: "contact@example.org",
+            startDay: DataRequest.day(Date().addingTimeInterval(-86400)), endDay: DataRequest.day(Date()),
+            metrics: [.init(type: "HKQuantityTypeIdentifierStepCount", function: .sum)], format: .csv)
+        guard case .file(let decoded) = try RequestInvitation(request.link().absoluteString) else {
+            return XCTFail("Expected a file request")
+        }
+        XCTAssertEqual(decoded.title, request.title)
+        for link in [base + "#short", base + "?server=https://example.org", base + "/extra", "https://example.org/collect/" + id.uuidString, "puls://pair?id=" + id.uuidString] {
+            XCTAssertThrowsError(try RequestInvitation(link))
+        }
+    }
     func testCollectionEnvelopeStripsIdentityAndEnforcesDatesAndConsent() throws {
         let type = "HKQuantityTypeIdentifierStepCount", now = Date()
         let metric = CollectionMetric(type: type, function: "raw", required: true, unit: "count")

@@ -3,7 +3,6 @@ import PulsHealthSync
 
 struct SharingView: View {
     @Environment(AppModel.self) private var model
-    @State private var link = ""
     var body: some View {
         let sharing = model.sharing
         List {
@@ -30,17 +29,8 @@ struct SharingView: View {
                     }.padding(.vertical, 6)
                 }
             }
-            Section("Have an invitation?") {
-                TextField("Paste invitation link", text: $link).textInputAutocapitalization(.never).autocorrectionDisabled()
-                Button("Review invitation") {
-                    do {
-                        guard let url = URL(string: link) else { throw CollectionError("Enter a valid invitation.") }
-                        if url.scheme == "https", url.host == PulsHealthDatabase.viewerURL.host,
-                           url.pathComponents.count == 3, url.pathComponents[1] == "collect", let id = UUID(uuidString: url.lastPathComponent) {
-                            sharing.invitation = CollectionInvitation(id: id, code: url.fragment)
-                        } else { sharing.invitation = try CollectionInvitation(url: url) }
-                    } catch { sharing.problem = error.localizedDescription }
-                }.disabled(link.isEmpty)
+            Section {
+                NavigationLink { OpenDataRequestView() } label: { Label("Open or scan request", systemImage: "qrcode.viewfinder") }
             }
             Section { NavigationLink { CollectionDirectoryView() } label: { Label("Browse opportunities", systemImage: "magnifyingglass") } } footer: { Text("Optional studies and programs accepting volunteers.") }
         }
@@ -174,7 +164,7 @@ struct ManageCollectionRequestsView: View {
             Section {
                 NavigationLink("Create request") { CreateCollectionRequestView() }
                 Link("Manage requests on the website", destination: PulsHealthDatabase.viewerURL.appending(path: "requests"))
-            } footer: { Text("Create a request for yourself, an organization, a group or a study. Invitations and contributions are stored on the PulsHealth server.") }
+            } footer: { Text("Request data once or on an ongoing basis for yourself, a group or a study. One-time requests can collect through PulsHealth or ask participants to export a file.") }
             ForEach(model.sharing.requests) { request in
                 Section { CollectionRequestRow(request: request) }
             }
@@ -187,7 +177,7 @@ private struct CollectionRequestRow: View {
     let request: CollectionRequest
     var body: some View {
         Link(destination: PulsHealthDatabase.viewerURL.appending(path: "requests")) {
-            VStack(alignment: .leading, spacing: 5) { Text(request.title).font(.headline); Text("\(request.status.capitalized) · \(request.metrics.count) metrics").font(.caption).foregroundStyle(.secondary) }
+            VStack(alignment: .leading, spacing: 5) { Text(request.title).font(.headline); Text("\(request.mode == "once" ? "One time" : "Ongoing") · \(request.status.capitalized) · \(request.metrics.count) metrics").font(.caption).foregroundStyle(.secondary) }
         }
     }
 }
@@ -200,6 +190,7 @@ struct CreateCollectionRequestView: View {
     @State private var contact = ""
     @State private var consent = ""
     @State private var mode = "ongoing"
+    @State private var delivery = "hosted"
     @State private var history = 30
     @State private var duration = 90
     @State private var retention = 90
@@ -208,6 +199,7 @@ struct CreateCollectionRequestView: View {
     @State private var busy = false
     @State private var error: String?
     @State private var invitation: URL?
+    @State private var fileInvitation: URL?
     struct Definition: Encodable {
         var title, organizer, kind, purpose, contact, consentText, mode: String
         var historyDays, durationDays, retentionDays: Int
@@ -221,37 +213,54 @@ struct CreateCollectionRequestView: View {
             } else {
                 Section("Request") {
                     TextField("Request name", text: $title); TextField("Person or organization", text: $organizer)
-                    Picker("Type", selection: $kind) { Text("General request").tag("general"); Text("Group program").tag("group"); Text("Research study").tag("study") }
                     TextField("Purpose and intended use", text: $purpose, axis: .vertical)
                     TextField("Contact email or URL", text: $contact).textInputAutocapitalization(.never)
                 }
-                Section("Collection") {
+                Section("Sharing") {
                     Picker("Schedule", selection: $mode) { Text("One time").tag("once"); Text("Ongoing").tag("ongoing") }
-                    Stepper("\(history) days of history", value: $history, in: 1...3650)
-                    if mode == "ongoing" { Stepper("\(duration) days of sharing", value: $duration, in: 1...365) }
-                    Stepper("Retain for \(retention) days after receipt", value: $retention, in: 1...365)
+                    if mode == "once" {
+                        Picker("Delivery", selection: $delivery) { Text("Collect in PulsHealth").tag("hosted"); Text("Export a file").tag("file") }
+                    }
+                    if mode == "ongoing" || delivery == "hosted" {
+                        Picker("Request type", selection: $kind) { Text("General request").tag("general"); Text("Group program").tag("group"); Text("Research study").tag("study") }
+                        Text("Collect contributions in PulsHealth and manage participants on the website. Groups and studies can collect once or on an ongoing basis.").font(.footnote).foregroundStyle(.secondary)
+                    } else {
+                        Text("Participants generate a file to share or send to your receiver. No PulsHealth account is needed.").font(.footnote).foregroundStyle(.secondary)
+                    }
                 }
-                Section {
-                    ForEach($metrics) { $metric in
-                        VStack(alignment: .leading) {
-                            Text(metric.name)
-                            Picker("Detail", selection: $metric.function) {
-                                Text("Individual records").tag("raw")
-                                ForEach(HealthTypeCatalog.allowedAggregateFunctions(for: metric.type)) { function in Text("Daily \(function.displayName)").tag(function.rawValue) }
+                if mode == "once" && delivery == "file" {
+                    FileRequestOptions(title: $title, requester: $organizer, purpose: $purpose, contact: $contact, link: $fileInvitation)
+                } else {
+                    Section("Collection") {
+                        Stepper("\(history) days of history", value: $history, in: 1...3650)
+                        if mode == "ongoing" { Stepper("\(duration) days of sharing", value: $duration, in: 1...365) }
+                        Stepper("Retain for \(retention) days after receipt", value: $retention, in: 1...365)
+                    }
+                    Section {
+                        ForEach($metrics) { $metric in
+                            VStack(alignment: .leading) {
+                                Text(metric.name)
+                                Picker("Detail", selection: $metric.function) {
+                                    Text("Individual records").tag("raw")
+                                    ForEach(HealthTypeCatalog.allowedAggregateFunctions(for: metric.type)) { function in Text("Daily \(function.displayName)").tag(function.rawValue) }
+                                }
+                                Toggle("Required", isOn: $metric.required)
                             }
-                            Toggle("Required", isOn: $metric.required)
-                        }
-                    }.onDelete { metrics.remove(atOffsets: $0) }
-                    NavigationLink("Choose metrics") { metricPicker }
-                } header: { Text("Requested data") } footer: { Text("Daily summaries include complete days only. Profiles, device names, sources and metadata are excluded.") }
-                Section("Consent and data use") { TextField("Who can access contributions, how they are used, and withdrawal contact", text: $consent, axis: .vertical) }
-                Section {
-                    Text("Invitation-only. Scope is fixed once created. Downloaded copies remain your responsibility, including retention and deletion. Research studies must have their own consent and approval process.").font(.footnote).foregroundStyle(.secondary)
-                    Button(busy ? "Creating…" : "Create request") { Task { await create() } }.disabled(busy || metrics.isEmpty || [title,organizer,purpose,contact,consent].contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }))
+                        }.onDelete { metrics.remove(atOffsets: $0) }
+                        NavigationLink("Choose metrics") { metricPicker }
+                    } header: { Text("Requested data") } footer: { Text("Daily summaries include complete days only. Profiles, device names, sources and metadata are excluded.") }
+                    Section("Consent and data use") { TextField("Who can access contributions, how they are used, and withdrawal contact", text: $consent, axis: .vertical) }
+                    Section {
+                        Text("Invitation-only. Scope is fixed once created. Downloaded copies remain your responsibility, including retention and deletion. Research studies must have their own consent and approval process.").font(.footnote).foregroundStyle(.secondary)
+                        Button(busy ? "Creating…" : "Create request") { Task { await create() } }.disabled(busy || metrics.isEmpty || [title,organizer,purpose,contact,consent].contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }))
+                    }
                 }
             }
             if let error { Text(error).foregroundStyle(.red) }
         }.navigationTitle("Create request").navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: Binding(get: { fileInvitation != nil }, set: { if !$0 { fileInvitation = nil } })) {
+            if let fileInvitation { RequestCodeView(link: fileInvitation) }
+        }
     }
     private var metricPicker: some View {
         List {

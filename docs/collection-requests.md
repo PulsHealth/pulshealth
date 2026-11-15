@@ -1,19 +1,27 @@
 # Collection requests
 
 Collection requests are account-backed invitations to contribute Apple Health
-quantity or category data. They are separate from personal database sync and
-from the existing stateless one-time ZIP [Data Requests](requests.md).
+quantity or category data. They share one Requests feature with one-time
+[file exports](requests.md). Personal database sync remains separate.
 
 ## Flows
 
-- **Organizer:** Settings → Requests & programs → Create & manage requests, or
+- **Organizer:** Settings → Requests → Create & manage requests, or
   the viewer's Requests page. Choose General request, Group program or Research
-  study, name the organizer/contact, explain purpose and consent, and select
-  required/optional metrics, individual records or daily aggregates, history,
-  one-time/ongoing duration and retention. Share the generated invitation link.
-- **Participant:** open an invitation, review the recipient, data use, period
-  and retention, select optional metrics, and affirm consent. Sign-in and
-  Health permissions are required. Free/Pro history/type limits still apply.
+  study. Every type supports one-time or ongoing sharing. The iPhone creator
+  also offers Export a file for one-time requests; file delivery uses the share
+  sheet or a compatible receiver without a PulsHealth account. Hosted collection
+  is available in both the app and the website. Name the
+  organizer/contact and explain the purpose. Hosted delivery also asks for
+  consent, required/optional metrics, individual records or daily aggregates,
+  history, duration and retention. File delivery asks for dates, metrics,
+  file format and an optional receiver. Share the generated invitation link.
+- **Participant:** use Open or scan request in Settings or Sharing for either
+  file-export links or hosted invitations. Hosted requests require sign-in:
+  review the recipient, data use, period and retention, select optional metrics,
+  and affirm consent. File requests need no account: review the data, dates
+  and destination, then generate and share or send the file. Both delivery
+  methods require Health permissions; Free/Pro history/type limits still apply.
 - **Sharing:** each enrollment has independent status, credentials and local
   anchors. Send available data, pause an ongoing request, resume with new data
   from now, or stop. One-time requests have a fixed data cutoff at approval;
@@ -35,7 +43,7 @@ accounts or a multi-user organization workspace.
 
 ## Isolation and collection protocol
 
-This is a separate JSON protocol at the viewer, not a change to Puls Sync v1.
+Hosted delivery uses a separate JSON protocol at the viewer, not a change to Puls Sync v1.
 It requires accounts mode and migration 032, privilege reset 098 and repeatable role grants 102.
 The native client uses the existing PulsHealth account service. Custom personal
 sync destinations do not affect it. A separate self-hosted native account/service

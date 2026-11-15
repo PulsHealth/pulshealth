@@ -3,11 +3,11 @@ import AVFoundation
 import CoreImage.CIFilterBuiltins
 import PulsHealthSync
 
-struct CreateDataRequestView: View {
-    @State private var title = ""
-    @State private var requester = ""
-    @State private var purpose = ""
-    @State private var contact = ""
+struct FileRequestOptions: View {
+    @Binding var title: String
+    @Binding var requester: String
+    @Binding var purpose: String
+    @Binding var contact: String
     @State private var start = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
     @State private var end = Date()
     @State private var metrics: [DataRequest.Metric] = []
@@ -15,17 +15,11 @@ struct CreateDataRequestView: View {
     @State private var sends = false
     @State private var destinationName = ""
     @State private var endpoint = ""
-    @State private var link: URL?
+    @Binding var link: URL?
     @State private var problem: String?
 
     var body: some View {
-        Form {
-            Section("About This Request") {
-                TextField("Request name", text: $title)
-                TextField("Requested by", text: $requester)
-                TextField("Purpose", text: $purpose)
-                TextField("Contact email or phone", text: $contact)
-            }
+        Group {
             Section("Data & Dates") {
                 NavigationLink("Data types (\(metrics.count))") { RequestMetricPicker(metrics: $metrics) }
                 DatePicker("From", selection: $start, in: ...Date(), displayedComponents: .date)
@@ -53,13 +47,9 @@ struct CreateDataRequestView: View {
             if let problem { Section { Text(problem).foregroundStyle(.red) } }
             Section {
                 Button("Create Link & QR Code") { create() }
-                Text("One-time request. No account or ongoing sync. Links expire after 30 days and can be reused by different people. Anyone with the link can see its request details; it contains no health data or upload credentials.")
+                Text("Participants export once. No PulsHealth account is needed. Links expire after 30 days and can be reused by different people. Anyone with the link can see its request details; it contains no health data or upload credentials.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
-        }
-        .navigationTitle("Create Request")
-        .navigationDestination(isPresented: Binding(get: { link != nil }, set: { if !$0 { link = nil } })) {
-            if let link { RequestCodeView(link: link) }
         }
     }
     private func create() {
@@ -160,18 +150,20 @@ struct OpenDataRequestView: View {
     @State private var text = ""
     @State private var scanning = false
     @State private var scanned = false
+    @State private var problem: String?
     var body: some View {
         Form {
             Section {
                 TextField("Paste a PulsHealth request link", text: $text, axis: .vertical)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
-                Button("Open Request") { model.dataRequests.open(text) }.disabled(text.isEmpty)
+                Button("Open Request") { open() }.disabled(text.isEmpty)
                 Button("Scan Request QR Code", systemImage: "qrcode.viewfinder") { scanning = true }
-            } footer: { Text("You’ll review the data, dates and destination before generating anything.") }
+            } footer: { Text("Open a one-time or ongoing request. You’ll review the data, schedule and destination before sharing.") }
+            if let problem { Section { Text(problem).foregroundStyle(.red) } }
         }
         .navigationTitle("Open Request")
         .sheet(isPresented: $scanning, onDismiss: {
-            if scanned { scanned = false; model.dataRequests.open(text) }
+            if scanned { scanned = false; open() }
         }) {
             RequestScanner { code in
                 text = code
@@ -179,6 +171,10 @@ struct OpenDataRequestView: View {
                 scanning = false
             }
         }
+    }
+    private func open() {
+        do { try model.openRequestLink(text); problem = nil }
+        catch { problem = error.localizedDescription }
     }
 }
 
@@ -194,7 +190,7 @@ private struct RequestScanner: View {
                 if allowed {
                     CameraPreview(onCode: { code in
                         guard !done else { return }
-                        do { _ = try DataRequest.parse(code); done = true; onCode(code) }
+                        do { _ = try RequestInvitation(code); done = true; onCode(code) }
                         catch { problem = error.localizedDescription }
                     }, onFailure: { problem = $0 })
                     Text("Scan a PulsHealth request code. You will review the request after scanning.")
@@ -223,7 +219,7 @@ struct FulfillDataRequestView: View {
                     LabeledContent("Requested by", value: request.requester)
                     Text(request.purpose)
                     Text(request.contact).font(.footnote)
-                    Text("Requester details are supplied by the link and are not verified. This is a one-time export, not study enrollment or ongoing sync.")
+                    Text("Requester details are supplied by the link and are not verified. This request exports a file once. It does not send future updates.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 Section("Requested Data") {

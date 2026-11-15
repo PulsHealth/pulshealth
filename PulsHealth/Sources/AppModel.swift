@@ -1131,6 +1131,19 @@ final class AppModel {
 
     // MARK: - Pairing links
 
+    /// Keep the reviewed request stable until it is dismissed, regardless of delivery method.
+    func openRequestLink(_ text: String) throws {
+        guard dataRequests.pending == nil, !dataRequests.isBusy, sharing.invitation == nil else {
+            throw CollectionError("Finish or close the current request before opening another.")
+        }
+        switch try RequestInvitation(text) {
+        case .file:
+            dataRequests.open(text.trimmingCharacters(in: .whitespacesAndNewlines))
+        case .collection(let invitation):
+            sharing.invitation = invitation
+        }
+    }
+
     /// Entry point for `onOpenURL`: a tapped `puls://pair?…` link, or the same
     /// string read from the server's QR code by the iOS Camera app.
     ///
@@ -1141,13 +1154,10 @@ final class AppModel {
     /// values go nowhere until the user accepts, and then only as far as a scan
     /// would take them: into the server fields, tested, not applied.
     func handleIncomingURL(_ url: URL) {
-        if url.scheme == "puls", url.host == "collection" {
-            do { sharing.invitation = try CollectionInvitation(url: url) }
-            catch { sharing.problem = error.localizedDescription }
-            return
-        }
-        if url.scheme == "puls", url.host == "request" {
-            dataRequests.open(url.absoluteString)
+        if (url.scheme == "puls" && ["collection", "request"].contains(url.host ?? "")) ||
+            (url.scheme == "https" && url.host == PulsHealthDatabase.viewerURL.host && url.path.hasPrefix("/collect/")) {
+            do { try openRequestLink(url.absoluteString) }
+            catch { dataRequests.error = error.localizedDescription }
             return
         }
         guard url.scheme?.lowercased() == PairingPayload.scheme else { return }

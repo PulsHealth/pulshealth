@@ -66,21 +66,9 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
 
-            Section("Requests & programs") {
+            Section("Requests") {
                 NavigationLink { ManageCollectionRequestsView() } label: { Label("Create & manage requests", systemImage: "person.2.badge.gearshape") }
-            }
-
-            Section {
-                NavigationLink { CreateDataRequestView() } label: { Label("Create Export Link", systemImage: "qrcode") }
-                NavigationLink { OpenDataRequestView() } label: { Label("Open or Scan Export Link", systemImage: "qrcode.viewfinder") }
-            } header: {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("One-time Export Links")
-                    Text("Create health data requests for research participants, teams, or other groups.")
-                        .font(.footnote)
-                        .fontWeight(.regular)
-                        .textCase(nil)
-                }
+                NavigationLink { OpenDataRequestView() } label: { Label("Open or scan request", systemImage: "qrcode.viewfinder") }
             }
 
             // Keyed on the *applied* server, like the Sync tab's first-time screen:
