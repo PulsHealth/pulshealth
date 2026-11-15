@@ -21,7 +21,7 @@
 #   3. A file that is not a dump is refused before anything is touched.
 #   4. Restores into the live, since-modified database (the drop-public path).
 #   5. Restores again into a wiped volume (the fresh-database path).
-#   After each restore: the row count of every table in public and auth, the
+#   After each restore: the row count of every table in public, auth and collections, the
 #   compressed-chunk count, the continuous aggregate, metric_daily, the
 #   extension version and schema_migrations are identical to the moment of
 #   the dump; restore mode is off; migrate applied nothing; the product API
@@ -80,7 +80,7 @@ snapshot() {
            (xpath('/row/c/text()', query_to_xml(
               format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text
     FROM information_schema.tables
-    WHERE table_schema IN ('public', 'auth') AND table_type = 'BASE TABLE'
+    WHERE table_schema IN ('public', 'auth', 'collections') AND table_type = 'BASE TABLE'
     ORDER BY 1"
   sql "SELECT 'quantity_rollups rows=' || count(*) || ' sum=' || coalesce(round(sum(sum_value)::numeric, 3), 0) FROM quantity_rollups"
   sql "SELECT 'metric_daily rows=' || count(*) FROM metric_daily"
@@ -133,6 +133,7 @@ group "0. restore.sh encodes the TimescaleDB restore rules"
 rs=$server_dir/backup/restore.sh
 # line <text>: the first line of code (not comment) carrying <text>.
 line() { awk -v want="$1" '!/^[[:space:]]*#/ && index($0, want) { print NR; exit }' "$rs"; }
+l_collections=$(line 'DROP SCHEMA IF EXISTS collections CASCADE')
 l_web=$(line 'DROP SCHEMA IF EXISTS web CASCADE')
 l_auth=$(line 'DROP SCHEMA IF EXISTS auth CASCADE')
 l_drop=$(line 'DROP SCHEMA IF EXISTS public CASCADE')
@@ -140,15 +141,15 @@ l_ext=$(line 'CREATE EXTENSION IF NOT EXISTS timescaledb')
 l_pre=$(line 'SELECT timescaledb_pre_restore()')
 l_restore=$(line 'pg_restore --no-owner')
 l_post=$(line 'SELECT timescaledb_post_restore()')
-for v in l_web l_auth l_drop l_ext l_pre l_restore l_post; do
+for v in l_collections l_web l_auth l_drop l_ext l_pre l_restore l_post; do
   [[ -n ${!v} ]] || fail "restore.sh: step $v not found"
 done
-(( l_web < l_drop && l_auth < l_drop && l_drop < l_ext && l_ext < l_pre && l_pre < l_restore && l_restore < l_post )) \
+(( l_collections < l_auth && l_web < l_drop && l_auth < l_drop && l_drop < l_ext && l_ext < l_pre && l_pre < l_restore && l_restore < l_post )) \
   || fail "restore.sh: steps out of order (web $l_web, auth $l_auth, drop public $l_drop, extension $l_ext, pre_restore $l_pre, pg_restore $l_restore, post_restore $l_post)"
 if grep -E '^[^#]*pg_restore' "$rs" | grep -qE '(^|[[:space:]])(-j|--jobs)'; then
   fail "restore.sh: pg_restore must never run in parallel (-j/--jobs)"
 fi
-echo "drop web/auth/public → extension → pre_restore → single-threaded pg_restore → post_restore"
+echo "drop collections/web/auth/public → extension → pre_restore → single-threaded pg_restore → post_restore"
 endgroup
 
 group "1. seed synthetic data: compressed chunks and a continuous aggregate"
@@ -170,6 +171,21 @@ done
 sql "CALL refresh_continuous_aggregate('quantity_rollups', NULL, NULL)" >/dev/null
 [[ $(sql "SELECT count(*) FROM timescaledb_information.chunks WHERE hypertable_name = 'quantity_samples' AND is_compressed") -ge 2 ]] \
   || fail "the seed produced fewer than two compressed chunks"
+# Collection consent, contributions and receipts must survive both restore paths.
+# No upload credential is seeded; the fixture enrollment is stopped.
+sql "WITH r AS (
+       INSERT INTO collections.requests(user_id,definition,invite_hash)
+       SELECT id, jsonb_build_object('title','Restore fixture','retentionDays',365), decode(repeat('00',32),'hex')
+       FROM users ORDER BY id LIMIT 1 RETURNING id,user_id
+     ), e AS (
+       INSERT INTO collections.enrollments(request_id,user_id,status,metrics,start_ms,end_ms)
+       SELECT id,user_id,'stopped','[]'::jsonb,0,1 FROM r RETURNING id,user_id
+     ), d AS (
+       INSERT INTO collections.records(enrollment_id,user_id,record_key,payload)
+       SELECT id,user_id,'restore-fixture',jsonb_build_object('value',123) FROM e
+     )
+     INSERT INTO collections.receipts(enrollment_id,user_id,batch_id,digest)
+     SELECT id,user_id,gen_random_uuid(),repeat('0',64) FROM e" >/dev/null
 before=$(snapshot)
 echo "$before" | grep -vE ' rows=0$'
 endgroup

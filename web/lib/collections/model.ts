@@ -64,6 +64,7 @@ export function batch(value: unknown) {
     if (Object.keys(r).some(k => !["key", "type", "function", "start", "end", "value", "category", "unit"].includes(k))) throw new Error("Unexpected record field.");
     if (r.function !== "raw" && !t.allowedAggregateFunctions.some(f => f === r.function)) throw new Error("Unsupported function.");
     if (![r.start, r.end].every(n => typeof n === "number" && Number.isSafeInteger(n) && n >= 0) || Number(r.end) < Number(r.start)) throw new Error("Invalid dates.");
+    if (r.function !== "raw" && (Number(r.end) - Number(r.start) < 23 * 3_600_000 || Number(r.end) - Number(r.start) > 25 * 3_600_000)) throw new Error("Aggregates must contain a complete daily bucket.");
     const unit = r.function === "duration" ? "s" : t.unit;
     if ((r.unit ?? null) !== unit) throw new Error("Non-canonical unit.");
     if (t.kind === "category") {

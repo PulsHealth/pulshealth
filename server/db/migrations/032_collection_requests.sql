@@ -222,6 +222,7 @@ BEGIN
      OR jsonb_typeof(v->'start') IS DISTINCT FROM 'number' OR jsonb_typeof(v->'end') IS DISTINCT FROM 'number'
      OR (v->>'start')::bigint<e.start_ms OR (v->>'start')::bigint>=e.end_ms
      OR (v->>'end')::bigint<(v->>'start')::bigint OR (v->>'end')::bigint>e.end_ms
+     OR (v->>'function'<>'raw' AND (v->>'end')::bigint-(v->>'start')::bigint NOT BETWEEN 82800000 AND 90000000)
      OR length(v->>'key') NOT BETWEEN 1 AND 240
      OR v - ARRAY['key','type','function','start','end','value','category','unit'] <> '{}'::jsonb
      OR (v->>'unit') IS DISTINCT FROM (m->>'unit') THEN

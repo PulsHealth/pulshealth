@@ -15,6 +15,11 @@ describe("collection contract",()=>{
    expect(()=>batch({batchID:id,records:[{...record,...changes}],deletions:[]})).toThrow();
   expect(batch({batchID:id,records:[record],deletions:[id]}).records).toHaveLength(1);
  });
+ it("rejects fine-grained values mislabeled as daily aggregates and permits DST days",()=>{
+  const aggregate={key:`${step}:sum:100`,type:step,function:"sum",start:100,end:86_400_100,value:3,unit:"count"};
+  expect(()=>batch({batchID:id,records:[{...aggregate,end:60_100}],deletions:[]})).toThrow();
+  for(const hours of [23,24,25]) expect(batch({batchID:id,records:[{...aggregate,end:100+hours*3_600_000}],deletions:[]}).records).toHaveLength(1);
+ });
  it("requires purpose, consent and finite bounds",()=>{
   expect(()=>definition({title:"",metrics:[]})).toThrow();
  });

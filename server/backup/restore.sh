@@ -17,7 +17,7 @@
 #                PULS_BOOTSTRAP_BUILD=1 environment variable turns it on
 #
 # THIS DESTROYS THE CURRENT CONTENTS OF THE DATABASE. Everything in the `public`
-# schema, and the web viewer's `auth` and `web` schemas (015_web_accounts.sql),
+# schema, and the viewer's `auth`, `web` and `collections` schemas (015_web_accounts.sql),
 # is dropped and replaced by the dump. There is no undo and no second
 # copy; if the live database still holds anything you want, dump it first
 # (`make backup`).
@@ -30,7 +30,7 @@
 #      caches from — the database while it is being replaced, and the
 #      scheduled `backup` service if it is running, so it cannot dump a
 #      half-restored database as the newest backup (step 7 starts it again).
-#   3. Drops the `web` and `auth` schemas (the viewer's per-user views, which
+#   3. Drops the `collections`, `web` and `auth` schemas (the viewer's per-user views, which
 #      depend on public, and its accounts) — the dump recreates them, and a
 #      schema that survived would stop pg_restore at "already exists" — then
 #      drops and recreates the `public` schema WHILE TIMESCALEDB IS LIVE, so its
@@ -277,10 +277,11 @@ db_psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname
 # and continuous-aggregate catalog rows on the way out instead of leaving the
 # catalog describing tables that no longer exist.
 # The viewer's schemas go first: `web` holds views over public's tables, and
-# `auth` references public.users. Both are in the dump; left in place, the
+# `auth` and `collections` reference public.users. All are in the dump; left in place, the
 # restore's CREATE SCHEMA would fail (--exit-on-error) with public already
 # gone. A dump from before 015 has neither, and the next migrate run
 # recreates them empty.
+db_psql -c "DROP SCHEMA IF EXISTS collections CASCADE" >/dev/null
 db_psql -c "DROP SCHEMA IF EXISTS web CASCADE" >/dev/null
 db_psql -c "DROP SCHEMA IF EXISTS auth CASCADE" >/dev/null
 db_psql -c "DROP SCHEMA IF EXISTS public CASCADE" >/dev/null

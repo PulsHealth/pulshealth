@@ -16,8 +16,7 @@ Name, date of birth and biological sex remain optional. Changing your sign-in
 email requires your current password; the app sends it over HTTPS for that
 check and does not persist it. Signing in does not enable Health uploads or
 change your sync destination. The account session credential stays in a
-separate device-only Keychain item; the profile is held in memory while the
-User or managed-server setup page is open. If the same account is also your active sync destination,
+separate device-only Keychain item; the profile is held in memory while the app is running. If the same account is also your active sync destination,
 saved edits update that destination's local profile. Signing out removes the
 account credential from this iPhone and requests server-session revocation;
 it does not disconnect an independently configured sync destination. The web
