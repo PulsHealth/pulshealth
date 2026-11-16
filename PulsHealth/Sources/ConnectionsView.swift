@@ -19,12 +19,12 @@ struct ConnectionsView: View {
             if model.stateFileUnreadable { StateUnreadableNotice() }
             if !history {
                 if model.sharing.hasSavedDraft {
-                    NavigationLink { CreateCollectionRequestView() } label: {
+                    NavigationLink(value: SyncRoute.createRequest) {
                         ConnectionRow(title: "Finish group setup", ownership: "Draft", detail: model.sharing.creationDraft.title, status: "Not created", symbol: "square.and.pencil")
                     }
                 }
                 ForEach(model.savedDestinations) { destination in
-                    NavigationLink { PersonalConnectionView(destination: destination, path: $path) } label: {
+                    NavigationLink(value: SyncRoute.personalDestination(destination.id)) {
                         let active = destination.id == model.activeDestinationID
                         ConnectionRow(title: active && model.usesPulsHealthDatabase ? "PulsHealth database" : destination.identity.serverLabel,
                                       ownership: "Personal", detail: active ? lastPersonalReceipt : "Only the selected database receives uploads",
@@ -35,15 +35,15 @@ struct ConnectionsView: View {
                     NavigationLink(value: SyncRoute.personal) { Label("Finish database setup", systemImage: "checklist") }
                 }
                 ForEach(model.sharing.requests.filter { $0.status == "open" }) { request in
-                    NavigationLink { OrganizerConnectionView(requestID: request.id) } label: { organizerRow(request) }
+                    NavigationLink(value: SyncRoute.organizer(request.id)) { organizerRow(request) }
                 }
             } else {
                 ForEach(model.sharing.requests.filter { $0.status != "open" }) { request in
-                    NavigationLink { OrganizerConnectionView(requestID: request.id) } label: { organizerRow(request) }
+                    NavigationLink(value: SyncRoute.organizer(request.id)) { organizerRow(request) }
                 }
             }
             ForEach(enrollments.filter { e in !model.sharing.requests.contains { $0.id == e.request.id } }) { enrollment in
-                NavigationLink { SharingDetailView(enrollmentID: enrollment.id) } label: {
+                NavigationLink(value: SyncRoute.contribution(enrollment.id)) {
                     let status = ConnectionPresentation.sharing(enrollment, running: model.sharing.running.contains(enrollment.id), enabled: model.sharing.isEnabled(enrollment.id))
                     ConnectionRow(title: enrollment.request.title, ownership: "Managed by \(enrollment.request.organizer)",
                                   detail: enrollment.lastReceived.map { "Last receipt \($0.formatted(date: .abbreviated, time: .shortened))" } ?? "\(enrollment.metrics.count) metrics · \(enrollment.request.mode == "once" ? "One time" : "Ongoing")",
@@ -51,33 +51,25 @@ struct ConnectionsView: View {
                 }
             }
             if let problem = model.sharing.problem { Text(problem).foregroundStyle(.red) }
+            if model.sharing.serviceUnavailable && (!model.sharing.enrollments.isEmpty || !model.sharing.requests.isEmpty) {
+                Text("Group connections aren’t available on this server yet.").foregroundStyle(.secondary)
+            }
             if !history && model.savedDestinations.isEmpty && model.sharing.requests.isEmpty && enrollments.isEmpty && !model.isSettingUpInitialSync {
                 Section {
                     VStack(spacing: 12) {
                         Image(systemName: "arrow.triangle.2.circlepath").font(.largeTitle).foregroundStyle(.tint)
                         Text("Where should your data go?").font(.title2.bold())
                         Text("Connect to your own database or join another").foregroundStyle(.secondary)
-                        NavigationLink("Add a connection") { AddConnectionView(path: $path) }.buttonStyle(.borderedProminent)
+                        NavigationLink("Add a connection", value: SyncRoute.addConnection).buttonStyle(.borderedProminent)
                     }.frame(maxWidth: .infinity).padding(.vertical, 30)
                 }.listRowBackground(Color.clear)
             }
             if !history {
-                NavigationLink { ConnectionsView(path: $path, history: true) } label: { Text("Connection history") }
+                NavigationLink(value: SyncRoute.history) { Text("Connection history") }
             }
         }
         .navigationTitle(history ? "History" : "Connections")
-        .toolbar { if !history { ToolbarItem(placement: .primaryAction) { NavigationLink { AddConnectionView(path: $path) } label: { Image(systemName: "plus") }.accessibilityLabel("Add a connection") } } }
-        .navigationDestination(for: SyncRoute.self) { route in
-            switch route {
-            case .personal: SyncView(path: $path)
-            case .server(let scan, let choice): ServerSettingsView(scanOnArrival: scan, preferred: choice)
-            case .rawSamples: RawSamplesPickerView()
-            case .aggregates: AggregatesPickerView(scope: .sync)
-            case .activity: ActivityView()
-            case .type(let id): if let status = model.statuses.first(where: { $0.id == id }) { TypeDetailView(status: status) }
-            case .aggregateType(let id): if let descriptor = HealthTypeCatalog.descriptor(for: id) { AggregateTypeView(descriptor: descriptor, scope: .sync) }
-            }
-        }
+        .toolbar { if !history { ToolbarItem(placement: .primaryAction) { NavigationLink(value: SyncRoute.addConnection) { Image(systemName: "plus") }.accessibilityLabel("Add a connection") } } }
         .task { await model.sharing.refresh() }
         .refreshable { await model.sharing.refresh() }
     }
@@ -113,23 +105,26 @@ struct ConnectionRow: View {
     }
 }
 struct AddConnectionView: View {
-    @Binding var path: [SyncRoute]
     var body: some View {
         List {
-            NavigationLink { OwnDatabaseEntryView(path: $path) } label: { Label("Your database", systemImage: "externaldrive") }
-            NavigationLink(value: SyncRoute.server(scan: false, choice: .pulsHealth)) { Label("PulsHealth database", systemImage: "cloud") }
-            NavigationLink { List {
-                NavigationLink { OpenDataRequestView() } label: { Label("Join a group", systemImage: "qrcode.viewfinder") }
-                NavigationLink { CreateCollectionRequestView() } label: { Label("Create a group", systemImage: "person.2.badge.plus") }
-            }.navigationTitle("Group connection") } label: {
+            NavigationLink(value: SyncRoute.ownDatabase) { Label("Your database", systemImage: "externaldrive") }
+            NavigationLink(value: SyncRoute.managedDatabase) { Label("PulsHealth database", systemImage: "cloud") }
+            NavigationLink(value: SyncRoute.groupChoice) {
                 VStack(alignment: .leading, spacing: 4) { Label("Group connection", systemImage: "person.2"); Text("Join or create a group, study, or program.").font(.caption).foregroundStyle(.secondary) }
             }
-            NavigationLink("Browse opportunities") { CollectionDirectoryView() }
+            NavigationLink("Browse opportunities", value: SyncRoute.opportunities)
         }.navigationTitle("Add a connection")
     }
 }
+struct GroupConnectionChoiceView: View {
+    var body: some View {
+        List {
+            NavigationLink("Join a group", value: SyncRoute.openRequest)
+            NavigationLink("Create a group", value: SyncRoute.createRequest)
+        }.navigationTitle("Group connection")
+    }
+}
 struct OwnDatabaseEntryView: View {
-    @Binding var path: [SyncRoute]
     var body: some View {
         List {
             NavigationLink(value: SyncRoute.server(scan: true, choice: .own)) { Label("Scan connection code", systemImage: "qrcode.viewfinder") }
@@ -158,5 +153,38 @@ struct PersonalConnectionView: View {
         .confirmationDialog("Remove this connection from your iPhone?", isPresented: $remove, titleVisibility: .visible) {
             Button("Remove connection", role: .destructive) { Task { if await model.unpairDestination(id: destination.id) { dismiss() } } }
         } message: { Text("Local credentials and sync progress are removed. Data on the server is unchanged.") }
+    }
+}
+
+/// Register exactly once at the Connections stack root, never on a pushed page.
+struct ConnectionRouteView: View {
+    @Environment(AppModel.self) private var model
+    var route: SyncRoute
+    @Binding var path: [SyncRoute]
+    var body: some View {
+        switch route {
+        case .personal: SyncView(path: $path)
+        case .addConnection: AddConnectionView()
+        case .ownDatabase: OwnDatabaseEntryView()
+        case .managedDatabase: PulsHealthConnectionSetupView()
+        case .groupChoice: GroupConnectionChoiceView()
+        case .openRequest: OpenDataRequestView()
+        case .createRequest: CreateCollectionRequestView()
+        case .opportunities: CollectionDirectoryView()
+        case .history: ConnectionsView(path: $path, history: true)
+        case .personalDestination(let id):
+            if let destination = model.savedDestinations.first(where: { $0.id == id }) { PersonalConnectionView(destination: destination, path: $path) }
+        case .organizer(let id): OrganizerConnectionView(requestID: id)
+        case .contribution(let id): SharingDetailView(enrollmentID: id)
+        case .participants(let id): CollectionParticipantsView(requestID: id)
+        case .deletion(let id):
+            if let enrollment = model.sharing.enrollments.first(where: { $0.id == id }) { ConnectionDeletionView(enrollment: enrollment) }
+        case .server(let scan, let choice): ServerSettingsView(scanOnArrival: scan, preferred: choice)
+        case .rawSamples: RawSamplesPickerView()
+        case .aggregates: AggregatesPickerView(scope: .sync)
+        case .activity: ActivityView()
+        case .type(let id): if let status = model.statuses.first(where: { $0.id == id }) { TypeDetailView(status: status) }
+        case .aggregateType(let id): if let descriptor = HealthTypeCatalog.descriptor(for: id) { AggregateTypeView(descriptor: descriptor, scope: .sync) }
+        }
     }
 }

@@ -8,10 +8,12 @@ final class SharingModel {
     var requests: [CollectionRequest] = []
     var enrollments: [CollectionEnrollment] = []
     var invitation: CollectionInvitation?
+    var organizerToOpen: UUID?
     var returnToConnections = UUID()
     var creationDraft = ConnectionDraft()
     var hasSavedDraft = false
     private(set) var hiddenConnections: Set<UUID> = []
+    private(set) var serviceUnavailable = false
     var problem: String?
     var notices: [UUID: String] = [:]
     private(set) var busy = false
@@ -113,7 +115,7 @@ final class SharingModel {
         }
         for item in local { await disable(item.enrollment.id) }
         try? persist()
-        enrollments = []; requests = []
+        enrollments = []; requests = []; serviceUnavailable = false
     }
     private func checkSession(_ generation: Int) throws {
         guard generation == sessionGeneration else { throw CancellationError() }
@@ -160,6 +162,7 @@ final class SharingModel {
             guard account.hasSession else { await stopLocallyForSignOut(); problem = account.problem; return }
             let response: CollectionResponse<CollectionList> = try await account.collectionCommand(CollectionCommand(action: "list"))
             try checkSession(generation)
+            serviceUnavailable = false
             requests = response.result.requests; enrollments = response.result.enrollments
             guard let owner = account.savedProfile?.userID else { throw CollectionError("Sign in to load sharing.") }
             // Server-side pause/stop and credential rotation take effect on this device too.
@@ -177,6 +180,9 @@ final class SharingModel {
                 } else if let e = enrollments.first(where: { $0.id == local[index].enrollment.id }) { local[index].enrollment = e }
             }
             try persist(); problem = nil
+        } catch is CollectionServiceUnavailable {
+            serviceUnavailable = true
+            problem = account.problem
         } catch { problem = error.localizedDescription }
     }
     func discover(_ invite: CollectionInvitation? = nil) async throws -> [CollectionRequest] {

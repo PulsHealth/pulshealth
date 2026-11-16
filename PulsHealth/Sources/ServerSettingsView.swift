@@ -437,7 +437,7 @@ struct ServerSettingsView: View {
                 if needsInitialSyncReview {
                     guard setup.commit(to: &model.config) else { return }
                     model.isSettingUpInitialSync = true
-                    dismiss()
+                    model.initialSyncReviewRequested = UUID()
                 } else {
                     Task { await apply() }
                 }

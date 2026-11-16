@@ -101,6 +101,36 @@ final class UserAccountTests: XCTestCase {
         XCTAssertEqual(try credentials.token(), "existing-account-token")
     }
 
+    func testMissingExperimentalCollectionsIsNotReportedAsAccountFailure() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MissingCollectionsProtocol.self]
+        let account = UserAccount(credentials: InMemoryTokenStore(token: "existing-account-token"), session: URLSession(configuration: configuration))
+        do {
+            let _: CollectionResponse<CollectionList> = try await account.collectionCommand(CollectionCommand(action: "list"))
+            XCTFail("Expected unavailable feature")
+        } catch { XCTAssertTrue(error is CollectionServiceUnavailable) }
+    }
+    func testMissingRequestKeepsAPIErrorInsteadOfDisablingCollections() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MissingRequestProtocol.self]
+        let account = UserAccount(credentials: InMemoryTokenStore(token: "existing-account-token"), session: URLSession(configuration: configuration))
+        do {
+            let _: CollectionResponse<CollectionList> = try await account.collectionCommand(CollectionCommand(action: "list"))
+            XCTFail("Expected missing request")
+        } catch {
+            XCTAssertFalse(error is CollectionServiceUnavailable)
+            XCTAssertEqual(error.localizedDescription, "Request not found.")
+        }
+    }
+    func testOfflineRestoreExplainsConnectivityWithoutDiscardingSession() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [AccountTestProtocol.self]
+        let credentials = InMemoryTokenStore(token: "existing-account-token")
+        let account = UserAccount(credentials: credentials, session: URLSession(configuration: configuration))
+        await account.restore()
+        XCTAssertEqual(account.problem, "You’re offline. Reconnect and try again.")
+        XCTAssertEqual(try credentials.token(), "existing-account-token")
+    }
     func testInvalidCallbackCannotReplaceAnExistingCredential() async {
         let credentials = InMemoryTokenStore(token: "existing-account-token")
         let account = UserAccount(credentials: credentials)
@@ -182,4 +212,28 @@ private final class ForeignManagedFixture: ManagedAccountFixtureProtocol, @unche
 }
 private final class RevokedManagedFixture: ManagedAccountFixtureProtocol, @unchecked Sendable {
     override class var connectStatus: Int { 401 }
+}
+
+private final class MissingCollectionsProtocol: URLProtocol, @unchecked Sendable {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let response = HTTPURLResponse(url: request.url!, statusCode: 401, httpVersion: nil, headerFields: ["Content-Type":"text/plain"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data("Sign in required.".utf8))
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}
+
+private final class MissingRequestProtocol: URLProtocol, @unchecked Sendable {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let response = HTTPURLResponse(url: request.url!, statusCode: 404, httpVersion: nil, headerFields: ["Content-Type":"application/json"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data("{\"error\":\"Request not found.\"}".utf8))
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
 }

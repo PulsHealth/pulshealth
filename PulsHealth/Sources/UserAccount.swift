@@ -212,13 +212,30 @@ final class UserAccount {
             guard let response = response as? HTTPURLResponse else { throw AccountError("Your account could not be reached. Try again.") }
             guard (200..<300).contains(response.statusCode) else {
                 let message = try? JSONDecoder().decode(Failure.self, from: data).error
-                throw AccountError(message ?? "Your account could not be reached. Try again.")
+                if path == "collections", message == nil, [401, 404].contains(response.statusCode) {
+                    throw CollectionServiceUnavailable()
+                }
+                if response.statusCode == 401 {
+                    throw AccountError(message ?? "Your session expired. Sign in again.")
+                }
+                if response.statusCode == 503 {
+                    throw AccountError("PulsHealth is temporarily unavailable. Try again shortly.")
+                }
+                throw AccountError(message ?? "PulsHealth returned an unexpected response. Try again.")
             }
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .millisecondsSince1970
             return try decoder.decode(Response.self, from: data)
         } catch let error as AccountError { throw error }
-        catch { throw AccountError("Your account could not be reached. Try again.") }
+        catch let error as CollectionServiceUnavailable { throw error }
+        catch let error as URLError {
+            if error.code == .notConnectedToInternet { throw AccountError("You’re offline. Reconnect and try again.") }
+            if error.code == .timedOut { throw AccountError("PulsHealth took too long to respond. Try again.") }
+            if error.code == .cancelled { throw CancellationError() }
+            throw AccountError("Couldn’t connect to PulsHealth. Try again.")
+        }
+        catch is DecodingError { throw AccountError("PulsHealth returned an unexpected response. Try again.") }
+        catch { throw AccountError("Couldn’t connect to PulsHealth. Try again.") }
     }
 }
 
@@ -232,4 +249,8 @@ private final class NoAccountRedirects: NSObject, URLSessionTaskDelegate {
                     newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
         completionHandler(nil)
     }
+}
+
+struct CollectionServiceUnavailable: LocalizedError {
+    var errorDescription: String? { "Group connections aren’t available on this server yet." }
 }

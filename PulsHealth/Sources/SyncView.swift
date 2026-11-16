@@ -6,6 +6,8 @@ import PulsHealthSync
 /// accepted while another of them is on top.
 enum SyncRoute: Hashable {
     case personal
+    case addConnection, ownDatabase, groupChoice, openRequest, createRequest, opportunities, history, managedDatabase
+    case personalDestination(UUID), organizer(UUID), contribution(UUID), participants(UUID), deletion(UUID)
     /// The Database screen; `scan` opens the pairing scanner on arrival, and
     /// `choice` is the option picked on the first-time screen (`SyncIntro`).
     case server(scan: Bool, choice: DatabaseDestination? = nil)

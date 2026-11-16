@@ -33,7 +33,7 @@ struct OrganizerConnectionView: View {
                 }
                 CollectionSummaryView(request: request)
                 Section {
-                    NavigationLink("Participants") { CollectionParticipantsView(requestID: requestID) }
+                    NavigationLink("Participants", value: SyncRoute.participants(requestID))
                     if request.status == "open" {
                         Button("Create new invitation") { Task { await rotateInvitation() } }
                         if let invite { ShareLink("Share invitation", item: invite) }
@@ -41,7 +41,7 @@ struct OrganizerConnectionView: View {
                 }
                 Section {
                     if let enrollment = model.sharing.enrollments.first(where: { $0.request.id == requestID }) {
-                        NavigationLink("Your contribution · \(enrollment.status.capitalized)") { SharingDetailView(enrollmentID: enrollment.id) }
+                        NavigationLink("Your contribution · \(enrollment.status.capitalized)", value: SyncRoute.contribution(enrollment.id))
                     } else if request.status == "open" {
                         DisclosureGroup("Your contribution") {
                             Button("Review & join") { model.sharing.invitation = CollectionInvitation(id: requestID) }

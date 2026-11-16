@@ -169,9 +169,10 @@ struct ManageCollectionRequestsView: View {
     }
 }
 private struct CollectionRequestRow: View {
+    @Environment(AppModel.self) private var model
     let request: CollectionRequest
     var body: some View {
-        NavigationLink { OrganizerConnectionView(requestID: request.id) } label: {
+        Button { model.sharing.organizerToOpen = request.id } label: {
             VStack(alignment: .leading, spacing: 5) { Text(request.title).font(.headline); Text("\(request.mode == "once" ? "One time" : "Ongoing") · \(request.status.capitalized) · \(request.metrics.count) metrics").font(.caption).foregroundStyle(.secondary) }
         }
     }
@@ -264,6 +265,9 @@ struct CreateCollectionRequestView: View {
                     if model.sharing.account.problem != nil { NavigationLink("Check account") { UserView(account: model.sharing.account) } }
                     }
                 }
+            }
+            if model.sharing.serviceUnavailable && (mode == "ongoing" || delivery == "hosted") {
+                Text("Group connections aren’t available on this server yet.").foregroundStyle(.secondary)
             }
             if let error { Text(error).foregroundStyle(.red) }
         }.navigationTitle(invitation == nil ? "Create a group" : "Group created").navigationBarTitleDisplayMode(.inline)

@@ -131,14 +131,32 @@ targets:
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: true
         SWIFT_OBJC_BRIDGING_HEADER: HostedTests/ExceptionCatcher.h
+  PulsHealthUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: PulsHealth
+    configFiles:
+      Debug: Config/Local.xcconfig
+      Release: Config/Local.xcconfig
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: true
+        TEST_TARGET_NAME: PulsHealth
 schemes:
   PulsHealth:
     build:
       targets:
         PulsHealth: all
         PulsHealthHostedTests: [test]
+        PulsHealthUITests: [test]
     run:
       storeKitConfiguration: Configuration/Pro.storekit
     test:
       targets:
         - PulsHealthHostedTests
+        - PulsHealthUITests

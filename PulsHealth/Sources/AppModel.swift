@@ -38,6 +38,7 @@ final class AppModel {
     /// outlives the screen that started it (`ExportModel`).
     let subscriptions: SubscriptionStore
     /// Add Database stages a new destination on Sync; only Apply saves it.
+    var initialSyncReviewRequested = UUID()
     var isSettingUpInitialSync = false
     var showsPro = false
     var proContext: ProContext = .plan

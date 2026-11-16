@@ -118,11 +118,16 @@ struct RootView: View {
             model.reviews.cancelPending()
             typeActions.notice = nil
         }
+        .onChange(of: model.sharing.organizerToOpen) { _, id in
+            guard let id else { return }
+            syncPath = [.organizer(id)]; selection = .sync
+            model.sharing.organizerToOpen = nil
+        }
         .onChange(of: model.sharing.returnToConnections) {
             syncPath = []; connectionsNavigationID = UUID(); selection = .sync
         }
-        .onChange(of: model.isSettingUpInitialSync) { _, settingUp in
-            if settingUp { syncPath = [.personal]; selection = .sync }
+        .onChange(of: model.initialSyncReviewRequested) {
+            syncPath = [.personal]; selection = .sync
         }
         .onChange(of: syncPath) { _, _ in model.reviews.cancelPending() }
         .onChange(of: model.wakeRecords) { _, _ in offerSyncReviewOnReturn() }
@@ -190,7 +195,10 @@ struct RootView: View {
                     .tabItem { Label("Export", systemImage: "square.and.arrow.up") }
                     .badge(model.export.draft.selectedTypeCount)
                     .tag(Tab.export)
-                NavigationStack(path: $syncPath) { ConnectionsView(path: $syncPath) }
+                NavigationStack(path: $syncPath) {
+                    ConnectionsView(path: $syncPath)
+                        .navigationDestination(for: SyncRoute.self) { route in ConnectionRouteView(route: route, path: $syncPath) }
+                }
                     .id(connectionsNavigationID)
                     // The Raw Samples and Aggregates pickers are pushed on this
                     // stack, so their Apply/Discard bar belongs to the tab, not
