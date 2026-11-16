@@ -49,6 +49,13 @@ description: '## What does Flights Climbed count?
   without evidence from the recording source.
 
 
+  ## Find the answer you need
+
+  For an everyday explanation, start with [what Flights Climbed means on Apple Watch and iPhone](/blog/what-does-flights-climbed-mean/).
+  If your Watch reports stairs you did not climb, use the [flight-count troubleshooting checklist](/blog/apple-watch-flights-climbed-wrong/).
+  This reference describes the stored count, recording intervals and source-aware interpretation.
+
+
   ## How often are flights recorded?
 
   This is an activity-dependent stream, not a reading expected every minute. In the selected source, stored intervals
@@ -144,7 +151,7 @@ references:
 - title: 'Apple: flightsClimbed'
   url: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/flightsclimbed
   type: official
-last_updated: '2026-10-24'
+last_updated: '2026-11-16'
 research_notes: Executed private eleven-facet snapshot investigation before rewriting. Apple primary sources checked
   for units, category semantics and supported sources. Unsupported precise sensing claims and generic clinical targets
   removed.
@@ -182,6 +189,6 @@ figures:
   section: What do example records look like?
   width: 1500
   height: 600
-seo_title: "Flights Climbed in Apple Health: What Counts?"
+seo_title: "Flights Climbed: Apple Health Units, Sources and Records"
 
 seo_description: "What does Apple Health count as a flight of stairs? Learn how iPhone and Apple Watch record flights, why counts vary, and how to read overlapping sources."

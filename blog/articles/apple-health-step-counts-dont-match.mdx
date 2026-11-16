@@ -1,11 +1,11 @@
 ---
-title: "Why Your Apple Health Step Counts Don't Match"
+title: "Apple Watch and iPhone Steps Don't Match? How to Check"
 date: "2026-04-12"
-updated: "2026-11-08"
+updated: "2026-11-16"
 draft: false
 author: "Sean Wade"
 tags: ["apple-health", "steps", "data-quality", "export"]
-excerpt: "Apple Watch, iPhone and exported step counts can differ. Check device sources, daily summaries and time zones before deleting or changing your Health history."
+excerpt: "Different steps on Apple Watch, iPhone or a CSV export? Check sources, daily totals, refresh times and time zones without deleting your Health history."
 ---
 
 Your Watch shows one step count. Health on your iPhone shows another. Export the records, add the values in a spreadsheet, and you may get a third number—sometimes a much larger one.
@@ -14,7 +14,16 @@ That disagreement does not automatically mean your steps are duplicated or your 
 
 **Start by comparing one completed day, using the same time zone, and identifying how each total was calculated.** Today's moving total makes a poor debugging target.
 
-*Updated November 8, 2026: added a comparison worksheet. November 7: added a worked example of overlapping and complementary sources, and clarified how HealthKit aggregates differ from raw sums. The September data comparison is unchanged.*
+## A quick check before changing anything
+
+1. Pick **yesterday or another completed day** on both screens, rather than today's changing count.
+2. In iPhone Health, open **Steps → Show All Data** to inspect the entries, then **Data Sources & Access** to identify the contributors. Apple's [Health data guide](https://support.apple.com/en-us/108779) explains how to view and prioritize sources.
+3. Compare the same local-day boundaries and note when each result refreshed.
+4. If only the export is higher, check whether it contains raw observations from both phone and Watch rather than a merged daily statistic.
+
+A phone-only count and a Watch-only count need not agree: they can cover different parts of your day. Health's combined total also need not equal either device's total or their sum. The source and calculation checks below help you identify which comparison you are making.
+
+*Updated November 16, 2026: added a quick comparison checklist and answers to common source questions. The existing September data comparison is unchanged.*
 
 ## Start with the shape of the mismatch
 
@@ -132,6 +141,16 @@ Open the syncing app with the phone unlocked, run a sync if it provides that act
 
 Changing source priority is useful when you have deliberately chosen which device to trust. It is not a universal repair for an old export, a server fallback, or a UTC grouping error. Changing it will not rewrite a CSV already on your computer.
 
+## Should I put Apple Watch first in Data Sources & Access?
+
+Choose the source order based on which device you intend to prefer when both contribute. Apple says the source at the top takes priority; adding a new source can change that order. Reordering is worth reviewing when you change devices, but it cannot update an old CSV or repair the date boundaries in a script. [Apple's source-priority instructions](https://support.apple.com/en-us/108779)
+
+## Will removing duplicate rows make the export match Health?
+
+Only if repeated copies of the same record are the problem. Phone and Watch observations can have different identifiers while covering the same activity. Removing rows with equal values, or taking the largest source total for the day, does not reproduce HealthKit's merged statistics.
+
+For a reusable daily series, [export a daily HealthKit aggregate](/blog/export-apple-health-to-csv-excel/) and retain its time zone and source settings. For the underlying fields, units and recording patterns, see the [Step Count reference](/knowledge-base/types/HKQuantityTypeIdentifierStepCount/).
+
 ## Keep enough information to explain the number
 
 Label each result as a **raw sum**, **single-source sum**, **HealthKit aggregate**, or **server fallback**, with its date boundary and refresh time. That small amount of bookkeeping makes a later discrepancy much easier to trace.
@@ -153,3 +172,7 @@ Copy this table into your notes before changing source priority or deleting reco
 | Coverage or permission limitations, if known | | |
 
 If the boundaries or methods differ, reconcile those first. If they agree but the values do not, keep the raw evidence and investigate freshness and source coverage. Unknown freshness stays unknown; a recent account-wide sync does not prove that every daily bucket was recomputed.
+
+## Inspect your own records
+
+[PulsHealth for iPhone](https://apps.apple.com/us/app/pulshealth/id6757657354) lets you explore your Apple Health data and export selected records without setting up a server. Use the [CSV export guide](/blog/export-apple-health-to-csv-excel/) to keep the source and time boundaries with your comparison. A raw export helps explain a mismatch; it is not an independent measurement of your activity.

@@ -1,11 +1,11 @@
 ---
-title: "Why Your Apple Watch Says You Climbed Stairs When You Didn't"
+title: "Apple Watch Flights Climbed Wrong? How to Check the Count"
 date: "2026-08-30"
-updated: "2026-10-25"
+updated: "2026-11-16"
 draft: false
 author: "Sean Wade"
 tags: ["apple-watch", "apple-health", "flights-climbed", "data-quality"]
-excerpt: "An unexpected stair count can come from the recording device, another data source, or the way records were added up. Here's how to find out which."
+excerpt: "Apple Watch counting stairs you did not climb? Check the recorded source, timing, water exposure and overlapping exports before changing or deleting Health data."
 featured_image: "/blog/apple-watch-flights-climbed-wrong/social.webp"
 ---
 
@@ -13,7 +13,17 @@ You finish a fairly ordinary day, open Activity, and find that your Apple Watch 
 
 The useful question is **where those flights entered the record**. A surprising total in Health, a surprising Watch measurement, and a surprising spreadsheet sum are three different problems. Checking the records first gives you a better chance of finding the cause.
 
-Start with one completed day. Find the records behind the number, identify the device that wrote them, and look for the interval when the count jumped.
+## Check these three things first
+
+| Where the count looks wrong | What to check first |
+| --- | --- |
+| Health's daily total | Open **Flights Climbed → Show All Data** and inspect the source and time of the unexpected entries. |
+| An entry recorded by Apple Watch | Note the activity and recording conditions, including recent swimming; see the water check below. |
+| Only your CSV or spreadsheet | Check whether you added overlapping phone and Watch records, or grouped them in a different time zone. |
+
+Use one completed day to avoid today's ongoing activity, and note when you checked it: late records can still revise an earlier total. Source priority, calibration and deleting records address different problems; none is a universal fix for flights.
+
+*Updated November 16, 2026: added a triage table to separate the Health total, Watch records and spreadsheet calculations.*
 
 If you are first trying to understand the metric, start with [what Flights Climbed means and how to compare stairs with hiking](/blog/what-does-flights-climbed-mean/).
 
@@ -85,3 +95,7 @@ Be cautious with the common advice to reset fitness calibration. Apple's publish
 If an entry is demonstrably wrong, preserve your notes before deciding whether to delete it. Avoid deleting an entire device's history just to remove one spike. Health deletions can propagate through iCloud to your other devices. [Apple's deletion guidance](https://support.apple.com/en-us/108779)
 
 For a longer investigation, [export selected records](/blog/export-apple-health-to-csv-excel/) and compare their intervals and sources. PulsHealth's [Flights Climbed reference](/knowledge-base/types/HKQuantityTypeIdentifierFlightsClimbed/) explains the stored quantity. The goal is modest: find where the implausible number appeared, so the fix addresses that part of the system.
+
+## Inspect your own records
+
+[PulsHealth for iPhone](https://apps.apple.com/us/app/pulshealth/id6757657354) lets you explore your Apple Health data and export selected records without setting up a server. Use the [CSV export guide](/blog/export-apple-health-to-csv-excel/) to keep the source and time boundaries with your comparison. A raw export helps explain a mismatch; it is not an independent measurement of your activity.
