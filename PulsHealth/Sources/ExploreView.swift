@@ -2,8 +2,7 @@ import SwiftUI
 import PulsHealthSync
 
 /// Screens the Explore tab pushes. `type` opens the per-type page
-/// (`TypePageView`), which links on to the sync detail when the type is
-/// synced.
+/// (`TypePageView`), with analysis and one-time export selection.
 enum ExploreRoute: Hashable {
     case type(String)
 }

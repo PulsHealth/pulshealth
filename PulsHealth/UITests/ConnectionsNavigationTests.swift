@@ -66,4 +66,32 @@ final class ConnectionsNavigationTests: XCTestCase {
         capture.name = "Data request choices"; capture.lifetime = .keepAlways; add(capture)
 
     }
+    func testExploreOffersExportWithoutConnectionChanges() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-PulsInitialTab", "explore", "-onboardingCompleted", "YES", "-PulsFixtureProfiles", "YES"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Explore"].waitForExistence(timeout: 15))
+        if app.buttons["Dismiss"].exists { app.buttons["Dismiss"].tap() }
+        let search = app.textFields["Search data types"]
+        search.tap(); search.typeText("Heart Rate")
+        app.buttons.containing(.staticText, identifier: "Heart Rate").firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Heart Rate"].waitForExistence(timeout: 5))
+        let exportMenu = app.buttons["typeActions.menu"]
+        XCTAssertEqual(exportMenu.label, "Export")
+        exportMenu.tap()
+        XCTAssertTrue(app.buttons["Add to Export"].waitForExistence(timeout: 5))
+        for title in ["Add to Sync…", "Manage Sync…", "Edit Sync Draft…", "Sync Details"] {
+            XCTAssertFalse(app.buttons[title].exists)
+        }
+        app.buttons["Add to Export"].tap()
+        XCTAssertTrue(app.buttons["typeActions.selectExport"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["typeActions.stageSync"].exists)
+        app.buttons["typeActions.selectExport"].tap()
+        XCTAssertTrue(app.buttons["Open Export"].waitForExistence(timeout: 5))
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Explore export selection"; capture.lifetime = .keepAlways; add(capture)
+        app.buttons["Open Export"].tap()
+        XCTAssertTrue(app.tabBars.buttons["Export"].isSelected)
+    }
+
 }

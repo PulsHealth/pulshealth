@@ -45,7 +45,7 @@ group’s boundary clear; parent and child rows use the same background, alignme
 and icon size. Search results show each type’s category. Workouts has its own
 card between Sleep and Vitals.
 
-The type page’s **+** menu connects Explore to the other tabs. **Add to Export**
+The type page’s **Export** menu selects data for a one-time export. **Add to Export**
 selects the type in the current multi-type draft without creating files.
 Export starts with no types or aggregates selected each launch; Sync never
 preselects its export data. Its
@@ -54,13 +54,10 @@ selected types. Export’s Clear Selection removes draft choices, Cancel Export
 stops a running export, and an earlier completed file remains available until
 it is shared, deleted or replaced by a new export.
 
-**Add to Sync** opens a local sheet for raw readings, aggregates, or both.
-Aggregate function, interval and device choices stay with their series. Cancel
-leaves the shared draft unchanged. Add stages the selection; **Review** on Sync
-shows the destination and all pending edits before Apply. Undo one type’s edits
-or Discard All Changes to return to the applied configuration. A missing database
-is configured on Sync before applying. The new actions never start exports or
-uploads themselves.
+Explore never changes a connection’s data selection. Configure ongoing sync
+inside **Connections → your database**; data requests use the scope you review
+when joining. The export selection sheet offers raw readings, aggregates, or
+both. Cancel leaves the draft unchanged; adding data does not start an export.
 
 ## Free and Pro access
 
@@ -223,9 +220,7 @@ Sources/
 │   │                       stat tiles, the value distribution, samples over
 │   │                       time, sources and devices, cadence; an aggregate
 │   │                       preview (quantity types, after an analysis) with
-│   │                       Add to Export and Add to Sync; and,
-│   │                       for a synced type, the sync details
-│   │                       (TypeSyncDetailsSections).
+│   │                       Add to Export. Connection settings stay in Connections.
 │   ├── ExploreCharts.swift The page's Swift Charts: the histogram (over the
 │   │                       middle of the data, with the article's typical
 │   │                       range behind it for discrete types), daily
