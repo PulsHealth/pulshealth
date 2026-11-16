@@ -131,7 +131,7 @@ struct RequestCodeView: View {
                 Text(link.absoluteString).font(.caption2).textSelection(.enabled).lineLimit(4)
             }
             Section {
-                Text("Open this link or scan the code with PulsHealth installed. If it isn’t installed, install PulsHealth, then reopen the same link. Settings → Open or Scan Request also accepts a pasted link.")
+                Text("Open this link or scan the code with PulsHealth installed. If it isn’t installed, install PulsHealth, then reopen the same link. Settings → Data requests → Open or scan request also accepts a pasted link.")
                 Link("Get PulsHealth", destination: URL(string: "https://apps.apple.com/app/id6757657354")!)
                 Text("The requester’s identity is not verified by this code. Editing the request creates a different link; an existing link cannot be recalled.")
             }
@@ -230,7 +230,7 @@ struct FulfillDataRequestView: View {
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                     if request.metrics.contains(where: { $0.type == HealthTypeCatalog.medicationDoseIdentifier }) {
-                        Text("Medication Doses needs its own permission, which iOS asks for after Apply under Sync → Raw Samples. Until that has been answered this export contains no doses.")
+                        Text("Medication Doses needs its own permission, which iOS asks for after Apply under Connections → Database → Raw Samples. Until that has been answered this export contains no doses.")
                             .font(.footnote).foregroundStyle(.orange)
                     }
                 }

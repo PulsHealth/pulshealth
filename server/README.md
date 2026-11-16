@@ -435,8 +435,8 @@ stamped with when it was last used.
 
 Pairing a phone with one is a single command. It prints the same block the
 shared token gets — URL, token, user ID and a QR code, which the app scans
-with **Scan Pairing Code** on its Database screen (**Sync → Connect Your Server**
-before a database is configured, **Sync → Database** after):
+with **Scan Pairing Code** on its Database screen (**Connections → + → Your database**
+before a database is configured, **Connections → Database** after):
 
 ```bash
 scripts/bootstrap.sh --issue-device "My iPhone"                  # the default user
@@ -842,7 +842,7 @@ curl -s -H "Authorization: Bearer $PULS_TOKEN" http://localhost:8080/v1/stats | 
 Every upload writes one `batches` row with `received_at` (server time),
 `wake_id`/`trigger` (the iOS wake that produced it), `bytes`, `parse_ms`,
 `insert_ms` and the per-kind counts — enough to see how often the phone got
-execution time and what each wake did. The app's own wake export (Sync →
+execution time and what each wake did. The app's own wake export (Connections →
 Activity → Background → Export) adds durations, gaps, expirations and Low
 Power Mode.
 

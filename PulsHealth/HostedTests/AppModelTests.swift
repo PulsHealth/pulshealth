@@ -895,7 +895,7 @@ final class AppModelTests: XCTestCase {
 
     // MARK: - Apply gating
 
-    /// Edits on the Sync tab's pickers are staged in `config` and reach the engine only on
+    /// Edits on the Connections tab's pickers are staged in `config` and reach the engine only on
     /// Apply.
     func testStagedEditsReachTheEngineOnlyOnApply() async throws {
         let h = try await makeModel(flags: ["onboardingCompleted": true])
@@ -1361,7 +1361,7 @@ final class AppModelTests: XCTestCase {
     /// First one wins: a second link while the first awaits an answer is
     /// dropped, and Continue delivers only the payload the prompt named.
     /// Accepting fills nothing; during the flow the payload waits, and once
-    /// the flow is done it is handed to Sync → Database exactly once.
+    /// the flow is done it is handed to Connections → Database exactly once.
     func testAPairingLinkDuringTheFlowWaitsForItAndTheFirstLinkWins() async throws {
         let h = try await makeModel()
         await h.model.start()
@@ -1403,7 +1403,7 @@ final class AppModelTests: XCTestCase {
 
     /// A link can be what launches the app. Its prompt waits for `start()`,
     /// which may take the flow down — and then accepting leads straight to
-    /// Sync → Database.
+    /// Connections → Database.
     func testALaunchLinkWaitsForStartBeforeDecidingWhereItGoes() async throws {
         let h = try await makeModel(stored: SyncConfiguration(serverURL: mine, authToken: "own"))
         XCTAssertTrue(h.model.showsOnboarding, "init's guess")

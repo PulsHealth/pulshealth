@@ -1,7 +1,7 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Sync → type: everything we know about one type's sync state. A header
+/// Connections → type: everything we know about one type's sync state. A header
 /// (icon, name, what it is doing now) over `TypeSyncDetailsSections`, which
 /// the Type page can embed on its own under "Sync details".
 struct TypeDetailView: View {

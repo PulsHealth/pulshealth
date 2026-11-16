@@ -23,7 +23,7 @@ struct RootView: View {
     @State private var connectionsNavigationID = UUID()
     @State private var exportNavigationID = UUID()
     /// Owned here rather than by SyncView so an accepted pairing link can pop
-    /// whatever the Sync tab had pushed and land on its Database screen.
+    /// whatever the Connections tab had pushed and land on its Database screen.
     @State private var syncPath: [SyncRoute] = {
         #if DEBUG
         // Open the real setup screens for repeatable simulator captures.
@@ -155,7 +155,7 @@ struct RootView: View {
             selection = .sync
         }
         // Save & Apply on Settings, the User page, the Database screen or the
-        // Sync tab's Apply bar can all raise the server/user-change prompt; show it
+        // Connections tab's Apply bar can all raise the server/user-change prompt; show it
         // above every tab.
         .serverChangePrompt()
         // First run only: a fresh install lands here with no server and no
@@ -204,7 +204,7 @@ struct RootView: View {
                     // stack, so their Apply/Discard bar belongs to the tab, not
                     // to a screen that could be popped with edits still staged.
                     .safeAreaInset(edge: .bottom) { PendingChangesBar() }
-                    .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
+                    .tabItem { Label("Connections", systemImage: "server.rack") }
                     .badge(model.hasPendingChanges ? "•" : nil)
                     .tag(Tab.sync)
                 NavigationStack { SettingsView() }

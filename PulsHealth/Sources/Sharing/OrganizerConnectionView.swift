@@ -48,23 +48,23 @@ struct OrganizerConnectionView: View {
                         }
                     }
                 }
-                Section("Manage group") {
+                Section("Manage request") {
                     Button(cursor == 0 ? "Download contributions" : "Download next page") { Task { await download() } }
                     if let downloadNotice { Text(downloadNotice).font(.caption).foregroundStyle(.secondary) }
-                    if request.status == "open" { Button("Close group", role: .destructive) { close = true } }
+                    if request.status == "open" { Button("Close request", role: .destructive) { close = true } }
                 }
             }
             if let error { Text(error).foregroundStyle(.red) }
             if busy { ProgressView() }
         }
         .disabled(busy)
-        .navigationTitle("Group connection").navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Data request").navigationBarTitleDisplayMode(.inline)
         .task { await model.sharing.refresh() }
         .onChange(of: model.sharing.accountRevision) {
             invite = nil; export = false; document = ContributionDocument(); cursor = 0; pendingCursor = 0; downloadNotice = nil
         }
-        .confirmationDialog("Close this group?", isPresented: $close, titleVisibility: .visible) {
-            Button("Close group", role: .destructive) { Task { await closeGroup() } }
+        .confirmationDialog("Close this request?", isPresented: $close, titleVisibility: .visible) {
+            Button("Close request", role: .destructive) { Task { await closeGroup() } }
         } message: { Text("This stops future contributions from everyone.") }
         .fileExporter(isPresented: $export, document: document, contentType: .plainText, defaultFilename: "contributions.ndjson") { result in
             if case .success = result { cursor = pendingCursor }

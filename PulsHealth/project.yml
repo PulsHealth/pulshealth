@@ -47,7 +47,7 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSHealthShareUsageDescription: PulsHealth reads your health data to export it, share the data you approve with request organizers, and sync it to the database you choose.
         NSHealthUpdateUsageDescription: PulsHealth does not write health data.
-        # Sync → Database can read the pairing QR code a database's setup
+        # Connections → Database can read the pairing QR code a database's setup
         # prints instead of making the user type a URL, a token and a UUID.
         # Settings also scans request QR codes. No frame is ever stored.
         NSCameraUsageDescription: PulsHealth uses the camera to scan database pairing and data request QR codes.

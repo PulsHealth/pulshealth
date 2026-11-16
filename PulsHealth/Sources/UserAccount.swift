@@ -235,7 +235,7 @@ final class UserAccount {
             throw AccountError("Couldn’t connect to PulsHealth. Try again.")
         }
         catch is DecodingError {
-            if path == "collections" { throw CollectionError("Group connections couldn’t be loaded. Try again.") }
+            if path == "collections" { throw CollectionError("Data requests couldn’t be loaded. Try again.") }
             throw AccountError("PulsHealth returned an unexpected account response. Try again.")
         }
         catch { throw AccountError("Couldn’t connect to PulsHealth. Try again.") }
@@ -255,5 +255,5 @@ private final class NoAccountRedirects: NSObject, URLSessionTaskDelegate {
 }
 
 struct CollectionServiceUnavailable: LocalizedError {
-    var errorDescription: String? { "Group connections aren’t available on this server yet." }
+    var errorDescription: String? { "Data requests aren’t available on this server yet." }
 }

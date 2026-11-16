@@ -80,7 +80,7 @@ final class CollectionTests: XCTestCase {
             _ = try await transport.upload(SyncBatch(deviceID: "Fixture", type: "HKQuantityTypeIdentifierStepCount", reason: .backfill, samples: [], deletions: []))
             XCTFail("Scheduled upload must not be acknowledged")
         } catch {
-            XCTAssertEqual(error.localizedDescription, "This request’s collection window has not started.")
+            XCTAssertEqual(error.localizedDescription, "This request’s sharing period has not started.")
         }
         await transport.disable()
     }

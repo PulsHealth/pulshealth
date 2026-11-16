@@ -2,7 +2,7 @@ import AuthenticationServices
 import SwiftUI
 import PulsHealthSync
 
-/// Sync → Database. Two choices: the PulsHealth database, which needs an
+/// Connections → Database. Two choices: the PulsHealth database, which needs an
 /// account and is paired by signing in, and your own database, paired with
 /// the code its setup prints (scanned, pasted, or accepted as a `puls://`
 /// link) or typed in by hand.
@@ -18,9 +18,9 @@ struct ServerSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     /// A caller that wants the scanner already up on arrival (a pairing
-    /// route can); the Sync tab's Set Up opens the form itself.
+    /// route can); the Connections tab's Set Up opens the form itself.
     let scanOnArrival: Bool
-    /// The choice made on the Sync tab's first-time screen, if that is what
+    /// The choice made on the Connections tab's first-time screen, if that is what
     /// opened this one (`DatabaseSetup.init(applied:scanOnArrival:preferred:)`).
     var preferred: DatabaseDestination? = nil
 
@@ -336,7 +336,7 @@ struct ServerSettingsView: View {
                     Text(signInProblem).font(.caption).foregroundStyle(.red)
                 }
             } footer: {
-                Text("Sign in and tap Connect this iPhone in the browser. Then add the database and review your selection on the Sync tab.")
+                Text("Sign in and tap Connect this iPhone in the browser. Then add the database and review your selection on the Connections tab.")
             }
         }
     }
@@ -564,7 +564,7 @@ struct ServerSettingsView: View {
         // Save & Apply is disabled while the URL is invalid; an empty field
         // clears the server.
         guard setup.commit(to: &model.config) else { return }
-        // Applied: back to the Sync tab, which now shows the server's status.
+        // Applied: back to the Connections tab, which now shows the server's status.
         // Deferred to the server-change prompt instead: stay, so the fields
         // are still here to adjust if the user cancels it (and if they
         // confirm it, `settle(applied:)` notices).

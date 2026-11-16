@@ -127,7 +127,7 @@ If moving from LAN to HTTPS later, set `INGEST_BIND_ADDR=127.0.0.1` in
 ## 4. Pair the app and choose what to sync
 
 1. Open PulsHealth, complete the first-run Health permission step, then open
-   **Sync → Connect Your Server** (or **Sync → Database** if already configured).
+   **Connections → + → Your database** (or open your existing database in **Connections**).
 2. Use **Scan Pairing Code** or **Paste Pairing Code** with the script's output.
    Alternatively enter the database URL and token; keep the user ID the server
    supplied. Pairing fills the fields and tests the connection. Use **Test

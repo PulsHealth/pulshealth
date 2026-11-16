@@ -9,7 +9,7 @@ struct CollectionSummaryView: View {
             Text(request.organizer).font(.headline)
             Text(request.purpose)
         }
-        Section("Collection") {
+        Section("Sharing period") {
             LabeledContent("Schedule", value: request.mode == "once" ? "One time" : "Ongoing")
             if let start = request.sharingStart, let end = request.sharingEnd {
                 LabeledContent("Start", value: start.formatted())
@@ -165,7 +165,7 @@ struct ManageCollectionRequestsView: View {
             }
             if let problem = model.sharing.problem { Text(problem).foregroundStyle(.red) }
             NavigationLink("Sign in or view account") { UserView(account: model.sharing.account) }
-        }.navigationTitle("Requests").task { await model.sharing.refresh() }
+        }.navigationTitle("Data requests").task { await model.sharing.refresh() }
     }
 }
 private struct CollectionRequestRow: View {
@@ -212,7 +212,7 @@ struct CreateCollectionRequestView: View {
     var body: some View {
         Form {
             if let invitation {
-                Section { Label("Group created", systemImage: "checkmark.circle.fill"); ShareLink("Share invitation", item: invitation) }
+                Section { Label("Request created", systemImage: "checkmark.circle.fill"); ShareLink("Share invitation", item: invitation) }
             } else {
                 Section("Request") {
                     TextField("Request name", text: $title); TextField("Person or organization", text: $organizer)
@@ -235,11 +235,11 @@ struct CreateCollectionRequestView: View {
                 if mode == "once" && delivery == "file" {
                     FileRequestOptions(title: $title, requester: $organizer, purpose: $purpose, contact: $contact, draft: $fileDraft, link: $fileInvitation)
                 } else {
-                    Section("Collection") {
+                    Section("Sharing period") {
                         if mode == "ongoing" {
                             DatePicker("Start", selection: $startDate, in: Date(timeIntervalSince1970: 0)..., displayedComponents: [.date, .hourAndMinute])
                             DatePicker("End", selection: $endDate, in: startDate..., displayedComponents: [.date, .hourAndMinute])
-                            Text("Times use \(TimeZone.current.identifier). A past start includes history; a future start schedules collection. Everyone shares the same end date.").font(.footnote).foregroundStyle(.secondary)
+                            Text("Times use \(TimeZone.current.identifier). A past start includes history; a future start schedules sharing. Everyone shares the same end date.").font(.footnote).foregroundStyle(.secondary)
                         } else { Stepper("\(history) days of history", value: $history, in: 1...3650) }
                         Stepper("Retain for \(retention) days after receipt", value: $retention, in: 1...365)
                     }
@@ -260,17 +260,17 @@ struct CreateCollectionRequestView: View {
                     Section {
                         Text("Invitation-only. Scope is fixed once created. Downloaded copies remain your responsibility, including retention and deletion. Research studies must have their own consent and approval process.").font(.footnote).foregroundStyle(.secondary)
                         if model.sharing.account.hasSession {
-                        Button(busy ? "Creating…" : "Create group") { Task { await create() } }.disabled(busy || metrics.isEmpty || [title,organizer,purpose,contact,consent].contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }))
+                        Button(busy ? "Creating…" : "Create request") { Task { await create() } }.disabled(busy || metrics.isEmpty || [title,organizer,purpose,contact,consent].contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }))
                     } else { NavigationLink("Sign in to create in PulsHealth") { UserView(account: model.sharing.account) } }
                     if model.sharing.account.problem != nil { NavigationLink("Check account") { UserView(account: model.sharing.account) } }
                     }
                 }
             }
             if model.sharing.serviceUnavailable && (mode == "ongoing" || delivery == "hosted") {
-                Text("Group connections aren’t available on this server yet.").foregroundStyle(.secondary)
+                Text("Data requests aren’t available on this server yet.").foregroundStyle(.secondary)
             }
             if let error { Text(error).foregroundStyle(.red) }
-        }.navigationTitle(invitation == nil ? "Create a group" : "Group created").navigationBarTitleDisplayMode(.inline)
+        }.navigationTitle(invitation == nil ? "Create request" : "Request created").navigationBarTitleDisplayMode(.inline)
         .onAppear { if !loaded { loadDraft(); loaded = true } }
         .onChange(of: model.sharing.accountRevision) { invitation = nil }
         .task { await model.sharing.account.restore() }

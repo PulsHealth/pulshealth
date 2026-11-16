@@ -814,7 +814,7 @@ private struct AggregatePreviewSection: View {
                 }
             }
             if added, inSync, model.hasPendingChanges {
-                Text("Apply it on the Sync tab.")
+                Text("Apply it on the Connections tab.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

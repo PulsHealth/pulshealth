@@ -63,7 +63,7 @@ actor CollectionTransport: SyncTransport {
     func upload(_ batch: SyncBatch) async throws -> UploadResult {
         guard enabled else { throw CancellationError() }
         try Task.checkCancellation()
-        guard Date() >= enrollment.start else { throw CollectionError("This request’s collection window has not started.") }
+        guard Date() >= enrollment.start else { throw CollectionError("This request’s sharing period has not started.") }
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
         let data = try encoder.encode(CollectionBatch(batch, enrollment: enrollment))
         let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
@@ -75,11 +75,11 @@ actor CollectionTransport: SyncTransport {
         let (body, response) = try await session.data(for: request)
         guard enabled else { throw CancellationError() }
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            throw TransportError.serverError(status: (response as? HTTPURLResponse)?.statusCode ?? 500, body: "Collection upload was not accepted. Check sharing status.")
+            throw TransportError.serverError(status: (response as? HTTPURLResponse)?.statusCode ?? 500, body: "Contribution upload was not accepted. Check sharing status.")
         }
         struct Receipt: Decodable { var batchID: UUID; var digest: String }
         let receipt = try JSONDecoder().decode(Receipt.self, from: body)
-        guard receipt.batchID == batch.batchID, receipt.digest == digest else { throw CollectionError("The collection receipt could not be verified.") }
+        guard receipt.batchID == batch.batchID, receipt.digest == digest else { throw CollectionError("The contribution receipt could not be verified.") }
         return UploadResult(bytesSent: data.count, duration: Date().timeIntervalSince(started))
     }
 }

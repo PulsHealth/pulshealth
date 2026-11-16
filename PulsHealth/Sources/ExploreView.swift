@@ -12,7 +12,7 @@ enum ExploreRoute: Hashable {
 /// screen lays it out, with what HealthKit holds for each type from
 /// `ExploreModel` — the cheap facts for every row, the profile for the ones
 /// that have been analyzed. Every type opens its page, whether it is synced
-/// or not; turning sync on is the Sync tab's job.
+/// or not; turning sync on is the Connections tab's job.
 ///
 /// The two Health-access cards live here, not on Sync, because they are about
 /// what the app may read at all, server or no server.
@@ -102,7 +102,7 @@ struct ExploreView: View {
                 "Health access incomplete",
                 subtitle: "Some enabled data types haven't been authorized yet, so their syncs will fail."
             ) {
-                // The Sync tab's Apply bar only appears while
+                // The Connections tab's Apply bar only appears while
                 // changes are staged, so in this exact situation (types
                 // added to the catalog after the first grant, or an
                 // interrupted permission sheet) there was no button to

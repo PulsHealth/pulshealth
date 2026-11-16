@@ -109,7 +109,7 @@ upload behavior. These are upload acknowledgments, not a server-edit protocol:
 series points are insert-if-absent, so retransmission adds new timestamps but
 does not overwrite edited values or remove points missing from HealthKit.
 
-The app shows saved receivers in Sync → Database. Normal credentials use
+The app shows saved receivers in Connections → Database. Normal credentials use
 separate destination-scoped Keychain items. Write-failure fallbacks retain the
 same protected-file and backup-exclusion rules described above. An upgrade
 adopts the previous receiver and its progress without starting over.

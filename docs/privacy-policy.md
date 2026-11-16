@@ -158,8 +158,7 @@ To the database you configure — the PulsHealth backend you run, a receiver
 you built from the protocol, or the PulsHealth database if you chose it and
 signed in — over HTTPS, authenticated with a bearer token. One-time requests can send a ZIP to a separate HTTPS destination you explicitly approve; ordinary exports go through the share sheet. See [Data Requests](#data-requests).
 
-**Signing in to the PulsHealth database.** Sync → Database → PulsHealth
-Database → Sign In to PulsHealth opens the phone connection page at
+**Signing in to the PulsHealth database.** Connections → + → PulsHealth database → Sign in & continue opens the phone connection page at
 `app.pulshealth.com` in iOS's sign-in sheet, after iOS asks whether the app
 may use that site to sign in. The sheet is a browser run by iOS: what you
 type into it goes to the developer's viewer, not through the app, and it
@@ -195,7 +194,7 @@ Transport Security (`NSAllowsLocalNetworking`).
 
 ## What stays on the device
 
-Sync → Database lists saved databases and identifies the active one. Switching
+Connections lists saved databases and identifies the active one. Switching
 resumes that database’s own progress. Unpairing removes its saved connection,
 credential and sync progress from this phone; it does not delete already
 uploaded server data or revoke credentials on the server.
@@ -312,9 +311,9 @@ background.
   ordinary, unencrypted file: it is only as private as the place you put it,
   the app can no longer delete it, and the developer receives it only if you choose to send it to the developer.
 
-## Collection requests and ongoing sharing
+## Data requests and ongoing sharing
 
-Collection requests are a separate, opt-in account feature. An organizer can
+Data requests are a separate, opt-in account feature. An organizer can
 create a request for a person, group or study, with a purpose, contact, consent
 text, specific quantity/category types, raw records or daily summaries, a
 history window, duration and retention period. Opening an invitation does not
@@ -355,7 +354,7 @@ iPhone hides its local entry; it does not erase recipient data.
 Invitation links contain an access secret and should be shared only with intended
 participants. Public directory listing is optional and reviewed, shows request
 information only, and is not verification of identity or research approval.
-[Collection requests](collection-requests.md) describes the flows and safeguards.
+[Data requests](collection-requests.md) describes the flows and safeguards.
 
 ## Data Requests
 
@@ -457,7 +456,7 @@ provider's responsibility are yours:
 Sean Wade operates the PulsHealth hosted service as an individual, with its
 primary database and managed backups in the United States and the web viewer
 at `app.pulshealth.com` — the **PulsHealth database** the app offers under
-Sync → Database. You create an account there (the app's Create Account
+Connections → + → PulsHealth database. You create an account there (the app's Create Account
 opens the form), or the developer invites you. What happens to your data:
 
 - **Signing up.** The sign-up form stores your name, email address, an
@@ -468,7 +467,7 @@ opens the form), or the developer invites you. What happens to your data:
   password from the emailed link. You can ask for your sign-up to be
   removed at any time by writing to support@pulshealth.com.
 - **The app still works exactly as described above.** Once your account is
-  set up, you sign in from Sync → Database (or open the account page's pairing code on
+  set up, you sign in from Connections → + → PulsHealth database (or open the account page's pairing code on
   the iPhone), and the app uploads only to the database address that code
   gives it — in this case the developer's. A one-time Data Request can separately
   send an export to a destination you review and approve.
@@ -604,7 +603,7 @@ opens the form), or the developer invites you. What happens to your data:
   interruption can take longer. The operator checks delayed requests and aims
   to resolve them within 24 hours; contact support@pulshealth.com if your receipt
   is still pending then. The request alone is not a completion confirmation.
-  Tap Disconnect under Sync → Database (or delete
+  Tap Disconnect under Connections → Database (or delete
   the app) to stop it trying to sync.
   This flow is available to approved signups and invited personal accounts
   designated by the operator. Administrator, shared demo and protected

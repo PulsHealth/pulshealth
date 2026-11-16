@@ -175,7 +175,7 @@ for judging what is.
   instance (the viewer at `app.pulshealth.com`) for family and friends and
   for people whose access request they approve. The app offers it as the
   **PulsHealth database**, its only built-in destination, reached by
-  signing in from Sync → Database: an `ASWebAuthenticationSession` on the
+  signing in from Connections → Database: an `ASWebAuthenticationSession` on the
   phone connection page, whose Connect this iPhone returns an ordinary pairing code.
   The app holds that one address and nothing else about the instance. A
   report about the software covers it too, and one about that instance's

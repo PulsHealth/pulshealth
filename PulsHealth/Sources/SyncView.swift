@@ -1,7 +1,7 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Screens the Sync tab pushes. Value-based so `RootView`, which owns the
+/// Screens the Connections tab pushes. Value-based so `RootView`, which owns the
 /// stack's path, can pop back to the Database screen when a pairing link is
 /// accepted while another of them is on top.
 enum SyncRoute: Hashable {
@@ -39,7 +39,7 @@ struct StateUnreadableNotice: View {
     }
 }
 
-/// The Sync tab: where the data goes and how that is going. With no server
+/// The Connections tab: where the data goes and how that is going. With no server
 /// applied it is the first-time screen (`SyncIntro`): what syncing does and
 /// the two places it can go — a supported way to use the app, not a fault;
 /// the first tap on Sync is where the database is asked for, never the
@@ -471,7 +471,7 @@ struct SyncView: View {
     }
 }
 
-/// An aggregated type in the Sync tab: what it has ("Daily total, hourly
+/// An aggregated type in the Connections tab: what it has ("Daily total, hourly
 /// total") and how far it has got, from the applied configuration.
 private struct AggregatedTypeRow: View {
     @Environment(AppModel.self) private var model
@@ -560,7 +560,7 @@ struct TypeRow: View {
 }
 
 /// A Test Connection and what it ran against (`AppModel.testConnection`), so
-/// the Sync tab's status card can attribute the result to the applied server
+/// the Connections tab's status card can attribute the result to the applied server
 /// and ignore one run against a URL that was never saved.
 struct ConnectionTestRecord: Equatable {
     let url: URL

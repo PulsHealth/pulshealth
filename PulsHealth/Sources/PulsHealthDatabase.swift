@@ -3,7 +3,7 @@ import Foundation
 import PulsHealthSync
 
 /// The PulsHealth database: the developer's own instance of the stack, hosted
-/// for the people who sign up (`web/README.md`, "Access requests"). Sync →
+/// for the people who sign up (`web/README.md`, "Access requests"). Connections →
 /// Database offers it next to a database of your own.
 ///
 /// The app knows exactly one address for it, the viewer's, and this is the

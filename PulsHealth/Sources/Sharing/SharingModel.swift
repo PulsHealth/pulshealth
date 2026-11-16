@@ -52,7 +52,7 @@ final class SharingModel {
     /// Account/group errors do not describe the health of a personal database.
     var connectionListProblem: String? {
         guard hasRememberedConnections || !writable else { return nil }
-        return problem ?? (serviceUnavailable ? "Group connections aren’t available on this server yet." : nil)
+        return problem ?? (serviceUnavailable ? "Data requests aren’t available on this server yet." : nil)
     }
     var accountRevision: Int { sessionGeneration }
     func command<Value: Decodable, Body: Encodable>(_ body: Body) async throws -> CollectionResponse<Value> {
@@ -218,7 +218,7 @@ final class SharingModel {
             }
             let policy = await accessPolicy()
             if let maximum = policy.maximumTypes, Set(metrics.map(\.type)).count > maximum { throw CollectionError("This request needs more than \(maximum) types. Choose fewer optional types or upgrade to Pro before joining.") }
-            if let end = request.sharingEnd, end <= Date() { throw CollectionError("This request’s collection window has ended.") }
+            if let end = request.sharingEnd, end <= Date() { throw CollectionError("This request’s sharing period has ended.") }
             if !request.allowsHistory(policy) { throw CollectionError("This request includes history outside your plan. Upgrade to Pro before joining.") }
             for metric in metrics {
                 guard let descriptor = HealthTypeCatalog.descriptor(for: metric.type), [.quantity, .category].contains(descriptor.kind),

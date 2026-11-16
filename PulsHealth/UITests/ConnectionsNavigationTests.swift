@@ -7,6 +7,7 @@ final class ConnectionsNavigationTests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.navigationBars["Connections"].waitForExistence(timeout: 15))
         if app.buttons["Dismiss"].exists { app.buttons["Dismiss"].tap() }
+        XCTAssertTrue(app.tabBars.buttons["Connections"].exists)
         return app
     }
     func testPulsHealthSetupWaitsForExplicitSignIn() {
@@ -43,7 +44,7 @@ final class ConnectionsNavigationTests: XCTestCase {
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "Database review"; capture.lifetime = .keepAlways; add(capture)
     }
-    func testManualSetupAndGroupChoicesUseTheRootRouteRegistration() {
+    func testManualSetupAndDataRequestChoicesUseTheRootRouteRegistration() {
         let app = launchConnections()
         app.navigationBars.buttons["Add a connection"].tap()
         app.buttons["Your database"].tap()
@@ -57,11 +58,12 @@ final class ConnectionsNavigationTests: XCTestCase {
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Connections"].waitForExistence(timeout: 5))
         app.navigationBars.buttons["Add a connection"].tap()
-        app.buttons["Group connection"].tap()
-        XCTAssertTrue(app.buttons["Join a group"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Create a group"].exists)
+        app.buttons["Data requests"].tap()
+        XCTAssertTrue(app.navigationBars["Data requests"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Open request"].exists)
+        XCTAssertTrue(app.buttons["Create request"].exists)
         let capture = XCTAttachment(screenshot: app.screenshot())
-        capture.name = "Group choices"; capture.lifetime = .keepAlways; add(capture)
+        capture.name = "Data request choices"; capture.lifetime = .keepAlways; add(capture)
 
     }
 }

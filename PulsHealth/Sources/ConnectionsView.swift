@@ -20,7 +20,7 @@ struct ConnectionsView: View {
             if !history {
                 if model.sharing.hasSavedDraft {
                     NavigationLink(value: SyncRoute.createRequest) {
-                        ConnectionRow(title: "Finish group setup", ownership: "Draft", detail: model.sharing.creationDraft.title, status: "Not created", symbol: "square.and.pencil")
+                        ConnectionRow(title: "Finish request setup", ownership: "Draft", detail: model.sharing.creationDraft.title, status: "Not created", symbol: "square.and.pencil")
                     }
                 }
                 ForEach(model.savedDestinations) { destination in
@@ -53,7 +53,7 @@ struct ConnectionsView: View {
             if let problem = model.sharing.connectionListProblem {
                 ConnectionSurface {
                     VStack(alignment: .leading, spacing: 12) {
-                        Label("Group connections unavailable", systemImage: "exclamationmark.circle").font(.headline)
+                        Label("Data requests unavailable", systemImage: "exclamationmark.circle").font(.headline)
                         Text(problem).font(.subheadline).foregroundStyle(.secondary)
                         HStack {
                             Button("Try again") { Task { await model.sharing.refresh() } }
@@ -64,10 +64,10 @@ struct ConnectionsView: View {
             }
             if !history && model.savedDestinations.isEmpty && model.sharing.requests.isEmpty && enrollments.isEmpty && !model.isSettingUpInitialSync {
                 VStack(spacing: 14) {
-                    Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 38, weight: .light)).foregroundStyle(.tint)
+                    Image(systemName: "server.rack").font(.system(size: 38, weight: .light)).foregroundStyle(.tint)
                         .frame(width: 76, height: 76).background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 24))
                     Text("Where should your data go?").font(.title2.bold()).multilineTextAlignment(.center)
-                    Text("Connect to your own database or join another").foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    Text("Connect a database or share data through a request.").foregroundStyle(.secondary).multilineTextAlignment(.center)
                     NavigationLink("Add a connection", value: SyncRoute.addConnection).buttonStyle(.borderedProminent).controlSize(.large)
                 }.frame(maxWidth: .infinity).padding(.vertical, 48)
             }
@@ -178,7 +178,7 @@ struct AddConnectionView: View {
         ConnectionPage {
             NavigationLink(value: SyncRoute.ownDatabase) { ConnectionChoice(title: "Your database", symbol: "externaldrive") }.accessibilityLabel("Your database")
             NavigationLink(value: SyncRoute.managedDatabase) { ConnectionChoice(title: "PulsHealth database", symbol: "cloud") }.accessibilityLabel("PulsHealth database")
-            NavigationLink(value: SyncRoute.groupChoice) { ConnectionChoice(title: "Group connection", detail: "Join or create a group, study, or program.", symbol: "person.2") }.accessibilityLabel("Group connection")
+            NavigationLink(value: SyncRoute.groupChoice) { ConnectionChoice(title: "Data requests", detail: "Share requested data or create a request.", symbol: "person.2") }.accessibilityLabel("Data requests")
             NavigationLink("Browse opportunities", value: SyncRoute.opportunities).font(.subheadline).foregroundStyle(Color.accentColor).padding(.top, 12)
         }.buttonStyle(.plain).navigationTitle("Add a connection")
     }
@@ -186,9 +186,9 @@ struct AddConnectionView: View {
 struct GroupConnectionChoiceView: View {
     var body: some View {
         ConnectionPage {
-            NavigationLink(value: SyncRoute.openRequest) { ConnectionChoice(title: "Join a group", symbol: "qrcode.viewfinder") }.accessibilityLabel("Join a group")
-            NavigationLink(value: SyncRoute.createRequest) { ConnectionChoice(title: "Create a group", symbol: "person.2.badge.plus") }.accessibilityLabel("Create a group")
-        }.buttonStyle(.plain).navigationTitle("Group connection")
+            NavigationLink(value: SyncRoute.openRequest) { ConnectionChoice(title: "Open request", symbol: "qrcode.viewfinder") }.accessibilityLabel("Open request")
+            NavigationLink(value: SyncRoute.createRequest) { ConnectionChoice(title: "Create request", symbol: "person.2.badge.plus") }.accessibilityLabel("Create request")
+        }.buttonStyle(.plain).navigationTitle("Data requests")
     }
 }
 struct OwnDatabaseEntryView: View {

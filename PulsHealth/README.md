@@ -190,8 +190,8 @@ Sources/
 │                         staging directory at launch, and runs the export's
 │                         Health-access step (applied selection, never the draft).
 ├── RootView.swift        TabView (Explore / Export / Sync / Settings). Owns the
-│                         Sync tab's path so an accepted pairing link lands on
-│                         Sync → Database; hosts the pairing and server-change
+│                         Connections tab's path so an accepted pairing link lands on
+│                         Connections → Database; hosts the pairing and server-change
 │                         prompts and presents OnboardingView on a first run.
 ├── Design/               The design system: TypeIcon (Health-style tile),
 │                         CardSection, ChartCard (a chart with its controls
@@ -256,7 +256,7 @@ Sources/
 │                         in flight (progress, cancel, idle-timer and background-task assertion),
 │                         the finished export, and the lifetime of its staged
 │                         files. A run outlives the screen that started it.
-├── SyncView.swift        The Sync tab. No database applied: the first-time
+├── SyncView.swift        The Connections tab. No database applied: the first-time
 │                         screen (SyncIntro). Otherwise the status
 │                         card (host, or "PulsHealth Database · host"; last sync,
 │                         backfill progress + ETA, failing count, which types
@@ -271,7 +271,7 @@ Sources/
 │                         until Show All; pull-to-refresh and the error alert;
 │                         then rows to Database and Activity. The
 │                         PendingChangesBar sits on this tab.
-├── ServerSettingsView.swift  Sync → Database: Your Own Server first, then
+├── ServerSettingsView.swift  Connections → Database: Your Own Server first, then
 │                         PulsHealth Managed Server (none checked until
 │                         authenticated). Managed: restores the Settings account or
 │                         opens sign-in; Use PulsHealth Server pairs with its native credential.
@@ -301,7 +301,7 @@ Sources/
 │                         sign-up), the privacy-policy
 │                         link, the sign-in callback scheme, and what a
 │                         sign-in sheet's callback or error means.
-├── ActivityView.swift    Sync → Activity: segmented Log / Background over
+├── ActivityView.swift    Connections → Activity: segmented Log / Background over
 │                         LogView and BackgroundActivityView, with a shared
 │                         diagnostics Export button on both segments.
 ├── LogView.swift         Live filterable event stream (level + type filters).
@@ -310,7 +310,7 @@ Sources/
 │                         gap, expired/interrupted count, per-trigger rollups, a
 │                         recent-wakes list. ActivityView exports wakes
 │                         (CSV+JSON) + the event log (JSON) for offline analysis.
-├── RawSamplesPickerView.swift  Sync → Raw Samples → Edit: ~80 types grouped
+├── RawSamplesPickerView.swift  Connections → Raw Samples → Edit: ~80 types grouped
 │                         by category, every one a switch (raw samples only;
 │                         workout routes and enhanced data under Workouts);
 │                         All Types / Common Set / None. Also TypePresets and
@@ -346,7 +346,7 @@ Sources/
 │                           HealthExplorer.aggregatePreview, shared with the
 │                           Type page) and how many values it makes. Nothing
 │                           is added until Add.
-├── TypeDetailView.swift  Sync → type: a header (icon, name, activity) over
+├── TypeDetailView.swift  Connections → type: a header (icon, name, activity) over
 │                         TypeSyncDetailsSections — anchor/activity/rate/ETA,
 │                         volume counters, timeline, server-side counts
 │                         (GET /v1/stats) and the reconcile action, both shown
@@ -376,22 +376,22 @@ Sources/
 │                         its section includes Disable Developer Mode. Stored
 │                         analysis summaries are removed when deleting the app.
 │                         Also UserView and the server-change prompt. The
-│                         database is not here; it is the Sync tab's.
+│                         database is not here; it is the Connections tab's.
 ├── OnboardingView.swift  First run: four pages swiped in a paging ScrollView,
 │                         no database asked for. "Unlock your Health Data"
 │                         (Explore, Export, Sync); one-time exports; "Always
-│                         in sync" (database setup is later in the Sync tab);
+│                         in sync" (database setup is later in the Connections tab);
 │                         then "Which Health data would you like to use?"
 │                         (iOS's sheet for TypePresets.common). The final
 │                         Health page cannot be skipped: its neutral Continue
 │                         button or a swipe past the end presents the sheet,
 │                         then applies the selection and finishes only after
 │                         an answer (root CLAUDE.md). A puls:// link during the
-│                         flow waits until it ends, then Sync → Database
+│                         flow waits until it ends, then Connections → Database
 │                         opens with the fields filled. Settings →
 │                         About → "Show Onboarding Again" replays it
 │                         (with a Close button) for testing.
-├── SyncIntro.swift       The Sync tab with no database applied: "Always in
+├── SyncIntro.swift       The Connections tab with no database applied: "Always in
 │                         Sync" (automatic, whole history, use it your way,
 │                         you stay in control), then two cards — PulsHealth
 │                         Database (Sign In or Create Account) and Your Own
@@ -400,7 +400,7 @@ Sources/
 │                         opens the Database screen with that option chosen;
 │                         nothing is applied from here.
 ├── PairingScannerView.swift  AVFoundation QR sheet feeding PairingPayload.parse.
-│                         Used by Sync → Database (its Scan Pairing Code, or a
+│                         Used by Connections → Database (its Scan Pairing Code, or a
 │                         route with scan: true, opens it). Handles
 │                         not-yet-asked, denied, and no-camera, each with a
 │                         "Type It Instead" way out; no frame is ever stored.
@@ -466,10 +466,10 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   delivers. Only the host is logged, never the link or token. Accepting during
   the first run parks the payload in `confirmedPairing` and the flow's last
   page says a link is waiting; when the flow ends, and at any other time, the
-  app switches to the Sync tab and pushes Sync → Database, popping anything
+  app switches to the Connections tab and pushes Connections → Database, popping anything
   pushed there.
 - **The PulsHealth database.** The developer's own instance, which anyone may
-  ask to join (`web/README.md`, "Access requests"), offered on Sync →
+  ask to join (`web/README.md`, "Access requests"), offered on Connections →
   Database next to your own. The app holds one address for it,
   `PulsHealthDatabase.viewerURL`; the database's own URL, the token and the
   user ID come back from the viewer's account page as an ordinary pairing
@@ -495,7 +495,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   (`PulsHealthDatabase.domain`). The sheet is a browser, so any page it
   reached could send a `puls://pair` link: a code for a host outside the
   domain is filled into Your Own Database with a warning naming the host,
-  and is never called the PulsHealth database. Where it is, the Sync tab
+  and is never called the PulsHealth database. Where it is, the Connections tab
   and the Database screen show its host beside the name. A code opened from the account page in
   Safari (the invite email leads there) is an ordinary incoming link instead:
   confirmed, filled into Your Own Database and, to the app, any database —
@@ -511,7 +511,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 - **Without a database.** The first-run flow never asks for one: it asks for
   Health access for the starter set, and Start Exploring applies it. Nothing
   syncs (`AppModel.configured` needs a database URL in the applied
-  configuration), the Sync tab shows its first-time screen (`SyncIntro`) instead
+  configuration), the Connections tab shows its first-time screen (`SyncIntro`) instead
   of a status, and the Explore and Export tabs work regardless.
 - **The Export tab** writes a selection of its own — `ExportDraft`: types,
   aggregates, workout switches, a preset or custom range, the format
@@ -553,7 +553,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 - A newly enabled type with no anchor auto-backfills from the configured start date;
   a newly added aggregate config with no watermark does the same.
 - Aggregates are independent of raw sync (a type can sync only its daily sum, no raw
-  samples), which is why the Sync tab gives each its own section and picker —
+  samples), which is why the Connections tab gives each its own section and picker —
   authorization and observer registration cover the union of both. Nothing
   adds aggregates by itself: a type switched on under Raw Samples sends raw
   samples only, an update leaves an install's aggregates as they were (the
@@ -590,7 +590,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   `CLAUDE.md`, "Limited history access"). The app's part: it re-reads the dates
   at launch (without holding up the launch), on every foreground (where a
   change made in Settings shows up) and after every permission sheet — Apply's,
-  an analysis's, an export's (`AppModel.refreshReadableHistory`); the Sync tab shows a
+  an analysis's, an export's (`AppModel.refreshReadableHistory`); the Connections tab shows a
   "Limited Health history" card naming the types, the date and the Settings
   path, with the existing Open Health Settings button; the Type page says an
   analysis covers only from that date, and the aggregate preview why its
@@ -610,7 +610,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   "running" at the next launch means the app was killed mid-wake) — about 10k
   wakes, months of them. Each wake's id and trigger ride the upload as
   `X-Wake-ID`/`X-Wake-Trigger` headers, so the server's `batches` rows join
-  back to the device records. **Sync → Activity → Log or Background → Export** shares
+  back to the device records. **Connections → Activity → Log or Background → Export** shares
   the wakes (CSV and JSON) and the event log (JSON).
 
 ## App Store reviews

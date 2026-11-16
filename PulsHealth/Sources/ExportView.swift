@@ -254,7 +254,7 @@ struct ExportView: View {
                 }
                 if let layoutIssue { Text(layoutIssue).foregroundStyle(.orange) }
                 if model.exportLacksMedicationAccess {
-                    Text("Medication Doses needs its own permission, which iOS asks for after Apply under Sync → Raw Samples. Until that has been answered this export contains no doses.")
+                    Text("Medication Doses needs its own permission, which iOS asks for after Apply under Connections → Database → Raw Samples. Until that has been answered this export contains no doses.")
                         .foregroundStyle(.orange)
                 }
             }

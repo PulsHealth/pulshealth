@@ -1,13 +1,13 @@
-# Collection requests
+# Data requests
 
-Collection requests are account-backed invitations to contribute Apple Health
-quantity or category data. They share one Requests feature with one-time
+Data requests are account-backed invitations to contribute Apple Health
+quantity or category data. They share the Data requests tools with one-time
 [file exports](requests.md). Personal database sync remains separate.
 
 ## Flows
 
-- **Organizer:** Connections → + → Group connection → Create a group, Settings → Requests, or
-  the viewer's Requests page. Choose General request, Group program or Research
+- **Organizer:** Connections → + → Data requests → Create request, Settings → Data requests, or
+  the viewer's Data requests page. Choose General request, Group program or Research
   study. Every type supports one-time or ongoing sharing. The iPhone creator
   also offers Export a file for one-time requests; file delivery uses the share
   sheet or a compatible receiver without a PulsHealth account. Hosted collection
@@ -17,8 +17,9 @@ quantity or category data. They share one Requests feature with one-time
   a fixed start/end window for ongoing sharing, history for one-time sharing,
   and retention. File delivery asks for dates, metrics,
   file format and an optional receiver. Share the generated invitation link.
-- **Participant:** use Open or scan request in Settings or Sharing for either
-  file-export links or hosted invitations. Hosted requests require sign-in:
+- **Participant:** use Open or scan request under Settings → Data requests, or
+  Open request under Connections → + → Data requests, for either file-export
+  links or hosted invitations. Hosted requests require sign-in:
   review the recipient, data use, period and retention, select optional metrics,
   and affirm consent. File requests need no account: review the data, dates
   and destination, then generate and share or send the file. Both delivery
@@ -35,15 +36,15 @@ quantity or category data. They share one Requests feature with one-time
 - **Organizer website:** view participant codes and receipt timestamps, download
   contributions in pages of up to 1,000 NDJSON records, rotate invitation links,
   or close a request. Closing prevents further uploads for all participants.
-- **Opportunities:** a secondary entry in Sharing. Website creators can submit a
+- **Opportunities:** a secondary entry in Add a connection. Website creators can submit a
   listing for administrator review. Only approved, open listings appear publicly.
   Review is not an endorsement, identity verification, or research ethics approval.
 
 The iPhone has four tabs: Explore, Export, Connections and Settings. Connections
-lists saved personal databases, joined requests and groups you organize. The plus
-opens Your database, PulsHealth database and Group connection (join or create).
+lists saved personal databases, joined requests and data requests you organize. The plus
+opens Your database, PulsHealth database and Data requests (open or create).
 Browsing stays inside Add a connection. Creating and managing requests is also
-available in Settings. Requests are
+available under Settings → Data requests. Data requests are
 invitation-only by default. Definitions cannot be edited after creation: a
 changed scope needs a new request and new consent. The creator is the sole
 organizer with access; organization labels do not create shared administrator
@@ -54,14 +55,14 @@ accounts or a multi-user organization workspace.
 Organizer rows show Open, Awaiting participants or Closed, counts and the latest
 contribution. The native detail includes participant codes, invitation rotation,
 paged contribution downloads (at most 1,000 records per file) and closing the
-group. Closing stops future contributions from everyone. Your own contribution
-is separate and requires explicit review/consent, even when you created the group.
+request. Closing stops future contributions from everyone. Your own contribution
+is separate and requires explicit review/consent, even when you created the request.
 An owner can review/join without rotating the public invitation. Existing
 invitations open the existing connection rather than enrolling a second time.
 
-Save & close preserves an unfinished group definition on this iPhone in a
+Save & close preserves an unfinished request definition on this iPhone in a
 protected, backup-excluded draft. Creation uses the existing PulsHealth collection
-service. Custom ongoing group servers are not supported; a compatible custom
+service. Custom ongoing request servers are not supported; a compatible custom
 receiver remains available through one-time file delivery. Only the selected
 personal database receives automatic personal sync; other saved databases are
 shown as Inactive and retain their independent sync progress.
@@ -148,7 +149,7 @@ organizer downloads. Backups follow the operator's backup retention, and any
 restoration must preserve deletion/retention obligations.
 
 Deploy the database migration and viewer before distributing an app build that
-uses collection requests. This feature does not itself provision a host, deploy
+uses data requests. This feature does not itself provision a host, deploy
 services, publish an App Store update, or provide study-specific approval forms.
 Before a pilot, verify TLS, account availability, backups, the retention job and
 signed-device HealthKit/background behavior. Use synthetic participants for tests.
@@ -159,5 +160,5 @@ The active personal database opens directly into its data, activity and sync
 controls. Inactive saved databases retain the explicit switch action. Removal
 uses a full-screen confirmation and retains the engine’s sync-in-progress and
 state-readability checks. Connection and setup pages use individual cards rather
-than a settings-style list. Group/account metadata errors are scoped to known
-group connections; they do not represent personal database sync health.
+than a settings-style list. Request/account metadata errors are scoped to known
+request connections; they do not represent personal database sync health.

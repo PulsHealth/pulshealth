@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Sync → Activity: the event log and the background-wake study, one segment
+/// Connections → Activity: the event log and the background-wake study, one segment
 /// each. The diagnostics export is shared by both segments; LogView adds its
 /// filter menu. This view owns the files so switching segments keeps them alive.
 struct ActivityView: View {

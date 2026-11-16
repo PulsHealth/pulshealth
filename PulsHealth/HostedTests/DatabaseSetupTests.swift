@@ -3,7 +3,7 @@ import XCTest
 import PulsHealthSync
 @testable import PulsHealth
 
-/// Sync → Database's decisions (`DatabaseSetup`): what the screen starts
+/// Connections → Database's decisions (`DatabaseSetup`): what the screen starts
 /// from, what Save & Apply commits, and when a sign-in's code is done.
 final class DatabaseSetupTests: XCTestCase {
     private let user = "5ea4d000-0000-4000-8000-0000000000aa"
@@ -45,7 +45,7 @@ final class DatabaseSetupTests: XCTestCase {
         XCTAssertNil(pulsHealth.signedIn)
     }
 
-    /// The Sync tab's first-time screen opens the Database screen with a
+    /// The Connections tab's first-time screen opens the Database screen with a
     /// choice made; it holds only while no database is applied.
     func testPreferredChoiceOnlyWithoutADatabase() {
         XCTAssertEqual(DatabaseSetup(applied: SyncConfiguration(), preferred: .pulsHealth).destination, .pulsHealth)

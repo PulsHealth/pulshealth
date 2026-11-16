@@ -10,7 +10,7 @@ enum SettingsRoute: Hashable {
 /// The Settings tab: who the data is stored as, the sync window and backfill
 /// (only once a server is applied), how many types run at once, Health access
 /// and the on-device data under Privacy & Data, diagnostics, and About. The
-/// database is not here — it is the Sync tab's (`ServerSettingsView`).
+/// database is not here — it is the Connections tab's (`ServerSettingsView`).
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @AppStorage("settings.developerMode") private var developerMode = false
@@ -66,12 +66,12 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
 
-            Section("Requests") {
-                NavigationLink { ManageCollectionRequestsView() } label: { Label("Create & manage requests", systemImage: "person.2.badge.gearshape") }
+            Section("Data requests") {
+                NavigationLink { ManageCollectionRequestsView() } label: { Label("Create & manage data requests", systemImage: "person.2.badge.gearshape") }
                 NavigationLink { OpenDataRequestView() } label: { Label("Open or scan request", systemImage: "qrcode.viewfinder") }
             }
 
-            // Keyed on the *applied* server, like the Sync tab's first-time screen:
+            // Keyed on the *applied* server, like the Connections tab's first-time screen:
             // without one there is nothing for a start date, a backfill or
             // an anchor to act on.
             if model.appliedConfig.serverURL != nil {
@@ -89,7 +89,7 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Text("Start Initial Backfill")
-                            // Progress and ETA are the Sync tab's status card;
+                            // Progress and ETA are the Connections tab's status card;
                             // this only says why the button is disabled.
                             if model.backfillActive {
                                 Spacer()
@@ -124,7 +124,7 @@ struct SettingsView: View {
             // Save & Apply commits them.
             if model.isSettingUpInitialSync {
                 Section {
-                    Text("Finish setting up your database on the Sync tab. Apply there starts the first sync with your selected types and history.")
+                    Text("Finish setting up your database on the Connections tab. Apply there starts the first sync with your selected types and history.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
@@ -157,7 +157,7 @@ struct SettingsView: View {
                     Button("Delete Export", role: .destructive) { confirmDeleteExport = true }
                 }
                 // App Review 5.1.1(v): the account the PulsHealth database
-                // needs can be deleted from the app. Sync → Database has it
+                // needs can be deleted from the app. Connections → Database has it
                 // too; this is where people look for it. Always shown: an
                 // iPhone paired from the account page's link, rather than by
                 // signing in here, looks like any other database to the app.
@@ -237,7 +237,7 @@ struct SettingsView: View {
                     if validatingAggregates {
                         ProgressView()
                     } else if let failures = aggregateValidationFailures {
-                        // Each failure is logged under Sync → Activity.
+                        // Each failure is logged under Connections → Activity.
                         if failures == 0 {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
@@ -366,7 +366,7 @@ struct ConnectionTestResultRow: View {
 }
 
 /// The fresh-vs-keep prompt raised when Save & Apply (from the Database screen,
-/// Settings, the User page or the Sync tab's Apply bar) would point the sync at a different server or
+/// Settings, the User page or the Connections tab's Apply bar) would point the sync at a different server or
 /// user ID than the stored anchors and watermarks were earned against.
 /// Attached at the root so it appears whichever tab the apply came from.
 struct ServerChangePrompt: ViewModifier {
