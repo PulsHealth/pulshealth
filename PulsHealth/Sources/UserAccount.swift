@@ -234,7 +234,10 @@ final class UserAccount {
             if error.code == .cancelled { throw CancellationError() }
             throw AccountError("Couldn’t connect to PulsHealth. Try again.")
         }
-        catch is DecodingError { throw AccountError("PulsHealth returned an unexpected response. Try again.") }
+        catch is DecodingError {
+            if path == "collections" { throw CollectionError("Group connections couldn’t be loaded. Try again.") }
+            throw AccountError("PulsHealth returned an unexpected account response. Try again.")
+        }
         catch { throw AccountError("Couldn’t connect to PulsHealth. Try again.") }
     }
 }

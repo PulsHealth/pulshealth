@@ -20,6 +20,10 @@ struct ConnectionDraft: Codable {
 }
 
 struct ConnectionPresentation {
+    static func route(destinationID: UUID, activeID: UUID?) -> SyncRoute {
+        destinationID == activeID ? .personal : .personalDestination(destinationID)
+    }
+
     var label: String
     var symbol: String
     static func sharing(_ e: CollectionEnrollment, running: Bool, enabled: Bool, now: Date = Date()) -> Self {

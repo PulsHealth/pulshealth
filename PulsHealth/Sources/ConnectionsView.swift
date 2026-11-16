@@ -15,8 +15,8 @@ struct ConnectionsView: View {
         }
     }
     var body: some View {
-        List {
-            if model.stateFileUnreadable { StateUnreadableNotice() }
+        ConnectionPage {
+            if model.stateFileUnreadable { ConnectionNotice(title: "Settings unavailable", message: StateUnreadableNotice.message) }
             if !history {
                 if model.sharing.hasSavedDraft {
                     NavigationLink(value: SyncRoute.createRequest) {
@@ -24,10 +24,10 @@ struct ConnectionsView: View {
                     }
                 }
                 ForEach(model.savedDestinations) { destination in
-                    NavigationLink(value: SyncRoute.personalDestination(destination.id)) {
+                    NavigationLink(value: ConnectionPresentation.route(destinationID: destination.id, activeID: model.activeDestinationID)) {
                         let active = destination.id == model.activeDestinationID
                         ConnectionRow(title: active && model.usesPulsHealthDatabase ? "PulsHealth database" : destination.identity.serverLabel,
-                                      ownership: "Personal", detail: active ? lastPersonalReceipt : "Only the selected database receives uploads",
+                                      ownership: "Personal", detail: active ? lastPersonalReceipt : "Inactive database",
                                       status: personalStatus(active: active), symbol: "externaldrive")
                     }
                 }
@@ -50,26 +50,35 @@ struct ConnectionsView: View {
                                   status: status.label, symbol: status.symbol)
                 }
             }
-            if let problem = model.sharing.problem { Text(problem).foregroundStyle(.red) }
-            if model.sharing.serviceUnavailable && (!model.sharing.enrollments.isEmpty || !model.sharing.requests.isEmpty) {
-                Text("Group connections aren’t available on this server yet.").foregroundStyle(.secondary)
+            if let problem = model.sharing.connectionListProblem {
+                ConnectionSurface {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Group connections unavailable", systemImage: "exclamationmark.circle").font(.headline)
+                        Text(problem).font(.subheadline).foregroundStyle(.secondary)
+                        HStack {
+                            Button("Try again") { Task { await model.sharing.refresh() } }
+                            NavigationLink("Account", value: SyncRoute.account)
+                        }.buttonStyle(.bordered)
+                    }
+                }
             }
             if !history && model.savedDestinations.isEmpty && model.sharing.requests.isEmpty && enrollments.isEmpty && !model.isSettingUpInitialSync {
-                Section {
-                    VStack(spacing: 12) {
-                        Image(systemName: "arrow.triangle.2.circlepath").font(.largeTitle).foregroundStyle(.tint)
-                        Text("Where should your data go?").font(.title2.bold())
-                        Text("Connect to your own database or join another").foregroundStyle(.secondary)
-                        NavigationLink("Add a connection", value: SyncRoute.addConnection).buttonStyle(.borderedProminent)
-                    }.frame(maxWidth: .infinity).padding(.vertical, 30)
-                }.listRowBackground(Color.clear)
+                VStack(spacing: 14) {
+                    Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 38, weight: .light)).foregroundStyle(.tint)
+                        .frame(width: 76, height: 76).background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 24))
+                    Text("Where should your data go?").font(.title2.bold()).multilineTextAlignment(.center)
+                    Text("Connect to your own database or join another").foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    NavigationLink("Add a connection", value: SyncRoute.addConnection).buttonStyle(.borderedProminent).controlSize(.large)
+                }.frame(maxWidth: .infinity).padding(.vertical, 48)
             }
-            if !history {
-                NavigationLink(value: SyncRoute.history) { Text("Connection history") }
+            if !history && (!model.savedDestinations.isEmpty || model.sharing.hasRememberedConnections) {
+                NavigationLink(value: SyncRoute.history) { Label("Connection history", systemImage: "clock.arrow.circlepath").font(.subheadline).foregroundStyle(Color.accentColor) }
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 10)
             }
         }
+        .buttonStyle(.plain)
         .navigationTitle(history ? "History" : "Connections")
-        .toolbar { if !history { ToolbarItem(placement: .primaryAction) { NavigationLink(value: SyncRoute.addConnection) { Image(systemName: "plus") }.accessibilityLabel("Add a connection") } } }
+        .toolbar { if !history { ToolbarItem(placement: .primaryAction) { NavigationLink(value: SyncRoute.addConnection) { Image(systemName: "plus").foregroundStyle(Color.accentColor) }.accessibilityLabel("Add a connection") } } }
         .task { await model.sharing.refresh() }
         .refreshable { await model.sharing.refresh() }
     }
@@ -89,47 +98,105 @@ struct ConnectionsView: View {
                       status: r.status == "closed" ? "Closed" : (r.participantCount ?? 0) == 0 ? "Awaiting participants" : "Open", symbol: "person.2")
     }
 }
+/// Quiet cards match the Connections mockups without List's row chrome.
+struct ConnectionPage<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14, content: content)
+                .frame(maxWidth: 620).frame(maxWidth: .infinity).padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 28)
+        }.background(Color(uiColor: .systemGroupedBackground))
+    }
+}
+struct ConnectionSurface<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+    var body: some View {
+        content().frame(maxWidth: .infinity, alignment: .leading).padding(18)
+            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(uiColor: .separator).opacity(0.16), lineWidth: 1))
+    }
+}
+struct ConnectionNotice: View {
+    var title: String
+    var message: String
+    var body: some View { ConnectionSurface { VStack(alignment: .leading, spacing: 8) { Text(title).font(.headline); Text(message).font(.subheadline).foregroundStyle(.secondary) } } }
+}
 struct ConnectionRow: View {
     var title: String
     var ownership: String
     var detail: String
     var status: String
     var symbol: String
+    private var statusColor: Color {
+        if status == "Syncing" { return .blue }
+        if ["Paused", "Needs attention", "Paused by plan"].contains(status) { return .orange }
+        if ["Open", "Awaiting participants"].contains(status) { return .purple }
+        if ["Synced", "Active"].contains(status) { return .green }
+        return .secondary
+    }
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(ownership).font(.caption).foregroundStyle(.secondary)
-            Text(title).font(.headline)
-            Label(status, systemImage: symbol).font(.caption).foregroundStyle(status == "Needs attention" ? Color.orange : Color.accentColor)
-            Text(detail).font(.caption).foregroundStyle(.secondary)
-        }.padding(.vertical, 8)
+        ConnectionSurface {
+            VStack(alignment: .leading, spacing: 10) {
+                Label(ownership, systemImage: ownership.hasPrefix("Personal") ? "externaldrive" : "person.2")
+                    .font(.caption).foregroundStyle(.secondary)
+                HStack(alignment: .top, spacing: 14) {
+                    Text(title).font(.system(.headline, design: .rounded)).foregroundStyle(.primary)
+                    Spacer(minLength: 4)
+                    Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary).padding(.top, 3)
+                }
+                HStack(spacing: 6) {
+                    if status == "Syncing" { ProgressView().controlSize(.mini).tint(statusColor) }
+                    else { Circle().fill(statusColor).frame(width: 6, height: 6) }
+                    Text(status).font(.subheadline.weight(.medium)).foregroundStyle(statusColor)
+                }
+                Text(detail).font(.caption).foregroundStyle(.secondary)
+            }
+        }.contentShape(RoundedRectangle(cornerRadius: 20))
+    }
+}
+struct ConnectionChoice: View {
+    var title: String
+    var detail: String? = nil
+    var symbol: String
+    var body: some View {
+        ConnectionSurface {
+            HStack(spacing: 15) {
+                Image(systemName: symbol).font(.system(size: 23, weight: .regular)).foregroundStyle(.tint)
+                    .frame(width: 48, height: 48).background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(title).font(.headline).foregroundStyle(.primary)
+                    if let detail { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+            }
+        }.contentShape(RoundedRectangle(cornerRadius: 20))
     }
 }
 struct AddConnectionView: View {
     var body: some View {
-        List {
-            NavigationLink(value: SyncRoute.ownDatabase) { Label("Your database", systemImage: "externaldrive") }
-            NavigationLink(value: SyncRoute.managedDatabase) { Label("PulsHealth database", systemImage: "cloud") }
-            NavigationLink(value: SyncRoute.groupChoice) {
-                VStack(alignment: .leading, spacing: 4) { Label("Group connection", systemImage: "person.2"); Text("Join or create a group, study, or program.").font(.caption).foregroundStyle(.secondary) }
-            }
-            NavigationLink("Browse opportunities", value: SyncRoute.opportunities)
-        }.navigationTitle("Add a connection")
+        ConnectionPage {
+            NavigationLink(value: SyncRoute.ownDatabase) { ConnectionChoice(title: "Your database", symbol: "externaldrive") }.accessibilityLabel("Your database")
+            NavigationLink(value: SyncRoute.managedDatabase) { ConnectionChoice(title: "PulsHealth database", symbol: "cloud") }.accessibilityLabel("PulsHealth database")
+            NavigationLink(value: SyncRoute.groupChoice) { ConnectionChoice(title: "Group connection", detail: "Join or create a group, study, or program.", symbol: "person.2") }.accessibilityLabel("Group connection")
+            NavigationLink("Browse opportunities", value: SyncRoute.opportunities).font(.subheadline).foregroundStyle(Color.accentColor).padding(.top, 12)
+        }.buttonStyle(.plain).navigationTitle("Add a connection")
     }
 }
 struct GroupConnectionChoiceView: View {
     var body: some View {
-        List {
-            NavigationLink("Join a group", value: SyncRoute.openRequest)
-            NavigationLink("Create a group", value: SyncRoute.createRequest)
-        }.navigationTitle("Group connection")
+        ConnectionPage {
+            NavigationLink(value: SyncRoute.openRequest) { ConnectionChoice(title: "Join a group", symbol: "qrcode.viewfinder") }.accessibilityLabel("Join a group")
+            NavigationLink(value: SyncRoute.createRequest) { ConnectionChoice(title: "Create a group", symbol: "person.2.badge.plus") }.accessibilityLabel("Create a group")
+        }.buttonStyle(.plain).navigationTitle("Group connection")
     }
 }
 struct OwnDatabaseEntryView: View {
     var body: some View {
-        List {
-            NavigationLink(value: SyncRoute.server(scan: true, choice: .own)) { Label("Scan connection code", systemImage: "qrcode.viewfinder") }
-            NavigationLink(value: SyncRoute.server(scan: false, choice: .own)) { Text("Enter details manually") }
-        }.navigationTitle("Your database")
+        ConnectionPage {
+            NavigationLink(value: SyncRoute.server(scan: true, choice: .own)) { ConnectionChoice(title: "Scan connection code", symbol: "qrcode.viewfinder") }.accessibilityLabel("Scan connection code")
+            NavigationLink(value: SyncRoute.server(scan: false, choice: .own)) { ConnectionChoice(title: "Enter details manually", symbol: "keyboard") }.accessibilityLabel("Enter details manually")
+        }.buttonStyle(.plain).navigationTitle("Your database")
     }
 }
 struct PersonalConnectionView: View {
@@ -150,9 +217,13 @@ struct PersonalConnectionView: View {
             Button("Remove connection", role: .destructive) { remove = true }
             if let error = model.lastErrorMessage { Text(error).foregroundStyle(.red) }
         }.navigationTitle("Personal connection")
-        .confirmationDialog("Remove this connection from your iPhone?", isPresented: $remove, titleVisibility: .visible) {
-            Button("Remove connection", role: .destructive) { Task { if await model.unpairDestination(id: destination.id) { dismiss() } } }
-        } message: { Text("Local credentials and sync progress are removed. Data on the server is unchanged.") }
+        .fullScreenCover(isPresented: $remove) {
+            ConnectionRemovalView(destination: destination) {
+                let removed = await model.unpairDestination(id: destination.id)
+                if removed { model.sharing.returnToConnections = UUID() }
+                return removed
+            }
+        }
     }
 }
 
@@ -164,6 +235,7 @@ struct ConnectionRouteView: View {
     var body: some View {
         switch route {
         case .personal: SyncView(path: $path)
+        case .account: UserView(account: model.sharing.account)
         case .addConnection: AddConnectionView()
         case .ownDatabase: OwnDatabaseEntryView()
         case .managedDatabase: PulsHealthConnectionSetupView()

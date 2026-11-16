@@ -316,6 +316,29 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(h.model.config.enabledTypes.contains(heartRate))
     }
 
+    func testConnectionsCardsAndRemovalModalRenderOnPhone() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
+        await h.model.start()
+        let destination = try XCTUnwrap(h.model.savedDestinations.first)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let size = CGSize(width: 393, height: 852)
+        let views: [(String, AnyView)] = [
+            ("Connections cards", AnyView(NavigationStack { ConnectionsView(path: .constant([])) }.environment(h.model))),
+            ("Removal full screen", AnyView(ConnectionRemovalView(destination: destination, remove: { false }).environment(h.model)))
+        ]
+        for (name, view) in views {
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(origin: .zero, size: size)
+            let controller = UIHostingController(rootView: view)
+            window.rootViewController = controller; window.makeKeyAndVisible(); controller.view.frame = window.bounds
+            window.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(150))
+            let attachment = XCTAttachment(image: UIGraphicsImageRenderer(size: size).image { controller.view.layer.render(in: $0.cgContext) })
+            attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
+            window.isHidden = true
+        }
+        XCTAssertEqual(h.model.savedDestinations.count, 1, "Rendering removal must not unpair or upload anything")
+    }
     func testConnectedTypeFlowScreenshots() async throws {
         let defaults = UserDefaults.standard
         let keys = ["PulsInitialType", "PulsInitialTab", "PulsFixtureProfiles"]

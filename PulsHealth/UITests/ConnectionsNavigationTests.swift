@@ -13,6 +13,8 @@ final class ConnectionsNavigationTests: XCTestCase {
         let app = launchConnections()
         app.navigationBars.buttons["Add a connection"].tap()
         XCTAssertTrue(app.navigationBars["Add a connection"].waitForExistence(timeout: 5))
+        let choices = XCTAttachment(screenshot: app.screenshot())
+        choices.name = "Add connection cards"; choices.lifetime = .keepAlways; add(choices)
         app.buttons["PulsHealth database"].tap()
         XCTAssertTrue(app.buttons["Sign in & continue"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.navigationBars["PulsHealth database"].exists)
@@ -41,7 +43,7 @@ final class ConnectionsNavigationTests: XCTestCase {
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "Database review"; capture.lifetime = .keepAlways; add(capture)
     }
-    func testManualSetupAndHistoryUseTheRootRouteRegistration() {
+    func testManualSetupAndGroupChoicesUseTheRootRouteRegistration() {
         let app = launchConnections()
         app.navigationBars.buttons["Add a connection"].tap()
         app.buttons["Your database"].tap()
@@ -54,9 +56,12 @@ final class ConnectionsNavigationTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Add a connection"].waitForExistence(timeout: 5))
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Connections"].waitForExistence(timeout: 5))
-        app.buttons["Connection history"].tap()
-        XCTAssertTrue(app.navigationBars["History"].waitForExistence(timeout: 5))
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.navigationBars["Connections"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons["Add a connection"].tap()
+        app.buttons["Group connection"].tap()
+        XCTAssertTrue(app.buttons["Join a group"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Create a group"].exists)
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Group choices"; capture.lifetime = .keepAlways; add(capture)
+
     }
 }

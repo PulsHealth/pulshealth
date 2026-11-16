@@ -7,18 +7,18 @@ struct PulsHealthConnectionSetupView: View {
     @State private var connecting = false
     @State private var problem: String?
     var body: some View {
-        List {
-            Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    Image(systemName: "cloud").font(.largeTitle).foregroundStyle(.tint)
-                    Text("PulsHealth database").font(.title2.bold())
-                    Text("Sync to your database hosted by PulsHealth.").foregroundStyle(.secondary)
+        ConnectionPage {
+            ConnectionSurface {
+                VStack(alignment: .leading, spacing: 18) {
+                    Image(systemName: "cloud").font(.system(size: 34, weight: .light)).foregroundStyle(.tint)
+                        .frame(width: 68, height: 68).background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 20))
+                    Text("Your health data, in your database.").font(.title2.bold())
                     Button(connecting ? "Connecting…" : "Sign in & continue") { Task { await connect() } }
-                        .buttonStyle(.borderedProminent).disabled(connecting)
-                }.padding(.vertical, 16)
+                        .buttonStyle(.borderedProminent).controlSize(.large).disabled(connecting)
+                }.padding(.vertical, 10)
             }
-            if connecting { ProgressView() }
-            if let problem { Section { Text(problem).foregroundStyle(.red) } }
+            if connecting { ProgressView().frame(maxWidth: .infinity) }
+            if let problem { ConnectionNotice(title: "Couldn’t connect", message: problem) }
         }.navigationTitle("PulsHealth database").navigationBarTitleDisplayMode(.inline)
     }
     private func connect() async {
@@ -39,7 +39,7 @@ struct PulsHealthConnectionSetupView: View {
                 }
                 model.noteSignInPairing(payload)
                 model.isSettingUpInitialSync = true
-                    model.initialSyncReviewRequested = UUID()
+                model.initialSyncReviewRequested = UUID()
             case .cancelled: return
             case .failed(let message): problem = message
             }

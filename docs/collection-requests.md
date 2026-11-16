@@ -152,3 +152,12 @@ uses collection requests. This feature does not itself provision a host, deploy
 services, publish an App Store update, or provide study-specific approval forms.
 Before a pilot, verify TLS, account availability, backups, the retention job and
 signed-device HealthKit/background behavior. Use synthetic participants for tests.
+
+### Connection screen behavior
+
+The active personal database opens directly into its data, activity and sync
+controls. Inactive saved databases retain the explicit switch action. Removal
+uses a full-screen confirmation and retains the engine’s sync-in-progress and
+state-readability checks. Connection and setup pages use individual cards rather
+than a settings-style list. Group/account metadata errors are scoped to known
+group connections; they do not represent personal database sync health.

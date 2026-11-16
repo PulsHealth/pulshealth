@@ -46,6 +46,14 @@ final class SharingModel {
            let hidden = try? JSONDecoder().decode(Set<UUID>.self, from: data) { hiddenConnections = hidden }
         account.onSessionEnding = { [weak self] in await self?.stopLocallyForSignOut() }
     }
+    var hasRememberedConnections: Bool {
+        !requests.isEmpty || !enrollments.isEmpty
+    }
+    /// Account/group errors do not describe the health of a personal database.
+    var connectionListProblem: String? {
+        guard hasRememberedConnections || !writable else { return nil }
+        return problem ?? (serviceUnavailable ? "Group connections aren’t available on this server yet." : nil)
+    }
     var accountRevision: Int { sessionGeneration }
     func command<Value: Decodable, Body: Encodable>(_ body: Body) async throws -> CollectionResponse<Value> {
         let revision = sessionGeneration
@@ -183,7 +191,7 @@ final class SharingModel {
         } catch is CollectionServiceUnavailable {
             serviceUnavailable = true
             problem = account.problem
-        } catch { problem = error.localizedDescription }
+        } catch { serviceUnavailable = false; problem = error.localizedDescription }
     }
     func discover(_ invite: CollectionInvitation? = nil) async throws -> [CollectionRequest] {
         var url = URLComponents(url: PulsHealthDatabase.viewerURL.appending(path: "api/sharing"), resolvingAgainstBaseURL: false)!

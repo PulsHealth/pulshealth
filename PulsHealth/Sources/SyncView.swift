@@ -5,7 +5,7 @@ import PulsHealthSync
 /// stack's path, can pop back to the Database screen when a pairing link is
 /// accepted while another of them is on top.
 enum SyncRoute: Hashable {
-    case personal
+    case personal, account
     case addConnection, ownDatabase, groupChoice, openRequest, createRequest, opportunities, history, managedDatabase
     case personalDestination(UUID), organizer(UUID), contribution(UUID), participants(UUID), deletion(UUID)
     /// The Database screen; `scan` opens the pairing scanner on arrival, and
@@ -53,6 +53,7 @@ struct SyncView: View {
     /// the sections' Edit buttons push their pickers the same way.
     @Binding var path: [SyncRoute]
     @Environment(AppModel.self) private var model
+    @State private var destinationToRemove: SavedSyncDestination?
     @State private var showsAllRaw = false
     @State private var showsAllAggregates = false
 
@@ -85,13 +86,23 @@ struct SyncView: View {
                 aggregatesSection
             }
             linksSection
+            if let destination = model.savedDestinations.first(where: { $0.id == model.activeDestinationID }) {
+                Section { Button("Remove connection", role: .destructive) { destinationToRemove = destination } }
+            }
         }
         .navigationTitle("Database")
+        .fullScreenCover(item: $destinationToRemove) { destination in
+            ConnectionRemovalView(destination: destination) {
+                let removed = await model.unpairDestination(id: destination.id)
+                if removed { model.sharing.returnToConnections = UUID() }
+                return removed
+            }
+        }
         .refreshable { await model.syncNow(trigger: "pull-to-refresh") }
         .alert(
             "Error",
             isPresented: Binding(
-                get: { model.lastErrorMessage != nil },
+                get: { model.lastErrorMessage != nil && destinationToRemove == nil },
                 set: { if !$0 { model.lastErrorMessage = nil } }
             )
         ) {

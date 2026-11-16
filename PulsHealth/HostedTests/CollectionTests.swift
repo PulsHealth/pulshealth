@@ -84,6 +84,19 @@ final class CollectionTests: XCTestCase {
         }
         await transport.disable()
     }
+    func testActiveDatabaseOpensItsDashboardDirectly() {
+        let active = UUID(), inactive = UUID()
+        XCTAssertEqual(ConnectionPresentation.route(destinationID: active, activeID: active), .personal)
+        XCTAssertEqual(ConnectionPresentation.route(destinationID: inactive, activeID: active), .personalDestination(inactive))
+    }
+    func testAccountErrorsDoNotDescribePersonalDatabaseHealth() {
+        let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let sharing = SharingModel(directory: folder)
+        sharing.problem = "Unexpected account response"
+        XCTAssertNil(sharing.connectionListProblem)
+        sharing.requests = [CollectionRequest(id: UUID(), title: "Fixture", organizer: "Example", kind: "group", purpose: "Test", contact: "contact@example.org", consentText: "Test", mode: "ongoing", historyDays: 30, durationDays: 30, retentionDays: 30, metrics: [], version: 1, status: "open", listing: "private")]
+        XCTAssertEqual(sharing.connectionListProblem, "Unexpected account response")
+    }
     func testConnectionStatesKeepHistoryPauseAndScheduleDistinct() {
         let now = Date()
         let request = CollectionRequest(id: UUID(), title: "Fixture", organizer: "Example", kind: "group", purpose: "Test", contact: "contact@example.org", consentText: "Test", mode: "ongoing", historyDays: 30, durationDays: 90, retentionDays: 30, metrics: [], version: 1, status: "open", listing: "private")
