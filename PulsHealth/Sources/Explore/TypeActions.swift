@@ -196,8 +196,9 @@ struct TypeDataSelectionSheet: View {
                         }
                     }
                 } footer: {
-                    Text(functions.isEmpty ? "Aggregates aren’t available for this type."
-                         : "Choose raw readings, aggregates, or both.")
+                    if functions.isEmpty {
+                        Text("Aggregates aren’t available for this type.")
+                    }
                 }
                 if draft.includesAggregates {
                     ForEach($draft.aggregates) { $aggregate in
@@ -246,9 +247,10 @@ struct TypeDataSelectionSheet: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(!canSave)
                     .accessibilityIdentifier(scope == .export ? "typeActions.selectExport" : "typeActions.stageSync")
-                    Text(scope == .export ? "Adds to your selection. Start the export when you’re ready on Export."
-                         : "Nothing is uploaded until you review and apply on Sync.")
-                        .font(.caption).foregroundStyle(.secondary)
+                    if scope == .sync {
+                        Text("Nothing is uploaded until you review and apply on Connections.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
