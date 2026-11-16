@@ -197,12 +197,41 @@ struct AggregatePreviewPane: View {
                     if isComputing { ProgressView().controlSize(.small).padding(6) }
                 }
                 if showsSummary {
-                    Text("Gaps mean no readable data. The current interval may be incomplete.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                    periodStatistics
                 }
             }
         }
         .task(id: "\(config.seriesIdentity)|\(days)|\(revision?.timeIntervalSince1970 ?? 0)") { await compute() }
+    }
+
+    private var periodStatistics: some View {
+        let populated = buckets.filter { $0.value != nil }
+        return DisclosureGroup("Period statistics") {
+            VStack(alignment: .leading, spacing: 12) {
+                if !populated.isEmpty {
+                    let values = populated.compactMap(\.value)
+                    LabeledContent("Average \(config.intervalUnit.displayName.lowercased()) value", value: valueLabel(values.reduce(0, +) / Double(values.count)))
+                    if config.function == .sum {
+                        LabeledContent("Total", value: valueLabel(values.reduce(0, +)))
+                    }
+                    if let highest = populated.max(by: { ($0.value ?? 0) < ($1.value ?? 0) }), let value = highest.value {
+                        LabeledContent("Highest", value: valueLabel(value))
+                        Text(highest.start.formatted(date: .abbreviated, time: .omitted)).foregroundStyle(.secondary)
+                    }
+                    if let lowest = populated.min(by: { ($0.value ?? 0) < ($1.value ?? 0) }), let value = lowest.value {
+                        LabeledContent("Lowest", value: valueLabel(value))
+                        Text(lowest.start.formatted(date: .abbreviated, time: .omitted)).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .font(.subheadline).monospacedDigit()
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 8)
+        }.font(.subheadline)
+    }
+
+    private func valueLabel(_ value: Double) -> String {
+        formatValue(value) + (config.unitString.map { " \($0)" } ?? "")
     }
 
     private func compute() async {

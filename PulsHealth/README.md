@@ -440,6 +440,16 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 
 ## Behavior notes
 
+Explore quantity and category pages share raw-value distribution, recording
+volume, busiest days, weekday patterns, time between records, and source/device
+contributions. Quantity charts offer daily aggregates and expandable period
+statistics; category charts show daily record counts. Category codes are never
+averaged. Average gaps use consecutive sample starts, including simultaneous
+records; weekday calculations use the profile's recording time zone. Source
+breakdowns show record counts, shares and first/last recording dates. The
+interface uses concise measure labels instead of general explanatory caveats.
+
+
 - A fresh install opens straight into the first-run flow; an install that
   already has a database, enabled types, or a previous Apply never sees it (the
   decision is `AppModel.showsOnboarding` — see the invariant in the root

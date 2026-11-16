@@ -40,32 +40,34 @@ struct TypePageView: View {
                    !AggregateFunction.choices(for: identifier).isEmpty {
                     AggregatePreviewSection(descriptor: descriptor, analysisRevision: profile.computedAt)
                 } else if descriptor.kind == .category {
-                    CategoryValuesSection(profile: profile, knowledge: knowledge, color: .accentColor)
+                    SamplesOverTimeSection(profile: profile, color: .accentColor)
                 } else {
                     distributionSection(descriptor, profile: profile, color: .accentColor)
                 }
+                RecordingSummarySection(profile: profile)
                 Section("Explore further") {
-                    if let values = profile.values, values.count > 0 {
+                    if (profile.values?.count ?? 0) > 0 || descriptor.kind == .category {
                         NavigationLink {
                             List {
                                 analysisScope(profile)
-                                distributionSection(descriptor, profile: profile, color: .accentColor)
+                                if descriptor.kind == .category {
+                                    CategoryValuesSection(profile: profile, knowledge: knowledge, color: .accentColor)
+                                } else {
+                                    distributionSection(descriptor, profile: profile, color: .accentColor)
+                                }
                             }
-                            .navigationTitle("Distribution")
+                            .navigationTitle("Raw distribution")
                             .navigationBarTitleDisplayMode(.inline)
                         } label: {
-                            detailLabel("Value distribution", subtitle: "Common readings, spread and extremes")
+                            detailLabel("Raw value distribution", subtitle: descriptor.kind == .category ? "Counts, proportions and recorded duration" : "Histogram, percentiles, spread and extremes")
                         }
                     }
                     NavigationLink {
                         List {
                             analysisScope(profile)
-                            statTiles(profile)
+                            RecordingPatternsSection(profile: profile)
                             if !profile.dailyCounts.isEmpty {
                                 SamplesOverTimeSection(profile: profile, color: .accentColor)
-                            }
-                            if !profile.sources.isEmpty || !profile.devices.isEmpty {
-                                SourcesSection(profile: profile, color: .accentColor)
                             }
                             if let cadence = profile.cadence {
                                 cadenceSection(cadence, profile: profile)
@@ -74,7 +76,19 @@ struct TypePageView: View {
                         .navigationTitle("Recording details")
                         .navigationBarTitleDisplayMode(.inline)
                     } label: {
-                        detailLabel("Recording details", subtitle: "Coverage, sources and gaps")
+                        detailLabel("Amount and timing", subtitle: "Busiest days, weekday patterns and recording gaps")
+                    }
+                    if !profile.sources.isEmpty || !profile.devices.isEmpty {
+                        NavigationLink {
+                            List {
+                                analysisScope(profile)
+                                SourcesSection(profile: profile, color: .accentColor)
+                            }
+                            .navigationTitle("Sources and devices")
+                            .navigationBarTitleDisplayMode(.inline)
+                        } label: {
+                            detailLabel("Sources and devices", subtitle: "Record counts, contribution and recording history")
+                        }
                     }
                     NavigationLink {
                         List { header(descriptor, profile: profile, facts: facts) }
@@ -298,28 +312,6 @@ struct TypePageView: View {
         return Array(repeating: GridItem(.flexible(), alignment: .top), count: count)
     }
 
-    private func statTiles(_ profile: TypeProfile) -> some View {
-        Section {
-            LazyVGrid(columns: gridColumns, spacing: 14) {
-                StatTile(
-                    label: "Samples", value: profile.sampleCount.compactString,
-                    footnote: profile.unmappableCount > 0
-                        ? "\(profile.unmappableCount.formatted()) not in \(profile.unitString ?? "unit")" : nil)
-                StatTile(
-                    label: "Days with data",
-                    value: (profile.coverage?.daysWithSamples ?? profile.dailyCounts.count).compactString,
-                    footnote: profile.coverage.map { "\(Int(($0.fraction * 100).rounded()))% of the span" })
-                StatTile(
-                    label: "Median gap",
-                    value: profile.cadence.map { gapString($0.medianGapSeconds) } ?? "—")
-                StatTile(
-                    label: "Sources", value: "\(profile.sources.count)",
-                    footnote: profile.sources.first?.name)
-            }
-            .padding(.vertical, 4)
-        }
-    }
-
     // MARK: - Distribution
 
     @ViewBuilder
@@ -327,13 +319,7 @@ struct TypePageView: View {
         switch descriptor.kind {
         case .quantity:
             if let values = profile.values, values.count > 0 {
-                // A cumulative type's typical range is a day's total (0 to
-                // 50,000 steps); against per-sample values it is only a grey
-                // wash over the whole plot.
-                let cumulative = HealthTypeCatalog.allowedAggregateFunctions(for: identifier).contains(.sum)
-                ValueDistributionSection(
-                    values: values, unit: profile.unitString, color: color,
-                    isCumulative: cumulative)
+                ValueDistributionSection(values: values, unit: profile.unitString, color: color)
             }
         case .category:
             EmptyView()  // the values card sits above the stat tiles
@@ -373,15 +359,17 @@ struct TypePageView: View {
     private func cadenceSection(_ cadence: TypeProfile.Cadence, profile: TypeProfile) -> some View {
         let days = max(profile.coverage?.daysWithSamples ?? profile.dailyCounts.count, 1)
         let perDay = Double(profile.sampleCount) / Double(days)
-        return CardSection("Cadence", subtitle: cadence.isEstimated ? "Gap percentiles are estimates" : nil) {
+        return CardSection("Time between records") {
             LazyVGrid(columns: gridColumns, spacing: 14) {
-                StatTile(label: "Median gap", value: gapString(cadence.medianGapSeconds))
-                StatTile(label: "90th percentile gap", value: gapString(cadence.p90GapSeconds))
+                StatTile(label: "Average gap", value: RecordingInsights(profile: profile).averageGap.map(gapString) ?? "—")
+                StatTile(label: cadence.isEstimated ? "Median gap · estimated" : "Median gap", value: gapString(cadence.medianGapSeconds))
+                StatTile(label: "Shortest gap", value: gapString(cadence.minGapSeconds))
+                StatTile(label: cadence.isEstimated ? "90th percentile · estimated" : "90th percentile gap", value: gapString(cadence.p90GapSeconds))
                 StatTile(label: "Per day with data", value: formatValue(perDay), unit: "samples")
                 StatTile(label: "Longest gap", value: gapString(cadence.maxGapSeconds))
             }
             if cadence.zeroGapCount > 0 {
-                Text("\(cadence.zeroGapCount.formatted()) samples share a timestamp with another. Usually the Watch and the iPhone both recording.")
+                LabeledContent("Records sharing a start time", value: cadence.zeroGapCount.formatted())
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -475,13 +463,12 @@ private struct ValueDistributionSection: View {
     let values: TypeProfile.ValueDistribution
     let unit: String?
     let color: Color
-    var isCumulative = false
     @State private var readout: String?
 
     var body: some View {
         ChartCard(
             "Value distribution",
-            subtitle: isCumulative ? "Individual recorded amounts, not daily totals." : "How often each reading occurs.",
+            subtitle: values.isEstimated ? "Raw readings · estimated histogram" : "Raw readings",
             readout: readout
         ) {
             VStack(alignment: .leading, spacing: 8) {
@@ -490,41 +477,12 @@ private struct ValueDistributionSection: View {
                     median: values.median, readout: $readout)
                 Text("Middle 90%: \(formatValue(values.p5))–\(formatValue(values.p95))\(unit.map { " \($0)" } ?? "")")
                     .font(.subheadline.weight(.medium))
-                Text(values.isEstimated
-                    ? "Percentiles and chart counts are estimated from a sample of the readings."
-                    : "The middle 90% runs from the 5th to the 95th percentile.")
-                    .font(.footnote).foregroundStyle(.secondary)
-                if let axisNote {
-                    Text(axisNote)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                if values.histogram.belowCount + values.histogram.aboveCount > 0 {
+                    LabeledContent("Outside displayed range", value: (values.histogram.belowCount + values.histogram.aboveCount).formatted())
+                        .font(.footnote).foregroundStyle(.secondary)
                 }
-                Text("This describes your recorded values, not a healthy range.")
-                    .font(.footnote).foregroundStyle(.secondary)
                 statsRow
             }
-        }
-    }
-
-    /// What the histogram leaves off its axis, when anything: the tails
-    /// past the 1st and 99th percentiles (the 5th and 95th, past a long
-    /// tail) that would otherwise squash every bar into a corner. The stats
-    /// row under it still has the true extremes.
-    private var axisNote: String? {
-        let histogram = values.histogram
-        let below = histogram.belowCount
-        let above = histogram.aboveCount
-        guard below + above > 0 else { return nil }
-        let share = Double(below + above) / Double(max(values.count, 1))
-        let percent = share < 0.005 ? "under 1%" : share.formatted(.percent.precision(.fractionLength(0)))
-        let unitText = unit.map { " \($0)" } ?? ""
-        let lower = formatValue(histogram.lowerBound)
-        let upper = formatValue(histogram.upperBound)
-        switch (below > 0, above > 0) {
-        case (false, _): return "The axis stops at \(upper)\(unitText); \(percent) of samples are above it."
-        case (_, false): return "The axis starts at \(lower)\(unitText); \(percent) of samples are below it."
-        default: return "The axis covers \(lower)–\(upper)\(unitText); \(percent) of samples fall outside it."
         }
     }
 
@@ -538,8 +496,6 @@ private struct ValueDistributionSection: View {
                 statistic("5th percentile", values.p5)
                 statistic("95th percentile", values.p95)
                 statistic("Standard deviation", values.stddev)
-                Text("Each reading has equal weight. Frequent recording periods contribute more than sparse ones.")
-                    .font(.footnote).foregroundStyle(.secondary)
             }.padding(.top, 10)
         }
         .font(.subheadline)
@@ -559,7 +515,7 @@ private struct SamplesOverTimeSection: View {
     @State private var readout: String?
 
     var body: some View {
-        ChartCard("Recording frequency", subtitle: "Number of records, not the measured value. Days without records are not zero measurements.", readout: readout) {
+        ChartCard("Records over time", subtitle: window == .year ? "Weekly record counts" : "Daily record counts", readout: readout) {
             Picker("Window", selection: $window) {
                 ForEach(TimeWindow.allCases) { Text($0.rawValue).tag($0) }
             }
@@ -625,8 +581,6 @@ private struct CategoryValuesSection: View {
 
     /// Time is only worth a toggle when the samples have length: sleep
     /// stages and stand hours do, a logged symptom is an instant.
-    private var isSleep: Bool { profile?.typeIdentifier == "HKCategoryTypeIdentifierSleepAnalysis" }
-
     private var totalDuration: TimeInterval { entries.reduce(0) { $0 + $1.duration } }
     private var hasDuration: Bool { totalDuration >= 60 }
 
@@ -634,7 +588,9 @@ private struct CategoryValuesSection: View {
         entries.filter { showsDefinitions || $0.count > 0 }.map { entry in
             let text: String
             switch measure {
-            case .count: text = entry.count.formatted()
+            case .count:
+                let total = max(profile?.sampleCount ?? 0, 1)
+                text = entry.count.formatted() + " · " + (Double(entry.count) / Double(total)).formatted(.percent.precision(.fractionLength(1)))
             case .time: text = entry.count == 0 ? "0" : durationString(entry.duration)
             }
             return ShareBars.Row(
@@ -658,10 +614,8 @@ private struct CategoryValuesSection: View {
             EmptyView()
         } else {
         ChartCard(
-            isSleep ? "Sleep records" : "Recorded values",
-            subtitle: isSleep
-                ? (measure == .time ? "Recorded time by stage, not time asleep per night." : "Number of records by stage, not time asleep.")
-                : "Bars compare the recorded categories.",
+            "Raw value distribution",
+            subtitle: measure == .time ? "Recorded duration by value" : "Records by value",
             readout: readout, placeholder: ""
         ) {
             if hasDuration {
@@ -674,15 +628,9 @@ private struct CategoryValuesSection: View {
             ShareBars(rows: rows, color: color)
             Toggle("Show definitions and unrecorded values", isOn: $showsDefinitions)
                 .font(.subheadline)
-            if hasDuration, measure == .time {
-                Text(isSleep
-                    ? "In-bed and sleep stages can overlap, as can records from different sources. These durations cannot be added to find total sleep or stage percentages."
-                    : "Durations include overlapping records from all sources.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
+
         }
-        .onAppear { if hasDuration { measure = .time } }
+
         }
     }
 }
@@ -697,7 +645,7 @@ private struct SourcesSection: View {
             return profile.devices.sorted { $0.count > $1.count }.enumerated().map { index, device in
                 ShareBars.Row(
                     id: "device-\(index)", label: device.name ?? device.model ?? "No device",
-                    measure: Double(device.count), measureText: device.count.formatted(),
+                    measure: Double(device.count), measureText: contribution(device.count),
                     detail: range(device.earliestStart, device.latestStart),
                     tag: device.name != nil ? device.model : nil)
             }
@@ -705,18 +653,23 @@ private struct SourcesSection: View {
         return profile.sources.sorted { $0.count > $1.count }.enumerated().map { index, source in
             ShareBars.Row(
                 id: "source-\(index)", label: source.name,
-                measure: Double(source.count), measureText: source.count.formatted(),
+                measure: Double(source.count), measureText: contribution(source.count),
                 detail: range(source.earliestStart, source.latestStart))
         }
     }
 
+    private func contribution(_ count: Int) -> String {
+        count.formatted() + " · " + (Double(count) / Double(max(profile.sampleCount, 1))).formatted(.percent.precision(.fractionLength(1)))
+    }
+
     private func range(_ from: Date, _ to: Date) -> String {
-        "\(from.formatted(date: .abbreviated, time: .omitted)) – \(to.formatted(date: .abbreviated, time: .omitted))"
+        let insights = RecordingInsights(profile: profile)
+        return insights.dateLabel(from) + " – " + insights.dateLabel(to)
     }
 
     var body: some View {
         ChartCard(
-            "Sources and devices",
+            "Sources and devices", subtitle: "Records and share of all records",
             readout: "\(rows.count) \(showsDevices ? "devices" : "sources")", placeholder: ""
         ) {
             if !profile.devices.isEmpty, !profile.sources.isEmpty {
@@ -802,11 +755,6 @@ private struct AggregatePreviewSection: View {
                     .foregroundStyle(.secondary)
             }
             chartOptions
-            if descriptor.identifier == "HKQuantityTypeIdentifierBloodPressureSystolic"
-                || descriptor.identifier == "HKQuantityTypeIdentifierBloodPressureDiastolic" {
-                Text("This chart summarizes one blood-pressure component. Daily averages are not paired blood-pressure readings.")
-                    .font(.footnote).foregroundStyle(.secondary)
-            }
             DisclosureGroup("Use this summary") { addButtons.padding(.top, 8) }
                 .font(.subheadline)
         }

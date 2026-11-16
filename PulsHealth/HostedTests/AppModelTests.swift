@@ -325,16 +325,24 @@ final class AppModelTests: XCTestCase {
         await h.model.explore.load()
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let cases: [(String, DynamicTypeSize)] = [
-            (heartRate, .large), (steps, .large),
+            (heartRate, .large), ("recording", .large), (steps, .large),
             ("HKCategoryTypeIdentifierSleepAnalysis", .large),
             ("HKWorkoutTypeIdentifier", .large), (heartRate, .accessibility3),
         ]
         for (identifier, size) in cases {
-            XCTAssertNotNil(h.model.explore.profiles[identifier])
+            if identifier != "recording" { XCTAssertNotNil(h.model.explore.profiles[identifier]) }
             let window = UIWindow(windowScene: scene)
             window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
             let controller = UIHostingController(rootView:
-                NavigationStack { TypePageView(identifier: identifier) }
+                NavigationStack {
+                    if identifier == "recording" {
+                        List { RecordingPatternsSection(profile: ExploreFixtures.heartRate) }
+                            .navigationTitle("Amount and timing")
+                            .navigationBarTitleDisplayMode(.inline)
+                    } else {
+                        TypePageView(identifier: identifier)
+                    }
+                }
                     .environment(h.model).environment(TypeActions())
                     .dynamicTypeSize(size).preferredColorScheme(.dark))
             window.rootViewController = controller

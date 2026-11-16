@@ -4,6 +4,36 @@ import PulsHealthSync
 @testable import PulsHealth
 
 final class ExploreFixtureTests: XCTestCase {
+    func testAverageGapUsesStartTimesAndPreservesSimultaneousReadings() {
+        var profile = ExploreFixtures.heartRate
+        let first = Date(timeIntervalSince1970: 1_700_000_000)
+        profile.sampleCount = 3
+        profile.earliestStart = first
+        profile.latestStart = first.addingTimeInterval(120)
+        profile.latestEnd = first.addingTimeInterval(900)
+        profile.cadence?.gapCount = 2
+        profile.cadence?.zeroGapCount = 1
+        XCTAssertEqual(RecordingInsights(profile: profile).averageGap, 60)
+        profile.cadence?.gapCount = 1
+        XCTAssertNil(RecordingInsights(profile: profile).averageGap)
+        profile.sampleCount = 1
+        XCTAssertNil(RecordingInsights(profile: profile).averageGap)
+    }
+
+    func testBusiestDaysAndWeekdaysUseRecordingCalendar() {
+        var profile = ExploreFixtures.heartRate
+        profile.timeZoneID = "America/Los_Angeles"
+        let monday = ISO8601DateFormatter().date(from: "2026-11-17T02:00:00Z")!
+        let tuesday = monday.addingTimeInterval(86_400)
+        profile.dailyCounts = [.init(day: monday, count: 20), .init(day: tuesday, count: 40)]
+        let insights = RecordingInsights(profile: profile)
+        XCTAssertEqual(insights.busiestDays.first?.day, tuesday)
+        XCTAssertEqual(insights.recordsPerRecordedDay, 30)
+        XCTAssertEqual(insights.weekdays.first(where: { $0.id == 2 })?.average, 20)
+        XCTAssertEqual(insights.weekdays.first(where: { $0.id == 3 })?.average, 40)
+        XCTAssertNil(insights.weekdays.first(where: { $0.id == 4 })?.average)
+    }
+
     func testTrendBreaksAtMissingDataAndRetainsZero() {
         let start = Date(timeIntervalSince1970: 1_700_000_000)
         let values: [Double?] = [2, 0, nil, 4, nil, 7]

@@ -215,7 +215,7 @@ struct ShareBars: View {
                     }
                 }
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(row.label): \(row.measureText)")
+                .accessibilityLabel("\(row.label): \(row.measureText)" + (row.detail.map { "; " + $0 } ?? ""))
             }
         }
         .padding(.vertical, 2)
