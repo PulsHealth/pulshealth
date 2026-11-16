@@ -178,7 +178,7 @@ struct AddConnectionView: View {
         ConnectionPage {
             NavigationLink(value: SyncRoute.ownDatabase) { ConnectionChoice(title: "Your database", symbol: "externaldrive") }.accessibilityLabel("Your database")
             NavigationLink(value: SyncRoute.managedDatabase) { ConnectionChoice(title: "PulsHealth database", symbol: "cloud") }.accessibilityLabel("PulsHealth database")
-            NavigationLink(value: SyncRoute.groupChoice) { ConnectionChoice(title: "Data requests", detail: "Share requested data or create a request.", symbol: "person.2") }.accessibilityLabel("Data requests")
+            NavigationLink(value: SyncRoute.groupChoice) { ConnectionChoice(title: "Data requests", symbol: "person.2") }.accessibilityLabel("Data requests")
             NavigationLink("Browse opportunities", value: SyncRoute.opportunities).font(.subheadline).foregroundStyle(Color.accentColor).padding(.top, 12)
         }.buttonStyle(.plain).navigationTitle("Add a connection")
     }
