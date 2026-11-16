@@ -204,7 +204,7 @@ struct RootView: View {
                     // stack, so their Apply/Discard bar belongs to the tab, not
                     // to a screen that could be popped with edits still staged.
                     .safeAreaInset(edge: .bottom) { PendingChangesBar() }
-                    .tabItem { Label("Connections", systemImage: "arrow.triangle.2.circlepath") }
+                    .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
                     .badge(model.hasPendingChanges ? "•" : nil)
                     .tag(Tab.sync)
                 NavigationStack { SettingsView() }
