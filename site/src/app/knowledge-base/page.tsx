@@ -24,6 +24,9 @@ const popularTypes = [
   "HKQuantityTypeIdentifierHeartRate",
   "HKQuantityTypeIdentifierBloodGlucose",
   "HKQuantityTypeIdentifierStepCount",
+  "HKQuantityTypeIdentifierFlightsClimbed",
+  "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute",
+  "HKQuantityTypeIdentifierBodyMass",
 ];
 
 export default async function KnowledgeBasePage() {
@@ -56,6 +59,25 @@ export default async function KnowledgeBasePage() {
         {/* Search fills the shared hero content width, including narrow phones. */}
         <KnowledgeBaseSearch className="max-w-[40rem]" />
       </PageHero>
+
+      <section aria-labelledby="activity-questions" className="container mx-auto max-w-6xl px-4 pt-12">
+        <h2 id="activity-questions" className="text-2xl font-bold tracking-tight">Make sense of your activity totals</h2>
+        <p className="mt-3 max-w-2xl text-muted-foreground">Start with a question, then inspect the records behind the number.</p>
+        <ul className="mt-5 grid gap-3 sm:grid-cols-3">
+          {[
+            { href: "/blog/what-does-flights-climbed-mean/", title: "What does Flights Climbed mean?", description: "Flights, steps and elevation gain explained." },
+            { href: "/blog/apple-watch-flights-climbed-wrong/", title: "Why is my stair count wrong?", description: "Check the source, timing and recording conditions." },
+            { href: "/blog/apple-health-step-counts-dont-match/", title: "Why don't my step counts match?", description: "Compare Watch, iPhone and exported daily totals." },
+          ].map((guide) => (
+            <li key={guide.href}>
+              <Link href={guide.href} className="block h-full rounded-xl border bg-card p-5 transition-colors hover:border-brand/40 focus-visible:outline-2 focus-visible:outline-offset-4">
+                <span className="font-medium">{guide.title}</span>
+                <span className="mt-2 block text-sm text-muted-foreground">{guide.description}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="container mx-auto max-w-6xl px-4 py-20">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
