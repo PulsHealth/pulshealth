@@ -316,6 +316,44 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(h.model.config.enabledTypes.contains(heartRate))
     }
 
+    func testExploreAnalysisLayoutsWithSyntheticData() async throws {
+        let defaults = UserDefaults.standard
+        let previous = defaults.object(forKey: "PulsFixtureProfiles")
+        defaults.set(true, forKey: "PulsFixtureProfiles")
+        defer { defaults.set(previous, forKey: "PulsFixtureProfiles") }
+        let h = try await makeModel(flags: ["onboardingCompleted": true])
+        await h.model.explore.load()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let cases: [(String, DynamicTypeSize)] = [
+            (heartRate, .large), (steps, .large),
+            ("HKCategoryTypeIdentifierSleepAnalysis", .large),
+            ("HKWorkoutTypeIdentifier", .large), (heartRate, .accessibility3),
+        ]
+        for (identifier, size) in cases {
+            XCTAssertNotNil(h.model.explore.profiles[identifier])
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            let controller = UIHostingController(rootView:
+                NavigationStack { TypePageView(identifier: identifier) }
+                    .environment(h.model).environment(TypeActions())
+                    .dynamicTypeSize(size).preferredColorScheme(.dark))
+            window.rootViewController = controller
+            window.makeKeyAndVisible()
+            controller.view.frame = window.bounds
+            window.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(600))
+            let image = UIGraphicsImageRenderer(size: window.bounds.size).image {
+                controller.view.layer.render(in: $0.cgContext)
+            }
+            XCTAssertNotNil(image.cgImage)
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "Explore analysis \(identifier) \(size)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            window.isHidden = true
+        }
+    }
+
     func testConnectedTypeFlowScreenshots() async throws {
         let defaults = UserDefaults.standard
         let keys = ["PulsInitialType", "PulsInitialTab", "PulsFixtureProfiles"]

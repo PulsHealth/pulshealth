@@ -456,6 +456,31 @@ struct DailyCountsChart: View {
 /// The buckets a configured series would produce: a line for the discrete
 /// functions, columns for the cumulative ones (a sum is an amount per
 /// bucket; an average is a level).
+struct AggregateChartPoint: Identifiable {
+    let id: Int
+    let bucket: HealthExplorer.AggregateBucket
+    let value: Double
+    let segment: Int
+
+    /// Nil buckets and discontinuous intervals break the line. Zero is data.
+    static func make(_ buckets: [HealthExplorer.AggregateBucket]) -> [Self] {
+        var points: [Self] = []
+        var segment = 0
+        var previousEnd: Date?
+        for (index, bucket) in buckets.enumerated() {
+            guard let value = bucket.value, value.isFinite else {
+                segment += 1
+                previousEnd = nil
+                continue
+            }
+            if let previousEnd, bucket.start > previousEnd { segment += 1 }
+            points.append(Self(id: index, bucket: bucket, value: value, segment: segment))
+            previousEnd = bucket.end
+        }
+        return points
+    }
+}
+
 struct AggregatePreviewChart: View {
     let buckets: [HealthExplorer.AggregateBucket]
     let function: AggregateFunction
@@ -480,13 +505,19 @@ struct AggregatePreviewChart: View {
 
     var body: some View {
         Chart {
-            ForEach(Array(buckets.enumerated()), id: \.offset) { _, bucket in
-                if let value = bucket.value {
-                    if isColumn {
-                        column(bucket, value: value)
-                    } else {
-                        line(bucket, value: value)
-                    }
+            ForEach(AggregateChartPoint.make(buckets)) { point in
+                if isColumn {
+                    column(point.bucket, value: point.value)
+                } else {
+                    LineMark(
+                        x: .value("Time", point.bucket.start),
+                        y: .value(function.displayName, point.value),
+                        series: .value("Continuous readings", point.segment))
+                        .foregroundStyle(color)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                        .interpolationMethod(.linear)
+                    PointMark(x: .value("Time", point.bucket.start), y: .value(function.displayName, point.value))
+                        .foregroundStyle(color).symbolSize(12)
                 }
             }
             if let selected, let value = selected.value {
@@ -502,6 +533,8 @@ struct AggregatePreviewChart: View {
                 }
             }
         }
+        .chartXScale(domain: chartDomain)
+        .onChange(of: buckets) { selection = nil; readout = nil }
         .chartXSelection(value: $selection)
         .onChange(of: selection) { readout = computedReadout }
         // A level (average, min, max) reads better on a scale that fits it;
@@ -538,20 +571,9 @@ struct AggregatePreviewChart: View {
         .foregroundStyle(selected == nil || selected?.start == bucket.start ? color : color.opacity(0.4))
     }
 
-    /// A level: the line and the wash under it.
-    @ChartContentBuilder
-    private func line(_ bucket: HealthExplorer.AggregateBucket, value: Double) -> some ChartContent {
-        let name = function.displayName
-        AreaMark(x: .value("Time", bucket.start), y: .value(name, value))
-            .foregroundStyle(
-                LinearGradient(
-                    colors: [color.opacity(0.25), color.opacity(0.02)],
-                    startPoint: .top, endPoint: .bottom))
-            .interpolationMethod(.monotone)
-        LineMark(x: .value("Time", bucket.start), y: .value(name, value))
-            .foregroundStyle(color)
-            .lineStyle(StrokeStyle(lineWidth: 2))
-            .interpolationMethod(.monotone)
+    private var chartDomain: ClosedRange<Date> {
+        let start = buckets.first?.start ?? Date()
+        return start...max(buckets.last?.end ?? start.addingTimeInterval(1), start.addingTimeInterval(1))
     }
 
     private var accessibilityText: String {

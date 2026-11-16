@@ -28,6 +28,32 @@ enum ExploreFixtures {
         })
     }
 
+    /// Invented series for visual review only. No HealthKit query or persistence.
+    static func aggregateBuckets(config: AggregateConfig, days: Int) -> [HealthExplorer.AggregateBucket] {
+        let component: Calendar.Component
+        switch config.intervalUnit {
+        case .minute: component = .minute
+        case .hour: component = .hour
+        case .day: component = .day
+        case .week: component = .weekOfYear
+        case .month: component = .month
+        }
+        let now = Date()
+        let from = calendar.date(byAdding: .day, value: -days, to: now) ?? now
+        var start = calendar.dateInterval(of: component, for: from)?.start ?? from
+        var result: [HealthExplorer.AggregateBucket] = []
+        while start < now, result.count < 10_000 {
+            guard let end = calendar.date(byAdding: component, value: 1, to: start), end > start else { break }
+            let index = result.count
+            let cumulative = config.function == .sum
+            let base = cumulative ? 6_500.0 : 72.0
+            let value = base + sin(Double(index) * 0.7) * (cumulative ? 2_000 : 7)
+            result.append(.init(start: start, end: end, value: index % 13 == 5 ? nil : value, unit: config.unitString))
+            start = end
+        }
+        return result
+    }
+
     private static let calendar = Calendar.current
     private static let now = Date()
     private static func daysAgo(_ days: Int) -> Date {

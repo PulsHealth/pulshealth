@@ -33,35 +33,65 @@ struct TypePageView: View {
         let explore = model.explore
         let profile = explore.profiles[identifier]
         let facts = explore.quickFacts[identifier]
-        let color = descriptor.group.color
         return List {
-            header(descriptor, profile: profile, facts: facts)
             analysisCard(descriptor, profile: profile, facts: facts)
-            if descriptor.kind == .category {
-                // Static reference from the knowledge base, so it is worth
-                // showing before (or without) an analysis; the counts join
-                // it once there is a profile.
-                CategoryValuesSection(profile: profile, knowledge: knowledge, color: color)
+            if let profile, profile.sampleCount > 0 {
+                if descriptor.kind == .quantity,
+                   !AggregateFunction.choices(for: identifier).isEmpty {
+                    AggregatePreviewSection(descriptor: descriptor, analysisRevision: profile.computedAt)
+                } else if descriptor.kind == .category {
+                    CategoryValuesSection(profile: profile, knowledge: knowledge, color: .accentColor)
+                } else {
+                    distributionSection(descriptor, profile: profile, color: .accentColor)
+                }
+                Section("Explore further") {
+                    if let values = profile.values, values.count > 0 {
+                        NavigationLink {
+                            List {
+                                analysisScope(profile)
+                                distributionSection(descriptor, profile: profile, color: .accentColor)
+                            }
+                            .navigationTitle("Distribution")
+                            .navigationBarTitleDisplayMode(.inline)
+                        } label: {
+                            detailLabel("Value distribution", subtitle: "Common readings, spread and extremes")
+                        }
+                    }
+                    NavigationLink {
+                        List {
+                            analysisScope(profile)
+                            statTiles(profile)
+                            if !profile.dailyCounts.isEmpty {
+                                SamplesOverTimeSection(profile: profile, color: .accentColor)
+                            }
+                            if !profile.sources.isEmpty || !profile.devices.isEmpty {
+                                SourcesSection(profile: profile, color: .accentColor)
+                            }
+                            if let cadence = profile.cadence {
+                                cadenceSection(cadence, profile: profile)
+                            }
+                        }
+                        .navigationTitle("Recording details")
+                        .navigationBarTitleDisplayMode(.inline)
+                    } label: {
+                        detailLabel("Recording details", subtitle: "Coverage, sources and gaps")
+                    }
+                    NavigationLink {
+                        List { header(descriptor, profile: profile, facts: facts) }
+                            .navigationTitle("About this data")
+                            .navigationBarTitleDisplayMode(.inline)
+                    } label: {
+                        detailLabel("About this data", subtitle: "What is measured and available history")
+                    }
+                }
+            } else if let profile, profile.isComplete {
+                Section {
+                    Text("No readable samples in this analysis period. There may be no data, or Health access may be off.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
             }
-            if let profile {
-                statTiles(profile)
-                distributionSection(descriptor, profile: profile, color: color)
-                if !profile.dailyCounts.isEmpty {
-                    SamplesOverTimeSection(profile: profile, color: color)
-                }
-                if !profile.sources.isEmpty || !profile.devices.isEmpty {
-                    SourcesSection(profile: profile, color: color)
-                }
-                if let cadence = profile.cadence {
-                    cadenceSection(cadence, profile: profile)
-                }
-            }
-            // Only after an analysis: that is what requests Health access for
-            // the type, and a preview of a type with no data has nothing to
-            // draw but an error.
-            if profile != nil, descriptor.kind == .quantity,
-               !HealthTypeCatalog.allowedAggregateFunctions(for: identifier).isEmpty {
-                AggregatePreviewSection(descriptor: descriptor)
+            if profile == nil || profile?.sampleCount == 0 {
+                header(descriptor, profile: profile, facts: facts)
             }
         }
         .navigationTitle(descriptor.displayName)
@@ -86,6 +116,30 @@ struct TypePageView: View {
             // stale ones are refreshed only by the Refresh button.
             await explore.refreshQuickFacts(for: [identifier])
             if explore.profiles[identifier] == nil { explore.analyze(identifier) }
+        }
+    }
+
+    private func detailLabel(_ title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.body)
+            Text(subtitle).font(.footnote).foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func analysisScope(_ profile: TypeProfile) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Readings · " + (profileScope(profile) ?? "Available history"))
+                    .font(.subheadline.weight(.medium))
+                Text("Analyzed \(profile.computedAt.formatted(date: .abbreviated, time: .shortened))")
+                if let start = profile.readableSince ?? profile.rangeStart {
+                    Text("From \(start.formatted(date: .abbreviated, time: .omitted))")
+                }
+                if !profile.isComplete { Text("Incomplete scan: statistics describe only the data read.") }
+            }
+            .font(.footnote)
+            .foregroundStyle(.secondary)
         }
     }
 
@@ -116,6 +170,20 @@ struct TypePageView: View {
                 if let about = knowledge?.shortDescription {
                     Text(about)
                         .font(.footnote)
+                }
+                if let definitions = knowledge?.categoryValues, !definitions.isEmpty {
+                    DisclosureGroup("Possible values") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach(Array(definitions.enumerated()), id: \.offset) { _, value in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(value.displayName).font(.subheadline.weight(.medium))
+                                    if let description = value.description {
+                                        Text(description).font(.footnote).foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                        }.padding(.top, 8)
+                    }.font(.subheadline)
                 }
             }
             .padding(.vertical, 4)
@@ -174,52 +242,38 @@ struct TypePageView: View {
                     .controlSize(.small)
             }
         } else if let profile {
-            let stale = explore.isStale(identifier)
-            CardSection(
-                "Analysis",
-                subtitle: profile.isComplete
-                    ? nil
-                    : "The scan stopped early: every number is a lower bound. " + (profile.failureReason ?? ""),
-                action: {
-                    Button(stale ? "Refresh" : "Rescan") { explore.analyze(identifier, force: true) }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                }
-            ) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Analyzed \(profile.computedAt.formatted(date: .abbreviated, time: .shortened))")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Reading analysis · " + (profileScope(profile) ?? "Available history"))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Refresh") { explore.analyze(identifier, force: true) }
+                            .font(.subheadline)
+                    }
+                    if !profile.isComplete {
+                        Label("Incomplete analysis", systemImage: "exclamationmark.circle")
+                            .font(.subheadline.weight(.medium))
+                        Text("Only part of the data was read. Counts may be low; averages and ranges may not represent the full period.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                     if let since = profile.readableSince {
-                        // iOS 27 limited history access: the scan started
-                        // here, not at the lookback, and every number below
-                        // covers only this part.
-                        Text("Covers only from \(since.formatted(date: .abbreviated, time: .omitted)), the earliest \(descriptor.displayName) data iOS lets PulsHealth read")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text("Health access is limited to recent history. Full Access under Settings → Privacy & Security → Health → PulsHealth includes the rest.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else if let scope = profileScope(profile), let start = profile.rangeStart {
-                        Text("Covers the \(scope), from \(start.formatted(date: .abbreviated, time: .omitted))")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        Text("Health access limited to data from \(since.formatted(date: .abbreviated, time: .omitted)). Change access in Settings → Privacy & Security → Health → PulsHealth.")
+                            .font(.footnote).foregroundStyle(.secondary)
                     }
-                    if stale {
-                        StatusDot(
-                            text: explore.readableHistoryChanged(identifier)
-                                ? "Health access has changed since"
-                                : "Health has new data since",
-                            color: .orange)
+                    if explore.isStale(identifier) {
+                        Text(explore.readableHistoryChanged(identifier)
+                            ? "Health access changed. Refresh this analysis."
+                            : "New recordings are available. Refresh this analysis.")
+                            .font(.footnote).foregroundStyle(.secondary)
                     }
-                }
-                if let error = explore.errors[identifier] {
-                    Text(error).font(.footnote).foregroundStyle(.orange)
-                }
-                if let note = profile.failureReason, profile.isComplete {
-                    Text(note).font(.caption).foregroundStyle(.secondary)
+                    if let note = explore.errors[identifier] ?? profile.failureReason {
+                        Text(note).font(.footnote).foregroundStyle(.secondary)
+                    }
                 }
             }
+
         }
     }
 
@@ -279,7 +333,7 @@ struct TypePageView: View {
                 let cumulative = HealthTypeCatalog.allowedAggregateFunctions(for: identifier).contains(.sum)
                 ValueDistributionSection(
                     values: values, unit: profile.unitString, color: color,
-                    typicalRange: cumulative ? nil : knowledge?.typicalRange)
+                    isCumulative: cumulative)
             }
         case .category:
             EmptyView()  // the values card sits above the stat tiles
@@ -421,39 +475,33 @@ private struct ValueDistributionSection: View {
     let values: TypeProfile.ValueDistribution
     let unit: String?
     let color: Color
-    var typicalRange: TypeKnowledge.TypicalRange?
+    var isCumulative = false
     @State private var readout: String?
-
-    private var band: ClosedRange<Double>? {
-        guard let typicalRange, let low = typicalRange.min, let high = typicalRange.max, low < high else { return nil }
-        return low...high
-    }
 
     var body: some View {
         ChartCard(
             "Value distribution",
-            subtitle: values.isEstimated ? "Histogram and percentiles are estimates from a sample" : nil,
+            subtitle: isCumulative ? "Individual recorded amounts, not daily totals." : "How often each reading occurs.",
             readout: readout
         ) {
             VStack(alignment: .leading, spacing: 8) {
                 HistogramChart(
-                    histogram: values.histogram, unit: unit, color: color, typicalRange: band,
+                    histogram: values.histogram, unit: unit, color: color,
                     median: values.median, readout: $readout)
-                if let band {
-                    HStack(spacing: 6) {
-                        RoundedRectangle(cornerRadius: 2).fill(.gray.opacity(0.25)).frame(width: 14, height: 10)
-                        Text("Typical range \(formatValue(band.lowerBound))–\(formatValue(band.upperBound))"
-                            + (unit.map { " \($0)" } ?? ""))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                Text("Middle 90%: \(formatValue(values.p5))–\(formatValue(values.p95))\(unit.map { " \($0)" } ?? "")")
+                    .font(.subheadline.weight(.medium))
+                Text(values.isEstimated
+                    ? "Percentiles and chart counts are estimated from a sample of the readings."
+                    : "The middle 90% runs from the 5th to the 95th percentile.")
+                    .font(.footnote).foregroundStyle(.secondary)
                 if let axisNote {
                     Text(axisNote)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                Text("This describes your recorded values, not a healthy range.")
+                    .font(.footnote).foregroundStyle(.secondary)
                 statsRow
             }
         }
@@ -481,27 +529,27 @@ private struct ValueDistributionSection: View {
     }
 
     private var statsRow: some View {
-        let unitText = unit ?? ""
-        return ViewThatFits(in: .horizontal) {
-            HStack(spacing: 10) { statLabels }
-            VStack(alignment: .leading, spacing: 4) { statLabels }
+        DisclosureGroup("All statistics") {
+            VStack(spacing: 10) {
+                statistic("Median", values.median)
+                statistic("Average", values.mean)
+                statistic("Lowest", values.min)
+                statistic("Highest", values.max)
+                statistic("5th percentile", values.p5)
+                statistic("95th percentile", values.p95)
+                statistic("Standard deviation", values.stddev)
+                Text("Each reading has equal weight. Frequent recording periods contribute more than sparse ones.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }.padding(.top, 10)
         }
-        .font(.caption.monospacedDigit())
-        .foregroundStyle(.secondary)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "Minimum \(formatValue(values.min)), median \(formatValue(values.median)), mean \(formatValue(values.mean)), "
-                + "maximum \(formatValue(values.max)) \(unitText)")
+        .font(.subheadline)
     }
 
-    @ViewBuilder private var statLabels: some View {
-        Text("min \(formatValue(values.min))")
-        Text("p5 \(formatValue(values.p5))")
-        Text("median \(formatValue(values.median))")
-        Text("mean \(formatValue(values.mean))")
-        Text("p95 \(formatValue(values.p95))")
-        Text("max \(formatValue(values.max))\(unit.map { " \($0)" } ?? "")")
+    private func statistic(_ label: String, _ value: Double) -> some View {
+        LabeledContent(label, value: formatValue(value) + (unit.map { " \($0)" } ?? ""))
+            .monospacedDigit()
     }
+
 }
 
 private struct SamplesOverTimeSection: View {
@@ -511,7 +559,7 @@ private struct SamplesOverTimeSection: View {
     @State private var readout: String?
 
     var body: some View {
-        ChartCard("Samples over time", readout: readout) {
+        ChartCard("Recording frequency", subtitle: "Number of records, not the measured value. Days without records are not zero measurements.", readout: readout) {
             Picker("Window", selection: $window) {
                 ForEach(TimeWindow.allCases) { Text($0.rawValue).tag($0) }
             }
@@ -533,6 +581,7 @@ private struct CategoryValuesSection: View {
     let knowledge: TypeKnowledge?
     let color: Color
     @State private var measure: Measure = .count
+    @State private var showsDefinitions = false
 
     enum Measure: String, CaseIterable, Identifiable {
         case count = "Samples"
@@ -576,26 +625,22 @@ private struct CategoryValuesSection: View {
 
     /// Time is only worth a toggle when the samples have length: sleep
     /// stages and stand hours do, a logged symptom is an instant.
+    private var isSleep: Bool { profile?.typeIdentifier == "HKCategoryTypeIdentifierSleepAnalysis" }
+
     private var totalDuration: TimeInterval { entries.reduce(0) { $0 + $1.duration } }
     private var hasDuration: Bool { totalDuration >= 60 }
 
     private var rows: [ShareBars.Row] {
-        entries.map { entry in
+        entries.filter { showsDefinitions || $0.count > 0 }.map { entry in
             let text: String
             switch measure {
             case .count: text = entry.count.formatted()
             case .time: text = entry.count == 0 ? "0" : durationString(entry.duration)
             }
-            var detail = entry.description
-            if measure == .count, hasDuration, entry.count > 0 {
-                detail = [durationString(entry.duration) + " in total", entry.description]
-                    .compactMap { $0 }.joined(separator: " · ")
-            }
             return ShareBars.Row(
                 id: entry.id, label: entry.name,
                 measure: measure == .count ? Double(entry.count) : entry.duration,
-                measureText: text, detail: detail,
-                tag: entry.rawValue.map { "= \($0)" })
+                measureText: text, detail: showsDefinitions ? entry.description : nil)
         }
     }
 
@@ -613,12 +658,10 @@ private struct CategoryValuesSection: View {
             EmptyView()
         } else {
         ChartCard(
-            "Values",
-            subtitle: knowledge?.categoryValues == nil
-                ? nil
-                : profile == nil
-                    ? "Every value HealthKit defines for this type, in HealthKit's order."
-                    : "Every value HealthKit defines for this type, in HealthKit's order. Bars are relative to the largest.",
+            isSleep ? "Sleep records" : "Recorded values",
+            subtitle: isSleep
+                ? (measure == .time ? "Recorded time by stage, not time asleep per night." : "Number of records by stage, not time asleep.")
+                : "Bars compare the recorded categories.",
             readout: readout, placeholder: ""
         ) {
             if hasDuration {
@@ -629,10 +672,14 @@ private struct CategoryValuesSection: View {
             }
         } chart: {
             ShareBars(rows: rows, color: color)
+            Toggle("Show definitions and unrecorded values", isOn: $showsDefinitions)
+                .font(.subheadline)
             if hasDuration, measure == .time {
-                Text("\(durationString(totalDuration)) across every value. Overlapping samples — a Watch and an app both recording — are counted twice.")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                Text(isSleep
+                    ? "In-bed and sleep stages can overlap, as can records from different sources. These durations cannot be added to find total sleep or stage percentages."
+                    : "Durations include overlapping records from all sources.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
         .onAppear { if hasDuration { measure = .time } }
@@ -693,6 +740,7 @@ private struct SourcesSection: View {
 private struct AggregatePreviewSection: View {
     @Environment(TypeActions.self) private var typeActions
     let descriptor: HealthTypeDescriptor
+    let analysisRevision: Date
     @Environment(AppModel.self) private var model
     @State private var function: AggregateFunction?
     @State private var interval: AggregateIntervalUnit = .day
@@ -734,15 +782,15 @@ private struct AggregatePreviewSection: View {
 
     var body: some View {
         ChartCard(
-            "Aggregate preview",
-            subtitle: "What an aggregate would hold, computed the way the sync computes it",
+            "Over time",
+            subtitle: config.map { $0.label + (deviceFilter == .all ? " · All devices" : "") },
             readout: readout
         ) {
             controls
         } chart: {
             if let config {
                 AggregatePreviewPane(
-                    config: config, days: window.days, color: descriptor.group.color, readout: $readout)
+                    config: config, days: window.days, color: .accentColor, readout: $readout, showsSummary: true, revision: analysisRevision)
             }
             if let since = model.explore.quickFacts[descriptor.identifier]?.readableSince,
                since > windowStart {
@@ -753,7 +801,13 @@ private struct AggregatePreviewSection: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            addButtons
+            if descriptor.identifier == "HKQuantityTypeIdentifierBloodPressureSystolic"
+                || descriptor.identifier == "HKQuantityTypeIdentifierBloodPressureDiastolic" {
+                Text("This chart summarizes one blood-pressure component. Daily averages are not paired blood-pressure readings.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+            DisclosureGroup("Use this summary") { addButtons.padding(.top, 8) }
+                .font(.subheadline)
         }
         .onAppear {
             if function == nil { function = functions.first }
@@ -761,29 +815,27 @@ private struct AggregatePreviewSection: View {
     }
 
     @ViewBuilder private var controls: some View {
-        VStack(spacing: 8) {
-            HStack {
+        Picker("Window", selection: $window) {
+            ForEach(PreviewWindow.allCases) { Text($0.rawValue).tag($0) }
+        }
+        .pickerStyle(.segmented)
+        DisclosureGroup("Chart options") {
+            VStack(spacing: 8) {
                 Picker("Value", selection: $function) {
                     ForEach(functions) { Text($0.plainName).tag(Optional($0)) }
                 }
-                Spacer()
                 Picker("Interval", selection: $interval) {
                     ForEach(AggregateIntervalUnit.choices) { Text(intervalLabel($0)).tag($0) }
                 }
+                Picker("Source", selection: $deviceFilter) {
+                    Text("All devices").tag(AggregateDeviceFilter.all)
+                    Text("Apple Watch").tag(AggregateDeviceFilter.watch)
+                    Text("iPhone").tag(AggregateDeviceFilter.iphone)
+                }
             }
             .pickerStyle(.menu)
-            .font(.subheadline)
-            Picker("Device", selection: $deviceFilter) {
-                Text("All").tag(AggregateDeviceFilter.all)
-                Text("Watch").tag(AggregateDeviceFilter.watch)
-                Text("iPhone").tag(AggregateDeviceFilter.iphone)
-            }
-            .pickerStyle(.segmented)
-            Picker("Window", selection: $window) {
-                ForEach(PreviewWindow.allCases) { Text($0.rawValue).tag($0) }
-            }
-            .pickerStyle(.segmented)
         }
+        .font(.subheadline)
     }
 
     /// The aggregate the chart shows, into the export's draft or Sync's. In

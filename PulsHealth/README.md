@@ -220,16 +220,19 @@ Sources/
 │   │                       deleteAll — what Settings → Privacy & Data → Delete
 │   │                       Analysis calls. Profiles persist in TypeProfileStore.
 │   ├── TypePageView.swift  The Type page: the analysis (started on open),
-│   │                       stat tiles, the value distribution, samples over
-│   │                       time, sources and devices, cadence; an aggregate
-│   │                       preview (quantity types, after an analysis) with
-│   │                       Add to Export and Add to Sync; and,
+│   │                       a measurement-first Over time chart for quantities,
+│   │                       category/sleep records or workout breakdowns; links
+│   │                       to distribution, recording details and type context.
+│   │                       Chart options and export/sync actions expand on demand;
+│   │                       incomplete, stale and limited-history notices remain visible.
+│   │                       It also offers,
 │   │                       for a synced type, the sync details
 │   │                       (TypeSyncDetailsSections).
 │   ├── ExploreCharts.swift The page's Swift Charts: the histogram (over the
-│   │                       middle of the data, with the article's typical
-│   │                       range behind it for discrete types), daily
-│   │                       counts, sources.
+│   │                       middle of the readings), daily recording counts,
+│   │                       sources, and aggregate trends with visible points
+│   │                       and breaks at missing intervals. Distribution percentiles
+│   │                       describe readings, not a clinical reference range.
 │   └── TypeKnowledge.swift The slice of a knowledge-base article the page
 │                           uses (one-line description, unit, typical range,
 │                           category value names), decoded from the
