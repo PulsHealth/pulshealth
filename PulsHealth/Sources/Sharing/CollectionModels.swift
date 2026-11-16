@@ -26,6 +26,9 @@ struct CollectionRequest: Codable, Identifiable, Sendable {
     var version: Int
     var status: String
     var listing: String
+    var participantCount: Int? = nil
+    var contributedCount: Int? = nil
+    var lastContribution: Double? = nil
     var startAt: Int64? = nil
     var endAt: Int64? = nil
     var sharingStart: Date? { startAt.map { Date(timeIntervalSince1970: Double($0) / 1000) } }
@@ -45,11 +48,13 @@ struct CollectionEnrollment: Codable, Identifiable, Sendable {
     var generation: Int
     var lastReceived: Date?
     var consentedAt: Date
+    var deletionStatus: String? = nil
 }
 struct CollectionList: Decodable { var requests: [CollectionRequest]; var enrollments: [CollectionEnrollment] }
 struct CollectionResponse<Value: Decodable>: Decodable { var result: Value; var token: String?; var invite: String? }
 struct CollectionCommand: Encodable {
     var action: String
+    var withdraw: Bool? = nil
     var id: UUID?
     var invite: String?
     var accepted: Bool?
@@ -89,6 +94,10 @@ struct CollectionInvitation: Identifiable {
         }
         self.id = id; self.code = code
     }
+    static func link(id: UUID, code: String) -> URL? {
+        var url = URLComponents(url: PulsHealthDatabase.viewerURL.appending(path: "collect/" + id.uuidString.lowercased()), resolvingAgainstBaseURL: false)
+        url?.fragment = code; return url?.url
+    }
     init(id: UUID, code: String? = nil) { self.id = id; self.code = code }
 }
 struct CollectionError: LocalizedError { var errorDescription: String?; init(_ message: String) { errorDescription = message } }
@@ -107,4 +116,11 @@ enum RequestInvitation {
             self = .collection(try CollectionInvitation(url: url))
         }
     }
+}
+
+struct CollectionParticipant: Decodable, Identifiable {
+    var id: UUID
+    var status: String
+    var lastReceived: Double?
+    var deletionStatus: String?
 }

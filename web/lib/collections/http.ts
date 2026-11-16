@@ -25,7 +25,7 @@ export async function manage(request: NextRequest, native: boolean) {
     const action = String(input.action);
     const data: Record<string, unknown> = {};
     let token: string | undefined, invite: string | undefined;
-    if (!["list", "create", "review-list", "join", "pause", "resume", "stop", "finish", "credential", "close", "invite", "participants", "export", "review"].includes(action)) throw new Error("Unknown action.");
+    if (!["request-deletion", "confirm-deletion", "list", "create", "review-list", "join", "pause", "resume", "stop", "finish", "credential", "close", "invite", "participants", "export", "review"].includes(action)) throw new Error("Unknown action.");
     if (!["list", "create", "review-list"].includes(action)) data.id = uuid(input.id);
     if (action === "create" || action === "invite") {
       invite = newToken(); data.inviteHash = tokenHash(invite)!.toString("hex");
@@ -40,6 +40,10 @@ export async function manage(request: NextRequest, native: boolean) {
       }
       data.accepted = true; data.version = 1; data.metrics = metrics(input.metrics);
       data.inviteHash = tokenHash(typeof input.invite === "string" ? input.invite : null)?.toString("hex") ?? "";
+    }
+    if (action === "request-deletion") {
+      if (typeof input.withdraw !== "boolean") throw new Error("Choose whether to withdraw.");
+      data.withdraw = input.withdraw;
     }
     if (action === "export") {
       if (input.after !== undefined && (!Number.isSafeInteger(input.after) || Number(input.after) < 0)) throw new Error("Invalid export cursor.");

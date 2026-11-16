@@ -8,23 +8,17 @@ struct FileRequestOptions: View {
     @Binding var requester: String
     @Binding var purpose: String
     @Binding var contact: String
-    @State private var start = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
-    @State private var end = Date()
-    @State private var metrics: [DataRequest.Metric] = []
-    @State private var format: ExportFormat = .csv
-    @State private var sends = false
-    @State private var destinationName = ""
-    @State private var endpoint = ""
+    @Binding var draft: FileConnectionDraft
     @Binding var link: URL?
     @State private var problem: String?
 
     var body: some View {
         Group {
             Section("Data & Dates") {
-                NavigationLink("Data types (\(metrics.count))") { RequestMetricPicker(metrics: $metrics) }
-                DatePicker("From", selection: $start, in: ...Date(), displayedComponents: .date)
-                DatePicker("Through", selection: $end, in: ...Date(), displayedComponents: .date)
-                Picker("Format", selection: $format) {
+                NavigationLink("Data types (\(draft.metrics.count))") { RequestMetricPicker(metrics: $draft.metrics) }
+                DatePicker("From", selection: $draft.start, in: ...Date(), displayedComponents: .date)
+                DatePicker("Through", selection: $draft.end, in: ...Date(), displayedComponents: .date)
+                Picker("Format", selection: $draft.format) {
                     Text("CSV").tag(ExportFormat.csv)
                     Text("JSON").tag(ExportFormat.json)
                     Text("JSONL").tag(ExportFormat.jsonl)
@@ -32,10 +26,10 @@ struct FileRequestOptions: View {
                 Text("Both dates included, in the participant’s time zone. Daily aggregates include completed days only; today’s aggregate is omitted until tomorrow. One ZIP includes the data and export summary. Workout routes and extra streams are not requested.").font(.footnote).foregroundStyle(.secondary)
             }
             Section {
-                Toggle("Send to a destination", isOn: $sends)
-                if sends {
-                    TextField("Destination name", text: $destinationName)
-                    TextField("HTTPS upload endpoint", text: $endpoint)
+                Toggle("Send to a destination", isOn: $draft.sends)
+                if draft.sends {
+                    TextField("Destination name", text: $draft.destinationName)
+                    TextField("HTTPS upload endpoint", text: $draft.endpoint)
                         .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                     Text("Use a compatible PulsHealth request receiver, not an email address, folder link or database password. The participant confirms Generate & Send before any upload.")
                         .font(.footnote).foregroundStyle(.secondary)
@@ -55,15 +49,15 @@ struct FileRequestOptions: View {
     private func create() {
         do {
             var destination: DataRequest.Destination?
-            if sends {
-                guard let url = URL(string: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            if draft.sends {
+                guard let url = URL(string: draft.endpoint.trimmingCharacters(in: .whitespacesAndNewlines)) else {
                     throw DataRequest.Invalid("Enter an HTTPS upload endpoint.")
                 }
-                destination = .init(name: destinationName, url: url)
+                destination = .init(name: draft.destinationName, url: url)
             }
             let request = DataRequest(title: title, requester: requester, purpose: purpose, contact: contact,
-                startDay: DataRequest.day(start), endDay: DataRequest.day(end), metrics: metrics,
-                format: format, destination: destination)
+                startDay: DataRequest.day(draft.start), endDay: DataRequest.day(draft.end), metrics: draft.metrics,
+                format: draft.format, destination: destination)
             link = try request.link(); problem = nil
         } catch { problem = error.localizedDescription }
     }

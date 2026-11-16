@@ -76,7 +76,7 @@ struct ServerSettingsView: View {
         .onAppear {
             if !loaded {
                 loaded = true
-                setup = DatabaseSetup(applied: model.isSettingUpInitialSync ? model.config : model.appliedConfig, scanOnArrival: scanOnArrival, preferred: preferred, isStaged: model.isSettingUpInitialSync)
+                setup = DatabaseSetup(applied: preferred != nil ? SyncConfiguration() : model.isSettingUpInitialSync ? model.config : model.appliedConfig, scanOnArrival: scanOnArrival, preferred: preferred, isStaged: model.isSettingUpInitialSync)
                 showScanner = scanOnArrival
             }
             // This screen is built lazily: an accepted pairing link can be

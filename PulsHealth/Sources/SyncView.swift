@@ -5,6 +5,7 @@ import PulsHealthSync
 /// stack's path, can pop back to the Database screen when a pairing link is
 /// accepted while another of them is on top.
 enum SyncRoute: Hashable {
+    case personal
     /// The Database screen; `scan` opens the pairing scanner on arrival, and
     /// `choice` is the option picked on the first-time screen (`SyncIntro`).
     case server(scan: Bool, choice: DatabaseDestination? = nil)
@@ -83,23 +84,7 @@ struct SyncView: View {
             }
             linksSection
         }
-        .navigationTitle("Sync")
-        .navigationDestination(for: SyncRoute.self) { route in
-            switch route {
-            case .server(let scan, let choice): ServerSettingsView(scanOnArrival: scan, preferred: choice)
-            case .rawSamples: RawSamplesPickerView()
-            case .aggregates: AggregatesPickerView(scope: .sync)
-            case .activity: ActivityView()
-            case .type(let id):
-                if let status = model.statuses.first(where: { $0.id == id }) {
-                    TypeDetailView(status: status)
-                }
-            case .aggregateType(let id):
-                if let descriptor = HealthTypeCatalog.descriptor(for: id) {
-                    AggregateTypeView(descriptor: descriptor, scope: .sync)
-                }
-            }
-        }
+        .navigationTitle("Database")
         .refreshable { await model.syncNow(trigger: "pull-to-refresh") }
         .alert(
             "Error",

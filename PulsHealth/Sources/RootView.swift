@@ -3,7 +3,7 @@ import PulsHealthSync
 
 struct RootView: View {
     private enum Tab: String, Hashable {
-        case export, sync, sharing, settings
+        case explore, export, sync, settings
 
         /// Debug builds accept `-PulsInitialTab <name>` so a scripted
         /// simulator run can screenshot each tab without tapping; release
@@ -14,11 +14,13 @@ struct RootView: View {
                 return tab
             }
             #endif
-            return .export
+            return .explore
         }
     }
     @State private var selection: Tab = Tab.initial
+    @State private var exploredType: ExploreRoute?
     @State private var typeActions = TypeActions()
+    @State private var connectionsNavigationID = UUID()
     @State private var exportNavigationID = UUID()
     /// Owned here rather than by SyncView so an accepted pairing link can pop
     /// whatever the Sync tab had pushed and land on its Database screen.
@@ -43,7 +45,7 @@ struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
 
-    var body: some View {
+    @ViewBuilder private var presentedContent: some View {
         @Bindable var model = model
         @Bindable var requests = model.dataRequests
         VStack(spacing: 0) {
@@ -66,33 +68,13 @@ struct RootView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(.regularMaterial)
             }
-            TabView(selection: $selection) {
-                NavigationStack { ExportView() }
-                    .id(exportNavigationID)
-                    .tabItem { Label("Export", systemImage: "square.and.arrow.up") }
-                    .badge(model.export.draft.selectedTypeCount)
-                    .tag(Tab.export)
-                NavigationStack(path: $syncPath) { SyncView(path: $syncPath) }
-                    // The Raw Samples and Aggregates pickers are pushed on this
-                    // stack, so their Apply/Discard bar belongs to the tab, not
-                    // to a screen that could be popped with edits still staged.
-                    .safeAreaInset(edge: .bottom) { PendingChangesBar() }
-                    .tabItem { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
-                    .badge(model.hasPendingChanges ? "•" : nil)
-                    .tag(Tab.sync)
-                NavigationStack { SharingView() }
-                    .tabItem { Label("Sharing", systemImage: "person.2.fill") }
-                    .tag(Tab.sharing)
-                NavigationStack { SettingsView() }
-                    .tabItem { Label("Settings", systemImage: "gearshape.fill") }
-                    .tag(Tab.settings)
-            }
+            tabContent
         }
         .environment(typeActions)
         .sheet(item: Binding(get: { model.showsOnboarding ? nil : model.sharing.invitation }, set: { model.sharing.invitation = $0 })) { invitation in
             NavigationStack { CollectionReviewView(invitation: invitation) }.environment(model)
         }
-        .onChange(of: model.sharing.invitation?.id) { _, id in if id != nil { selection = .sharing } }
+        .onChange(of: model.sharing.invitation?.id) { _, id in if id != nil { selection = .sync } }
         .onChange(of: typeActions.destination) { _, destination in
             guard let destination else { return }
             switch destination {
@@ -100,7 +82,7 @@ struct RootView: View {
                 exportNavigationID = UUID()
                 selection = .export
             case .sync:
-                syncPath = []
+                syncPath = [.personal]
                 selection = .sync
             }
             typeActions.destination = nil
@@ -119,6 +101,11 @@ struct RootView: View {
         )) { Button("OK") { model.dataRequests.error = nil } } message: {
             Text(model.dataRequests.error ?? "")
         }
+
+    }
+    var body: some View {
+        @Bindable var model = model
+        presentedContent
         .task {
             presentDataRequest()
             if scenePhase == .active {
@@ -130,6 +117,12 @@ struct RootView: View {
         .onChange(of: selection) { _, _ in
             model.reviews.cancelPending()
             typeActions.notice = nil
+        }
+        .onChange(of: model.sharing.returnToConnections) {
+            syncPath = []; connectionsNavigationID = UUID(); selection = .sync
+        }
+        .onChange(of: model.isSettingUpInitialSync) { _, settingUp in
+            if settingUp { syncPath = [.personal]; selection = .sync }
         }
         .onChange(of: syncPath) { _, _ in model.reviews.cancelPending() }
         .onChange(of: model.wakeRecords) { _, _ in offerSyncReviewOnReturn() }
@@ -167,6 +160,49 @@ struct RootView: View {
         .fullScreenCover(isPresented: $model.showsOnboarding) {
             OnboardingView().environment(model)
         }
+    }
+    private var tabContent: some View {
+            TabView(selection: $selection) {
+                NavigationSplitView {
+                    ExploreView(selection: $exploredType)
+                        .reviewRequestOpportunity(.explore, blocked: exploredType != nil)
+                        .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 400)
+                } detail: {
+                    NavigationStack {
+                        if case .type(let id) = exploredType {
+                            TypePageView(identifier: id)
+                        } else {
+                            ContentUnavailableView(
+                                "Choose a Health Type", systemImage: "heart.text.square",
+                                description: Text("Select a type to explore its readings and trends."))
+                        }
+                    }
+                    // A different type starts at its own detail root; resizing
+                    // keeps this identity and any pushed analysis unchanged.
+                    .id(exploredType)
+                }
+                .navigationSplitViewStyle(.balanced)
+                    .safeAreaInset(edge: .bottom) { TypeActionNoticeView() }
+                    .tabItem { Label("Explore", systemImage: "heart.fill") }
+                    .tag(Tab.explore)
+                NavigationStack { ExportView() }
+                    .id(exportNavigationID)
+                    .tabItem { Label("Export", systemImage: "square.and.arrow.up") }
+                    .badge(model.export.draft.selectedTypeCount)
+                    .tag(Tab.export)
+                NavigationStack(path: $syncPath) { ConnectionsView(path: $syncPath) }
+                    .id(connectionsNavigationID)
+                    // The Raw Samples and Aggregates pickers are pushed on this
+                    // stack, so their Apply/Discard bar belongs to the tab, not
+                    // to a screen that could be popped with edits still staged.
+                    .safeAreaInset(edge: .bottom) { PendingChangesBar() }
+                    .tabItem { Label("Connections", systemImage: "arrow.triangle.2.circlepath") }
+                    .badge(model.hasPendingChanges ? "•" : nil)
+                    .tag(Tab.sync)
+                NavigationStack { SettingsView() }
+                    .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+                    .tag(Tab.settings)
+            }
     }
     private func offerSyncReviewOnReturn() {
         guard scenePhase == .active, !model.reviewRequestsBlocked,

@@ -138,6 +138,45 @@ describe.skipIf(!webUrl||!adminUrl)("collection authorization (real web_app role
   expect((await cmd('list',1)).enrollments[0].status).toBe('stopped');
   expect((await web.query('SELECT collections.discover($1,$2) AS result',[request,invite])).rows[0].result).toEqual([]);
  });
+ it('isolates deletion requests and confirms only after removing server contributions',async()=>{
+  const r=await cmd('create',0,{definition:def,inviteHash:invite.toString('hex')});
+  try {
+   const hash=tokenHash(newToken())!;
+   const e=await cmd('join',1,{id:r.id,inviteHash:invite.toString('hex'),accepted:true,version:1,metrics:[metric],tokenHash:hash.toString('hex')});
+   const now=Date.now();
+   await web.query('SELECT collections.upload($1,$2,$3,$4,$5)',[hash,randomUUID(),'a'.repeat(64),JSON.stringify([{key:randomUUID(),type:metric.type,function:'raw',unit:'count',start:now-1000,end:now-500,value:10}]),'[]']);
+   await expect(cmd('request-deletion',0,{id:e.id,withdraw:true})).rejects.toMatchObject({code:'P0002'});
+   await expect(cmd('request-deletion',1,{id:e.id})).rejects.toMatchObject({code:'22023'});
+   const requested=await cmd('request-deletion',1,{id:e.id,withdraw:false});
+   expect(requested.status).toBe('active');expect(requested.deletionStatus).toBe('requested');
+   expect((await cmd('participants',0,{id:r.id}))[0].deletionStatus).toBe('requested');
+   await expect(cmd('participants',2,{id:r.id})).rejects.toMatchObject({code:'P0002'});
+   await expect(cmd('confirm-deletion',1,{id:e.id})).rejects.toMatchObject({code:'P0002'});
+   const confirmed=await cmd('confirm-deletion',0,{id:e.id});
+   expect(confirmed.status).toBe('stopped');expect(confirmed.deletionStatus).toBe('confirmed');
+   expect(await cmd('export',0,{id:r.id})).toEqual([]);
+   expect((await admin.query('SELECT count(*)::int n FROM collections.receipts WHERE enrollment_id=$1',[e.id])).rows[0].n).toBe(0);
+   await expect(web.query('SELECT collections.upload($1,$2,$3,$4,$5)',[hash,randomUUID(),'a'.repeat(64),'[]','[]'])).rejects.toMatchObject({code:'42501'});
+   await expect(web.query('SELECT collections.command_before_connections($1,$2,$3)',['list',sessions[0],{}])).rejects.toMatchObject({code:'42501'});
+  }finally {await admin.query('DELETE FROM collections.requests WHERE id=$1',[r.id]);}
+ });
+ it('lets the creator join a private group without rotating its invitation',async()=>{
+  const r=await cmd('create',0,{definition:def,inviteHash:invite.toString('hex')});
+  try {
+   const hash=tokenHash(newToken())!.toString('hex');
+   const e=await cmd('join',0,{id:r.id,accepted:true,version:1,metrics:[metric],tokenHash:hash});
+   expect(e.request.id).toBe(r.id);
+   expect((await web.query('SELECT collections.discover($1,$2) result',[r.id,invite])).rows[0].result).toHaveLength(1);
+   const stopped=await cmd('request-deletion',0,{id:e.id,withdraw:true});
+   expect(stopped.status).toBe('stopped');expect(stopped.deletionStatus).toBe('requested');
+   const listed=(await cmd('list',0)).requests.find((v:{id:string})=>v.id===r.id);
+   expect(listed.participantCount).toBe(1);
+   const discovered=(await web.query('SELECT collections.discover($1,$2) result',[r.id,invite])).rows[0].result[0];
+   expect(discovered).not.toHaveProperty('participantCount');
+   expect(discovered).not.toHaveProperty('lastContribution');
+   expect(e.request).not.toHaveProperty('participantCount');
+  }finally {await admin.query('DELETE FROM collections.requests WHERE id=$1',[r.id]);}
+ });
  it('deletes participant records with the account, preserving the organizer request',async()=>{
   await admin.query('DELETE FROM auth.accounts WHERE user_id=$1',[users[1]]);
   await admin.query('DELETE FROM users WHERE id=$1',[users[1]]);

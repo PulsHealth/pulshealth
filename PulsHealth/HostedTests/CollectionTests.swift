@@ -84,6 +84,43 @@ final class CollectionTests: XCTestCase {
         }
         await transport.disable()
     }
+    func testConnectionStatesKeepHistoryPauseAndScheduleDistinct() {
+        let now = Date()
+        let request = CollectionRequest(id: UUID(), title: "Fixture", organizer: "Example", kind: "group", purpose: "Test", contact: "contact@example.org", consentText: "Test", mode: "ongoing", historyDays: 30, durationDays: 90, retentionDays: 30, metrics: [], version: 1, status: "open", listing: "private")
+        var e = CollectionEnrollment(id: UUID(), request: request, status: "active", metrics: [], start: now.addingTimeInterval(60), end: now.addingTimeInterval(600), generation: 1, consentedAt: now)
+        XCTAssertEqual(ConnectionPresentation.sharing(e, running: false, enabled: true, now: now).label, "Scheduled")
+        e.status = "paused"
+        XCTAssertEqual(ConnectionPresentation.sharing(e, running: false, enabled: false, now: now).label, "Paused")
+        e.status = "active"; e.start = now.addingTimeInterval(-60)
+        XCTAssertEqual(ConnectionPresentation.sharing(e, running: true, enabled: true, now: now).label, "Syncing")
+        e.lastReceived = now
+        XCTAssertEqual(ConnectionPresentation.sharing(e, running: false, enabled: true, now: now).label, "Synced")
+        e.status = "stopped"
+        XCTAssertEqual(ConnectionPresentation.sharing(e, running: false, enabled: false, now: now).label, "Withdrawn")
+    }
+    func testGroupDraftRetainsFieldsAcrossRestartWithoutCreatingARequest() throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let first = SharingModel(directory: folder)
+        first.creationDraft.title = "Saved draft"
+        first.creationDraft.mode = "once"
+        first.creationDraft.contact = "contact@example.org"
+        first.creationDraft.file = FileConnectionDraft()
+        first.creationDraft.file?.format = .jsonl
+        first.creationDraft.file?.endpoint = "https://example.org/receive"
+        first.creationDraft.file?.metrics = [.init(type: "HKQuantityTypeIdentifierStepCount", function: .sum)]
+        try first.saveDraft()
+        let restored = SharingModel(directory: folder)
+        XCTAssertTrue(restored.hasSavedDraft)
+        XCTAssertEqual(restored.creationDraft.title, "Saved draft")
+        XCTAssertEqual(restored.creationDraft.mode, "once")
+        XCTAssertEqual(restored.creationDraft.file?.format, .jsonl)
+        XCTAssertEqual(restored.creationDraft.file?.endpoint, "https://example.org/receive")
+        XCTAssertEqual(restored.creationDraft.file?.metrics.count, 1)
+        XCTAssertTrue(restored.requests.isEmpty)
+        try restored.clearDraft()
+        XCTAssertFalse(SharingModel(directory: folder).hasSavedDraft)
+    }
     func testRestartPreservesRawAndAggregateProgress() async throws {
         let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }

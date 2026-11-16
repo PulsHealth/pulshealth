@@ -330,7 +330,7 @@ can read contributions. The organizer sees a participant code and can download
 contributions, without access to your personal database or account email.
 
 You may participate in multiple requests. Pause or stop disables this iPhone’s
-upload path immediately; an offline server update is retried when Sharing is
+upload path immediately; an offline server update is retried when Connections is
 opened online. Resume starts from now and does not fill the paused interval.
 Signing out stops sharing on this iPhone. Existing uploaded records remain
 subject to the request’s retention policy, and downloaded copies cannot be
@@ -338,6 +338,19 @@ recalled. Contact the organizer about their copies. Account deletion removes
 your server contributions and any requests you own. Records beyond retention
 are excluded from exports and removed by hourly cleanup; operator backups have
 their separate retention. Background updates depend on iOS and Health access.
+
+The app also keeps group creation drafts and locally removed connection IDs in
+protected, backup-excluded files on this iPhone. Drafts contain the organizer's
+entered request details and metric choices, not contributions or credentials.
+They are cleared after successful creation. Native organizer downloads are
+paged, held in memory for the file picker, and saved only where you choose.
+
+You can request deletion for an individual collection contribution, with or
+without withdrawing from future sharing. The organizer can stop further uploads
+and delete server records and receipts before confirming. Deletion status and
+request/completion timestamps remain until account deletion. Downloaded copies
+and operator backups require separate handling. Removing a connection from this
+iPhone hides its local entry; it does not erase recipient data.
 
 Invitation links contain an access secret and should be shared only with intended
 participants. Public directory listing is optional and reviewed, shows request

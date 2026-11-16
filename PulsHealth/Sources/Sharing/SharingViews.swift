@@ -1,35 +1,6 @@
 import SwiftUI
 import PulsHealthSync
 
-struct SharingView: View {
-    @Environment(AppModel.self) private var model
-    var body: some View {
-        let sharing = model.sharing
-        List {
-            Section {
-                NavigationLink { OpenDataRequestView() } label: { Label("Open or scan request", systemImage: "qrcode.viewfinder") }
-            } footer: {
-                if sharing.enrollments.isEmpty { Text("Review what’s requested before you share.") }
-            }
-            if let problem = sharing.problem { Section { Text(problem).foregroundStyle(.red) } }
-            ForEach(sharing.enrollments) { e in
-                NavigationLink { SharingDetailView(enrollmentID: e.id) } label: {
-                    VStack(alignment: .leading, spacing: 7) {
-                        HStack { Text(e.request.title).font(.headline); Spacer(); Text(e.status == "active" && e.start > Date() ? "Scheduled" : e.status.capitalized).font(.caption).foregroundStyle(e.status == "active" ? .green : .secondary) }
-                        Text(e.request.organizer).foregroundStyle(.secondary)
-                        Text("\(e.metrics.count) metrics · \(e.request.mode == "once" ? "One time" : "Ongoing")").font(.caption)
-                        if let last = e.lastReceived { Text("Last receipt \(last.formatted(date: .abbreviated, time: .shortened))").font(.caption).foregroundStyle(.secondary) }
-                        if let notice = sharing.notices[e.id] { Text(notice).font(.caption).foregroundStyle(.secondary) }
-                    }.padding(.vertical, 6)
-                }
-            }
-            Section { NavigationLink { CollectionDirectoryView() } label: { Label("Browse opportunities", systemImage: "magnifyingglass") } }
-        }
-        .navigationTitle("Sharing")
-        .refreshable { await sharing.refresh() }
-        .task { await sharing.refresh() }
-    }
-}
 struct CollectionSummaryView: View {
     let request: CollectionRequest
     var body: some View {
@@ -76,7 +47,12 @@ struct CollectionReviewView: View {
                     Text(request.consentText)
                     Text("Contributions go to this request’s organizer through PulsHealth. Account profile, source and device names are excluded. The organizer can download copies. Stopping sharing prevents future uploads; it does not recall previous downloads.").font(.footnote).foregroundStyle(.secondary)
                     Text("Health permissions may limit available records. Daily summaries include only complete daily buckets within the approved range.").font(.footnote).foregroundStyle(.secondary)
-                    if model.sharing.account.hasSession {
+                    if let existing = model.sharing.enrollments.first(where: { $0.request.id == request.id }) {
+                        if model.sharing.hiddenConnections.contains(existing.id) {
+                            Button("Restore connection") { model.sharing.restoreConnection(existing.id) }
+                        }
+                        NavigationLink("Open existing connection") { SharingDetailView(enrollmentID: existing.id) }
+                    } else if model.sharing.account.hasSession {
                         Toggle("I agree to this request and its data use", isOn: $accepted)
                         Button(request.mode == "once" ? "Agree & send available data" : "Agree & start sharing") {
                             Task { await model.sharing.join(request, metrics: request.metrics.filter { selected.contains($0.id) }, invite: invitation) }
@@ -97,18 +73,23 @@ struct CollectionReviewView: View {
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         .task {
             do {
-                guard let r = try await model.sharing.discover(invitation).first else { throw CollectionError("This invitation has expired or was closed. Ask the organizer for a new link.") }
+                let loaded: CollectionRequest?
+                if let owned = model.sharing.requests.first(where: { $0.id == invitation.id }) { loaded = owned }
+                else { loaded = try await model.sharing.discover(invitation).first }
+                guard let r = loaded else { throw CollectionError("This invitation has expired or was closed. Ask the organizer for a new link.") }
                 request = r; selected = Set(r.metrics.filter(\.required).map(\.id))
-                await model.sharing.account.restore()
+                await model.sharing.refresh()
             } catch { problem = error.localizedDescription }
         }
     }
 }
 struct SharingDetailView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
     let enrollmentID: UUID
     @State private var confirmStop = false
     @State private var confirmFinish = false
+    @State private var confirmRemove = false
     var body: some View {
         List {
             if let e = model.sharing.enrollments.first(where: { $0.id == enrollmentID }) {
@@ -135,17 +116,26 @@ struct SharingDetailView: View {
                             Button("Enable sharing on this iPhone") { Task { await model.sharing.change("credential", enrollment: e) } }
                             Text("This replaces the credential used by any other iPhone for this request.").font(.footnote).foregroundStyle(.secondary)
                         }
-                        Button("Stop sharing", role: .destructive) { confirmStop = true }
+                        Button("Withdraw", role: .destructive) { confirmStop = true }
                     }.disabled(model.sharing.busy)
-                    .confirmationDialog("Stop sharing with \(e.request.organizer)?", isPresented: $confirmStop, titleVisibility: .visible) {
-                        Button("Stop sharing", role: .destructive) { Task { await model.sharing.change("stop", enrollment: e) } }
+                    .confirmationDialog("Withdraw from \(e.request.organizer)?", isPresented: $confirmStop, titleVisibility: .visible) {
+                        Button("Withdraw", role: .destructive) { Task { await model.sharing.change("stop", enrollment: e) } }
                     } message: { Text("Future uploads stop. Existing contributions remain until the retention period ends; contact the organizer about downloaded copies.") }
                     .confirmationDialog("Finish this contribution?", isPresented: $confirmFinish, titleVisibility: .visible) {
                         Button("Finish contribution") { Task { await model.sharing.change("finish", enrollment: e) } }
                     } message: { Text("This ends further uploads, including any unsent records. Review the last receipt before finishing.") }
                 }
+                Section {
+                    NavigationLink(e.deletionStatus == "requested" ? "Deletion requested" : e.deletionStatus == "confirmed" ? "Deletion confirmed" : "Request deletion of shared data") { ConnectionDeletionView(enrollment: e) }
+                    if ["stopped", "complete"].contains(e.status), e.deletionStatus != "requested" {
+                        Button("Remove from this iPhone", role: .destructive) { confirmRemove = true }
+                    }
+                }
+                .confirmationDialog("Remove this connection from your iPhone?", isPresented: $confirmRemove, titleVisibility: .visible) {
+                    Button("Remove connection", role: .destructive) { Task { await model.sharing.removeConnection(e); if model.sharing.hiddenConnections.contains(e.id) { dismiss() } } }
+                } message: { Text("This removes the local entry. Recipient copies are unchanged.") }
             }
-        }.navigationTitle("Sharing details").navigationBarTitleDisplayMode(.inline)
+        }.navigationTitle("Connection").navigationBarTitleDisplayMode(.inline)
     }
 }
 struct CollectionDirectoryView: View {
@@ -181,13 +171,15 @@ struct ManageCollectionRequestsView: View {
 private struct CollectionRequestRow: View {
     let request: CollectionRequest
     var body: some View {
-        Link(destination: PulsHealthDatabase.viewerURL.appending(path: "requests")) {
+        NavigationLink { OrganizerConnectionView(requestID: request.id) } label: {
             VStack(alignment: .leading, spacing: 5) { Text(request.title).font(.headline); Text("\(request.mode == "once" ? "One time" : "Ongoing") · \(request.status.capitalized) · \(request.metrics.count) metrics").font(.caption).foregroundStyle(.secondary) }
         }
     }
 }
 struct CreateCollectionRequestView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var loaded = false
     @State private var title = ""
     @State private var organizer = ""
     @State private var kind = "general"
@@ -206,6 +198,8 @@ struct CreateCollectionRequestView: View {
     @State private var error: String?
     @State private var invitation: URL?
     @State private var fileInvitation: URL?
+    @State private var fileDraft = FileConnectionDraft()
+    @State private var didCreateFile = false
     struct Definition: Encodable {
         var title, organizer, kind, purpose, contact, consentText, mode: String
         var historyDays, durationDays, retentionDays: Int
@@ -217,7 +211,7 @@ struct CreateCollectionRequestView: View {
     var body: some View {
         Form {
             if let invitation {
-                Section { Label("Request created", systemImage: "checkmark.circle.fill"); ShareLink("Share invitation", item: invitation); Text("Only people with your invitation can review this request. Manage participants and downloads on the website.") }
+                Section { Label("Group created", systemImage: "checkmark.circle.fill"); ShareLink("Share invitation", item: invitation) }
             } else {
                 Section("Request") {
                     TextField("Request name", text: $title); TextField("Person or organization", text: $organizer)
@@ -225,19 +219,20 @@ struct CreateCollectionRequestView: View {
                     TextField("Contact email or URL", text: $contact).textInputAutocapitalization(.never)
                 }
                 Section("Sharing") {
+                    if mode == "ongoing" || delivery == "hosted" { LabeledContent("Destination", value: "PulsHealth storage") }
+
                     Picker("Schedule", selection: $mode) { Text("One time").tag("once"); Text("Ongoing").tag("ongoing") }
                     if mode == "once" {
                         Picker("Delivery", selection: $delivery) { Text("Collect in PulsHealth").tag("hosted"); Text("Export a file").tag("file") }
                     }
                     if mode == "ongoing" || delivery == "hosted" {
                         Picker("Request type", selection: $kind) { Text("General request").tag("general"); Text("Group program").tag("group"); Text("Research study").tag("study") }
-                        Text("Collect contributions in PulsHealth and manage participants on the website. Groups and studies can collect once or on an ongoing basis.").font(.footnote).foregroundStyle(.secondary)
                     } else {
                         Text("Participants generate a file to share or send to your receiver. No PulsHealth account is needed.").font(.footnote).foregroundStyle(.secondary)
                     }
                 }
                 if mode == "once" && delivery == "file" {
-                    FileRequestOptions(title: $title, requester: $organizer, purpose: $purpose, contact: $contact, link: $fileInvitation)
+                    FileRequestOptions(title: $title, requester: $organizer, purpose: $purpose, contact: $contact, draft: $fileDraft, link: $fileInvitation)
                 } else {
                     Section("Collection") {
                         if mode == "ongoing" {
@@ -263,12 +258,32 @@ struct CreateCollectionRequestView: View {
                     Section("Consent and data use") { TextField("Who can access contributions, how they are used, and withdrawal contact", text: $consent, axis: .vertical) }
                     Section {
                         Text("Invitation-only. Scope is fixed once created. Downloaded copies remain your responsibility, including retention and deletion. Research studies must have their own consent and approval process.").font(.footnote).foregroundStyle(.secondary)
-                        Button(busy ? "Creating…" : "Create request") { Task { await create() } }.disabled(busy || metrics.isEmpty || [title,organizer,purpose,contact,consent].contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }))
+                        if model.sharing.account.hasSession {
+                        Button(busy ? "Creating…" : "Create group") { Task { await create() } }.disabled(busy || metrics.isEmpty || [title,organizer,purpose,contact,consent].contains(where: { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }))
+                    } else { NavigationLink("Sign in to create in PulsHealth") { UserView(account: model.sharing.account) } }
+                    if model.sharing.account.problem != nil { NavigationLink("Check account") { UserView(account: model.sharing.account) } }
                     }
                 }
             }
             if let error { Text(error).foregroundStyle(.red) }
-        }.navigationTitle("Create request").navigationBarTitleDisplayMode(.inline)
+        }.navigationTitle(invitation == nil ? "Create a group" : "Group created").navigationBarTitleDisplayMode(.inline)
+        .onAppear { if !loaded { loadDraft(); loaded = true } }
+        .onChange(of: model.sharing.accountRevision) { invitation = nil }
+        .task { await model.sharing.account.restore() }
+        .onChange(of: fileInvitation) { _, value in
+            if value != nil {
+                didCreateFile = true
+                do { try model.sharing.clearDraft() } catch { self.error = error.localizedDescription }
+            }
+        }
+        .onDisappear { if invitation == nil && !didCreateFile { saveDraft() } }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                if invitation != nil {
+                    Button("Done") { model.sharing.returnToConnections = UUID() }
+                } else { Button("Save & close") { saveDraft(); if error == nil { model.sharing.returnToConnections = UUID() } }.disabled(busy) }
+            }
+        }
         .navigationDestination(isPresented: Binding(get: { fileInvitation != nil }, set: { if !$0 { fileInvitation = nil } })) {
             if let fileInvitation { RequestCodeView(link: fileInvitation) }
         }
@@ -280,15 +295,26 @@ struct CreateCollectionRequestView: View {
             }
         }.searchable(text: $search).navigationTitle("Add metrics")
     }
+    private func loadDraft() {
+        let d = model.sharing.creationDraft
+        title = d.title; organizer = d.organizer; kind = d.kind; purpose = d.purpose
+        contact = d.contact; consent = d.consent; mode = d.mode; delivery = d.delivery
+        history = d.history; startDate = d.startDate; endDate = d.endDate; retention = d.retention; metrics = d.metrics; fileDraft = d.file ?? FileConnectionDraft()
+    }
+    private func saveDraft() {
+        model.sharing.creationDraft = ConnectionDraft(title: title, organizer: organizer, kind: kind, purpose: purpose, contact: contact, consent: consent, mode: mode, delivery: delivery, history: history, startDate: startDate, endDate: endDate, retention: retention, metrics: metrics, file: fileDraft)
+        do { try model.sharing.saveDraft(); error = nil } catch { self.error = error.localizedDescription }
+    }
     private func create() async {
         busy = true; defer { busy = false }
         do {
             if mode == "ongoing" && (endDate <= startDate || endDate <= Date()) { throw CollectionError("Choose an end date after the start and in the future.") }
             let d = Definition(title: title, organizer: organizer, kind: kind, purpose: purpose, contact: contact, consentText: consent, mode: mode, historyDays: history, durationDays: 90, retentionDays: retention, metrics: metrics, startAt: mode == "ongoing" ? Int64(floor(startDate.timeIntervalSince1970 * 1000)) : nil, endAt: mode == "ongoing" ? Int64(floor(endDate.timeIntervalSince1970 * 1000)) : nil)
-            let response: CollectionResponse<CollectionRequest> = try await model.sharing.account.collectionCommand(Create(definition: d))
+            let response: CollectionResponse<CollectionRequest> = try await model.sharing.command(Create(definition: d))
             guard let code = response.invite else { throw CollectionError("Invitation unavailable. Open the website to create a new link.") }
             var url = URLComponents(url: PulsHealthDatabase.viewerURL.appending(path: "collect/" + response.result.id.uuidString.lowercased()), resolvingAgainstBaseURL: false)!
             url.fragment = code; invitation = url.url
+            try model.sharing.clearDraft()
             await model.sharing.refresh()
         } catch { self.error = error.localizedDescription }
     }

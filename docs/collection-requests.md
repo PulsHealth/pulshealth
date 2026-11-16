@@ -6,7 +6,7 @@ quantity or category data. They share one Requests feature with one-time
 
 ## Flows
 
-- **Organizer:** Settings → Requests → Create & manage requests, or
+- **Organizer:** Connections → + → Group connection → Create a group, Settings → Requests, or
   the viewer's Requests page. Choose General request, Group program or Research
   study. Every type supports one-time or ongoing sharing. The iPhone creator
   also offers Export a file for one-time requests; file delivery uses the share
@@ -23,9 +23,10 @@ quantity or category data. They share one Requests feature with one-time
   and affirm consent. File requests need no account: review the data, dates
   and destination, then generate and share or send the file. Both delivery
   methods require Health permissions; Free/Pro history/type limits still apply.
-- **Sharing:** the start page offers Open or scan request and secondary browsing,
-  with no general sign-in prompt. Only hosted request review asks for a PulsHealth
-  account; file requests, including compatible external receivers, remain account-free.
+- **Connections:** the list has no general sign-in prompt. Only hosted request
+  review or creation asks for a PulsHealth account. File requests, including
+  compatible external receivers, remain account-free. Personal database setup
+  starts with scanning, with manual details available as an alternative.
   Each enrollment has independent status, credentials and local
   anchors. Send available data, pause an ongoing request, resume with new data
   from now, or stop. One-time requests have a fixed data cutoff at approval;
@@ -38,12 +39,41 @@ quantity or category data. They share one Requests feature with one-time
   listing for administrator review. Only approved, open listings appear publicly.
   Review is not an endorsement, identity verification, or research ethics approval.
 
-The iPhone has four tabs: Export, Sync, Sharing and Settings. Creating and
-managing requests belongs in Settings; browsing is not a tab. Requests are
+The iPhone has four tabs: Explore, Export, Connections and Settings. Connections
+lists saved personal databases, joined requests and groups you organize. The plus
+opens Your database, PulsHealth database and Group connection (join or create).
+Browsing stays inside Add a connection. Creating and managing requests is also
+available in Settings. Requests are
 invitation-only by default. Definitions cannot be edited after creation: a
 changed scope needs a new request and new consent. The creator is the sole
 organizer with access; organization labels do not create shared administrator
 accounts or a multi-user organization workspace.
+
+## Native management and deletion
+
+Organizer rows show Open, Awaiting participants or Closed, counts and the latest
+contribution. The native detail includes participant codes, invitation rotation,
+paged contribution downloads (at most 1,000 records per file) and closing the
+group. Closing stops future contributions from everyone. Your own contribution
+is separate and requires explicit review/consent, even when you created the group.
+An owner can review/join without rotating the public invitation. Existing
+invitations open the existing connection rather than enrolling a second time.
+
+Save & close preserves an unfinished group definition on this iPhone in a
+protected, backup-excluded draft. Creation uses the existing PulsHealth collection
+service. Custom ongoing group servers are not supported; a compatible custom
+receiver remains available through one-time file delivery. Only the selected
+personal database receives automatic personal sync; other saved databases are
+shown as Inactive and retain their independent sync progress.
+
+Withdraw stops future contributions. Request deletion records a pending request,
+optionally also withdrawing (selected by default). The organizer's Delete &
+confirm action stops uploads and deletes server contribution records/receipts
+before recording confirmation. It cannot erase downloaded copies or backups.
+The deletion status and request/completion timestamps remain until account
+deletion. A pending request never appears as confirmed. Completed/withdrawn
+entries appear in history; Remove from this iPhone hides a resolved entry locally,
+without deleting recipient copies. Pending deletion requests cannot be hidden.
 
 ## Ongoing request dates
 
