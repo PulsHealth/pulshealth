@@ -220,16 +220,19 @@ Sources/
 │   │                       deleteAll — what Settings → Privacy & Data → Delete
 │   │                       Analysis calls. Profiles persist in TypeProfileStore.
 │   ├── TypePageView.swift  The Type page: the analysis (started on open),
-│   │                       stat tiles, the value distribution, samples over
-│   │                       time, sources and devices, cadence; an aggregate
-│   │                       preview (quantity types, after an analysis) with
-│   │                       Add to Export and Add to Sync; and,
+│   │                       a measurement-first Over time chart for quantities,
+│   │                       category/sleep records or workout breakdowns; links
+│   │                       to distribution, recording details and type context.
+│   │                       Chart options and export/sync actions expand on demand;
+│   │                       incomplete, stale and limited-history notices remain visible.
+│   │                       It also offers,
 │   │                       for a synced type, the sync details
 │   │                       (TypeSyncDetailsSections).
 │   ├── ExploreCharts.swift The page's Swift Charts: the histogram (over the
-│   │                       middle of the data, with the article's typical
-│   │                       range behind it for discrete types), daily
-│   │                       counts, sources.
+│   │                       middle of the readings), daily recording counts,
+│   │                       sources, and aggregate trends with visible points
+│   │                       and breaks at missing intervals. Distribution percentiles
+│   │                       describe readings, not a clinical reference range.
 │   └── TypeKnowledge.swift The slice of a knowledge-base article the page
 │                           uses (one-line description, unit, typical range,
 │                           category value names), decoded from the
@@ -436,6 +439,20 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 ```
 
 ## Behavior notes
+
+Explore quantity and category pages share raw-value distribution, recording
+volume, busiest days, weekday patterns, time between records, and source/device
+contributions. Quantity charts offer daily aggregates and expandable period
+statistics; category charts show daily record counts. Category codes are never
+averaged. Average gaps use consecutive sample starts, including simultaneous
+records; weekday calculations use the profile's recording time zone. Source
+breakdowns show record counts, shares and first/last recording dates. The
+interface uses concise measure labels instead of general explanatory caveats.
+Keep chart copy limited to meaningful measurements, selected values and controls.
+Do not add idle interaction instructions, availability fractions below the primary
+value, or redundant counts of the categories/sources already visible. Coverage
+statistics belong in the dedicated recording detail view.
+
 
 - A fresh install opens straight into the first-run flow; an install that
   already has a database, enabled types, or a previous Apply never sees it (the

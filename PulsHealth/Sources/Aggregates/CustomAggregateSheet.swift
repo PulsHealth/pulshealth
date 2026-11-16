@@ -160,6 +160,8 @@ struct AggregatePreviewPane: View {
     let days: Int
     let color: Color
     @Binding var readout: String?
+    var showsSummary = false
+    var revision: Date? = nil
     @State private var buckets: [HealthExplorer.AggregateBucket] = []
     @State private var isComputing = true
     @State private var error: String?
@@ -168,11 +170,21 @@ struct AggregatePreviewPane: View {
         Group {
             if let error {
                 PreviewState(title: "Could not compute", symbol: "exclamationmark.triangle", message: error, tint: .orange)
-            } else if buckets.isEmpty, !isComputing {
+            } else if !buckets.contains(where: { $0.value != nil }), !isComputing {
                 PreviewState(title: "No values", symbol: "chart.bar", message: "Nothing in this window.")
             } else if buckets.isEmpty {
                 ProgressView().frame(maxWidth: .infinity, minHeight: 200)
             } else {
+                if showsSummary, let latest = buckets.last(where: { $0.value != nil }), let value = latest.value {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Latest \(config.intervalUnit.displayName.lowercased()) · " + latest.start.formatted(
+                            date: .abbreviated, time: config.intervalUnit == .hour || config.intervalUnit == .minute ? .shortened : .omitted))
+                            .font(.footnote).foregroundStyle(.secondary)
+                        Text(formatValue(value) + (config.unitString.map { " \($0)" } ?? ""))
+                            .font(.title2.weight(.semibold)).monospacedDigit()
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                }
                 // The spinner sits top-leading: the chart's top-trailing
                 // corner is where its unit label is.
                 AggregatePreviewChart(
@@ -182,19 +194,60 @@ struct AggregatePreviewPane: View {
                 .overlay(alignment: .topLeading) {
                     if isComputing { ProgressView().controlSize(.small).padding(6) }
                 }
+                if showsSummary {
+                    periodStatistics
+                }
             }
         }
-        .task(id: "\(config.seriesIdentity)|\(days)") { await compute() }
+        .task(id: "\(config.seriesIdentity)|\(days)|\(revision?.timeIntervalSince1970 ?? 0)") { await compute() }
+    }
+
+    private var periodStatistics: some View {
+        let populated = buckets.filter { $0.value != nil }
+        return DisclosureGroup("Period statistics") {
+            VStack(alignment: .leading, spacing: 12) {
+                if !populated.isEmpty {
+                    let values = populated.compactMap(\.value)
+                    LabeledContent("Average \(config.intervalUnit.displayName.lowercased()) value", value: valueLabel(values.reduce(0, +) / Double(values.count)))
+                    if config.function == .sum {
+                        LabeledContent("Total", value: valueLabel(values.reduce(0, +)))
+                    }
+                    if let highest = populated.max(by: { ($0.value ?? 0) < ($1.value ?? 0) }), let value = highest.value {
+                        LabeledContent("Highest", value: valueLabel(value))
+                        Text(highest.start.formatted(date: .abbreviated, time: .omitted)).foregroundStyle(.secondary)
+                    }
+                    if let lowest = populated.min(by: { ($0.value ?? 0) < ($1.value ?? 0) }), let value = lowest.value {
+                        LabeledContent("Lowest", value: valueLabel(value))
+                        Text(lowest.start.formatted(date: .abbreviated, time: .omitted)).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .font(.subheadline).monospacedDigit()
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 8)
+        }.font(.subheadline)
+    }
+
+    private func valueLabel(_ value: Double) -> String {
+        formatValue(value) + (config.unitString.map { " \($0)" } ?? "")
     }
 
     private func compute() async {
         readout = nil
+        buckets = []
         isComputing = true
         error = nil
         // Debounce: a control tapped twice computes once. A newer change
         // cancels this task (`.task(id:)`) before it gets further.
         try? await Task.sleep(for: .milliseconds(250))
         guard !Task.isCancelled else { return }
+        #if DEBUG
+        if ExploreFixtures.isEnabled {
+            buckets = ExploreFixtures.aggregateBuckets(config: config, days: days)
+            isComputing = false
+            return
+        }
+        #endif
         let to = Date()
         let from = Calendar.current.date(byAdding: .day, value: -days, to: to) ?? to
         let anchor = Calendar.current.startOfDay(for: model.appliedConfig.startDate)
