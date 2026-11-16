@@ -213,7 +213,7 @@ uploaded server data or revoke credentials on the server.
   data: unreadable until the first unlock after a restart, and excluded from
   device and iCloud backups, so a parked token is never carried off the phone.
 - **Sync state** — one file, `sync-state.json`, in the app's private container,
-  holding your saved database configurations and their separate sync progress.
+  holding your saved database configurations, optional connection names and their separate sync progress. Connection names stay on this iPhone and are never uploaded.
   Only the selected active database receives automatic uploads. Each saved
   configuration includes its database URL, chosen types, start date, the
   identity fields if you filled them in, and — if you signed in to the

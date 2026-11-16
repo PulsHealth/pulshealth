@@ -567,7 +567,8 @@ public actor SyncStateStore {
             savedConfiguration.authToken = nil
         }
         return SavedDestinationState(
-            destination: SavedSyncDestination(id: id, identity: identity, serverURL: url, userID: savedConfiguration.userID),
+            destination: SavedSyncDestination(id: id, identity: identity, serverURL: url, userID: savedConfiguration.userID,
+                                              name: destinations.first { $0.destination.id == id }?.destination.name),
             configuration: savedConfiguration, typeStates: typeStates, aggregateStates: aggregateStates,
             activitySummaryState: activitySummaryState, workoutRoutesState: workoutRoutesState,
             workoutStreamsState: workoutStreamsState)
@@ -658,7 +659,7 @@ public actor SyncStateStore {
         if clearAuthToken { config.authToken = nil }
         let id = existing?.destination.id ?? SavedSyncDestination.identifier(identity: identity, deviceID: deviceID)
         var target = SavedDestinationState(
-            destination: SavedSyncDestination(id: id, identity: identity, serverURL: url, userID: config.userID),
+            destination: SavedSyncDestination(id: id, identity: identity, serverURL: url, userID: config.userID, name: existing?.destination.name),
             configuration: config, typeStates: existing?.typeStates ?? [:],
             aggregateStates: existing?.aggregateStates ?? [:],
             activitySummaryState: existing?.activitySummaryState ?? ActivitySummaryState(),
@@ -717,6 +718,22 @@ public actor SyncStateStore {
             }
             throw error
         }
+    }
+
+    /// Rename only local presentation metadata. Actor isolation makes the
+    /// snapshot/write atomic with respect to incoming cursor updates.
+    public func renameDestination(id: UUID, name: String) throws {
+        guard !isReadOnly else { throw SavedDestinationError.readOnly }
+        guard !legacyCredentialUnavailable else { throw SavedDestinationError.credential }
+        let cleaned = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard cleaned.count <= 80, !cleaned.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) else {
+            throw SavedDestinationError.invalidName
+        }
+        var registry = try registrySnapshot()
+        guard let index = registry.firstIndex(where: { $0.destination.id == id }) else { throw SavedDestinationError.notFound }
+        registry[index].destination.name = cleaned.isEmpty ? nil : cleaned
+        let active = registry.first { $0.destination.id == activeDestinationID }
+        try commitDestination(active, configuration: configuration, registry: registry)
     }
 
     func switchDestination(id: UUID) throws {

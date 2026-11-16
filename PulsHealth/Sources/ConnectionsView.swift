@@ -26,8 +26,10 @@ struct ConnectionsView: View {
                 ForEach(model.savedDestinations) { destination in
                     NavigationLink(value: ConnectionPresentation.route(destinationID: destination.id, activeID: model.activeDestinationID)) {
                         let active = destination.id == model.activeDestinationID
-                        ConnectionRow(title: active && model.usesPulsHealthDatabase ? "PulsHealth database" : destination.identity.serverLabel,
-                                      ownership: "Personal", detail: active ? lastPersonalReceipt : "Inactive database",
+                        let name = model.connectionName(destination)
+                        let receipt = active ? lastPersonalReceipt : "Inactive database"
+                        ConnectionRow(title: name,
+                                      ownership: "Personal", detail: name == destination.identity.serverLabel ? receipt : "\(destination.identity.serverLabel) · \(receipt)",
                                       status: personalStatus(active: active), symbol: "externaldrive")
                     }
                 }
@@ -208,6 +210,7 @@ struct PersonalConnectionView: View {
     var body: some View {
         List {
             LabeledContent("Server", value: destination.identity.serverLabel)
+            LabeledContent("User ID", value: destination.userID).textSelection(.enabled)
             LabeledContent("Status", value: destination.id == model.activeDestinationID ? "Selected database" : "Inactive")
             if destination.id == model.activeDestinationID {
                 NavigationLink("Data, activity & sync controls", value: SyncRoute.personal)
@@ -216,7 +219,8 @@ struct PersonalConnectionView: View {
             }
             Button("Remove connection", role: .destructive) { remove = true }
             if let error = model.lastErrorMessage { Text(error).foregroundStyle(.red) }
-        }.navigationTitle("Personal connection")
+            NavigationLink("Connection settings", value: SyncRoute.connectionSettings(destination.id))
+        }.navigationTitle(model.connectionName(destination))
         .fullScreenCover(isPresented: $remove) {
             ConnectionRemovalView(destination: destination) {
                 let removed = await model.unpairDestination(id: destination.id)
@@ -238,6 +242,7 @@ struct ConnectionRouteView: View {
         case .account: UserView(account: model.sharing.account)
         case .addConnection: AddConnectionView()
         case .ownDatabase: OwnDatabaseEntryView()
+        case .connectionSettings(let id): ConnectionSettingsView(destinationID: id)
         case .managedDatabase: PulsHealthConnectionSetupView()
         case .groupChoice: GroupConnectionChoiceView()
         case .openRequest: OpenDataRequestView()
@@ -257,6 +262,53 @@ struct ConnectionRouteView: View {
         case .activity: ActivityView()
         case .type(let id): if let status = model.statuses.first(where: { $0.id == id }) { TypeDetailView(status: status) }
         case .aggregateType(let id): if let descriptor = HealthTypeCatalog.descriptor(for: id) { AggregateTypeView(descriptor: descriptor, scope: .sync) }
+        }
+    }
+}
+
+/// Settings belong to the selected connection; adding another starts at +.
+struct ConnectionSettingsView: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    let destinationID: UUID
+    @State private var name = ""
+    @State private var loaded = false
+    private var destination: SavedSyncDestination? { model.savedDestinations.first { $0.id == destinationID } }
+
+    private func defaultName(_ destination: SavedSyncDestination) -> String {
+        var automatic = destination
+        automatic.name = nil
+        return model.connectionName(automatic)
+    }
+
+    var body: some View {
+        Form {
+            if let destination {
+                Section("Name (optional)") {
+                    TextField(defaultName(destination), text: $name)
+                        .accessibilityIdentifier("connection.name")
+                }
+                Section("Server") {
+                    Text(destination.identity.serverLabel).textSelection(.enabled)
+                    LabeledContent("User ID", value: destination.userID).textSelection(.enabled)
+                    if destinationID == model.activeDestinationID {
+                        NavigationLink("Edit connection details", value: SyncRoute.server(scan: false))
+                    }
+                }
+            }
+            if let error = model.lastErrorMessage { Section { Text(error).foregroundStyle(.red) } }
+        }
+        .navigationTitle("Connection settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") {
+                    Task { if await model.renameDestination(id: destinationID, name: name) { dismiss() } }
+                }.disabled(model.isUpdatingConnection || destination == nil)
+            }
+        }
+        .onAppear {
+            if !loaded { name = destination?.name ?? ""; loaded = true }
         }
     }
 }

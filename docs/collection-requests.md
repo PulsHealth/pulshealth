@@ -162,3 +162,10 @@ uses a full-screen confirmation and retains the engine’s sync-in-progress and
 state-readability checks. Connection and setup pages use individual cards rather
 than a settings-style list. Request/account metadata errors are scoped to known
 request connections; they do not represent personal database sync health.
+
+Personal database connections use their server address as a default name (or
+PulsHealth database for the active hosted connection). Connection settings lets
+you save an optional local name; clearing it restores the default. Names do not
+change the destination, credentials, selected data or sync progress. Adding a
+database and editing an existing connection are separate flows; connection
+settings no longer repeats the saved-database list or destination chooser.

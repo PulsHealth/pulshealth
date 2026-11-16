@@ -28,6 +28,56 @@ import Testing
         return deviceID
     }
 
+    @Test func localNamesSurviveWritesReconfigurationAndSwitchesWithoutChangingIdentity() async throws {
+        let dir = directory()
+        let tokens = InMemoryTokenStore()
+        let store = SyncStateStore(directory: dir, tokenStore: tokens)
+        let alpha = configuration("alpha", token: "alpha-secret")
+        try await store.applySavedConfiguration(alpha)
+        let id = try #require(await store.activeDestinationID)
+        try await store.renameDestination(id: id, name: "  Personal archive  ")
+        await store.update("raw") { $0.anchorData = Data([1, 2]); $0.totalSamplesExported = 42 }
+        await store.persistNow()
+        try await store.applySavedConfiguration(alpha)
+        #expect(await store.savedDestinations.first?.name == "Personal archive")
+        try await store.applySavedConfiguration(configuration("beta", token: "beta-secret"))
+        let active = await store.activeDestinationID
+        try await store.renameDestination(id: id, name: "Health archive")
+        #expect(await store.activeDestinationID == active)
+        let reloaded = SyncStateStore(directory: dir, tokenStore: tokens)
+        #expect(await reloaded.savedDestinations.first { $0.id == id }?.name == "Health archive")
+        try await reloaded.switchDestination(id: id)
+        #expect(await reloaded.configuration == alpha)
+        #expect(await reloaded.state(for: "raw").anchorData == Data([1, 2]))
+        #expect(await reloaded.state(for: "raw").totalSamplesExported == 42)
+        #expect(try tokens.token(for: id) == "alpha-secret")
+        try await reloaded.renameDestination(id: id, name: "   ")
+        let automatic = try #require(await reloaded.savedDestinations.first { $0.id == id })
+        #expect(automatic.name == nil)
+        #expect(automatic.displayName == automatic.identity.serverLabel)
+    }
+
+    @Test func legacyDestinationDecodesWithoutNameAndRenameFailureKeepsOldName() async throws {
+        let dir = directory()
+        let store = SyncStateStore(directory: dir, tokenStore: InMemoryTokenStore())
+        try await store.applySavedConfiguration(configuration("alpha", token: "original"))
+        let destination = try #require(await store.savedDestinations.first)
+        var json = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(destination)) as? [String: Any])
+        json.removeValue(forKey: "name")
+        let decoded = try JSONDecoder().decode(SavedSyncDestination.self, from: JSONSerialization.data(withJSONObject: json))
+        #expect(decoded.name == nil)
+        try await store.renameDestination(id: destination.id, name: "Archive")
+        let file = dir.appendingPathComponent("sync-state.json")
+        try FileManager.default.removeItem(at: file)
+        try FileManager.default.createDirectory(at: file, withIntermediateDirectories: false)
+        do {
+            try await store.renameDestination(id: destination.id, name: "Replacement")
+            Issue.record("Expected a persistence error")
+        } catch SavedDestinationError.persistence { }
+        #expect(await store.savedDestinations.first?.name == "Archive")
+        #expect(await store.configuration.authToken == "original")
+    }
+
     @Test func switchingRestoresEveryProgressFamilyAndCredentialsAfterRestart() async throws {
         let dir = directory()
         let tokens = InMemoryTokenStore()
@@ -227,7 +277,9 @@ import Testing
         let id = try #require(await store.activeDestinationID)
         let file = dir.appendingPathComponent("sync-state.json")
         #expect(try String(contentsOf: file, encoding: .utf8).contains("parked-secret"))
+        try await store.renameDestination(id: id, name: "Protected archive")
         let reloaded = SyncStateStore(directory: dir, tokenStore: tokens)
+        #expect(await reloaded.savedDestinations.first?.name == "Protected archive")
         #expect(await reloaded.configuration.authToken == "parked-secret")
         #expect(try tokens.token(for: id) == "parked-secret")
         #expect(!(try String(contentsOf: file, encoding: .utf8)).contains("parked-secret"))

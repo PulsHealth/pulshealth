@@ -32,15 +32,18 @@ final class ConnectionsNavigationTests: XCTestCase {
         app.buttons["Enter details manually"].tap()
         let url = app.textFields["Database URL"]
         XCTAssertTrue(url.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Saved Databases"].exists)
+        XCTAssertFalse(app.staticTexts["Your Own Server"].exists)
+        XCTAssertFalse(app.staticTexts["PulsHealth Managed Server"].exists)
         url.tap(); url.typeText("https://example.invalid")
         let token = app.secureTextFields["Token"]
         token.tap(); token.typeText("synthetic-test-token")
-        let addDatabase = app.buttons["Add Database"]
+        let addDatabase = app.buttons["Continue"]
         for _ in 0..<5 where !addDatabase.isHittable { app.swipeUp() }
         XCTAssertTrue(addDatabase.isHittable)
         addDatabase.tap()
         XCTAssertTrue(app.staticTexts["Ready for your first sync"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.navigationBars["Database"].exists)
+        XCTAssertTrue(app.navigationBars["Review connection"].exists)
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "Database review"; capture.lifetime = .keepAlways; add(capture)
     }

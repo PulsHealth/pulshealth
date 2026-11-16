@@ -13,7 +13,11 @@ struct ConnectionRemovalView: View {
             Spacer()
             Image(systemName: "externaldrive.badge.minus").font(.system(size: 46, weight: .light)).foregroundStyle(.red)
             Text("Remove connection?").font(.largeTitle.bold())
-            Text(destination.identity.serverLabel).font(.headline).foregroundStyle(.secondary)
+            Text(model.connectionName(destination)).font(.headline).foregroundStyle(.secondary)
+            if model.connectionName(destination) != destination.identity.serverLabel {
+                Text(destination.identity.serverLabel).font(.subheadline).foregroundStyle(.secondary)
+            }
+            LabeledContent("User ID", value: destination.userID).font(.caption).foregroundStyle(.secondary)
             Text("Syncing to this database will stop. Local credentials and sync progress will be removed. Data already on the server stays there.")
                 .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             if let error = model.lastErrorMessage { Text(error).foregroundStyle(.red) }

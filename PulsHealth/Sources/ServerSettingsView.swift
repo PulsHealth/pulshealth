@@ -32,8 +32,6 @@ struct ServerSettingsView: View {
     /// The host of a code the sign-in sheet handed back for a database outside
     /// the viewer's domain, now filled in under your own database instead.
     @State private var signInElsewhere: String?
-    @State private var destinationToSwitch: SavedSyncDestination?
-    @State private var destinationToUnpair: SavedSyncDestination?
     @State private var loaded = false
     @State private var showSignupNotice = false
     /// Outcome of the last Test Connection for the values currently entered;
@@ -45,19 +43,18 @@ struct ServerSettingsView: View {
         setup.needsInitialSyncReview(applied: model.appliedConfig, draft: model.config, saved: model.savedDestinations)
     }
 
-    private var applyTitle: String { needsInitialSyncReview ? "Add Database" : "Save & Apply" }
+    private var applyTitle: String { needsInitialSyncReview ? "Continue" : "Save changes" }
 
     var body: some View {
         @Bindable var model = model
         Form {
-            savedDestinationsSection
             if let message = model.lastErrorMessage {
                 Section {
                     Label(message, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                 }
             }
-            destinationSection
+            if setup.destination == nil { destinationSection }
             switch setup.destination {
             case .pulsHealth: pulsHealthSections
             case .own: ownDatabaseSections
@@ -71,7 +68,7 @@ struct ServerSettingsView: View {
             openSheet(on: PulsHealthDatabase.connectURL)
         }
         .disabled(model.isUpdatingConnection)
-        .navigationTitle("Database")
+        .navigationTitle(preferred != nil || needsInitialSyncReview ? "Connect database" : "Connection details")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if !loaded {
@@ -111,95 +108,6 @@ struct ServerSettingsView: View {
         .sheet(isPresented: $showScanner) {
             PairingScannerView { applyPairing($0) }
         }
-        .confirmationDialog(
-            "Switch active database?",
-            isPresented: Binding(get: { destinationToSwitch != nil }, set: { if !$0 { destinationToSwitch = nil } }),
-            titleVisibility: .visible,
-            presenting: destinationToSwitch
-        ) { destination in
-            Button("Switch Database") {
-                destinationToSwitch = nil
-                Task {
-                    if await model.switchDestination(id: destination.id) { resetSetup() }
-                }
-            }
-        } message: { destination in
-            Text("Sync to \(databaseAddress(destination)) as user \(destination.userID), resuming its saved progress. The previous database stops receiving uploads after the switch succeeds. Unapplied edits will be discarded.")
-        }
-        .confirmationDialog(
-            "Unpair database?",
-            isPresented: Binding(get: { destinationToUnpair != nil }, set: { if !$0 { destinationToUnpair = nil } }),
-            titleVisibility: .visible,
-            presenting: destinationToUnpair
-        ) { destination in
-            Button("Unpair", role: .destructive) {
-                destinationToUnpair = nil
-                Task {
-                    let wasActive = model.activeDestinationID == destination.id
-                    if await model.unpairDestination(id: destination.id), wasActive { resetSetup() }
-                }
-            }
-        } message: { destination in
-            Text("Remove \(databaseAddress(destination)), user \(destination.userID), and its saved credentials and sync progress from this iPhone. If active, syncing stops. Already uploaded data remains on the server. Pair again to reconnect.")
-        }
-    }
-
-    @ViewBuilder private var savedDestinationsSection: some View {
-        if !model.savedDestinations.isEmpty {
-            Section {
-                ForEach(model.savedDestinations) { destination in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Database")
-                                .font(.headline)
-                            Spacer()
-                            if destination.id == model.activeDestinationID {
-                                Label("Active", systemImage: "checkmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.green)
-                            }
-                        }
-                        Text(databaseAddress(destination))
-                            .textSelection(.enabled)
-                        Text("User ID: \(destination.userID)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
-                        HStack {
-                            if destination.id != model.activeDestinationID {
-                                Button("Switch to This Database") { destinationToSwitch = destination }
-                                    .buttonStyle(.borderless)
-                            }
-                            Spacer()
-                            Button("Unpair", role: .destructive) { destinationToUnpair = destination }
-                                .buttonStyle(.borderless)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-                if model.isUpdatingConnection {
-                    ProgressView("Updating connection…")
-                }
-            } header: {
-                Text("Saved Databases")
-            } footer: {
-                Text("Only the active database receives synced Health data. Each database and user ID keeps its own sync progress.")
-            }
-        }
-    }
-
-    /// Keep the transport scheme visible without exposing URL credentials,
-    /// queries or fragments (a pasted URL may contain secrets there).
-    private func databaseAddress(_ destination: SavedSyncDestination) -> String {
-        let scheme = destination.serverURL.scheme.map { "\($0)://" } ?? ""
-        return scheme + destination.identity.serverLabel
-    }
-
-    private func resetSetup() {
-        connectionTest.cancel()
-        signInProblem = nil
-        signInElsewhere = nil
-        setup = DatabaseSetup(applied: model.appliedConfig)
     }
 
     // MARK: - The choice
@@ -207,15 +115,15 @@ struct ServerSettingsView: View {
     private var destinationSection: some View {
         Section {
             destinationRow(
-                .own, title: "Your Own Server",
+                .own, title: "Your database",
                 detail: "Connect a server you run and control.",
                 symbol: "externaldrive.connected.to.line.below")
             destinationRow(
-                .pulsHealth, title: "PulsHealth Managed Server",
+                .pulsHealth, title: "PulsHealth database",
                 detail: "Sign in and connect to your PulsHealth server.",
                 symbol: "cloud")
         } header: {
-            Text(model.savedDestinations.isEmpty ? "Sync To" : "Add or Edit a Database")
+            Text("Connect database")
         } footer: {
             if setup.destination == nil {
                 Text("Choose where PulsHealth keeps a live copy of your Health data. You can change it later.")
@@ -362,7 +270,7 @@ struct ServerSettingsView: View {
             }
             PastePairingCodeRow(urlText: setup.own.urlText) { applyPairing($0) }
         } footer: {
-            Text("A pairing code, scanned, pasted, or opened as a puls:// link, fills in the URL, token and user ID your database's setup prints (`make pairing`) and tests them.")
+            Text("Use a pairing code from your server, or enter its details below.")
         }
 
         Section {
@@ -408,14 +316,14 @@ struct ServerSettingsView: View {
                 .foregroundStyle(.secondary)
             }
         } header: {
-            Text("Or enter it by hand")
+            Text("Connection details")
         } footer: {
-            Text("Database URL is the address your database's pairing code shows. Use https://; plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x). Test Connection uses the values entered above without saving them.")
+            Text("Use the address and token provided by your server.")
         }
 
         applySection(disabled: setup.own.urlIssue != nil) {
             if needsInitialSyncReview {
-                Text("Returns to Sync to choose types and a backfill date. No Health data is uploaded to this database until you tap Apply.")
+                Text("Choose your data and history next. Nothing is uploaded until you apply.")
             } else {
                 Text("An empty URL disconnects the database; syncing stops and the Export tab keeps working.")
             }

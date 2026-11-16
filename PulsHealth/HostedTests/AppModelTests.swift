@@ -147,6 +147,40 @@ final class AppModelTests: XCTestCase {
         return Harness(model: model, engine: engine, defaults: defaults, access: access)
     }
 
+    func testConnectionNamesAreLocalAndSettingsRenderWithoutLegacySetupChoices() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
+        await h.model.start()
+        let destination = try XCTUnwrap(h.model.savedDestinations.first)
+        let configuration = h.model.appliedConfig
+        XCTAssertEqual(h.model.connectionName(destination), destination.identity.serverLabel)
+        let renamed = await h.model.renameDestination(id: destination.id, name: "Personal archive")
+        XCTAssertTrue(renamed)
+        let saved = try XCTUnwrap(h.model.savedDestinations.first)
+        XCTAssertEqual(h.model.connectionName(saved), "Personal archive")
+        XCTAssertEqual(h.model.appliedConfig, configuration)
+        XCTAssertEqual(h.model.config, configuration)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        for (label, view) in [
+            ("Named connection", AnyView(NavigationStack { SyncView(path: .constant([])) }.environment(h.model))),
+            ("Connection settings", AnyView(NavigationStack { ConnectionSettingsView(destinationID: destination.id) }.environment(h.model)))
+        ] {
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            let controller = UIHostingController(rootView: view)
+            window.rootViewController = controller; window.makeKeyAndVisible()
+            controller.view.frame = window.bounds; window.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(200))
+            let attachment = XCTAttachment(image: UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+            })
+            attachment.name = label; attachment.lifetime = .keepAlways; add(attachment)
+            window.isHidden = true
+        }
+        let cleared = await h.model.renameDestination(id: destination.id, name: "")
+        XCTAssertTrue(cleared)
+        XCTAssertEqual(h.model.connectionName(try XCTUnwrap(h.model.savedDestinations.first)), destination.identity.serverLabel)
+    }
+
     func testTypeSyncSheetDraftIsLocalAndStagesAtomically() async throws {
         let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
         await h.model.start()

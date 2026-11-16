@@ -1038,6 +1038,29 @@ final class AppModel {
         }
     }
 
+    func connectionName(_ destination: SavedSyncDestination) -> String {
+        destination.name ?? (destination.id == activeDestinationID && usesPulsHealthDatabase
+                            ? "PulsHealth database" : destination.identity.serverLabel)
+    }
+
+    @discardableResult
+    func renameDestination(id: UUID, name: String) async -> Bool {
+        guard !isUpdatingConnection else { return false }
+        guard !stateFileUnreadable else { lastErrorMessage = StateUnreadableNotice.message; return false }
+        isUpdatingConnection = true
+        defer { isUpdatingConnection = false }
+        do {
+            try await engine.store.renameDestination(id: id, name: name)
+            connectionGeneration += 1
+            await refresh()
+            lastErrorMessage = nil
+            return true
+        } catch {
+            lastErrorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     @discardableResult
     func switchDestination(id: UUID) async -> Bool {
         guard connectionEditCanStart() else { return false }

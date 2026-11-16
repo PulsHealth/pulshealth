@@ -7,6 +7,7 @@ import PulsHealthSync
 enum SyncRoute: Hashable {
     case personal, account
     case addConnection, ownDatabase, groupChoice, openRequest, createRequest, opportunities, history, managedDatabase
+    case connectionSettings(UUID)
     case personalDestination(UUID), organizer(UUID), contribution(UUID), participants(UUID), deletion(UUID)
     /// The Database screen; `scan` opens the pairing scanner on arrival, and
     /// `choice` is the option picked on the first-time screen (`SyncIntro`).
@@ -90,7 +91,7 @@ struct SyncView: View {
                 Section { Button("Remove connection", role: .destructive) { destinationToRemove = destination } }
             }
         }
-        .navigationTitle("Database")
+        .navigationTitle(connectionTitle)
         .fullScreenCover(item: $destinationToRemove) { destination in
             ConnectionRemovalView(destination: destination) {
                 let removed = await model.unpairDestination(id: destination.id)
@@ -112,6 +113,14 @@ struct SyncView: View {
         }
     }
 
+    private var connectionTitle: String {
+        if model.isSettingUpInitialSync { return "Review connection" }
+        if let destination = model.savedDestinations.first(where: { $0.id == model.activeDestinationID }) {
+            return model.connectionName(destination)
+        }
+        return "Connect database"
+    }
+
     /// First connection is staged on the normal Sync screen. The existing
     /// pickers and Apply bar are shared with later edits; no setup-only page.
     private var initialSyncSection: some View {
@@ -125,7 +134,7 @@ struct SyncView: View {
             } set: { model.setSyncStartDate($0) }, in: ...Date(), displayedComponents: .date)
                 .accessibilityIdentifier("initialSync.startDate")
             Text(model.subscriptions.hasPro
-                 ? "A shorter history makes the first sync quicker. You can choose an earlier date later in Settings. Health access may limit available history."
+                 ? "A shorter history makes the first sync quicker. You can choose an earlier date later in this connection’s sync settings. Health access may limit available history."
                  : "Free sync includes 5 types and the most recent 30 days. Pro unlocks more types and earlier history.")
                 .font(.footnote).foregroundStyle(.secondary)
             Text("Nothing is uploaded to this database until you apply.")
@@ -460,8 +469,10 @@ struct SyncView: View {
     private var linksSection: some View {
         Section {
             if model.appliedConfig.serverURL != nil {
-                NavigationLink(value: SyncRoute.server(scan: false)) {
-                    Label("Database", systemImage: "externaldrive.connected.to.line.below")
+                if let id = model.activeDestinationID {
+                    NavigationLink(value: SyncRoute.connectionSettings(id)) {
+                        Label("Connection settings", systemImage: "gearshape")
+                    }
                 }
             }
             NavigationLink(value: SyncRoute.activity) {

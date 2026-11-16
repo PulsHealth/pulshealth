@@ -7,6 +7,9 @@ public struct SavedSyncDestination: Identifiable, Sendable, Equatable, Codable {
     public let identity: ServerIdentity
     public let serverURL: URL
     public let userID: String
+    /// Optional local label; never part of receiver identity or an upload.
+    public var name: String? = nil
+    public var displayName: String { name ?? identity.serverLabel }
     /// Stable across a retried migration or interrupted pairing. A credential
     /// never gets a new, unreachable random Keychain account on every retry.
     static func identifier(identity: ServerIdentity, deviceID: String) -> UUID {
@@ -20,10 +23,11 @@ public struct SavedSyncDestination: Identifiable, Sendable, Equatable, Codable {
 }
 
 public enum SavedDestinationError: Error, LocalizedError {
-    case busy, readOnly, notFound, credential, persistence
+    case busy, readOnly, notFound, credential, persistence, invalidName
 
     public var errorDescription: String? {
         switch self {
+        case .invalidName: "Use a connection name of up to 80 characters."
         case .busy: "Wait for the current sync or connection request to finish before changing databases."
         case .readOnly: "Sync settings could not be read. Unlock your device and reopen the app."
         case .notFound: "This paired database is no longer available."
