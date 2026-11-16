@@ -334,8 +334,7 @@ struct TypePageView: View {
                 let total = profile.workouts?.totalDurationSeconds
                 ChartCard(
                     "Workouts by activity",
-                    subtitle: total.map { "\(durationString($0)) in total, most frequent first" },
-                    readout: "\(rows.count) \(rows.count == 1 ? "activity" : "activities")", placeholder: ""
+                    subtitle: total.map { "\(durationString($0)) in total" }
                 ) {
                     ShareBars(rows: rows, color: color)
                 }
@@ -347,7 +346,7 @@ struct TypePageView: View {
                         label: TypeKnowledge.humanize(label.label), measure: Double(label.count),
                         measureText: label.count.formatted())
                 }
-                ChartCard("Values", readout: "\(rows.count) distinct values", placeholder: "") {
+                ChartCard("Values") {
                     ShareBars(rows: rows, color: color)
                 }
             }
@@ -600,14 +599,6 @@ private struct CategoryValuesSection: View {
         }
     }
 
-    private var readout: String? {
-        guard profile != nil else { return nil }
-        let present = entries.filter { $0.count > 0 }.count
-        let known = knowledge?.categoryValues?.count ?? 0
-        if known == 0 { return "\(present) distinct values" }
-        return "\(present) of \(entries.count) values in your data"
-    }
-
     var body: some View {
         let hasDuration = hasDuration
         if entries.isEmpty {
@@ -615,8 +606,7 @@ private struct CategoryValuesSection: View {
         } else {
         ChartCard(
             "Raw value distribution",
-            subtitle: measure == .time ? "Recorded duration by value" : "Records by value",
-            readout: readout, placeholder: ""
+            subtitle: measure == .time ? "Recorded duration by value" : "Records by value"
         ) {
             if hasDuration {
                 Picker("Measure", selection: $measure) {
@@ -669,8 +659,7 @@ private struct SourcesSection: View {
 
     var body: some View {
         ChartCard(
-            "Sources and devices", subtitle: "Records and share of all records",
-            readout: "\(rows.count) \(showsDevices ? "devices" : "sources")", placeholder: ""
+            "Sources and devices", subtitle: "Records and share of all records"
         ) {
             if !profile.devices.isEmpty, !profile.sources.isEmpty {
                 Picker("Breakdown", selection: $showsDevices) {

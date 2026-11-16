@@ -182,8 +182,6 @@ struct AggregatePreviewPane: View {
                             .font(.footnote).foregroundStyle(.secondary)
                         Text(formatValue(value) + (config.unitString.map { " \($0)" } ?? ""))
                             .font(.title2.weight(.semibold)).monospacedDigit()
-                        Text("\(buckets.filter { $0.value != nil }.count) of \(buckets.count) \(config.intervalUnit.displayName.lowercased())s with data")
-                            .font(.footnote).foregroundStyle(.secondary)
                     }
                     .fixedSize(horizontal: false, vertical: true)
                 }

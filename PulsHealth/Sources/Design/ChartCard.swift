@@ -10,23 +10,19 @@ import SwiftUI
 struct ChartCard<Controls: View, Chart: View>: View {
     let title: String
     var subtitle: String?
-    /// The selection or summary under the plot; shown greyed when nil so the
-    /// card does not jump when a selection begins.
+    /// A selected chart value. No idle hint or empty text row.
     var readout: String?
-    var placeholder = "Touch the chart for values"
     @ViewBuilder let controls: () -> Controls
     @ViewBuilder let chart: () -> Chart
 
     init(
         _ title: String, subtitle: String? = nil, readout: String? = nil,
-        placeholder: String = "Touch the chart for values",
         @ViewBuilder controls: @escaping () -> Controls,
         @ViewBuilder chart: @escaping () -> Chart
     ) {
         self.title = title
         self.subtitle = subtitle
         self.readout = readout
-        self.placeholder = placeholder
         self.controls = controls
         self.chart = chart
     }
@@ -38,11 +34,13 @@ struct ChartCard<Controls: View, Chart: View>: View {
             // sized once rather than each child getting the minimum.
             VStack(alignment: .leading, spacing: 8) { chart() }
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Text(readout ?? placeholder)
-                .font(.footnote.monospacedDigit())
-                .foregroundStyle(readout == nil ? .tertiary : .secondary)
-                .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            if let readout, !readout.isEmpty {
+                Text(readout)
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 }
@@ -50,11 +48,10 @@ struct ChartCard<Controls: View, Chart: View>: View {
 extension ChartCard where Controls == EmptyView {
     init(
         _ title: String, subtitle: String? = nil, readout: String? = nil,
-        placeholder: String = "Touch the chart for values",
         @ViewBuilder chart: @escaping () -> Chart
     ) {
         self.init(
-            title, subtitle: subtitle, readout: readout, placeholder: placeholder,
+            title, subtitle: subtitle, readout: readout,
             controls: { EmptyView() }, chart: chart)
     }
 }

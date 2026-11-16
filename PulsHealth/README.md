@@ -448,6 +448,10 @@ averaged. Average gaps use consecutive sample starts, including simultaneous
 records; weekday calculations use the profile's recording time zone. Source
 breakdowns show record counts, shares and first/last recording dates. The
 interface uses concise measure labels instead of general explanatory caveats.
+Keep chart copy limited to meaningful measurements, selected values and controls.
+Do not add idle interaction instructions, availability fractions below the primary
+value, or redundant counts of the categories/sources already visible. Coverage
+statistics belong in the dedicated recording detail view.
 
 
 - A fresh install opens straight into the first-run flow; an install that
