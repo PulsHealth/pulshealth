@@ -333,7 +333,9 @@ final class AppModelTests: XCTestCase {
             window.rootViewController = controller; window.makeKeyAndVisible(); controller.view.frame = window.bounds
             window.layoutIfNeeded()
             try await Task.sleep(for: .milliseconds(150))
-            let attachment = XCTAttachment(image: UIGraphicsImageRenderer(size: size).image { controller.view.layer.render(in: $0.cgContext) })
+            let attachment = XCTAttachment(image: UIGraphicsImageRenderer(size: size).image { _ in
+                controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+            })
             attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
             window.isHidden = true
         }
