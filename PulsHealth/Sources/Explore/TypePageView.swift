@@ -801,6 +801,7 @@ private struct AggregatePreviewSection: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            chartOptions
             if descriptor.identifier == "HKQuantityTypeIdentifierBloodPressureSystolic"
                 || descriptor.identifier == "HKQuantityTypeIdentifierBloodPressureDiastolic" {
                 Text("This chart summarizes one blood-pressure component. Daily averages are not paired blood-pressure readings.")
@@ -819,6 +820,9 @@ private struct AggregatePreviewSection: View {
             ForEach(PreviewWindow.allCases) { Text($0.rawValue).tag($0) }
         }
         .pickerStyle(.segmented)
+    }
+
+    private var chartOptions: some View {
         DisclosureGroup("Chart options") {
             VStack(spacing: 8) {
                 Picker("Value", selection: $function) {

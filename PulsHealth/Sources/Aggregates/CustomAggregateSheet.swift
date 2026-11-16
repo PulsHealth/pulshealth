@@ -177,13 +177,15 @@ struct AggregatePreviewPane: View {
             } else {
                 if showsSummary, let latest = buckets.last(where: { $0.value != nil }), let value = latest.value {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Latest interval · " + latest.start.formatted(date: .abbreviated, time: .shortened))
+                        Text("Latest \(config.intervalUnit.displayName.lowercased()) · " + latest.start.formatted(
+                            date: .abbreviated, time: config.intervalUnit == .hour || config.intervalUnit == .minute ? .shortened : .omitted))
                             .font(.footnote).foregroundStyle(.secondary)
                         Text(formatValue(value) + (config.unitString.map { " \($0)" } ?? ""))
                             .font(.title2.weight(.semibold)).monospacedDigit()
-                        Text("\(buckets.filter { $0.value != nil }.count) of \(buckets.count) intervals with data")
+                        Text("\(buckets.filter { $0.value != nil }.count) of \(buckets.count) \(config.intervalUnit.displayName.lowercased())s with data")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
+                    .fixedSize(horizontal: false, vertical: true)
                 }
                 // The spinner sits top-leading: the chart's top-trailing
                 // corner is where its unit label is.
