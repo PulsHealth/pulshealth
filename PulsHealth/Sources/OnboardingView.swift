@@ -196,7 +196,7 @@ struct OnboardingView: View {
     private var connectionsPage: some View {
         pageLayout {
             VStack(spacing: 20) {
-                pageIcon("server.rack", color: .accentColor)
+                pageIcon("arrow.triangle.2.circlepath", color: .accentColor)
                 pageTitle("Always in sync")
                 bodyText("Keep your own copy or share selected Health data with others.")
                 VStack(alignment: .leading, spacing: 18) {
