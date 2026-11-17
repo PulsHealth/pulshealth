@@ -197,12 +197,12 @@ struct OnboardingView: View {
         pageLayout {
             VStack(spacing: 20) {
                 pageIcon("server.rack", color: .accentColor)
-                pageTitle("Your connections")
+                pageTitle("Always in sync")
                 bodyText("Keep your own copy or share selected Health data with others.")
                 VStack(alignment: .leading, spacing: 18) {
                     feature(
                         "externaldrive", "Your database",
-                        "Sync automatically to a PulsHealth database or one you run yourself.")
+                        "Sync automatically to your own server or PulsHealth.")
                     feature(
                         "person.2", "Data requests",
                         "Review who’s asking and what they need, then share once or on an ongoing basis.")
