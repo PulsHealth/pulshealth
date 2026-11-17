@@ -258,8 +258,6 @@ struct ServerSettingsView: View {
                 Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
             }
             PastePairingCodeRow(urlText: setup.own.urlText) { applyPairing($0) }
-        } footer: {
-            Text("Use a pairing code from your server, or enter its details below.")
         }
 
         Section {
@@ -313,8 +311,6 @@ struct ServerSettingsView: View {
         applySection(disabled: setup.own.urlIssue != nil) {
             if needsInitialSyncReview {
                 Text("Choose your data and history next. Nothing is uploaded until you apply.")
-            } else {
-                Text("An empty URL disconnects the database; syncing stops and the Export tab keeps working.")
             }
         }
     }

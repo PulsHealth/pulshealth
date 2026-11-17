@@ -10,6 +10,29 @@ final class ConnectionsNavigationTests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Connections"].exists)
         return app
     }
+    func testFullSelectionReviewKeepsApplyVisible() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-PulsPreviewSyncReview", "YES", "-onboardingCompleted", "YES"]
+        app.launch()
+        let apply = app.buttons["syncReview.apply"]
+        XCTAssertTrue(apply.waitForExistence(timeout: 15))
+        XCTAssertTrue(apply.isHittable)
+        Thread.sleep(forTimeInterval: 1) // Let the presentation finish before capturing the action bar.
+        let overview = XCTAttachment(screenshot: app.screenshot())
+        overview.name = "Full selection review"; overview.lifetime = .keepAlways; add(overview)
+        app.buttons["syncReview.raw"].firstMatch.tap()
+        XCTAssertTrue(apply.isHittable)
+        Thread.sleep(forTimeInterval: 2) // Capture the expanded list after its transition.
+        let expanded = XCTAttachment(screenshot: app.screenshot())
+        expanded.name = "Expanded raw samples"; expanded.lifetime = .keepAlways; add(expanded)
+        app.buttons["syncReview.raw"].firstMatch.tap()
+        app.buttons["syncReview.aggregates"].firstMatch.tap()
+        XCTAssertTrue(apply.isHittable)
+        Thread.sleep(forTimeInterval: 2)
+        let aggregates = XCTAttachment(screenshot: app.screenshot())
+        aggregates.name = "Expanded daily aggregates"; aggregates.lifetime = .keepAlways; add(aggregates)
+    }
+
     func testPulsHealthSetupWaitsForExplicitSignIn() {
         let app = launchConnections()
         app.navigationBars.buttons["Add a connection"].tap()
@@ -17,8 +40,8 @@ final class ConnectionsNavigationTests: XCTestCase {
         let choices = XCTAttachment(screenshot: app.screenshot())
         choices.name = "Add connection cards"; choices.lifetime = .keepAlways; add(choices)
         app.buttons["PulsHealth database"].tap()
-        XCTAssertTrue(app.buttons["Sign in & continue"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.navigationBars["PulsHealth database"].exists)
+        XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["PulsHealth"].exists)
         XCTAssertEqual(app.state, .runningForeground)
         let capture = XCTAttachment(screenshot: app.screenshot())
         capture.name = "PulsHealth setup"; capture.lifetime = .keepAlways; add(capture)
@@ -29,7 +52,6 @@ final class ConnectionsNavigationTests: XCTestCase {
         let app = launchConnections()
         app.navigationBars.buttons["Add a connection"].tap()
         app.buttons["Your database"].tap()
-        app.buttons["Enter details manually"].tap()
         let url = app.textFields["Database URL"]
         XCTAssertTrue(url.waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["Saved Databases"].exists)
@@ -51,11 +73,7 @@ final class ConnectionsNavigationTests: XCTestCase {
         let app = launchConnections()
         app.navigationBars.buttons["Add a connection"].tap()
         app.buttons["Your database"].tap()
-        XCTAssertTrue(app.navigationBars["Your database"].waitForExistence(timeout: 5))
-        app.buttons["Enter details manually"].tap()
         XCTAssertTrue(app.textFields["Database URL"].waitForExistence(timeout: 5))
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.navigationBars["Your database"].waitForExistence(timeout: 5))
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Add a connection"].waitForExistence(timeout: 5))
         app.navigationBars.buttons.element(boundBy: 0).tap()

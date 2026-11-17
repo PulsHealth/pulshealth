@@ -259,6 +259,20 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(h.model.hasPendingChanges)
     }
 
+    func testUndoAggregateChangesPreservesRawDraftAndAggregateOrder() async throws {
+        let a = try XCTUnwrap(AggregateConfig.dailyDefault(for: heartRate))
+        let b = try XCTUnwrap(AggregateConfig.dailyDefault(for: steps))
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(serverURL: mine, aggregates: [a, b]))
+        await h.model.start()
+        h.model.config.enabledTypes.insert(heartRate)
+        h.model.config.aggregates[0] = a.with(interval: (1, .hour))
+        h.model.discardTypeAggregateChanges(heartRate)
+        XCTAssertEqual(h.model.config.aggregates, [a, b])
+        XCTAssertTrue(h.model.config.enabledTypes.contains(heartRate))
+        h.model.config.enabledTypes.remove(heartRate)
+        XCTAssertFalse(h.model.hasPendingChanges)
+    }
+
     func testTypeSyncFreeLimitRejectsWholeAddition() async throws {
         let chosen = Set(HealthTypeCatalog.all.prefix(5).map(\.identifier))
         let id = try XCTUnwrap(HealthTypeCatalog.all.first { !chosen.contains($0.identifier) }).identifier

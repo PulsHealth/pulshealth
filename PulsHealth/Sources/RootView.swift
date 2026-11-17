@@ -105,7 +105,17 @@ struct RootView: View {
     }
     var body: some View {
         @Bindable var model = model
-        presentedContent
+        Group {
+            #if DEBUG && targetEnvironment(simulator)
+            if UserDefaults.standard.bool(forKey: "PulsPreviewSyncReview") {
+                SyncReviewFixtureView()
+            } else {
+                presentedContent
+            }
+            #else
+            presentedContent
+            #endif
+        }
         .task {
             presentDataRequest()
             if scenePhase == .active {

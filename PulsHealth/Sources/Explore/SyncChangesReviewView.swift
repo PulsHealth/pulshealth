@@ -5,66 +5,123 @@ import SwiftUI
 struct SyncChangesReviewView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+    @State private var showsRaw = false
+    @State private var showsAggregates = false
+    @State private var showsSettings = false
     let onApply: () -> Void
 
-    private var changedTypes: [String] {
-        let raw = model.config.enabledTypes.symmetricDifference(model.appliedConfig.enabledTypes)
-        let aggregates = AggregateList.changedTypes(from: model.appliedConfig.aggregates, to: model.config.aggregates)
-        return raw.union(aggregates).sorted()
+    private var rawChanges: [String] {
+        model.config.enabledTypes.symmetricDifference(model.appliedConfig.enabledTypes).sorted { name($0) < name($1) }
+    }
+    private var aggregateTypes: [String] {
+        AggregateList.changedTypes(from: model.appliedConfig.aggregates, to: model.config.aggregates)
+            .sorted { name($0) < name($1) }
+    }
+    private func name(_ identifier: String) -> String {
+        HealthTypeCatalog.descriptor(for: identifier)?.displayName ?? identifier
+    }
+    private func summary(added: Int, removed: Int) -> String {
+        [added > 0 ? "\(added) added" : nil, removed > 0 ? "\(removed) removed" : nil]
+            .compactMap { $0 }.joined(separator: " · ")
+    }
+    private var rawSummary: String {
+        summary(added: model.config.enabledTypes.subtracting(model.appliedConfig.enabledTypes).count,
+                removed: model.appliedConfig.enabledTypes.subtracting(model.config.enabledTypes).count)
+    }
+    private var aggregateSummary: String {
+        let added = model.config.aggregates.filter { !model.appliedConfig.aggregates.contains($0) }
+        let removed = model.appliedConfig.aggregates.filter { !model.config.aggregates.contains($0) }
+        let changes = summary(added: added.count, removed: removed.count)
+        return !added.isEmpty && removed.isEmpty && added.allSatisfy(\.isDailyDefault)
+            ? "\(changes) · Daily" : changes
+    }
+
+    private var canApply: Bool {
+        model.config.serverURL != nil && !model.stateFileUnreadable
+            && (model.hasPendingChanges || model.hasPendingSettingsChanges || model.isSettingUpInitialSync)
     }
 
     var body: some View {
         NavigationStack {
-            List {
-                Section("Destination") {
-                    LabeledContent("Database", value: DatabaseSetup.databaseLabel(model.config.serverURL) ?? "Not connected")
-                    LabeledContent("History from", value: model.config.startDate.formatted(date: .abbreviated, time: .omitted))
-                }
-                ForEach(changedTypes, id: \.self) { identifier in
-                    Section(HealthTypeCatalog.descriptor(for: identifier)?.displayName ?? identifier) {
-                        if model.config.enabledTypes.contains(identifier) != model.appliedConfig.enabledTypes.contains(identifier) {
-                            Label(model.config.enabledTypes.contains(identifier) ? "Add raw readings" : "Remove raw readings",
-                                  systemImage: model.config.enabledTypes.contains(identifier) ? "plus.circle" : "minus.circle")
+            VStack(spacing: 0) {
+                List {
+                    Section {
+                        LabeledContent("Database", value: DatabaseSetup.databaseLabel(model.config.serverURL) ?? "Not connected")
+                        LabeledContent("History from", value: model.config.startDate.formatted(date: .abbreviated, time: .omitted))
+                    }
+                    Section("Data to sync") {
+                        if !rawChanges.isEmpty {
+                            DisclosureGroup(isExpanded: $showsRaw) {
+                                ForEach(rawChanges, id: \.self) { identifier in
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(name(identifier))
+                                            Text(model.config.enabledTypes.contains(identifier) ? "Add raw samples" : "Remove raw samples")
+                                                .font(.caption).foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Button("Undo") {
+                                            if model.appliedConfig.enabledTypes.contains(identifier) {
+                                                model.config.enabledTypes.insert(identifier)
+                                            } else {
+                                                model.config.enabledTypes.remove(identifier)
+                                            }
+                                        }.buttonStyle(.borderless)
+                                            .accessibilityLabel("Undo raw sample changes for \(name(identifier))")
+                                    }
+                                }
+                            } label: {
+                                summaryRow("Raw Samples", detail: rawSummary, symbol: "waveform.path.ecg")
+                            }.accessibilityIdentifier("syncReview.raw")
                         }
-                        let before = model.appliedConfig.aggregates.filter { $0.typeIdentifier == identifier }
-                        let after = model.config.aggregates.filter { $0.typeIdentifier == identifier }
-                        ForEach(before.filter { !after.contains($0) }) { config in
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Remove: \(config.label)")
-                                aggregateOptions(config)
+                        if !aggregateTypes.isEmpty {
+                            DisclosureGroup(isExpanded: $showsAggregates) {
+                                ForEach(aggregateTypes, id: \.self) { identifier in
+                                    DisclosureGroup(name(identifier)) {
+                                        aggregateChanges(for: identifier)
+                                        Button("Undo aggregate changes") {
+                                            model.discardTypeAggregateChanges(identifier)
+                                        }.buttonStyle(.borderless)
+                                    }
+                                }
+                            } label: {
+                                summaryRow("Aggregates", detail: aggregateSummary, symbol: "chart.bar")
+                            }.accessibilityIdentifier("syncReview.aggregates")
+                        }
+                        if rawChanges.isEmpty && aggregateTypes.isEmpty {
+                            Text("No data selection changes").foregroundStyle(.secondary)
+                        }
+                    }
+                    let settings = SyncSettingsChanges(from: model.appliedConfig, to: model.config).lines
+                    if !settings.isEmpty {
+                        Section {
+                            DisclosureGroup(isExpanded: $showsSettings) {
+                                ForEach(settings, id: \.self) { Text($0) }
+                            } label: {
+                                summaryRow("Connection settings", detail: settings.count == 1 ? "1 change" : "\(settings.count) changes", symbol: "slider.horizontal.3")
                             }
-                        }
-                        ForEach(after.filter { !before.contains($0) }) { config in
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Add: \(config.label)")
-                                aggregateOptions(config)
-                            }
-                        }
-                        Button("Undo Changes for This Type", role: .destructive) {
-                            model.discardTypeSyncChanges(identifier)
                         }
                     }
                 }
-                let settings = SyncSettingsChanges(from: model.appliedConfig, to: model.config).lines
-                if !settings.isEmpty {
-                    Section("Other Pending Changes") {
-                        ForEach(settings, id: \.self) { Text($0) }
+                VStack(spacing: 12) {
+                    Button(action: onApply) {
+                        HStack {
+                            Text(model.isSettingUpInitialSync ? "Apply & Start Sync" : "Apply Changes")
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 8)
                     }
-                }
-                Section {
-                    Button(model.isSettingUpInitialSync ? "Apply & Start Sync" : "Apply Changes") { onApply() }
-                        .buttonStyle(.borderedProminent)
-                        .frame(maxWidth: .infinity)
-                        .disabled(model.config.serverURL == nil || model.stateFileUnreadable
-                                  || (!model.hasPendingChanges && !model.hasPendingSettingsChanges && !model.isSettingUpInitialSync))
-                        .accessibilityIdentifier("syncReview.apply")
+                    .buttonStyle(.borderedProminent).controlSize(.large)
+                    .disabled(!canApply)
+                    .opacity(canApply ? 1 : 0.5)
+                    .accessibilityIdentifier("syncReview.apply")
                     Button("Discard All Changes", role: .destructive) {
                         model.discardChanges()
                         dismiss()
-                    }
-                } footer: {
-                    Text("All pending changes shown here will be applied together. Removing a type stops future uploads; data already in your database stays there.")
+                    }.font(.subheadline)
                 }
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 12)
+                .frame(maxWidth: .infinity).background(.bar)
             }
             .navigationTitle("Review Sync Changes")
             .navigationBarTitleDisplayMode(.inline)
@@ -72,6 +129,31 @@ struct SyncChangesReviewView: View {
         }
     }
 
+    private func summaryRow(_ title: String, detail: String, symbol: String) -> some View {
+        Label {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).foregroundStyle(.primary)
+                Text(detail).font(.subheadline).foregroundStyle(.secondary)
+            }.padding(.vertical, 6)
+        } icon: { Image(systemName: symbol).foregroundStyle(.tint) }
+    }
+
+    @ViewBuilder private func aggregateChanges(for identifier: String) -> some View {
+        let before = model.appliedConfig.aggregates.filter { $0.typeIdentifier == identifier }
+        let after = model.config.aggregates.filter { $0.typeIdentifier == identifier }
+        ForEach(before.filter { !after.contains($0) }) { config in
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Remove: \(config.label)")
+                aggregateOptions(config)
+            }
+        }
+        ForEach(after.filter { !before.contains($0) }) { config in
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Add: \(config.label)")
+                aggregateOptions(config)
+            }
+        }
+    }
     private func aggregateOptions(_ config: AggregateConfig) -> some View {
         Text([config.enabled ? "On" : "Off",
               config.startDate.map { "From \($0.formatted(date: .abbreviated, time: .omitted))" } ?? "Same history as Sync",
@@ -109,3 +191,21 @@ struct SyncSettingsChanges {
         lines = changes
     }
 }
+
+#if DEBUG && targetEnvironment(simulator)
+/// Synthetic full-selection preview. This model is never started or applied.
+struct SyncReviewFixtureView: View {
+    @State private var model: AppModel = {
+        let model = AppModel(subscriptions: SubscriptionStore(entitlementReader: { true }))
+        model.config = model.appliedConfig
+        model.config.enabledTypes = Set(HealthTypeCatalog.all.map(\.identifier))
+        model.config.serverURL = URL(string: "https://example.invalid")
+        model.config.aggregates = AggregateList.measurementTypes.compactMap { AggregateConfig.dailyDefault(for: $0.identifier) }
+        model.isSettingUpInitialSync = true
+        return model
+    }()
+    var body: some View {
+        SyncChangesReviewView(onApply: {}).environment(model)
+    }
+}
+#endif

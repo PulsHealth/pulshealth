@@ -326,7 +326,7 @@ struct ExportDraft: Equatable {
 
     init(now: Date = Date(), calendar: Calendar = .current) {
         let today = calendar.startOfDay(for: now)
-        customStart = calendar.date(byAdding: .year, value: -1, to: today) ?? today
+        customStart = calendar.date(byAdding: .day, value: -30, to: today) ?? today
         customEnd = now
     }
 

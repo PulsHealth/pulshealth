@@ -7,20 +7,39 @@ struct PulsHealthConnectionSetupView: View {
     @State private var connecting = false
     @State private var problem: String?
     var body: some View {
-        ConnectionPage {
-            ConnectionSurface {
-                VStack(alignment: .leading, spacing: 18) {
-                    Image(systemName: "cloud").font(.system(size: 34, weight: .light)).foregroundStyle(.tint)
-                        .frame(width: 68, height: 68).background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 20))
-                    Text("Your health data, in your database.").font(.title2.bold())
-                    Button(connecting ? "Connecting…" : "Sign in & continue") { Task { await connect() } }
-                        .buttonStyle(.borderedProminent).controlSize(.large).disabled(connecting)
-                }.padding(.vertical, 10)
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 28) {
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 56, weight: .light))
+                        .foregroundStyle(.tint)
+                        .frame(width: 100, height: 100)
+                        .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 28))
+                    Text("Sign in to your\nPulsHealth account")
+                        .font(.largeTitle.bold())
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button { Task { await connect() } } label: {
+                        HStack(spacing: 10) {
+                            if connecting { ProgressView().tint(.white) }
+                            Text(connecting ? "Signing in…" : "Sign in")
+                        }.frame(maxWidth: .infinity).padding(.vertical, 4)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(connecting)
+                    if let problem { ConnectionNotice(title: "Couldn’t connect", message: problem) }
+                }
+                .frame(maxWidth: 420)
+                .padding(28)
+                .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
-            if connecting { ProgressView().frame(maxWidth: .infinity) }
-            if let problem { ConnectionNotice(title: "Couldn’t connect", message: problem) }
-        }.navigationTitle("PulsHealth database").navigationBarTitleDisplayMode(.inline)
+            .background(Color(uiColor: .systemGroupedBackground))
+        }
+        .navigationTitle("PulsHealth")
+        .navigationBarTitleDisplayMode(.inline)
     }
+
     private func connect() async {
         guard !connecting else { return }; connecting = true; problem = nil
         defer { connecting = false }

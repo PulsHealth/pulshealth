@@ -11,6 +11,7 @@ enum SettingsRoute: Hashable {
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @AppStorage("settings.developerMode") private var developerMode = false
+    @State private var historyPath: [SyncRoute] = []
     private var account: UserAccount { model.sharing.account }
 
     var body: some View {
@@ -41,6 +42,14 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
 
+            Section("Connections") {
+                NavigationLink {
+                    ConnectionsView(path: $historyPath, history: true)
+                } label: {
+                    Label("Connection history", systemImage: "clock.arrow.circlepath")
+                }
+            }
+
             Section("Preferences") {
                 NavigationLink { PerformanceSettingsView() } label: {
                     Label("Performance", systemImage: "speedometer")
@@ -67,6 +76,9 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .task { await account.restore() }
+        .navigationDestination(for: SyncRoute.self) { route in
+            ConnectionRouteView(route: route, path: $historyPath)
+        }
         .navigationDestination(for: SettingsRoute.self) { route in
             switch route {
             case .user: UserView(account: account)

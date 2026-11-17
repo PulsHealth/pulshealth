@@ -73,13 +73,13 @@ struct ConnectionsView: View {
                     NavigationLink("Add a connection", value: SyncRoute.addConnection).buttonStyle(.borderedProminent).controlSize(.large)
                 }.frame(maxWidth: .infinity).padding(.vertical, 48)
             }
-            if !history && (!model.savedDestinations.isEmpty || model.sharing.hasRememberedConnections) {
-                NavigationLink(value: SyncRoute.history) { Label("Connection history", systemImage: "clock.arrow.circlepath").font(.subheadline).foregroundStyle(Color.accentColor) }
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 10)
+            if history && enrollments.isEmpty && !model.sharing.requests.contains(where: { $0.status != "open" }) {
+                ContentUnavailableView("No past connections", systemImage: "clock.arrow.circlepath",
+                                       description: Text("Completed and expired connections will appear here."))
             }
         }
         .buttonStyle(.plain)
-        .navigationTitle(history ? "History" : "Connections")
+        .navigationTitle(history ? "Connection history" : "Connections")
         .toolbar { if !history { ToolbarItem(placement: .primaryAction) { NavigationLink(value: SyncRoute.addConnection) { Image(systemName: "plus").foregroundStyle(Color.accentColor) }.accessibilityLabel("Add a connection") } } }
         .task { await model.sharing.refresh() }
         .refreshable { await model.sharing.refresh() }
@@ -178,7 +178,7 @@ struct ConnectionChoice: View {
 struct AddConnectionView: View {
     var body: some View {
         ConnectionPage {
-            NavigationLink(value: SyncRoute.ownDatabase) { ConnectionChoice(title: "Your database", symbol: "externaldrive") }.accessibilityLabel("Your database")
+            NavigationLink(value: SyncRoute.server(scan: false, choice: .own)) { ConnectionChoice(title: "Your database", symbol: "externaldrive") }.accessibilityLabel("Your database")
             NavigationLink(value: SyncRoute.managedDatabase) { ConnectionChoice(title: "PulsHealth database", symbol: "cloud") }.accessibilityLabel("PulsHealth database")
             NavigationLink(value: SyncRoute.groupChoice) { ConnectionChoice(title: "Data requests", symbol: "person.2") }.accessibilityLabel("Data requests")
         }.buttonStyle(.plain).navigationTitle("Add a connection")
@@ -190,14 +190,6 @@ struct GroupConnectionChoiceView: View {
             NavigationLink(value: SyncRoute.openRequest) { ConnectionChoice(title: "Open request", symbol: "qrcode.viewfinder") }.accessibilityLabel("Open request")
             NavigationLink(value: SyncRoute.createRequest) { ConnectionChoice(title: "Create request", symbol: "person.2.badge.plus") }.accessibilityLabel("Create request")
         }.buttonStyle(.plain).navigationTitle("Data requests")
-    }
-}
-struct OwnDatabaseEntryView: View {
-    var body: some View {
-        ConnectionPage {
-            NavigationLink(value: SyncRoute.server(scan: true, choice: .own)) { ConnectionChoice(title: "Scan connection code", symbol: "qrcode.viewfinder") }.accessibilityLabel("Scan connection code")
-            NavigationLink(value: SyncRoute.server(scan: false, choice: .own)) { ConnectionChoice(title: "Enter details manually", symbol: "keyboard") }.accessibilityLabel("Enter details manually")
-        }.buttonStyle(.plain).navigationTitle("Your database")
     }
 }
 struct PersonalConnectionView: View {
@@ -240,7 +232,7 @@ struct ConnectionRouteView: View {
         case .personal: SyncView(path: $path)
         case .account: UserView(account: model.sharing.account)
         case .addConnection: AddConnectionView()
-        case .ownDatabase: OwnDatabaseEntryView()
+        case .ownDatabase: ServerSettingsView(scanOnArrival: false, preferred: .own)
         case .connectionSettings(let id): ConnectionSettingsView(destinationID: id)
         case .managedDatabase: PulsHealthConnectionSetupView()
         case .groupChoice: GroupConnectionChoiceView()

@@ -249,9 +249,6 @@ struct ExportView: View {
             .disabled(selection.isEmpty || model.exportBlockedByBackfill || layoutIssue != nil)
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
-                if selection.isEmpty {
-                    Text("Nothing is selected. Choose data types or aggregated types above.")
-                }
                 if let layoutIssue { Text(layoutIssue).foregroundStyle(.orange) }
                 if model.exportLacksMedicationAccess {
                     Text("Medication Doses needs its own permission, which iOS asks for after Apply under Connections → Database → Raw Samples. Until that has been answered this export contains no doses.")

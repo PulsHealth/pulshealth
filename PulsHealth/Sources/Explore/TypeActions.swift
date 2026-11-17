@@ -120,6 +120,10 @@ extension AppModel {
     func discardTypeSyncChanges(_ identifier: String) {
         if appliedConfig.enabledTypes.contains(identifier) { config.enabledTypes.insert(identifier) }
         else { config.enabledTypes.remove(identifier) }
+        discardTypeAggregateChanges(identifier)
+    }
+
+    func discardTypeAggregateChanges(_ identifier: String) {
         var remaining = config.aggregates.filter { $0.typeIdentifier != identifier }
         var restored: [AggregateConfig] = []
         for applied in appliedConfig.aggregates {
