@@ -273,8 +273,7 @@ Sources/
 │                         Create Account explains full capacity and the waitlist.
 │                         Pairing returns a code — its database named
 │                         — tested above Save & Apply; once applied, Manage
-│                         Account, Connect an AI Assistant (docs, in
-│                         Safari). Saved Databases offers Switch and Unpair. Account deletion stays
+│                         Account (in Safari). Saved Databases offers Switch and Unpair. Account deletion stays
 │                         under Settings → Privacy & Data. Your own: the Database
 │                         URL and Token fields (validated: https, or http for
 │                         local-network hosts only; held in a

@@ -214,17 +214,6 @@ struct ServerSettingsView: View {
                 Link(destination: PulsHealthDatabase.accountURL) {
                     Label("Manage Account", systemImage: "person.crop.circle")
                 }
-            } footer: {
-                Text("Your account page lists the iPhones connected to your account, and is where you change your password.")
-            }
-            Section {
-                // Opens in Safari, like the other links: a page of the
-                // documentation, not a request the app makes.
-                Link(destination: PulsHealthDatabase.aiAssistantsURL) {
-                    Label("Connect an AI Assistant", systemImage: "sparkles")
-                }
-            } footer: {
-                Text("Sign in from Claude or another assistant and ask it about your Health data.")
             }
 
         } else {

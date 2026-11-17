@@ -176,7 +176,7 @@ address. Before you tap Save & Apply it does one thing with it: a connection
 test, which asks that database what it supports, using the token, and
 uploads no health data. Closing the sheet changes nothing. Create Account
 opens the developer's sign-up form in the same sheet; What the Developer
-Holds, Manage Account, Connect an AI Assistant and Delete PulsHealth
+Holds, Manage Account and Delete PulsHealth
 Account open the developer's pages in Safari, outside the app. A pairing code from the account page
 opened on the iPhone in Safari (where the invite email leads) instead
 reaches the app as an ordinary pairing link, which the app asks you to

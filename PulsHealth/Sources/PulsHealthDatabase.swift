@@ -63,11 +63,6 @@ enum PulsHealthDatabase {
     /// registration to happen in the app, not in Safari.
     static var signUpURL: URL { viewerURL.appending(path: "signup") }
 
-    /// How to connect Claude or another AI assistant to the PulsHealth
-    /// database: a documentation page, opened in Safari. The app itself makes
-    /// no request for it.
-    static let aiAssistantsURL = URL(string: "https://pulshealth.com/docs/ai/")!
-
     /// The privacy policy's section on what the developer holds for the
     /// people who use it.
     static let privacyURL = URL(string: "https://pulshealth.com/privacy#if-you-use-the-developers-viewer")!

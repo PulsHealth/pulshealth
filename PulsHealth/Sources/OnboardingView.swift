@@ -205,9 +205,6 @@ struct OnboardingView: View {
                     feature(
                         "bolt.heart", "Automatic",
                         "New data syncs by itself in the background.")
-                    feature(
-                        "sparkles", "Use it your way",
-                        "Ask your AI assistant about it, or browse it on the web.")
                 }
                 // Opens in Safari, outside the app.
                 Link(destination: URL(string: "https://pulshealth.com/#ways")!) {
