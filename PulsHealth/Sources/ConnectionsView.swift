@@ -290,7 +290,10 @@ struct ConnectionSettingsView: View {
                 }
                 Section("Server") {
                     Text(destination.identity.serverLabel).textSelection(.enabled)
-                    LabeledContent("User ID", value: destination.userID).textSelection(.enabled)
+                    DisclosureGroup("Account details") {
+                        LabeledContent("User ID", value: destination.userID)
+                            .font(.caption).textSelection(.enabled)
+                    }
                     if destinationID == model.activeDestinationID {
                         NavigationLink("Edit connection details", value: SyncRoute.server(scan: false))
                     }
