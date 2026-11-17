@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The per-type screen the Explore tab opens: what HealthKit holds for one
 /// catalog type (its `TypeProfile`), the knowledge base's one-line description and typical range,
-/// and the ways out — an aggregate preview, the sync detail.
+/// and one-time export selection, including an aggregate preview.
 ///
 /// Everything numeric comes from `ExploreModel`; nothing here reads
 /// HealthKit itself except the aggregate preview, which goes through the
@@ -12,9 +12,7 @@ struct TypePageView: View {
     let identifier: String
     @Environment(AppModel.self) private var model
     @Environment(TypeActions.self) private var typeActions
-    @State private var showsSyncChoices = false
     @State private var showsExportChoices = false
-    @State private var showsSyncDetails = false
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -67,25 +65,16 @@ struct TypePageView: View {
         .navigationTitle(descriptor.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { actions(descriptor) } }
-        .navigationDestination(isPresented: $showsSyncDetails) {
-            if let status = model.statuses.first(where: { $0.id == identifier }) { TypeDetailView(status: status) }
-        }
-        .sheet(isPresented: $showsSyncChoices) {
-            TypeDataSelectionSheet(descriptor: descriptor, configuration: model.config)
-        }
         .sheet(isPresented: $showsExportChoices) {
             TypeDataSelectionSheet(descriptor: descriptor,
                 configuration: SyncConfiguration(enabledTypes: model.export.draft.types, aggregates: model.export.draft.aggregates),
                 scope: .export)
         }
         .task {
-            // The facts decide whether the profile is current; cheap enough
-            // to refresh on every visit. Opening a type that has never been
-            // analyzed starts its one analysis (which requests Health access
-            // for the type when it has none); a stored profile is kept, and
-            // stale ones are refreshed only by the Refresh button.
+            // Browsing never starts analysis or presents Health permissions.
+            // Analyze requests access when needed; existing profiles stay put
+            // until the user chooses Refresh or Rescan.
             await explore.refreshQuickFacts(for: [identifier])
-            if explore.profiles[identifier] == nil { explore.analyze(identifier) }
         }
     }
 
@@ -157,9 +146,9 @@ struct TypePageView: View {
                     onCancel: { explore.cancel(identifier) })
             }
         } else if profile == nil {
-            // The analysis starts on its own when the page opens, so this is
-            // only what stopped it: no data, a declined read, or a failure.
-            let noData = facts != nil && facts?.latestStart == nil
+            // Missing quick facts can mean permission has not been requested.
+            // Wait for an explicit analysis before reporting an empty result.
+            let noData = explore.errors[identifier] != nil && facts != nil && facts?.latestStart == nil
             CardSection(
                 noData ? "No data" : "Not analyzed",
                 subtitle: noData
@@ -353,32 +342,12 @@ struct TypePageView: View {
                     }
                 }
             }
-            Section {
-                Button(syncActionTitle, systemImage: "arrow.triangle.2.circlepath") { showsSyncChoices = true }
-                    .disabled(model.stateFileUnreadable)
-                if model.hasPendingTypeChanges(identifier) {
-                    Button("Undo Sync Changes for This Type", systemImage: "arrow.uturn.backward") {
-                        model.discardTypeSyncChanges(identifier)
-                        typeActions.notice = nil
-                    }
-                }
-                if model.statuses.contains(where: { $0.id == identifier }), model.appliedConfig.serverURL != nil {
-                    Button("Sync Details", systemImage: "info.circle") { showsSyncDetails = true }
-                }
-            }
         } label: {
-            Label("Use This Type", systemImage: "plus")
+            Label("Export", systemImage: "square.and.arrow.up")
         }
         .accessibilityIdentifier("typeActions.menu")
     }
 
-    private var syncActionTitle: String {
-        if model.hasPendingTypeChanges(identifier) { return "Edit Sync Draft…" }
-        if model.appliedConfig.serverURL != nil, model.appliedConfig.observedTypeIdentifiers.contains(identifier) {
-            return "Manage Sync…"
-        }
-        return "Add to Sync…"
-    }
 
 }
 
@@ -688,8 +657,7 @@ private struct SourcesSection: View {
 
 /// The buckets an aggregate would produce, computed through the explorer as
 /// the sync would compute them and sent nowhere (`AggregatePreviewPane`),
-/// with the controls to try others and the buttons that add the one shown to
-/// Sync or to the export.
+/// with controls to try others and add the one shown to a one-time export.
 private struct AggregatePreviewSection: View {
     @Environment(TypeActions.self) private var typeActions
     let descriptor: HealthTypeDescriptor
@@ -699,7 +667,6 @@ private struct AggregatePreviewSection: View {
     @State private var deviceFilter: AggregateDeviceFilter = .all
     @State private var window: PreviewWindow = .month
     @State private var readout: String?
-    @State private var added = false
 
     enum PreviewWindow: String, CaseIterable, Identifiable {
         case week = "7 d"
@@ -786,38 +753,18 @@ private struct AggregatePreviewSection: View {
         }
     }
 
-    /// The aggregate the chart shows, into the export's draft or Sync's. In
-    /// either it joins the type's aggregates, which puts the type among the
-    /// aggregated ones if it was not already.
+    /// Add the previewed aggregate to the one-time export draft.
     @ViewBuilder private var addButtons: some View {
         if let config {
             let inExport = model.aggregateList(.export).duplicates(config)
-            let inSync = model.aggregateList(.sync).duplicates(config)
-            HStack(spacing: 12) {
-                Button(inExport ? "In Export" : "Add to Export") {
-                    model.export.prepareDraft()
-                    model.editAggregates(.export) { $0.add(config) }
-                    typeActions.addedToExport(descriptor.displayName, count: model.export.draft.selectedTypeCount)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .disabled(inExport || model.export.isRunning)
-                if model.appliedConfig.serverURL != nil {
-                    Button(inSync ? "In Sync" : "Add to Sync") {
-                        model.editAggregates(.sync) { $0.add(config) }
-                        added = true
-                        if model.aggregateList(.sync).configs.contains(config) { typeActions.addedToSync() }
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(inSync)
-                }
+            Button(inExport ? "In Export" : "Add to Export") {
+                model.export.prepareDraft()
+                model.editAggregates(.export) { $0.add(config) }
+                typeActions.addedToExport(descriptor.displayName, count: model.export.draft.selectedTypeCount)
             }
-            if added, inSync, model.hasPendingChanges {
-                Text("Apply it on the Sync tab.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(inExport || model.export.isRunning)
         }
     }
 

@@ -30,7 +30,7 @@ public struct PairingConfirmation: Sendable, Equatable {
     public enum Destination: Sendable, Equatable {
         /// The first-run flow's server step. Nothing is applied until its last step.
         case onboarding
-        /// Sync → Database. Nothing is applied until Save & Apply.
+        /// Connections → Database. Nothing is applied until Save & Apply.
         case settings
     }
 
@@ -105,7 +105,7 @@ public struct PairingConfirmation: Sendable, Equatable {
                     + "Nothing is sent until you finish setup.")
         case .settings:
             paragraphs.append(
-                "The details are filled in under Sync → Database and the connection is tested. "
+                "The details are filled in under Connections → Database and the connection is tested. "
                     + "Nothing changes until you tap Save & Apply.")
         }
         return paragraphs.joined(separator: "\n\n")
@@ -128,6 +128,6 @@ public struct PairingConfirmation: Sendable, Equatable {
             reason = failure.errorDescription ?? "It could not be read."
         }
         return reason + "\n\nNothing was changed. You can still scan the pairing code "
-            + "or enter the database details by hand on Sync → Database."
+            + "or enter the database details by hand on Connections → Database."
     }
 }

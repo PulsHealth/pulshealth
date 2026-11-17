@@ -1,7 +1,7 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Which list of aggregates a screen edits: the Sync tab's staged
+/// Which list of aggregates a screen edits: the Connections tab's staged
 /// configuration (`AppModel.config`, applied by the Apply bar) or the Export
 /// tab's draft (`ExportModel.draft`, this export's alone). The Aggregates
 /// picker, a type's aggregate page and the Custom… sheet are built once and
@@ -21,7 +21,7 @@ extension AppModel {
     }
 
     /// Make one edit to the list `scope` names. Sync's waits for Apply like
-    /// every other change on the Sync tab.
+    /// every other change on the Connections tab.
     func editAggregates(_ scope: AggregateScope, _ edit: (inout AggregateList) -> Void) {
         var list = aggregateList(scope)
         edit(&list)

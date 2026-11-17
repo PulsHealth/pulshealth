@@ -1,7 +1,7 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Sync → Aggregates → Edit, and Export → Aggregated types: the measurements
+/// Connections → Aggregates → Edit, and Export → Aggregated types: the measurements
 /// by category, searchable, laid out like the raw picker. A row works like a
 /// calendar in the Calendar app's list: tapping it adds the type with its
 /// daily default or removes it, and a selected row's ⓘ opens the type's page

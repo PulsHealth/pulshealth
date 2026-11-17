@@ -1,7 +1,7 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Sync → Activity → Background, the field-study screen: how often the app gets background execution time, when
+/// Connections → Activity → Background, the field-study screen: how often the app gets background execution time, when
 /// it wakes, and what work it does. ActivityView supplies the diagnostics export.
 struct BackgroundActivityView: View {
     @Environment(AppModel.self) private var model

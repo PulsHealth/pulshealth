@@ -147,6 +147,66 @@ final class AppModelTests: XCTestCase {
         return Harness(model: model, engine: engine, defaults: defaults, access: access)
     }
 
+    func testConnectionSyncSettingsCannotApplyAnotherSavedUserDraft() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine, authToken: "synthetic-connection-token"), progress: true)
+        await h.model.start()
+        let firstID = try XCTUnwrap(h.model.activeDestinationID)
+        let original = h.model.appliedConfig
+        var other = original
+        other.userID = "5ea4d000-0000-4000-8000-0000000000bb"
+        let configured = await h.engine.configure(other, confirmServerIdentity: true)
+        XCTAssertTrue(configured)
+        try await h.engine.switchDestination(id: firstID)
+        await h.model.refresh()
+        XCTAssertTrue(h.model.canEditConnectionSyncSettings(firstID))
+        h.model.config.userID = other.userID
+        XCTAssertFalse(h.model.canEditConnectionSyncSettings(firstID))
+        let applied = await h.model.applyConfiguration(expectedDestinationID: firstID)
+        XCTAssertFalse(applied)
+        XCTAssertEqual(h.model.activeDestinationID, firstID)
+        XCTAssertEqual(h.model.appliedConfig, original)
+        XCTAssertEqual(h.model.config.userID, other.userID, "Refusal preserves the pending draft")
+        let actual = await h.engine.store.configuration
+        XCTAssertEqual(actual.userID, original.userID)
+        XCTAssertEqual(actual.serverURL, original.serverURL)
+        h.model.config = original
+        XCTAssertTrue(h.model.canEditConnectionSyncSettings(firstID))
+    }
+
+    func testConnectionNamesAreLocalAndSettingsRenderWithoutLegacySetupChoices() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
+        await h.model.start()
+        let destination = try XCTUnwrap(h.model.savedDestinations.first)
+        let configuration = h.model.appliedConfig
+        XCTAssertEqual(h.model.connectionName(destination), destination.identity.serverLabel)
+        let renamed = await h.model.renameDestination(id: destination.id, name: "Personal archive")
+        XCTAssertTrue(renamed)
+        let saved = try XCTUnwrap(h.model.savedDestinations.first)
+        XCTAssertEqual(h.model.connectionName(saved), "Personal archive")
+        XCTAssertEqual(h.model.appliedConfig, configuration)
+        XCTAssertEqual(h.model.config, configuration)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        for (label, view) in [
+            ("Named connection", AnyView(NavigationStack { SyncView(path: .constant([])) }.environment(h.model))),
+            ("Connection settings", AnyView(NavigationStack { ConnectionSettingsView(destinationID: destination.id) }.environment(h.model)))
+        ] {
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            let controller = UIHostingController(rootView: view)
+            window.rootViewController = controller; window.makeKeyAndVisible()
+            controller.view.frame = window.bounds; window.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(200))
+            let attachment = XCTAttachment(image: UIGraphicsImageRenderer(size: window.bounds.size).image { _ in
+                controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+            })
+            attachment.name = label; attachment.lifetime = .keepAlways; add(attachment)
+            window.isHidden = true
+        }
+        let cleared = await h.model.renameDestination(id: destination.id, name: "")
+        XCTAssertTrue(cleared)
+        XCTAssertEqual(h.model.connectionName(try XCTUnwrap(h.model.savedDestinations.first)), destination.identity.serverLabel)
+    }
+
     func testTypeSyncSheetDraftIsLocalAndStagesAtomically() async throws {
         let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
         await h.model.start()
@@ -196,6 +256,20 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(h.model.stageTypeSync(sheet))
         h.model.discardTypeSyncChanges(heartRate)
         XCTAssertEqual(h.model.config.aggregates, [a, b])
+        XCTAssertFalse(h.model.hasPendingChanges)
+    }
+
+    func testUndoAggregateChangesPreservesRawDraftAndAggregateOrder() async throws {
+        let a = try XCTUnwrap(AggregateConfig.dailyDefault(for: heartRate))
+        let b = try XCTUnwrap(AggregateConfig.dailyDefault(for: steps))
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(serverURL: mine, aggregates: [a, b]))
+        await h.model.start()
+        h.model.config.enabledTypes.insert(heartRate)
+        h.model.config.aggregates[0] = a.with(interval: (1, .hour))
+        h.model.discardTypeAggregateChanges(heartRate)
+        XCTAssertEqual(h.model.config.aggregates, [a, b])
+        XCTAssertTrue(h.model.config.enabledTypes.contains(heartRate))
+        h.model.config.enabledTypes.remove(heartRate)
         XCTAssertFalse(h.model.hasPendingChanges)
     }
 
@@ -316,6 +390,31 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(h.model.config.enabledTypes.contains(heartRate))
     }
 
+    func testConnectionsCardsAndRemovalModalRenderOnPhone() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
+        await h.model.start()
+        let destination = try XCTUnwrap(h.model.savedDestinations.first)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let size = CGSize(width: 393, height: 852)
+        let views: [(String, AnyView)] = [
+            ("Connections cards", AnyView(NavigationStack { ConnectionsView(path: .constant([])) }.environment(h.model))),
+            ("Removal full screen", AnyView(ConnectionRemovalView(destination: destination, remove: { false }).environment(h.model)))
+        ]
+        for (name, view) in views {
+            let window = UIWindow(windowScene: scene)
+            window.frame = CGRect(origin: .zero, size: size)
+            let controller = UIHostingController(rootView: view)
+            window.rootViewController = controller; window.makeKeyAndVisible(); controller.view.frame = window.bounds
+            window.layoutIfNeeded()
+            try await Task.sleep(for: .milliseconds(150))
+            let attachment = XCTAttachment(image: UIGraphicsImageRenderer(size: size).image { _ in
+                controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+            })
+            attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
+            window.isHidden = true
+        }
+        XCTAssertEqual(h.model.savedDestinations.count, 1, "Rendering removal must not unpair or upload anything")
+    }
     func testConnectedTypeFlowScreenshots() async throws {
         let defaults = UserDefaults.standard
         let keys = ["PulsInitialType", "PulsInitialTab", "PulsFixtureProfiles"]
@@ -870,7 +969,7 @@ final class AppModelTests: XCTestCase {
 
     // MARK: - Apply gating
 
-    /// Edits on the Sync tab's pickers are staged in `config` and reach the engine only on
+    /// Edits on the Connections tab's pickers are staged in `config` and reach the engine only on
     /// Apply.
     func testStagedEditsReachTheEngineOnlyOnApply() async throws {
         let h = try await makeModel(flags: ["onboardingCompleted": true])
@@ -1336,7 +1435,7 @@ final class AppModelTests: XCTestCase {
     /// First one wins: a second link while the first awaits an answer is
     /// dropped, and Continue delivers only the payload the prompt named.
     /// Accepting fills nothing; during the flow the payload waits, and once
-    /// the flow is done it is handed to Sync → Database exactly once.
+    /// the flow is done it is handed to Connections → Database exactly once.
     func testAPairingLinkDuringTheFlowWaitsForItAndTheFirstLinkWins() async throws {
         let h = try await makeModel()
         await h.model.start()
@@ -1378,7 +1477,7 @@ final class AppModelTests: XCTestCase {
 
     /// A link can be what launches the app. Its prompt waits for `start()`,
     /// which may take the flow down — and then accepting leads straight to
-    /// Sync → Database.
+    /// Connections → Database.
     func testALaunchLinkWaitsForStartBeforeDecidingWhereItGoes() async throws {
         let h = try await makeModel(stored: SyncConfiguration(serverURL: mine, authToken: "own"))
         XCTAssertTrue(h.model.showsOnboarding, "init's guess")

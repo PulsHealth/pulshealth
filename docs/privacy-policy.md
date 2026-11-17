@@ -1,13 +1,13 @@
 # PulsHealth privacy policy
 
-**Last updated: 2026-10-22**
+**Last updated: 2026-11-14**
 
 PulsHealth is an iOS app that copies the health data on your iPhone to a
 database — one **you** run, or, if you create a PulsHealth account, the
 developer's own (the PulsHealth database) — or, if you have
 no database, writes it to files you then save or send yourself. This policy
 describes how the app and hosted service handle your data: it reads Apple Health, it uploads to the one database you set
-up, it exports a file when you ask for one, and it can send a one-time export to a request destination you approve.
+up, it exports a file when you ask for one, and it can send a one-time export or collect data over time for a request you explicitly approve.
 
 Settings → User also offers optional account sign-in independently of database
 sync. It reads your account identity, name, date of birth and biological sex
@@ -16,8 +16,7 @@ Name, date of birth and biological sex remain optional. Changing your sign-in
 email requires your current password; the app sends it over HTTPS for that
 check and does not persist it. Signing in does not enable Health uploads or
 change your sync destination. The account session credential stays in a
-separate device-only Keychain item; the profile is held in memory while the
-User or managed-server setup page is open. If the same account is also your active sync destination,
+separate device-only Keychain item; the profile is held in memory while the app is running. If the same account is also your active sync destination,
 saved edits update that destination's local profile. Signing out removes the
 account credential from this iPhone and requests server-session revocation;
 it does not disconnect an independently configured sync destination. The web
@@ -117,7 +116,7 @@ available from the plan row in Settings.
 The app may ask Apple's StoreKit framework to show its standard review prompt
 at a pause after a completed task. Apple decides whether to show it and
 handles any rating or review you choose to submit under Apple's terms.
-Settings → About → Write a Review opens the App Store review page. Neither
+Settings → Support PulsHealth → Write a Review opens the App Store review page. Neither
 path sends health data to Apple. StoreKit does not tell the app whether you
 submitted a rating or review; any review you publish is visible on the App
 Store. The timing counters described below remain in the app's own preferences.
@@ -159,8 +158,7 @@ To the database you configure — the PulsHealth backend you run, a receiver
 you built from the protocol, or the PulsHealth database if you chose it and
 signed in — over HTTPS, authenticated with a bearer token. One-time requests can send a ZIP to a separate HTTPS destination you explicitly approve; ordinary exports go through the share sheet. See [Data Requests](#data-requests).
 
-**Signing in to the PulsHealth database.** Sync → Database → PulsHealth
-Database → Sign In to PulsHealth opens the phone connection page at
+**Signing in to the PulsHealth database.** Connections → + → PulsHealth database → Sign in & continue opens the phone connection page at
 `app.pulshealth.com` in iOS's sign-in sheet, after iOS asks whether the app
 may use that site to sign in. The sheet is a browser run by iOS: what you
 type into it goes to the developer's viewer, not through the app, and it
@@ -178,7 +176,7 @@ address. Before you tap Save & Apply it does one thing with it: a connection
 test, which asks that database what it supports, using the token, and
 uploads no health data. Closing the sheet changes nothing. Create Account
 opens the developer's sign-up form in the same sheet; What the Developer
-Holds, Manage Account, Connect an AI Assistant and Delete PulsHealth
+Holds, Manage Account and Delete PulsHealth
 Account open the developer's pages in Safari, outside the app. A pairing code from the account page
 opened on the iPhone in Safari (where the invite email leads) instead
 reaches the app as an ordinary pairing link, which the app asks you to
@@ -196,7 +194,7 @@ Transport Security (`NSAllowsLocalNetworking`).
 
 ## What stays on the device
 
-Sync → Database lists saved databases and identifies the active one. Switching
+Connections lists saved databases and identifies the active one. Switching
 resumes that database’s own progress. Unpairing removes its saved connection,
 credential and sync progress from this phone; it does not delete already
 uploaded server data or revoke credentials on the server.
@@ -215,7 +213,7 @@ uploaded server data or revoke credentials on the server.
   data: unreadable until the first unlock after a restart, and excluded from
   device and iCloud backups, so a parked token is never carried off the phone.
 - **Sync state** — one file, `sync-state.json`, in the app's private container,
-  holding your saved database configurations and their separate sync progress.
+  holding your saved database configurations, optional connection names and their separate sync progress. Connection names stay on this iPhone and are never uploaded.
   Only the selected active database receives automatic uploads. Each saved
   configuration includes its database URL, chosen types, start date, the
   identity fields if you filled them in, and — if you signed in to the
@@ -312,6 +310,51 @@ background.
   files are not placed on the clipboard. Once a file has left the app it is an
   ordinary, unencrypted file: it is only as private as the place you put it,
   the app can no longer delete it, and the developer receives it only if you choose to send it to the developer.
+
+## Data requests and ongoing sharing
+
+Data requests are a separate, opt-in account feature. An organizer can
+create a request for a person, group or study, with a purpose, contact, consent
+text, specific quantity/category types, raw records or daily summaries, a
+history window, duration and retention period. Opening an invitation does not
+read or upload Health data. After you explicitly approve, the app sends only
+the selected scope to the PulsHealth account server for that organizer.
+
+Each enrollment has a separate upload credential in the device-bound Keychain
+and protected, backup-excluded local consent, anchors and diagnostic state.
+Uploads exclude account profiles, source/device names and arbitrary metadata.
+They include health values, timestamps and record keys scoped to that enrollment;
+these are sensitive health data, not a promise of anonymity. The server operator
+can read contributions. The organizer sees a participant code and can download
+contributions, without access to your personal database or account email.
+
+You may participate in multiple requests. Pause or stop disables this iPhone’s
+upload path immediately; an offline server update is retried when Connections is
+opened online. Resume starts from now and does not fill the paused interval.
+Signing out stops sharing on this iPhone. Existing uploaded records remain
+subject to the request’s retention policy, and downloaded copies cannot be
+recalled. Contact the organizer about their copies. Account deletion removes
+your server contributions and any requests you own. Records beyond retention
+are excluded from exports and removed by hourly cleanup; operator backups have
+their separate retention. Background updates depend on iOS and Health access.
+
+The app also keeps group creation drafts and locally removed connection IDs in
+protected, backup-excluded files on this iPhone. Drafts contain the organizer's
+entered request details and metric choices, not contributions or credentials.
+They are cleared after successful creation. Native organizer downloads are
+paged, held in memory for the file picker, and saved only where you choose.
+
+You can request deletion for an individual collection contribution, with or
+without withdrawing from future sharing. The organizer can stop further uploads
+and delete server records and receipts before confirming. Deletion status and
+request/completion timestamps remain until account deletion. Downloaded copies
+and operator backups require separate handling. Removing a connection from this
+iPhone hides its local entry; it does not erase recipient data.
+
+Invitation links contain an access secret and should be shared only with intended
+participants. Public directory listing is optional and reviewed, shows request
+information only, and is not verification of identity or research approval.
+[Data requests](collection-requests.md) describes the flows and safeguards.
 
 ## Data Requests
 
@@ -413,7 +456,7 @@ provider's responsibility are yours:
 Sean Wade operates the PulsHealth hosted service as an individual, with its
 primary database and managed backups in the United States and the web viewer
 at `app.pulshealth.com` — the **PulsHealth database** the app offers under
-Sync → Database. You create an account there (the app's Create Account
+Connections → + → PulsHealth database. You create an account there (the app's Create Account
 opens the form), or the developer invites you. What happens to your data:
 
 - **Signing up.** The sign-up form stores your name, email address, an
@@ -424,7 +467,7 @@ opens the form), or the developer invites you. What happens to your data:
   password from the emailed link. You can ask for your sign-up to be
   removed at any time by writing to support@pulshealth.com.
 - **The app still works exactly as described above.** Once your account is
-  set up, you sign in from Sync → Database (or open the account page's pairing code on
+  set up, you sign in from Connections → + → PulsHealth database (or open the account page's pairing code on
   the iPhone), and the app uploads only to the database address that code
   gives it — in this case the developer's. A one-time Data Request can separately
   send an export to a destination you review and approve.
@@ -549,7 +592,7 @@ opens the form), or the developer invites you. What happens to your data:
   OpenTopoMap). Those requests carry no health data, but they do reveal to
   that provider which area the map shows, and the viewer's address.
 - **Leaving.** **Delete my account and data** on the account page (the app's
-  Delete PulsHealth Account, under Settings → Privacy & Data, opens it)
+  Delete PulsHealth Account, under Settings → User, opens it)
   disables your account, signs out browsers, disconnects iPhone uploads and
   revokes connected assistants. The service immediately attempts to remove
   your account, profile and stored health records, including derived database
@@ -560,7 +603,7 @@ opens the form), or the developer invites you. What happens to your data:
   interruption can take longer. The operator checks delayed requests and aims
   to resolve them within 24 hours; contact support@pulshealth.com if your receipt
   is still pending then. The request alone is not a completion confirmation.
-  Tap Disconnect under Sync → Database (or delete
+  Tap Disconnect under Connections → Database (or delete
   the app) to stop it trying to sync.
   This flow is available to approved signups and invited personal accounts
   designated by the operator. Administrator, shared demo and protected

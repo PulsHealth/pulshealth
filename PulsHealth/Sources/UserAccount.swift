@@ -19,6 +19,7 @@ final class UserAccount {
     private(set) var busy = false
     private(set) var hasSession = false
     var problem: String?
+    var onSessionEnding: (() async -> Void)?
     private let credentials: any TokenStore
     private let session: URLSession
     private var token: String?
@@ -63,7 +64,10 @@ final class UserAccount {
     }
 
     func restore() async {
-        guard !busy else { return }
+        while busy {
+            do { try await Task.sleep(for: .milliseconds(50)) } catch { return }
+        }
+        guard !Task.isCancelled else { return }
         busy = true
         defer { busy = false }
         do {
@@ -88,6 +92,7 @@ final class UserAccount {
             struct Credential: Decodable { let token: String }
             let credential: Credential = try await request("POST", body: Exchange(code: code, verifier: attempt.verifier))
             let loaded: AccountProfile = try await request("GET", token: credential.token)
+            await onSessionEnding?()
             try credentials.setToken(credential.token)
             token = credential.token
             hasSession = true
@@ -155,6 +160,7 @@ final class UserAccount {
         busy = true
         defer { busy = false }
         do {
+            await onSessionEnding?()
             // Remove the device credential even when the server is unreachable.
             try credentials.setToken(nil)
             let oldToken = token
@@ -168,6 +174,18 @@ final class UserAccount {
                 let _: Empty = try await request("DELETE", token: oldToken)
             }
         } catch { problem = error.localizedDescription }
+    }
+
+    func collectionSessionFingerprint() throws -> String? {
+        guard let credential = try credentials.token() else { return nil }
+        return SHA256.hash(data: Data(credential.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    func collectionCommand<Value: Decodable, Body: Encodable>(_ body: Body) async throws -> CollectionResponse<Value> {
+        guard !busy else { throw AccountError("Wait for account sign-in or sign-out to finish, then try again.") }
+        // Read Keychain anew so a sign-out in another screen cannot leave a stale session in use.
+        guard let credential = try credentials.token() else { throw AccountError("Sign in from Settings → User first.") }
+        return try await request("POST", token: credential, body: body, path: "collections")
     }
 
     private struct Failure: Decodable { let error: String }
@@ -194,13 +212,33 @@ final class UserAccount {
             guard let response = response as? HTTPURLResponse else { throw AccountError("Your account could not be reached. Try again.") }
             guard (200..<300).contains(response.statusCode) else {
                 let message = try? JSONDecoder().decode(Failure.self, from: data).error
-                throw AccountError(message ?? "Your account could not be reached. Try again.")
+                if path == "collections", message == nil, [401, 404].contains(response.statusCode) {
+                    throw CollectionServiceUnavailable()
+                }
+                if response.statusCode == 401 {
+                    throw AccountError(message ?? "Your session expired. Sign in again.")
+                }
+                if response.statusCode == 503 {
+                    throw AccountError("PulsHealth is temporarily unavailable. Try again shortly.")
+                }
+                throw AccountError(message ?? "PulsHealth returned an unexpected response. Try again.")
             }
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .millisecondsSince1970
             return try decoder.decode(Response.self, from: data)
         } catch let error as AccountError { throw error }
-        catch { throw AccountError("Your account could not be reached. Try again.") }
+        catch let error as CollectionServiceUnavailable { throw error }
+        catch let error as URLError {
+            if error.code == .notConnectedToInternet { throw AccountError("You’re offline. Reconnect and try again.") }
+            if error.code == .timedOut { throw AccountError("PulsHealth took too long to respond. Try again.") }
+            if error.code == .cancelled { throw CancellationError() }
+            throw AccountError("Couldn’t connect to PulsHealth. Try again.")
+        }
+        catch is DecodingError {
+            if path == "collections" { throw CollectionError("Data requests couldn’t be loaded. Try again.") }
+            throw AccountError("PulsHealth returned an unexpected account response. Try again.")
+        }
+        catch { throw AccountError("Couldn’t connect to PulsHealth. Try again.") }
     }
 }
 
@@ -214,4 +252,8 @@ private final class NoAccountRedirects: NSObject, URLSessionTaskDelegate {
                     newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
         completionHandler(nil)
     }
+}
+
+struct CollectionServiceUnavailable: LocalizedError {
+    var errorDescription: String? { "Data requests aren’t available on this server yet." }
 }

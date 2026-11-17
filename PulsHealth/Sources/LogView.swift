@@ -1,7 +1,7 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Sync → Activity → Log: the live, filterable event stream.
+/// Connections → Activity → Log: the live, filterable event stream.
 struct LogView: View {
     @Environment(AppModel.self) private var model
     @State private var minLevel: SyncEvent.Level = .debug

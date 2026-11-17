@@ -11,6 +11,7 @@ and when, is the [Release record](#release-record) at the bottom.
 | Document | What it is |
 |---|---|
 | [`2.1-copy.md`](2.1-copy.md) | Approved 2.1 copy and the five-card advertising campaign; preparation, not a submission record. |
+| [`2.5-copy.md`](2.5-copy.md) | Connections / Data requests release copy and acceptance focus for 2.5 (34); uploaded to internal TestFlight, not submitted for App Store review. |
 | [`2.4-copy.md`](2.4-copy.md) | Release notes and reviewer walkthrough for the replacement 2.4 (33) submission. |
 | [`2.3-copy.md`](2.3-copy.md) | Prepared 2.3 release notes and updated first-sync review instructions; no upload or submission implied. |
 | [`2.2-copy.md`](2.2-copy.md) | Prepared Free/Pro description, What's New and reviewer walkthrough for the 2.2 candidate; acceptance and submission remain separate. |
@@ -238,6 +239,42 @@ changes, revisit them in the same pull request:
 | What ships to the store | [Release record](#release-record) — these documents describe the shipped binary, not whatever `main` happens to be |
 
 ## Release record
+
+### 2.5 (35) internal TestFlight (2026-11-16)
+
+Built from clean committed source `341c88064f2ea76bd0ca6f966d3a6312936a7805`
+on `codex/collection-requests`. This candidate streamlines connection setup,
+groups sync review into expandable samples and aggregates with persistent
+actions, moves connection history to Settings, and defaults new exports and
+syncs to 30 days. The account button reads “Sign in”.
+
+The signed archive, matching dSYMs, exported IPA hash, upload log and candidate
+evidence are retained privately. Focused validation passed 20 package tests
+and 12 app tests, with a subsequent full-selection UI check after footer
+refinements. The final label/build-number changes compiled in the Release
+archive; physical-phone acceptance remains unverified.
+
+Apple accepted the upload and completed processing. App Store Connect showed
+**2.5 (35): Testing** in the existing PulsHealth internal group. No external
+beta or App Store review submission was made. The backend and public website
+were not deployed; hosted request testing retains build 34's backend gates.
+
+
+### 2.5 (34) internal TestFlight (2026-11-16)
+
+Built from committed source `4adf936` on the Connections / Data requests branch.
+The clean signed archive and App Store distribution export preserve the fixed
+bundle identifier, HealthKit/background-delivery capabilities and preferred
+local signing configuration. Matching dSYMs, the exported IPA hash, upload log
+and candidate evidence are retained privately.
+
+Apple accepted the upload and completed processing. App Store Connect showed
+**2.5 (34): Testing** in the existing PulsHealth internal group. No external
+beta review or App Store review submission was performed, and nothing was
+released on the App Store. The hosted backend and public website were not deployed.
+Hosted request testing still requires the compatible backend/schema deployment
+and synthetic end-to-end checks; physical-phone upgrade, QR, HealthKit and
+background-sync acceptance remain unverified for this candidate.
 
 ### 2.4 (33) replacement submitted for App Review (2026-10-26)
 

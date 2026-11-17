@@ -3,34 +3,22 @@ import AVFoundation
 import CoreImage.CIFilterBuiltins
 import PulsHealthSync
 
-struct CreateDataRequestView: View {
-    @State private var title = ""
-    @State private var requester = ""
-    @State private var purpose = ""
-    @State private var contact = ""
-    @State private var start = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
-    @State private var end = Date()
-    @State private var metrics: [DataRequest.Metric] = []
-    @State private var format: ExportFormat = .csv
-    @State private var sends = false
-    @State private var destinationName = ""
-    @State private var endpoint = ""
-    @State private var link: URL?
+struct FileRequestOptions: View {
+    @Binding var title: String
+    @Binding var requester: String
+    @Binding var purpose: String
+    @Binding var contact: String
+    @Binding var draft: FileConnectionDraft
+    @Binding var link: URL?
     @State private var problem: String?
 
     var body: some View {
-        Form {
-            Section("About This Request") {
-                TextField("Request name", text: $title)
-                TextField("Requested by", text: $requester)
-                TextField("Purpose", text: $purpose)
-                TextField("Contact email or phone", text: $contact)
-            }
+        Group {
             Section("Data & Dates") {
-                NavigationLink("Data types (\(metrics.count))") { RequestMetricPicker(metrics: $metrics) }
-                DatePicker("From", selection: $start, in: ...Date(), displayedComponents: .date)
-                DatePicker("Through", selection: $end, in: ...Date(), displayedComponents: .date)
-                Picker("Format", selection: $format) {
+                NavigationLink("Data types (\(draft.metrics.count))") { RequestMetricPicker(metrics: $draft.metrics) }
+                DatePicker("From", selection: $draft.start, in: ...Date(), displayedComponents: .date)
+                DatePicker("Through", selection: $draft.end, in: ...Date(), displayedComponents: .date)
+                Picker("Format", selection: $draft.format) {
                     Text("CSV").tag(ExportFormat.csv)
                     Text("JSON").tag(ExportFormat.json)
                     Text("JSONL").tag(ExportFormat.jsonl)
@@ -38,10 +26,10 @@ struct CreateDataRequestView: View {
                 Text("Both dates included, in the participant’s time zone. Daily aggregates include completed days only; today’s aggregate is omitted until tomorrow. One ZIP includes the data and export summary. Workout routes and extra streams are not requested.").font(.footnote).foregroundStyle(.secondary)
             }
             Section {
-                Toggle("Send to a destination", isOn: $sends)
-                if sends {
-                    TextField("Destination name", text: $destinationName)
-                    TextField("HTTPS upload endpoint", text: $endpoint)
+                Toggle("Send to a destination", isOn: $draft.sends)
+                if draft.sends {
+                    TextField("Destination name", text: $draft.destinationName)
+                    TextField("HTTPS upload endpoint", text: $draft.endpoint)
                         .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                     Text("Use a compatible PulsHealth request receiver, not an email address, folder link or database password. The participant confirms Generate & Send before any upload.")
                         .font(.footnote).foregroundStyle(.secondary)
@@ -53,27 +41,23 @@ struct CreateDataRequestView: View {
             if let problem { Section { Text(problem).foregroundStyle(.red) } }
             Section {
                 Button("Create Link & QR Code") { create() }
-                Text("One-time request. No account or ongoing sync. Links expire after 30 days and can be reused by different people. Anyone with the link can see its request details; it contains no health data or upload credentials.")
+                Text("Participants export once. No PulsHealth account is needed. Links expire after 30 days and can be reused by different people. Anyone with the link can see its request details; it contains no health data or upload credentials.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
-        }
-        .navigationTitle("Create Request")
-        .navigationDestination(isPresented: Binding(get: { link != nil }, set: { if !$0 { link = nil } })) {
-            if let link { RequestCodeView(link: link) }
         }
     }
     private func create() {
         do {
             var destination: DataRequest.Destination?
-            if sends {
-                guard let url = URL(string: endpoint.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            if draft.sends {
+                guard let url = URL(string: draft.endpoint.trimmingCharacters(in: .whitespacesAndNewlines)) else {
                     throw DataRequest.Invalid("Enter an HTTPS upload endpoint.")
                 }
-                destination = .init(name: destinationName, url: url)
+                destination = .init(name: draft.destinationName, url: url)
             }
             let request = DataRequest(title: title, requester: requester, purpose: purpose, contact: contact,
-                startDay: DataRequest.day(start), endDay: DataRequest.day(end), metrics: metrics,
-                format: format, destination: destination)
+                startDay: DataRequest.day(draft.start), endDay: DataRequest.day(draft.end), metrics: draft.metrics,
+                format: draft.format, destination: destination)
             link = try request.link(); problem = nil
         } catch { problem = error.localizedDescription }
     }
@@ -147,7 +131,7 @@ struct RequestCodeView: View {
                 Text(link.absoluteString).font(.caption2).textSelection(.enabled).lineLimit(4)
             }
             Section {
-                Text("Open this link or scan the code with PulsHealth installed. If it isn’t installed, install PulsHealth, then reopen the same link. Settings → Open or Scan Request also accepts a pasted link.")
+                Text("Open this link or scan the code with PulsHealth installed. If it isn’t installed, install PulsHealth, then reopen the same link. Connections → + → Data requests → Open request also accepts a pasted link.")
                 Link("Get PulsHealth", destination: URL(string: "https://apps.apple.com/app/id6757657354")!)
                 Text("The requester’s identity is not verified by this code. Editing the request creates a different link; an existing link cannot be recalled.")
             }
@@ -160,18 +144,20 @@ struct OpenDataRequestView: View {
     @State private var text = ""
     @State private var scanning = false
     @State private var scanned = false
+    @State private var problem: String?
     var body: some View {
         Form {
             Section {
                 TextField("Paste a PulsHealth request link", text: $text, axis: .vertical)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
-                Button("Open Request") { model.dataRequests.open(text) }.disabled(text.isEmpty)
+                Button("Open Request") { open() }.disabled(text.isEmpty)
                 Button("Scan Request QR Code", systemImage: "qrcode.viewfinder") { scanning = true }
-            } footer: { Text("You’ll review the data, dates and destination before generating anything.") }
+            } footer: { Text("Open a one-time or ongoing request. You’ll review the data, schedule and destination before sharing.") }
+            if let problem { Section { Text(problem).foregroundStyle(.red) } }
         }
         .navigationTitle("Open Request")
         .sheet(isPresented: $scanning, onDismiss: {
-            if scanned { scanned = false; model.dataRequests.open(text) }
+            if scanned { scanned = false; open() }
         }) {
             RequestScanner { code in
                 text = code
@@ -179,6 +165,10 @@ struct OpenDataRequestView: View {
                 scanning = false
             }
         }
+    }
+    private func open() {
+        do { try model.openRequestLink(text); problem = nil }
+        catch { problem = error.localizedDescription }
     }
 }
 
@@ -194,7 +184,7 @@ private struct RequestScanner: View {
                 if allowed {
                     CameraPreview(onCode: { code in
                         guard !done else { return }
-                        do { _ = try DataRequest.parse(code); done = true; onCode(code) }
+                        do { _ = try RequestInvitation(code); done = true; onCode(code) }
                         catch { problem = error.localizedDescription }
                     }, onFailure: { problem = $0 })
                     Text("Scan a PulsHealth request code. You will review the request after scanning.")
@@ -223,7 +213,7 @@ struct FulfillDataRequestView: View {
                     LabeledContent("Requested by", value: request.requester)
                     Text(request.purpose)
                     Text(request.contact).font(.footnote)
-                    Text("Requester details are supplied by the link and are not verified. This is a one-time export, not study enrollment or ongoing sync.")
+                    Text("Requester details are supplied by the link and are not verified. This request exports a file once. It does not send future updates.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 Section("Requested Data") {
@@ -240,7 +230,7 @@ struct FulfillDataRequestView: View {
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                     if request.metrics.contains(where: { $0.type == HealthTypeCatalog.medicationDoseIdentifier }) {
-                        Text("Medication Doses needs its own permission, which iOS asks for after Apply under Sync → Raw Samples. Until that has been answered this export contains no doses.")
+                        Text("Medication Doses needs its own permission, which iOS asks for after Apply under Connections → Database → Raw Samples. Until that has been answered this export contains no doses.")
                             .font(.footnote).foregroundStyle(.orange)
                     }
                 }

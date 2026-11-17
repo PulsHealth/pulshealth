@@ -1,7 +1,7 @@
 import Foundation
 import PulsHealthSync
 
-/// Where Sync → Database sends the data: the two choices at the top of the
+/// Where Connections → Database sends the data: the two choices at the top of the
 /// screen.
 enum DatabaseDestination: Hashable {
     /// The developer's hosted database, paired by signing in
@@ -11,7 +11,7 @@ enum DatabaseDestination: Hashable {
     case own
 }
 
-/// Sync → Database's state and decisions, kept out of the view so they can
+/// Connections → Database's state and decisions, kept out of the view so they can
 /// be tested (`DatabaseSetupTests`): what the screen starts from, which
 /// fields Save & Apply commits, and when a sign-in's pairing code has been
 /// applied and stops asking to be.
@@ -36,7 +36,7 @@ struct DatabaseSetup: Equatable {
     /// URL and token in them.
     ///
     /// `preferred` is the choice the person already made before arriving (the
-    /// Sync tab's first-time screen); it applies only on an install with no
+    /// Connections tab's first-time screen); it applies only on an install with no
     /// database, where the screen would otherwise ask.
     init(
         applied: SyncConfiguration, scanOnArrival: Bool = false,
@@ -140,6 +140,16 @@ struct DatabaseSetup: Equatable {
         case nil:
             return false
         }
+        return true
+    }
+
+    /// A new destination starts with an explicit, empty selection rather than
+    /// inheriting the active connection's health data choices and history.
+    mutating func commitNewConnection(to configuration: inout SyncConfiguration) -> Bool {
+        guard commit(to: &configuration) else { return false }
+        configuration.enabledTypes = []
+        configuration.aggregates = []
+        configuration.startDate = SyncConfiguration().startDate
         return true
     }
 

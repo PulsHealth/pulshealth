@@ -45,9 +45,9 @@ targets:
         CFBundleDisplayName: PulsHealth
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        NSHealthShareUsageDescription: PulsHealth reads your health data to show it to you, export or send a one-time request you approve, and, if you set one up, sync it to the database you choose.
+        NSHealthShareUsageDescription: PulsHealth reads your health data to export it, share the data you approve with request organizers, and sync it to the database you choose.
         NSHealthUpdateUsageDescription: PulsHealth does not write health data.
-        # Sync → Database can read the pairing QR code a database's setup
+        # Connections → Database can read the pairing QR code a database's setup
         # prints instead of making the user type a URL, a token and a UUID.
         # Settings also scans request QR codes. No frame is ever stored.
         NSCameraUsageDescription: PulsHealth uses the camera to scan database pairing and data request QR codes.
@@ -101,8 +101,8 @@ targets:
         CODE_SIGN_STYLE: Automatic
         # Use a new build number for every App Store Connect upload.
         # Preserve the marketing version when replacing a withdrawn build.
-        CURRENT_PROJECT_VERSION: 33
-        MARKETING_VERSION: 2.4
+        CURRENT_PROJECT_VERSION: 35
+        MARKETING_VERSION: 2.5
         # The tint every control takes (Assets.xcassets/AccentColor): the blue
         # of the logo's pulse line, a shade lighter in dark mode.
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -131,14 +131,32 @@ targets:
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: true
         SWIFT_OBJC_BRIDGING_HEADER: HostedTests/ExceptionCatcher.h
+  PulsHealthUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: PulsHealth
+    configFiles:
+      Debug: Config/Local.xcconfig
+      Release: Config/Local.xcconfig
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: true
+        TEST_TARGET_NAME: PulsHealth
 schemes:
   PulsHealth:
     build:
       targets:
         PulsHealth: all
         PulsHealthHostedTests: [test]
+        PulsHealthUITests: [test]
     run:
       storeKitConfiguration: Configuration/Pro.storekit
     test:
       targets:
         - PulsHealthHostedTests
+        - PulsHealthUITests

@@ -108,7 +108,7 @@ import Testing
         #expect(message.contains("Nothing was changed."))
         let incomplete = PairingConfirmation.rejectionMessage(for: .missingField("token"))
         #expect(incomplete.hasPrefix("This isn’t a complete PulsHealth pairing code."))
-        #expect(incomplete.contains("on Sync → Database"))
+        #expect(incomplete.contains("on Connections → Database"))
         // Whoever opens the link may never have seen the server's scripts.
         #expect(!incomplete.contains("scripts/"))
     }

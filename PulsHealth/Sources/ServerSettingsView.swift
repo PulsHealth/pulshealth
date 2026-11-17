@@ -2,7 +2,7 @@ import AuthenticationServices
 import SwiftUI
 import PulsHealthSync
 
-/// Sync → Database. Two choices: the PulsHealth database, which needs an
+/// Connections → Database. Two choices: the PulsHealth database, which needs an
 /// account and is paired by signing in, and your own database, paired with
 /// the code its setup prints (scanned, pasted, or accepted as a `puls://`
 /// link) or typed in by hand.
@@ -18,9 +18,9 @@ struct ServerSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     /// A caller that wants the scanner already up on arrival (a pairing
-    /// route can); the Sync tab's Set Up opens the form itself.
+    /// route can); the Connections tab's Set Up opens the form itself.
     let scanOnArrival: Bool
-    /// The choice made on the Sync tab's first-time screen, if that is what
+    /// The choice made on the Connections tab's first-time screen, if that is what
     /// opened this one (`DatabaseSetup.init(applied:scanOnArrival:preferred:)`).
     var preferred: DatabaseDestination? = nil
 
@@ -32,32 +32,32 @@ struct ServerSettingsView: View {
     /// The host of a code the sign-in sheet handed back for a database outside
     /// the viewer's domain, now filled in under your own database instead.
     @State private var signInElsewhere: String?
-    @State private var destinationToSwitch: SavedSyncDestination?
-    @State private var destinationToUnpair: SavedSyncDestination?
     @State private var loaded = false
     @State private var showSignupNotice = false
     /// Outcome of the last Test Connection for the values currently entered;
     /// cleared whenever they change.
     @State private var connectionTest = DatabaseConnectionTest()
     @State private var showScanner = false
+    /// Only failures from saving this form belong here; HealthKit and sync
+    /// errors from elsewhere must not appear while adding a database.
+    @State private var saveProblem: String?
 
     private var needsInitialSyncReview: Bool {
         setup.needsInitialSyncReview(applied: model.appliedConfig, draft: model.config, saved: model.savedDestinations)
     }
 
-    private var applyTitle: String { needsInitialSyncReview ? "Add Database" : "Save & Apply" }
+    private var applyTitle: String { needsInitialSyncReview ? "Continue" : "Save changes" }
 
     var body: some View {
         @Bindable var model = model
         Form {
-            savedDestinationsSection
-            if let message = model.lastErrorMessage {
+            if let message = saveProblem {
                 Section {
                     Label(message, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                 }
             }
-            destinationSection
+            if setup.destination == nil { destinationSection }
             switch setup.destination {
             case .pulsHealth: pulsHealthSections
             case .own: ownDatabaseSections
@@ -71,12 +71,12 @@ struct ServerSettingsView: View {
             openSheet(on: PulsHealthDatabase.connectURL)
         }
         .disabled(model.isUpdatingConnection)
-        .navigationTitle("Database")
+        .navigationTitle(preferred != nil || needsInitialSyncReview ? "Connect database" : "Connection details")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if !loaded {
                 loaded = true
-                setup = DatabaseSetup(applied: model.isSettingUpInitialSync ? model.config : model.appliedConfig, scanOnArrival: scanOnArrival, preferred: preferred, isStaged: model.isSettingUpInitialSync)
+                setup = DatabaseSetup(applied: preferred != nil ? SyncConfiguration() : model.isSettingUpInitialSync ? model.config : model.appliedConfig, scanOnArrival: scanOnArrival, preferred: preferred, isStaged: model.isSettingUpInitialSync)
                 showScanner = scanOnArrival
             }
             // This screen is built lazily: an accepted pairing link can be
@@ -111,95 +111,6 @@ struct ServerSettingsView: View {
         .sheet(isPresented: $showScanner) {
             PairingScannerView { applyPairing($0) }
         }
-        .confirmationDialog(
-            "Switch active database?",
-            isPresented: Binding(get: { destinationToSwitch != nil }, set: { if !$0 { destinationToSwitch = nil } }),
-            titleVisibility: .visible,
-            presenting: destinationToSwitch
-        ) { destination in
-            Button("Switch Database") {
-                destinationToSwitch = nil
-                Task {
-                    if await model.switchDestination(id: destination.id) { resetSetup() }
-                }
-            }
-        } message: { destination in
-            Text("Sync to \(databaseAddress(destination)) as user \(destination.userID), resuming its saved progress. The previous database stops receiving uploads after the switch succeeds. Unapplied edits will be discarded.")
-        }
-        .confirmationDialog(
-            "Unpair database?",
-            isPresented: Binding(get: { destinationToUnpair != nil }, set: { if !$0 { destinationToUnpair = nil } }),
-            titleVisibility: .visible,
-            presenting: destinationToUnpair
-        ) { destination in
-            Button("Unpair", role: .destructive) {
-                destinationToUnpair = nil
-                Task {
-                    let wasActive = model.activeDestinationID == destination.id
-                    if await model.unpairDestination(id: destination.id), wasActive { resetSetup() }
-                }
-            }
-        } message: { destination in
-            Text("Remove \(databaseAddress(destination)), user \(destination.userID), and its saved credentials and sync progress from this iPhone. If active, syncing stops. Already uploaded data remains on the server. Pair again to reconnect.")
-        }
-    }
-
-    @ViewBuilder private var savedDestinationsSection: some View {
-        if !model.savedDestinations.isEmpty {
-            Section {
-                ForEach(model.savedDestinations) { destination in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Database")
-                                .font(.headline)
-                            Spacer()
-                            if destination.id == model.activeDestinationID {
-                                Label("Active", systemImage: "checkmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(.green)
-                            }
-                        }
-                        Text(databaseAddress(destination))
-                            .textSelection(.enabled)
-                        Text("User ID: \(destination.userID)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
-                        HStack {
-                            if destination.id != model.activeDestinationID {
-                                Button("Switch to This Database") { destinationToSwitch = destination }
-                                    .buttonStyle(.borderless)
-                            }
-                            Spacer()
-                            Button("Unpair", role: .destructive) { destinationToUnpair = destination }
-                                .buttonStyle(.borderless)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-                if model.isUpdatingConnection {
-                    ProgressView("Updating connection…")
-                }
-            } header: {
-                Text("Saved Databases")
-            } footer: {
-                Text("Only the active database receives synced Health data. Each database and user ID keeps its own sync progress.")
-            }
-        }
-    }
-
-    /// Keep the transport scheme visible without exposing URL credentials,
-    /// queries or fragments (a pasted URL may contain secrets there).
-    private func databaseAddress(_ destination: SavedSyncDestination) -> String {
-        let scheme = destination.serverURL.scheme.map { "\($0)://" } ?? ""
-        return scheme + destination.identity.serverLabel
-    }
-
-    private func resetSetup() {
-        connectionTest.cancel()
-        signInProblem = nil
-        signInElsewhere = nil
-        setup = DatabaseSetup(applied: model.appliedConfig)
     }
 
     // MARK: - The choice
@@ -207,15 +118,15 @@ struct ServerSettingsView: View {
     private var destinationSection: some View {
         Section {
             destinationRow(
-                .own, title: "Your Own Server",
+                .own, title: "Your database",
                 detail: "Connect a server you run and control.",
                 symbol: "externaldrive.connected.to.line.below")
             destinationRow(
-                .pulsHealth, title: "PulsHealth Managed Server",
+                .pulsHealth, title: "PulsHealth database",
                 detail: "Sign in and connect to your PulsHealth server.",
                 symbol: "cloud")
         } header: {
-            Text(model.savedDestinations.isEmpty ? "Sync To" : "Add or Edit a Database")
+            Text("Connect database")
         } footer: {
             if setup.destination == nil {
                 Text("Choose where PulsHealth keeps a live copy of your Health data. You can change it later.")
@@ -306,17 +217,6 @@ struct ServerSettingsView: View {
                 Link(destination: PulsHealthDatabase.accountURL) {
                     Label("Manage Account", systemImage: "person.crop.circle")
                 }
-            } footer: {
-                Text("Your account page lists the iPhones connected to your account, and is where you change your password.")
-            }
-            Section {
-                // Opens in Safari, like the other links: a page of the
-                // documentation, not a request the app makes.
-                Link(destination: PulsHealthDatabase.aiAssistantsURL) {
-                    Label("Connect an AI Assistant", systemImage: "sparkles")
-                }
-            } footer: {
-                Text("Sign in from Claude or another assistant and ask it about your Health data.")
             }
 
         } else {
@@ -336,7 +236,7 @@ struct ServerSettingsView: View {
                     Text(signInProblem).font(.caption).foregroundStyle(.red)
                 }
             } footer: {
-                Text("Sign in and tap Connect this iPhone in the browser. Then add the database and review your selection on the Sync tab.")
+                Text("Sign in and tap Connect this iPhone in the browser. Then add the database and review your selection on the Connections tab.")
             }
         }
     }
@@ -361,8 +261,6 @@ struct ServerSettingsView: View {
                 Label("Scan Pairing Code", systemImage: "qrcode.viewfinder")
             }
             PastePairingCodeRow(urlText: setup.own.urlText) { applyPairing($0) }
-        } footer: {
-            Text("A pairing code, scanned, pasted, or opened as a puls:// link, fills in the URL, token and user ID your database's setup prints (`make pairing`) and tests them.")
         }
 
         Section {
@@ -394,31 +292,12 @@ struct ServerSettingsView: View {
                 }
             }
             .disabled(connectionTest.running || !setup.own.isTestable)
-            if let pairedUserID = setup.own.pairedUserID {
-                // The third value of a pairing code has no field on this
-                // screen (it lives under Settings → User → Advanced), so
-                // say that it is staged too rather than changing it out
-                // of sight.
-                Label {
-                    Text("Filled in from a pairing code, with user ID \(pairedUserID). Nothing changes until you apply your selection.")
-                } icon: {
-                    Image(systemName: "qrcode")
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
         } header: {
-            Text("Or enter it by hand")
-        } footer: {
-            Text("Database URL is the address your database's pairing code shows. Use https://; plain http:// is accepted only for hosts on your local network (localhost, *.local, 10.x, 172.16–31.x, 192.168.x). Test Connection uses the values entered above without saving them.")
+            Text("Connection details")
         }
 
         applySection(disabled: setup.own.urlIssue != nil) {
-            if needsInitialSyncReview {
-                Text("Returns to Sync to choose types and a backfill date. No Health data is uploaded to this database until you tap Apply.")
-            } else {
-                Text("An empty URL disconnects the database; syncing stops and the Export tab keeps working.")
-            }
+            EmptyView()
         }
     }
 
@@ -435,9 +314,9 @@ struct ServerSettingsView: View {
             }
             Button {
                 if needsInitialSyncReview {
-                    guard setup.commit(to: &model.config) else { return }
+                    guard setup.commitNewConnection(to: &model.config) else { return }
                     model.isSettingUpInitialSync = true
-                    dismiss()
+                    model.initialSyncReviewRequested = UUID()
                 } else {
                     Task { await apply() }
                 }
@@ -564,13 +443,17 @@ struct ServerSettingsView: View {
         // Save & Apply is disabled while the URL is invalid; an empty field
         // clears the server.
         guard setup.commit(to: &model.config) else { return }
-        // Applied: back to the Sync tab, which now shows the server's status.
+        // Applied: back to the Connections tab, which now shows the server's status.
         // Deferred to the server-change prompt instead: stay, so the fields
         // are still here to adjust if the user cancels it (and if they
         // confirm it, `settle(applied:)` notices).
+        saveProblem = nil
+        model.lastErrorMessage = nil
         if await model.applyDatabaseConfiguration() {
             setup.settle(applied: model.appliedConfig)
             dismiss()
+        } else if model.pendingServerChange == nil {
+            saveProblem = model.lastErrorMessage
         }
     }
 

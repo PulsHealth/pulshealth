@@ -214,7 +214,7 @@ private struct AggregateRow: View {
     }
 }
 
-/// Sync → a type → an aggregate's Options…: where it starts, how long it
+/// Connections → a type → an aggregate's Options…: where it starts, how long it
 /// waits for late Apple Watch data, how far it has got, and Recompute. Edits
 /// wait for Apply like the rest of the Sync draft.
 private struct AggregateOptionsSheet: View {

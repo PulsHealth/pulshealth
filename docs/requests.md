@@ -1,16 +1,16 @@
 # PulsHealth Requests v1
 
-Use a Data Request when someone should review and share a specific selection
-once. For your own files, use [Export](export.md#on-device-export-no-server).
+Requests can collect once or on an ongoing basis for a person, group or study.
+This page documents the one-time **Export a file** delivery option. For hosted
+contributions and ongoing sharing, see [data requests](collection-requests.md). For your own files, use [Export](export.md#on-device-export-no-server).
 For ongoing database sync, use [server setup](setup.md).
 
-One-time, participant-reviewed exports. Create requests in **Settings → Create
-Request**. Specify the title, requester, purpose, contact, inclusive dates, data
+Create file requests in **Connections → + → Data requests → Create request**, then choose **One time → Export a file**. Specify the title, requester, purpose, contact, inclusive dates, data
 types and CSV, JSON or JSONL. Select individual records or an allowed daily aggregate
 for each type. Delivery defaults to the iOS share sheet. Optionally supply a named
 compatible HTTPS receiver. Create Link & QR Code shares either representation.
 
-The participant opens the link or scans it with Settings → Open or Scan Request,
+The participant opens the link or scans it with Connections → + → Data requests → Open request,
 reviews its scope and recipient, then taps **Generate & Share** or **Generate &
 Send**. The latter generates and uploads in a single action. A partial extraction
 stops for **Send Available Data**; a failed upload allows manual retry of the same
@@ -22,7 +22,7 @@ participant's time zone, including daylight saving changes. Today is necessarily
 partial. Daily aggregates include completed days only: a request through today
 omits today’s aggregate, records that limitation in the ZIP summary, and requires
 **Send Available Data** before uploading. Medication Doses needs its separate
-permission picker, currently available after Apply under Sync → Raw Samples;
+permission picker, currently available after Apply under Connections → Database → Raw Samples;
 the request review screen explains this setup requirement. HealthKit may return no records for denied access; completeness describes
 extraction, not proof of available permissions or expected records.
 

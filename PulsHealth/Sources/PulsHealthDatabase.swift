@@ -3,7 +3,7 @@ import Foundation
 import PulsHealthSync
 
 /// The PulsHealth database: the developer's own instance of the stack, hosted
-/// for the people who sign up (`web/README.md`, "Access requests"). Sync →
+/// for the people who sign up (`web/README.md`, "Access requests"). Connections →
 /// Database offers it next to a database of your own.
 ///
 /// The app knows exactly one address for it, the viewer's, and this is the
@@ -62,11 +62,6 @@ enum PulsHealthDatabase {
     /// sheet, like the account page: App Review expects an app's
     /// registration to happen in the app, not in Safari.
     static var signUpURL: URL { viewerURL.appending(path: "signup") }
-
-    /// How to connect Claude or another AI assistant to the PulsHealth
-    /// database: a documentation page, opened in Safari. The app itself makes
-    /// no request for it.
-    static let aiAssistantsURL = URL(string: "https://pulshealth.com/docs/ai/")!
 
     /// The privacy policy's section on what the developer holds for the
     /// people who use it.

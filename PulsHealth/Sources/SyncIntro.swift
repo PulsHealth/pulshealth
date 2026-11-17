@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// The Sync tab before any database is applied: what syncing does — the
+/// The Connections tab before any database is applied: what syncing does — the
 /// app's headline feature, so it says so — then the two places the data can
 /// go, each a card with its one way on. Sections for the tab's `List`, so it
 /// sits with the tab's links below it in the same inset-grouped style.
 ///
-/// Neither card applies anything: both open Sync → Database with that option
+/// Neither card applies anything: both open Connections → Database with that option
 /// already chosen (`choose`), where signing in or pairing, the developer's
 /// disclosure and Save & Apply all stay as they are.
 struct SyncIntro: View {
@@ -61,9 +61,6 @@ struct SyncIntro: View {
             highlight(
                 "clock.arrow.circlepath", .orange, "Your Whole History",
                 "The first sync brings over your past data, then it keeps up from there.")
-            highlight(
-                "sparkles", .purple, "Use It Your Way",
-                "Ask Claude or another AI assistant about it, or browse it on the web.")
             highlight(
                 "hand.raised.fill", .blue, "You Stay in Control",
                 "Choose which data syncs and where it goes. Disconnect any time.")

@@ -38,11 +38,13 @@ final class AppModel {
     /// outlives the screen that started it (`ExportModel`).
     let subscriptions: SubscriptionStore
     /// Add Database stages a new destination on Sync; only Apply saves it.
+    var initialSyncReviewRequested = UUID()
     var isSettingUpInitialSync = false
     var showsPro = false
     var proContext: ProContext = .plan
     let export = ExportModel()
     let dataRequests = DataRequestModel()
+    let sharing = SharingModel()
     /// Shared on-device review timing, independent of sync and export state.
     let reviews: ReviewRequests
     /// The Explore tab: what HealthKit holds per type, and the analyses
@@ -86,13 +88,13 @@ final class AppModel {
     /// + `uuids`, the per-type server rows need `stats`.
     private(set) var serverCapabilities: ServerCapabilities?
     /// The last Test Connection this session and the URL it ran against, so
-    /// the Sync tab can say what is known about the applied server without
+    /// the Connections tab can say what is known about the applied server without
     /// testing again. Not persisted: a fresh launch knows nothing.
     private(set) var lastConnectionTest: ConnectionTestRecord?
     /// The live editing draft bound by the Raw Samples and Aggregates pickers,
     /// the Database screen and Settings.
     var config = SyncConfiguration()
-    /// Snapshot of what's actually been pushed to the engine. The Sync tab's
+    /// Snapshot of what's actually been pushed to the engine. The Connections tab's
     /// pickers edit `config` freely; changes only reach the engine (and start
     /// backfilling) when `applyChanges()` advances this to match.
     private(set) var appliedConfig = SyncConfiguration()
@@ -116,7 +118,7 @@ final class AppModel {
     /// iOS 27 limited history access: the applied types HealthKit lets the
     /// app read only from a date on, by identifier, as of the last look
     /// (`refreshReadableHistory`). Empty when nothing is limited, and always
-    /// before iOS 27. Drives the Sync tab's notice.
+    /// before iOS 27. Drives the Connections tab's notice.
     private(set) var readableHistory: [String: Date] = [:]
 
     /// Every enabled type has completed at least one sync and not one of them
@@ -145,7 +147,7 @@ final class AppModel {
     /// (`SyncStateStore.isReadOnly`): it existed but could not be read, which
     /// happens when iOS prewarms the app before the first unlock after a
     /// restart. The store then shows an empty configuration and saves nothing
-    /// for the rest of the process, so the Sync tab and Settings say so
+    /// for the rest of the process, so the Connections tab and Settings say so
     /// (`StateUnreadableNotice`) and Apply is refused rather than taking a
     /// setup that would vanish. Reloading in place is not attempted: the
     /// engine's transport, the observer registration and this model's own
@@ -176,7 +178,7 @@ final class AppModel {
     /// Set by `handleIncomingURL`, cleared by the prompt's buttons. A link
     /// fills nothing until the user has answered this (`PairingLinkPromptModifier`).
     private(set) var pairingLinkPrompt: PairingLinkPrompt?
-    /// A pairing link the user accepted, waiting for Sync → Database to collect
+    /// A pairing link the user accepted, waiting for Connections → Database to collect
     /// it with `takeConfirmedPairing()` — after the first-run flow, if that is
     /// up (`pairingAwaitsSyncTab`). A hand-off rather than a write into
     /// `config`: the screen keeps the URL and token as local text until Save &
@@ -225,6 +227,7 @@ final class AppModel {
         self.healthAccess = healthAccess ?? engine
         self.capabilitiesReader = capabilitiesReader ?? engine
         self.explore = ExploreModel(engine: engine)
+        sharing.accessPolicy = { [subscriptions] in await subscriptions.currentPolicy() }
         dataRequests.accessPolicy = { [subscriptions] in await subscriptions.currentPolicy() }
         // An analysis can show the permission sheet too; what it answered
         // for history (iOS 27) is recorded the same way as after Apply's.
@@ -252,7 +255,7 @@ final class AppModel {
     }
 
     var reviewRequestsBlocked: Bool {
-        subscriptions.showsGiftWelcome || showsPro || isSettingUpInitialSync || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || pendingServerChange != nil || pairingLinkPrompt != nil
+        subscriptions.showsGiftWelcome || showsPro || isSettingUpInitialSync || showsOnboarding || dataRequests.pending != nil || dataRequests.isBusy || sharing.invitation != nil || sharing.busy || !sharing.running.isEmpty || pendingServerChange != nil || pairingLinkPrompt != nil
             || pairingAwaitsSyncTab || lastErrorMessage != nil || stateFileUnreadable
             || needsAuthorization || isSyncingAll || backfillActive || export.isRunning
             || statuses.contains(where: { $0.activity == .syncing })
@@ -483,7 +486,7 @@ final class AppModel {
         // must never commit a database still waiting for Sync's review.
         if isSettingUpInitialSync {
             completeOnboarding()
-            lastErrorMessage = "Finish setting up your database on the Sync tab and tap Apply to start its first sync."
+            lastErrorMessage = "Finish setting up your database on the Connections tab and tap Apply to start its first sync."
             return
         }
         defaults.set(true, forKey: Self.onboardingCompletedKey)
@@ -539,7 +542,7 @@ final class AppModel {
 
     /// What the Export tab exports: its own draft (`ExportModel.draft`),
     /// initially empty and edited on the tab or from Explore. It is not the
-    /// Sync tab's draft: what is chosen there counts only after Apply, and
+    /// Connections tab's draft: what is chosen there counts only after Apply, and
     /// what is chosen here never reaches the sync at all.
     var exportSelection: ExportSelectionSummary {
         ExportSelectionSummary(selection: export.draft.selection())
@@ -846,12 +849,16 @@ final class AppModel {
     @discardableResult
     func applyConfiguration(
         syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false,
-        clearAuthToken: Bool = false
+        clearAuthToken: Bool = false, expectedDestinationID: UUID? = nil
     ) async -> Bool {
+        if let id = expectedDestinationID, !canEditConnectionSyncSettings(id) {
+            lastErrorMessage = "Review or discard changes for a different connection before applying these sync settings."
+            return false
+        }
         // Other screens share this draft. Their plain Save must not silently
         // commit a new database without the Sync screen's first-backfill Apply.
         guard !isSettingUpInitialSync || wholeHistory else {
-            lastErrorMessage = "Finish setting up your database on the Sync tab and tap Apply to start its first sync."
+            lastErrorMessage = "Finish setting up your database on the Connections tab and tap Apply to start its first sync."
             return false
         }
         guard connectionEditCanStart() else { return false }
@@ -864,6 +871,12 @@ final class AppModel {
             }
         }
         guard connectionEditCanStart() else { return false }
+        // The subscription lookup suspends; a switch or draft edit in the
+        // meantime must not let this connection's controls apply another one.
+        if let id = expectedDestinationID, !canEditConnectionSyncSettings(id) {
+            lastErrorMessage = "Review or discard changes for a different connection before applying these sync settings."
+            return false
+        }
         isUpdatingConnection = true
         defer { isUpdatingConnection = false }
         // Nothing applied now would be saved (the store is read-only this
@@ -1035,6 +1048,36 @@ final class AppModel {
         }
     }
 
+    func canEditConnectionSyncSettings(_ id: UUID) -> Bool {
+        guard activeDestinationID == id,
+              let destination = savedDestinations.first(where: { $0.id == id }) else { return false }
+        return ServerIdentity(configuration: config) == destination.identity
+            && ServerIdentity(configuration: appliedConfig) == destination.identity
+    }
+
+    func connectionName(_ destination: SavedSyncDestination) -> String {
+        destination.name ?? (destination.id == activeDestinationID && usesPulsHealthDatabase
+                            ? "PulsHealth database" : destination.identity.serverLabel)
+    }
+
+    @discardableResult
+    func renameDestination(id: UUID, name: String) async -> Bool {
+        guard !isUpdatingConnection else { return false }
+        guard !stateFileUnreadable else { lastErrorMessage = StateUnreadableNotice.message; return false }
+        isUpdatingConnection = true
+        defer { isUpdatingConnection = false }
+        do {
+            try await engine.store.renameDestination(id: id, name: name)
+            connectionGeneration += 1
+            await refresh()
+            lastErrorMessage = nil
+            return true
+        } catch {
+            lastErrorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     @discardableResult
     func switchDestination(id: UUID) async -> Bool {
         guard connectionEditCanStart() else { return false }
@@ -1129,6 +1172,19 @@ final class AppModel {
 
     // MARK: - Pairing links
 
+    /// Keep the reviewed request stable until it is dismissed, regardless of delivery method.
+    func openRequestLink(_ text: String) throws {
+        guard dataRequests.pending == nil, !dataRequests.isBusy, sharing.invitation == nil else {
+            throw CollectionError("Finish or close the current request before opening another.")
+        }
+        switch try RequestInvitation(text) {
+        case .file:
+            dataRequests.open(text.trimmingCharacters(in: .whitespacesAndNewlines))
+        case .collection(let invitation):
+            sharing.invitation = invitation
+        }
+    }
+
     /// Entry point for `onOpenURL`: a tapped `puls://pair?…` link, or the same
     /// string read from the server's QR code by the iOS Camera app.
     ///
@@ -1139,8 +1195,10 @@ final class AppModel {
     /// values go nowhere until the user accepts, and then only as far as a scan
     /// would take them: into the server fields, tested, not applied.
     func handleIncomingURL(_ url: URL) {
-        if url.scheme == "puls", url.host == "request" {
-            dataRequests.open(url.absoluteString)
+        if (url.scheme == "puls" && ["collection", "request"].contains(url.host ?? "")) ||
+            (url.scheme == "https" && url.host == PulsHealthDatabase.viewerURL.host && url.path.hasPrefix("/collect/")) {
+            do { try openRequestLink(url.absoluteString) }
+            catch { dataRequests.error = error.localizedDescription }
             return
         }
         guard url.scheme?.lowercased() == PairingPayload.scheme else { return }
@@ -1178,14 +1236,14 @@ final class AppModel {
     /// shown rather than when the link arrived: a link that lands during the
     /// flow's final Apply is only presented once the cover is down, and by
     /// then both halves of the answer have changed — a server is applied, and
-    /// accepting leads to Sync → Database, not into the flow.
+    /// accepting leads to Connections → Database, not into the flow.
     func pairingConfirmation(for payload: PairingPayload) -> PairingConfirmation {
         PairingConfirmation(
             payload: payload,
             // The *applied* server: where data goes today, not a half-typed draft.
             currentServerURL: appliedConfig.serverURL,
             currentUserID: appliedConfig.userID,
-            // Always Sync → Database: the first-run flow has no database step
+            // Always Connections → Database: the first-run flow has no database step
             // any more, so a link accepted during it waits for the flow to end and
             // lands there (`pairingAwaitsSyncTab`).
             destination: .settings)
@@ -1220,14 +1278,14 @@ final class AppModel {
     // MARK: - The PulsHealth database
 
     /// Whether the applied database is the PulsHealth database, paired by
-    /// signing in on Sync → Database (`PulsHealthDatabase`), to a database
+    /// signing in on Connections → Database (`PulsHealthDatabase`), to a database
     /// under the viewer's domain. Derived from the applied configuration — it
-    /// ends the moment the app points anywhere else — so the Sync tab and the
+    /// ends the moment the app points anywhere else — so the Connections tab and the
     /// Database screen can name it, always beside its host.
     var usesPulsHealthDatabase: Bool { PulsHealthDatabase.isSignedIn(appliedConfig) }
 
     /// Logs a pairing code the PulsHealth sign-in sheet handed back. Like a
-    /// confirmed link it only fills Sync → Database's fields; Save & Apply
+    /// confirmed link it only fills Connections → Database's fields; Save & Apply
     /// applies it. The host only, never the code: it carries the token.
     func noteSignInPairing(_ payload: PairingPayload) {
         let label = pairingConfirmation(for: payload).serverLabel
@@ -1237,9 +1295,9 @@ final class AppModel {
         }
     }
 
-    /// True while an accepted link is waiting for Sync → Database, i.e. the
+    /// True while an accepted link is waiting for Connections → Database, i.e. the
     /// first-run flow is not the one that should take it. RootView switches to
-    /// the Sync tab and pushes the Database screen on this.
+    /// the Connections tab and pushes the Database screen on this.
     var pairingAwaitsSyncTab: Bool { confirmedPairing != nil && !showsOnboarding }
 
     /// One-shot: the screen that fills its fields from the payload takes it.
@@ -1250,10 +1308,10 @@ final class AppModel {
 
     // MARK: - Staged Sync changes
 
-    /// True while the Sync tab's draft differs from what's applied to the
+    /// True while the Connections tab's draft differs from what's applied to the
     /// engine. Scoped to the fields its pickers edit (raw types, aggregates,
     /// workout routes) so Settings-only edits don't trip the Apply bar. Drives
-    /// the pending-changes bar on the Sync tab.
+    /// the pending-changes bar on the Connections tab.
     var hasPendingChanges: Bool {
         config.enabledTypes != appliedConfig.enabledTypes
             || config.aggregates != appliedConfig.aggregates
@@ -1297,7 +1355,7 @@ final class AppModel {
         return parts.isEmpty ? "configuration" : parts.joined(separator: " · ")
     }
 
-    /// Commits the Sync tab's staged draft: pushes it to the engine and starts
+    /// Commits the Connections tab's staged draft: pushes it to the engine and starts
     /// backfilling newly enabled types/aggregates. Mirrors Settings' Save & Apply.
     func applyChanges() async {
         await applyConfiguration(syncNewTypes: true)
@@ -1363,7 +1421,7 @@ final class AppModel {
         // a second one would run alongside it (the button is disabled on
         // `backfillActive` too — this is the model's own guard).
         guard !continuedBackfillPending, typesBackfilling == 0 else {
-            lastErrorMessage = "A backfill is already running. It continues in the background; its progress is on the Sync tab."
+            lastErrorMessage = "A backfill is already running. It continues in the background; its progress is on the Connections tab."
             return
         }
         // iOS 26: run as a continued-processing task so the backfill keeps going
@@ -1477,7 +1535,7 @@ final class AppModel {
                 self.authorizationHint = """
                 iOS didn't show the medication picker, so medication doses stay \
                 unauthorized. Try Save & Apply again, or turn Medication Doses off \
-                under Sync → Raw Samples.
+                under Connections → Database → Raw Samples.
                 """
             }
         }
@@ -1673,7 +1731,7 @@ final class AppModel {
         await engine.eventLog.log(.info, "Stored type analyses deleted")
     }
 
-    // MARK: - Derived totals for the Explore and Sync tabs
+    // MARK: - Derived totals for the Explore and Connections tabs
 
     var totalSamples: Int { statuses.reduce(0) { $0 + $1.state.totalSamplesExported } }
     var totalBytes: Int { statuses.reduce(0) { $0 + $1.state.totalBytesUploaded } }

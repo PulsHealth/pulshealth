@@ -7,7 +7,7 @@ plus two standalone CLIs and the public website:
 | Path | What | Docs |
 |---|---|---|
 | `PulsHealthSync/` | Swift package (iOS 17+, Swift 6 strict concurrency): sync engine, transport, NDJSON encoding | `PulsHealthSync/README.md` |
-| `PulsHealth/` | SwiftUI app wrapping the library: Explore (type pages with analysis charts and an aggregate preview), Export builder (server-less files), Sync (the Database screen, synced types, activity log), Settings; benchmark | `PulsHealth/README.md` |
+| `PulsHealth/` | SwiftUI app wrapping the library: Explore (type pages with analysis charts and an aggregate preview), Export builder (server-less files), Connections (databases, data requests, synced types, activity log), Settings; benchmark | `PulsHealth/README.md` |
 | `server/` | Docker Compose: Go ingest/product APIs + PostgreSQL 17/TimescaleDB + Grafana | `server/README.md` |
 | `server/mcp/` | Go MCP server (stdio + streamable HTTP) giving AI assistants read-only tools over the product API; talks only to the API, never Postgres | `server/mcp/README.md`, `docs/ai.md` |
 | `web/` | Next.js self-hosted viewer, published as the fourth GHCR image. Reads Postgres directly: as the read-only `grafana` role (open, or one HTTP Basic password), or in accounts mode as `web_app`, limited by the database to the signed-in person's records. **Not** `site/`, which is the public marketing site | `web/README.md` |
@@ -371,7 +371,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   The medication picker is scheduled after the cover is down,
   never awaited (see Gotchas); a pairing link accepted during the flow waits
   in `confirmedPairing` until then (`pairingAwaitsSyncTab`), when RootView
-  opens Sync → Database with it.
+  opens Connections → Database with it.
 - **`site/` reads its content by relative path:** `knowledge-base/`
   (`site/src/lib/api.ts`), `blog/` (`site/src/lib/blog.ts`, `copy-blog-images`
   in `site/package.json`) and the repository files in the
@@ -415,7 +415,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   URL: it comes back with the token and user from the viewer's `/connect/iphone`
   page as an ordinary `puls://pair` code, through an
   `ASWebAuthenticationSession` (callback scheme `puls`, shared browser
-  session) that the person starts on Sync → Database. That code fills a
+  session) that the person starts on Connections → Database. That code fills a
   `ServerFieldsDraft` (`fill(fromSignIn:domain:)`) and is tested, and Save &
   Apply applies it, as with every pairing. Only a payload from that sheet or
   from a confirmed link ever fills the fields. Whether the applied database
@@ -429,7 +429,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   The screen's decisions live in `DatabaseSetup` (it starts from the
   *applied* configuration). Delete PulsHealth Account (App Review 5.1.1(v),
   `/account#delete-account`, whose `id` lives in `web/app/account/page.tsx`)
-  stays in Settings → Privacy & Data whether or not the iPhone is
+  stays in Settings → User whether or not the iPhone is
   connected: an iPhone paired through the account page's link in Safari is
   not marked. Changing any of this means changing
   `docs/privacy-policy.md` ("Where it goes", "If you use the developer's
@@ -645,7 +645,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   transport: never print to it; logs go to stderr.
 - Grafana datasource UID `puls-tsdb` is hardcoded in dashboard JSON — keep it stable.
 - Debounces are intentional: state persist 250 ms, event-log save 1 s. Edits
-  in the Sync tab's Raw Samples and Aggregates pickers (and a type's aggregate
+  in the Connections tab's Raw Samples and Aggregates pickers (and a type's aggregate
   page) are not debounced — they are staged in `AppModel.config` and reach the
   engine only when the user taps Apply (`applyChanges`).
 - **Public tree.** This repository is public: no personal identifiers, hostnames,

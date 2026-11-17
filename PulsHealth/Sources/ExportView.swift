@@ -249,12 +249,9 @@ struct ExportView: View {
             .disabled(selection.isEmpty || model.exportBlockedByBackfill || layoutIssue != nil)
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
-                if selection.isEmpty {
-                    Text("Nothing is selected. Choose data types or aggregated types above.")
-                }
                 if let layoutIssue { Text(layoutIssue).foregroundStyle(.orange) }
                 if model.exportLacksMedicationAccess {
-                    Text("Medication Doses needs its own permission, which iOS asks for after Apply under Sync → Raw Samples. Until that has been answered this export contains no doses.")
+                    Text("Medication Doses needs its own permission, which iOS asks for after Apply under Connections → Database → Raw Samples. Until that has been answered this export contains no doses.")
                         .foregroundStyle(.orange)
                 }
             }
@@ -593,7 +590,7 @@ struct ExportView: View {
 
 extension View {
     /// The confirmation before a staged export's files are deleted: the
-    /// Export tab's Delete Export and Settings → Privacy & Data's ask the same
+    /// Export deletion actions ask the same
     /// question and do the same thing (`ExportModel.discard`).
     @MainActor
     func deleteExportAlert(isPresented: Binding<Bool>, export: ExportModel) -> some View {

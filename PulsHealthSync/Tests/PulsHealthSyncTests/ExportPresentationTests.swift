@@ -16,6 +16,16 @@ import Testing
         ISO8601DateFormatter().date(from: iso)!
     }
 
+    @Test func newExportAndSyncDefaultToThirtyDays() {
+        #expect(ExportRange.default == .last30Days)
+        let before = Date()
+        let config = SyncConfiguration()
+        let after = Date()
+        let calendar = Calendar.current
+        #expect(config.startDate >= calendar.date(byAdding: .day, value: -30, to: before)!)
+        #expect(config.startDate <= calendar.date(byAdding: .day, value: -30, to: after)!)
+    }
+
     // MARK: - Range
 
     @Test func aRangeStartsAtLocalMidnightNotMidAfternoon() {

@@ -1,10 +1,14 @@
 import SwiftUI
 import PulsHealthSync
 
-/// Screens the Sync tab pushes. Value-based so `RootView`, which owns the
+/// Screens the Connections tab pushes. Value-based so `RootView`, which owns the
 /// stack's path, can pop back to the Database screen when a pairing link is
 /// accepted while another of them is on top.
 enum SyncRoute: Hashable {
+    case personal, account
+    case addConnection, ownDatabase, groupChoice, openRequest, createRequest, history, managedDatabase
+    case connectionSettings(UUID)
+    case personalDestination(UUID), organizer(UUID), contribution(UUID), participants(UUID), deletion(UUID)
     /// The Database screen; `scan` opens the pairing scanner on arrival, and
     /// `choice` is the option picked on the first-time screen (`SyncIntro`).
     case server(scan: Bool, choice: DatabaseDestination? = nil)
@@ -36,7 +40,7 @@ struct StateUnreadableNotice: View {
     }
 }
 
-/// The Sync tab: where the data goes and how that is going. With no server
+/// The Connections tab: where the data goes and how that is going. With no server
 /// applied it is the first-time screen (`SyncIntro`): what syncing does and
 /// the two places it can go — a supported way to use the app, not a fault;
 /// the first tap on Sync is where the database is asked for, never the
@@ -50,6 +54,7 @@ struct SyncView: View {
     /// the sections' Edit buttons push their pickers the same way.
     @Binding var path: [SyncRoute]
     @Environment(AppModel.self) private var model
+    @State private var destinationToRemove: SavedSyncDestination?
     @State private var showsAllRaw = false
     @State private var showsAllAggregates = false
 
@@ -82,29 +87,23 @@ struct SyncView: View {
                 aggregatesSection
             }
             linksSection
+            if let destination = model.savedDestinations.first(where: { $0.id == model.activeDestinationID }) {
+                Section { Button("Remove connection", role: .destructive) { destinationToRemove = destination } }
+            }
         }
-        .navigationTitle("Sync")
-        .navigationDestination(for: SyncRoute.self) { route in
-            switch route {
-            case .server(let scan, let choice): ServerSettingsView(scanOnArrival: scan, preferred: choice)
-            case .rawSamples: RawSamplesPickerView()
-            case .aggregates: AggregatesPickerView(scope: .sync)
-            case .activity: ActivityView()
-            case .type(let id):
-                if let status = model.statuses.first(where: { $0.id == id }) {
-                    TypeDetailView(status: status)
-                }
-            case .aggregateType(let id):
-                if let descriptor = HealthTypeCatalog.descriptor(for: id) {
-                    AggregateTypeView(descriptor: descriptor, scope: .sync)
-                }
+        .navigationTitle(connectionTitle)
+        .fullScreenCover(item: $destinationToRemove) { destination in
+            ConnectionRemovalView(destination: destination) {
+                let removed = await model.unpairDestination(id: destination.id)
+                if removed { model.sharing.returnToConnections = UUID() }
+                return removed
             }
         }
         .refreshable { await model.syncNow(trigger: "pull-to-refresh") }
         .alert(
             "Error",
             isPresented: Binding(
-                get: { model.lastErrorMessage != nil },
+                get: { model.lastErrorMessage != nil && destinationToRemove == nil },
                 set: { if !$0 { model.lastErrorMessage = nil } }
             )
         ) {
@@ -112,6 +111,14 @@ struct SyncView: View {
         } message: {
             Text(model.lastErrorMessage ?? "")
         }
+    }
+
+    private var connectionTitle: String {
+        if model.isSettingUpInitialSync { return "Review connection" }
+        if let destination = model.savedDestinations.first(where: { $0.id == model.activeDestinationID }) {
+            return model.connectionName(destination)
+        }
+        return "Connect database"
     }
 
     /// First connection is staged on the normal Sync screen. The existing
@@ -126,12 +133,10 @@ struct SyncView: View {
                     : max(model.config.startDate, SyncAccessPolicy.free.earliestDate() ?? model.config.startDate)
             } set: { model.setSyncStartDate($0) }, in: ...Date(), displayedComponents: .date)
                 .accessibilityIdentifier("initialSync.startDate")
-            Text(model.subscriptions.hasPro
-                 ? "A shorter history makes the first sync quicker. You can choose an earlier date later in Settings. Health access may limit available history."
-                 : "Free sync includes 5 types and the most recent 30 days. Pro unlocks more types and earlier history.")
-                .font(.footnote).foregroundStyle(.secondary)
-            Text("Nothing is uploaded to this database until you apply.")
-                .font(.footnote).foregroundStyle(.secondary)
+            if !model.subscriptions.hasPro {
+                Text("Free sync includes 5 types and the most recent 30 days. Pro unlocks more types and earlier history.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -462,8 +467,10 @@ struct SyncView: View {
     private var linksSection: some View {
         Section {
             if model.appliedConfig.serverURL != nil {
-                NavigationLink(value: SyncRoute.server(scan: false)) {
-                    Label("Database", systemImage: "externaldrive.connected.to.line.below")
+                if let id = model.activeDestinationID {
+                    NavigationLink(value: SyncRoute.connectionSettings(id)) {
+                        Label("Connection settings", systemImage: "gearshape")
+                    }
                 }
             }
             NavigationLink(value: SyncRoute.activity) {
@@ -473,7 +480,7 @@ struct SyncView: View {
     }
 }
 
-/// An aggregated type in the Sync tab: what it has ("Daily total, hourly
+/// An aggregated type in the Connections tab: what it has ("Daily total, hourly
 /// total") and how far it has got, from the applied configuration.
 private struct AggregatedTypeRow: View {
     @Environment(AppModel.self) private var model
@@ -562,7 +569,7 @@ struct TypeRow: View {
 }
 
 /// A Test Connection and what it ran against (`AppModel.testConnection`), so
-/// the Sync tab's status card can attribute the result to the applied server
+/// the Connections tab's status card can attribute the result to the applied server
 /// and ignore one run against a URL that was never saved.
 struct ConnectionTestRecord: Equatable {
     let url: URL

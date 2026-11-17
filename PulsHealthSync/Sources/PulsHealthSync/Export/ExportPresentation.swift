@@ -14,10 +14,8 @@ public enum ExportRange: String, Sendable, CaseIterable, Identifiable {
 
     public var id: String { rawValue }
 
-    /// A year: long enough to be what "my data" usually means, and bounded, so
-    /// a first export is not also the largest one the phone can produce. All
-    /// time is one tap away, with its size warning (`sizeNote`).
-    public static let `default` = ExportRange.lastYear
+    /// Start with a bounded 30-day export; longer ranges remain available.
+    public static let `default` = ExportRange.last30Days
 
     public var title: String {
         switch self {

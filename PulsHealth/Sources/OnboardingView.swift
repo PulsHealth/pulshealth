@@ -1,7 +1,7 @@
 import SwiftUI
 import PulsHealthSync
 
-/// First-run flow: welcome, export, sync, then required Health access.
+/// First-run flow: welcome, export, connections, then required Health access.
 /// Context comes before iOS asks about the starter set. The final Health
 /// page has one neutral Continue button and cannot be skipped on first run.
 /// Nothing reaches the engine until that permission step has been answered.
@@ -9,7 +9,7 @@ import PulsHealthSync
 /// A `puls://` pairing link can still arrive while this flow is up. It is
 /// confirmed here (the prompt cannot come from the covered RootView), and the
 /// accepted payload then waits in `AppModel.confirmedPairing` until the flow
-/// ends: `pairingAwaitsSyncTab` turns true, RootView opens Sync → Database,
+/// ends: `pairingAwaitsSyncTab` turns true, RootView opens Connections → Database,
 /// and that screen fills its fields from it.
 struct OnboardingView: View {
     @Environment(AppModel.self) private var model
@@ -113,7 +113,7 @@ struct OnboardingView: View {
         case .welcome: welcomePage
         case .health: healthPage
         case .export: exportPage
-        case .sync: syncPage
+        case .sync: connectionsPage
         }
     }
 
@@ -139,8 +139,8 @@ struct OnboardingView: View {
                         "square.and.arrow.up", "Export",
                         "Save any of it to CSV, JSON or JSONL files.")
                     feature(
-                        "arrow.triangle.2.circlepath", "Sync",
-                        "Keep a live, always up-to-date copy in a database.")
+                        "server.rack", "Connections",
+                        "Connect a database or share selected data with others.")
                 }
             }
         }
@@ -193,31 +193,29 @@ struct OnboardingView: View {
         }
     }
 
-    private var syncPage: some View {
+    private var connectionsPage: some View {
         pageLayout {
             VStack(spacing: 20) {
                 pageIcon("arrow.triangle.2.circlepath", color: .accentColor)
                 pageTitle("Always in sync")
-                // Words only: signing in to the PulsHealth database happens on
-                // Sync → Database, never in this flow.
-                bodyText("Keep a live copy of your Health data in a database, with a PulsHealth account or one you run yourself.")
+                bodyText("Keep your own copy or share selected Health data with others.")
                 VStack(alignment: .leading, spacing: 18) {
                     feature(
-                        "bolt.heart", "Automatic",
-                        "New data syncs by itself in the background.")
+                        "externaldrive", "Your database",
+                        "Sync automatically to your own server or PulsHealth.")
                     feature(
-                        "sparkles", "Use it your way",
-                        "Ask your AI assistant about it, or browse it on the web.")
+                        "person.2", "Data requests",
+                        "Review who’s asking and what they need, then share once or on an ongoing basis.")
                 }
                 // Opens in Safari, outside the app.
                 Link(destination: URL(string: "https://pulshealth.com/#ways")!) {
                     Label("Learn more", systemImage: "arrow.up.right.square")
                 }
                 if model.confirmedPairing != nil {
-                    // Accepted during the flow; Sync → Database opens with it
+                    // Accepted during the flow; Connections → Database opens with it
                     // filled in once the flow is done (RootView, on
                     // `pairingAwaitsSyncTab`).
-                    Label("A pairing link is waiting. The Sync tab opens with it filled in when you finish.", systemImage: "qrcode")
+                    Label("A pairing link is waiting. The Connections tab opens with it filled in when you finish.", systemImage: "qrcode")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

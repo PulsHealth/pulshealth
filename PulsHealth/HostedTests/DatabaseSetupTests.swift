@@ -3,7 +3,7 @@ import XCTest
 import PulsHealthSync
 @testable import PulsHealth
 
-/// Sync → Database's decisions (`DatabaseSetup`): what the screen starts
+/// Connections → Database's decisions (`DatabaseSetup`): what the screen starts
 /// from, what Save & Apply commits, and when a sign-in's code is done.
 final class DatabaseSetupTests: XCTestCase {
     private let user = "5ea4d000-0000-4000-8000-0000000000aa"
@@ -29,6 +29,35 @@ final class DatabaseSetupTests: XCTestCase {
         return config
     }
 
+    func testNewConnectionStartsEmptyWhileEditingPreservesSelections() {
+        var existing = ownConfiguration()
+        existing.enabledTypes = ["HKQuantityTypeIdentifierHeartRate"]
+        existing.aggregates = [AggregateConfig(typeIdentifier: "HKQuantityTypeIdentifierHeartRate", function: .average)]
+        existing.startDate = Date(timeIntervalSince1970: 0)
+
+        var edit = DatabaseSetup(applied: existing)
+        edit.own.tokenText = "replacement-token"
+        var updated = existing
+        XCTAssertTrue(edit.commit(to: &updated))
+        XCTAssertEqual(updated.enabledTypes, existing.enabledTypes)
+        XCTAssertEqual(updated.aggregates, existing.aggregates)
+        XCTAssertEqual(updated.startDate, existing.startDate)
+
+        for destination in [DatabaseDestination.own, .pulsHealth] {
+            var setup = DatabaseSetup(applied: SyncConfiguration(), preferred: destination)
+            if destination == .own { setup.receivePairing(signInPayload()) }
+            else { setup.receiveSignIn(signInPayload()) }
+            var fresh = existing
+            XCTAssertTrue(setup.commitNewConnection(to: &fresh))
+            XCTAssertTrue(fresh.enabledTypes.isEmpty)
+            XCTAssertTrue(fresh.aggregates.isEmpty)
+            XCTAssertEqual(fresh.serverURL, hosted)
+            XCTAssertEqual(fresh.userID, user)
+            XCTAssertEqual(fresh.startDate.timeIntervalSince1970,
+                           SyncConfiguration().startDate.timeIntervalSince1970, accuracy: 2)
+        }
+    }
+
     func testStartsFromWhatIsApplied() {
         let none = DatabaseSetup(applied: SyncConfiguration())
         XCTAssertNil(none.destination, "no database: the screen asks")
@@ -45,7 +74,7 @@ final class DatabaseSetupTests: XCTestCase {
         XCTAssertNil(pulsHealth.signedIn)
     }
 
-    /// The Sync tab's first-time screen opens the Database screen with a
+    /// The Connections tab's first-time screen opens the Database screen with a
     /// choice made; it holds only while no database is applied.
     func testPreferredChoiceOnlyWithoutADatabase() {
         XCTAssertEqual(DatabaseSetup(applied: SyncConfiguration(), preferred: .pulsHealth).destination, .pulsHealth)

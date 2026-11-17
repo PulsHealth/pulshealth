@@ -23,7 +23,7 @@ enum TypePresets {
     ]
 }
 
-/// Sync → Raw Samples → Edit, structured like Apple Health's Browse screen:
+/// Connections → Raw Samples → Edit, structured like Apple Health's Browse screen:
 /// a category list with colored icons that drills into per-category pages of
 /// switches, plus search across every type. A type switched on sends its
 /// raw samples, and nothing else: its aggregates are the Aggregates picker's.
@@ -268,7 +268,7 @@ private struct WorkoutEnhancedDataToggleRow: View {
     }
 }
 
-/// Floating Apply/Discard bar shown on the Sync tab while the staged
+/// Floating Apply/Discard bar shown on the Connections tab while the staged
 /// configuration draft differs from what's applied to the engine, or while a
 /// newly added database awaits its first Apply. Nothing
 /// chosen in the Raw Samples or Aggregates pickers, or on a type's aggregate
@@ -334,7 +334,7 @@ struct PendingChangesBar: View {
             Button("Apply & Start Sync") { apply() }
             Button("Not Yet", role: .cancel) {}
         } message: {
-            Text("A large backfill can take a while. Keep PulsHealth open and your iPhone unlocked and plugged in for the best progress. If interrupted, syncing resumes from saved progress. Follow progress on the Sync tab.")
+            Text("A large backfill can take a while. Keep PulsHealth open and your iPhone unlocked and plugged in for the best progress. If interrupted, syncing resumes from saved progress. Follow progress on the Connections tab.")
         }
     }
 

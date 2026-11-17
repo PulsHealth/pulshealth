@@ -42,6 +42,7 @@ final class ExportOptionsTests: XCTestCase {
 
     func testDefaultDraftKeepsSimpleDatasetLayout() {
         let draft = ExportDraft()
+        XCTAssertEqual(draft.range, .last30Days)
         XCTAssertTrue(draft.types.isEmpty)
         XCTAssertTrue(draft.aggregates.isEmpty)
         XCTAssertEqual(draft.selectedTypeCount, 0)

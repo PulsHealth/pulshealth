@@ -2,8 +2,7 @@ import SwiftUI
 import PulsHealthSync
 
 /// Screens the Explore tab pushes. `type` opens the per-type page
-/// (`TypePageView`), which links on to the sync detail when the type is
-/// synced.
+/// (`TypePageView`), with analysis and one-time export selection.
 enum ExploreRoute: Hashable {
     case type(String)
 }
@@ -12,7 +11,7 @@ enum ExploreRoute: Hashable {
 /// screen lays it out, with what HealthKit holds for each type from
 /// `ExploreModel` — the cheap facts for every row, the profile for the ones
 /// that have been analyzed. Every type opens its page, whether it is synced
-/// or not; turning sync on is the Sync tab's job.
+/// or not; turning sync on is the Connections tab's job.
 ///
 /// The two Health-access cards live here, not on Sync, because they are about
 /// what the app may read at all, server or no server.
@@ -102,7 +101,7 @@ struct ExploreView: View {
                 "Health access incomplete",
                 subtitle: "Some enabled data types haven't been authorized yet, so their syncs will fail."
             ) {
-                // The Sync tab's Apply bar only appears while
+                // The Connections tab's Apply bar only appears while
                 // changes are staged, so in this exact situation (types
                 // added to the catalog after the first grant, or an
                 // interrupted permission sheet) there was no button to
@@ -400,8 +399,6 @@ private struct ExploreTypeRow: View {
             if let status, status.isPaused {
                 Image(systemName: "pause.circle.fill").foregroundStyle(.orange)
                     .accessibilityLabel(status.pausedUntilText ?? "Paused")
-            } else if let status, status.state.lastError != nil {
-                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
             }
         }
         .padding(.vertical, 2)
@@ -418,7 +415,7 @@ private struct ExploreTypeRow: View {
             if let last = profile.latestStart { parts.append("last \(last.relativeString)") }
         } else if let facts, let first = facts.earliestStart {
             parts.append("Data since \(first.formatted(.dateTime.year()))")
-            parts.append("tap to analyze")
+            parts.append("Ready to analyze")
         } else if facts != nil {
             parts.append("No data")
         } else if let status, hasServer {

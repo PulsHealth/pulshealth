@@ -62,7 +62,7 @@ extension View {
 
 /// "Paste Pairing Code": the route for a database whose QR code is not in
 /// front of the camera — a terminal on the same device, a payload sent over a
-/// message. Used by the Sync tab’s Database screen.
+/// message. Used by the Connections tab’s Database screen.
 ///
 /// It is the system `PasteButton` rather than a button that reads
 /// `UIPasteboard`: the tap itself is the permission, so iOS shows no
