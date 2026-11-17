@@ -214,7 +214,7 @@ Sources/
 │   │                       state), the analyses in flight (one per type, over
 │   │                       the past year, started the first time its page is
 │   │                       opened; kept until Refresh), and
-│   │                       deleteAll — what Settings → Privacy & Data → Delete
+│   │                       deleteAll — what Settings → Advanced → Delete
 │   │                       Analysis calls. Profiles persist in TypeProfileStore.
 │   ├── TypePageView.swift  The Type page: the analysis (started on open),
 │   │                       stat tiles, the value distribution, samples over
@@ -274,7 +274,7 @@ Sources/
 │                         Pairing returns a code — its database named
 │                         — tested above Save & Apply; once applied, Manage
 │                         Account (in Safari). Saved Databases offers Switch and Unpair. Account deletion stays
-│                         under Settings → Privacy & Data. Your own: the Database
+│                         under Settings → User. Your own: the Database
 │                         URL and Token fields (validated: https, or http for
 │                         local-network hosts only; held in a
 │                         ServerFieldsDraft until Save & Apply, with Scan /
@@ -351,26 +351,18 @@ Sources/
 │                         (`TypeSyncStatus.cooldownUntil`) reads "Paused until
 │                         <time>" here, in its TypeRow and on the status card,
 │                         next to its error, and Sync Now is the way out.
-├── SettingsView.swift    PulsHealth Free/Pro plan row, User row, Data Requests
-│                         (create or open/scan a request, with a group-use
-│                         explanation), Sync (start date, backfill trigger, reset
-│                         all anchors — shown only once a server is applied),
-│                         Performance (concurrency, batch size), Save & Apply
-│                         (only while those or the User page have unapplied
-│                         edits), Privacy & Data (Health Access, which opens
-│                         the app's page in iOS Settings; delete a staged
-│                         export), Developer (benchmark and "Validate Aggregate
-│                         Functions", visible only in Developer Mode) and About
-│                         (version, replay onboarding, Write a Review and four
-│                         Links — the documentation, the
-│                         privacy policy, the GitHub repository and its issue
-│                         tracker — that open in Safari). Privacy & Data also
-│                         carries Delete PulsHealth Account, always. Tap Version
-│                         seven times and confirm to enable Developer Mode;
-│                         its section includes Disable Developer Mode. Stored
-│                         analysis summaries are removed when deleting the app.
-│                         Also UserView and the server-change prompt. The
-│                         database is not here; it is the Connections tab's.
+├── SettingsView.swift    Account and plan; Support PulsHealth (review and issue
+│                         links); Preferences (Performance and optional Developer
+│                         tools); Help & About (version without build number,
+│                         onboarding, documentation, privacy and source links).
+│                         Performance is one tap away; technical controls stay
+│                         on that page. Data requests live in Connections and
+│                         staged export deletion stays on Export. Account deletion
+│                         is under User, including when not signed in.
+│                         Connection settings owns Sync settings for the active
+│                         destination (history, backfill, reset and Health access).
+│                         Tap Version seven times to enable developer tools.
+│                         Also UserView and ServerChangePrompt.
 ├── OnboardingView.swift  First run: four pages swiped in a paging ScrollView,
 │                         no database asked for. "Unlock your Health Data"
 │                         (Explore, Export, Sync); one-time exports; "Always
@@ -498,8 +490,8 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
   Switching restores that receiver’s own progress; unpairing deletes only its
   local connection, credential and progress. Already uploaded data remains on
   the server. Emptying the URL disconnects without selecting another receiver. Delete PulsHealth Account (App Review 5.1.1(v)) opens the
-  account page's `#delete-account` section from Settings → Privacy & Data, whose Delete my account does the
-  rest. It remains under Settings → Privacy & Data whether or not this iPhone
+  account page's `#delete-account` section from Settings → User, whose Delete my account does the
+  rest. It remains under Settings → User whether or not this iPhone
   is connected, since an iPhone
   paired through Safari is not marked.
 - **Without a database.** The first-run flow never asks for one: it asks for
@@ -609,7 +601,7 @@ HostedTests/              XCTest bundle hosted in the app (HealthKit entitlement
 
 ## App Store reviews
 
-Settings → About → Write a Review permanently opens Apple's review page.
+Settings → Support PulsHealth → Write a Review permanently opens Apple's review page.
 Automatic requests use Apple's native StoreKit prompt, with no custom prompt
 or satisfaction question. Requests are offered at these pauses:
 

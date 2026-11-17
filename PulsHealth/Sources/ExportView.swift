@@ -593,7 +593,7 @@ struct ExportView: View {
 
 extension View {
     /// The confirmation before a staged export's files are deleted: the
-    /// Export tab's Delete Export and Settings → Privacy & Data's ask the same
+    /// Export deletion actions ask the same
     /// question and do the same thing (`ExportModel.discard`).
     @MainActor
     func deleteExportAlert(isPresented: Binding<Bool>, export: ExportModel) -> some View {

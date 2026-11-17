@@ -39,7 +39,7 @@ before pasting; nothing else refers to it.
 The field's limit is 4,000 characters. Measure the filled copy, including
 line breaks. The optional backend block can be removed to leave more room.
 Before submission, verify the deployed deletion and backup checks in README.md.
-The notes describe the prepared 2.0 behavior, not a claim that it is live.
+The notes describe this candidate, not a claim that it is live.
 
 Do not paste a QR image into the notes — the reviewer cannot scan a picture on
 the same screen they are reading. The typed path below is the one they will
@@ -52,37 +52,37 @@ use; the QR scanner is offered for completeness.
 ```
 WHAT THIS APP IS
 
-PulsHealth explores and exports Apple Health and syncs it to the user's database or the developer-hosted PulsHealth database. New accounts need approval; use the approved account below. Explore, Export and Data Requests need no account.
+PulsHealth explores and exports Apple Health and syncs it to the user's database or the developer-hosted PulsHealth database. New accounts need approval; use the approved account below. Explore, Export and one-time file requests need no account. Hosted data requests require sign-in.
 
 DEMO ACCOUNT (PulsHealth database)
 
   Email:    <<<DEMO_ACCOUNT_EMAIL>>>
   Password: <<<DEMO_ACCOUNT_PASSWORD>>>
 
-This approved account holds no real person’s data. Its records will be purged after review.
+This approved account contains only test data.
 
 HOW TO EXERCISE THE APP (about 5 minutes)
 
-1. Launch the app. Swipe through the four-page introduction.
-2. On page 2, Continue opens Health permissions. Allow read access (iOS 27 also asks which history to share; any choice works).
-3. Swipe to page 4 and tap "Start Exploring". The Explore tab appears.
-4. Sync > Sign In or Create Account > Sign In to PulsHealth. Continue to app.pulshealth.com.
-5. Sign in with the review account and tap "Connect this iPhone". The sheet returns directly to the app, which tests the connection.
-6. Tap "Save & Apply". The Sync tab shows "PulsHealth Database" with the database's address, and the upload begins.
+1. Launch the app. Swipe through Welcome, Export and Always in sync.
+2. On the final Health access page, tap Continue. Answer the Health permissions sheet (iOS 27 also asks which history to share; any choice works), then continue into the app.
+3. Open Connections > + > PulsHealth database > Sign in & continue.
+4. Sign in with the approved review account and tap Connect this iPhone. The app opens the connection review.
+5. Choose types and history, then tap Apply to start syncing. The connection shows its database address and status.
+6. Connection settings offers a local name, sync settings and Health Access.
 
-ACCOUNT DELETION: Settings > Privacy & Data > "Delete PulsHealth Account" > "Delete my account and data". Access stops immediately; records are erased automatically, with retry if interrupted. A private status link confirms completion. No support request is needed.
+ACCOUNT DELETION: Settings > User > "Delete PulsHealth Account" > "Delete my account and data". Access stops immediately; records are erased automatically, with retry if interrupted. A private status link confirms completion. No support request is needed.
 
 WHAT YOU SHOULD SEE
 
-On an empty device, add a Weight entry in Apple Health, then pull down on Sync. Samples sent rises once uploaded.
+On an empty device, add a Weight entry in Apple Health, then open its connection and pull down to sync. Samples sent rises once uploaded.
 
 YOUR OWN DATABASE (optional)
 
-Sync > Database > "Your Own Database": enter Database URL <<<REVIEW_SERVER_URL>>> and Token <<<REVIEW_TOKEN>>>, then "Test Connection" and "Save & Apply".
+Connections > + > Your database > Enter details manually: enter Database URL <<<REVIEW_SERVER_URL>>> and Token <<<REVIEW_TOKEN>>>, then Continue. Review types and history, then Apply.
 
 WITHOUT A DATABASE
 
-After steps 1-3, open Export to create CSV, JSON or JSONL files. Share or Save to Files opens the share sheet. No network request is made; temporary files are deleted after sharing and at launch.
+After completing onboarding, open Export to create CSV, JSON or JSONL files. Share or Save to Files opens the share sheet. No network request is made; temporary files are deleted after sharing and at launch.
 
 WHY WE DECLARE NSAllowsLocalNetworking
 
@@ -97,11 +97,11 @@ HEALTHKIT (Guideline 5.1.3)
 
 CAMERA
 
-Used to read database pairing and Data Request QR codes. No frame is stored or sent. Declining is handled: the same screen offers "Type It Instead".
+Used to read database pairing and Data Request QR codes. No frame is stored or sent. Manual entry is also available.
 
 URL SCHEME (puls://)
 
-puls://pair links ask for host confirmation and fill database fields; only Save & Apply applies them. The sign-in sheet returns a pairing link. puls://request links show data, dates, purpose and recipient before any read or delivery.
+puls://pair links ask for host confirmation and fill database fields; a new connection is reviewed before Apply starts syncing. The sign-in sheet returns a pairing link. Request links show data, dates, purpose and recipient before sharing.
 
 DATA REQUESTS
 
@@ -140,7 +140,7 @@ flow does not ask for a database at all. Its four pages are "Unlock your
 Health Data" (Explore, Export, Sync), Health access, one-time exports ("No
 account and no database needed"), and "Always in sync" (the PulsHealth
 database or your own), which says it is optional and can be set up any time
-from the Sync tab, and links to pulshealth.com/#ways in Safari. The Sync tab
+from the Connections tab, and links to pulshealth.com/#ways in Safari. The Connections tab
 of an install with no database explains syncing and offers the two choices
 (each opens the Database screen) instead of looking broken. The App Store description says the same.
 
@@ -157,8 +157,7 @@ approves it, and an email invites them to choose a password. Signing in happens 
 receives is the pairing code the connection page makes for this iPhone. There
 is no third-party or social login, so Sign in with Apple is not required
 (4.8). Creating an account happens in the same sheet (Create Account), not in
-Safari. Deletion (5.1.1(v)): Delete PulsHealth Account under Settings → Privacy &
-Data, whether or not the iPhone is connected, opens the account page's deletion
+Safari. Deletion (5.1.1(v)): Delete PulsHealth Account under Settings → User, whether or not the iPhone is connected, opens the account page's deletion
 section directly (`/account#delete-account`). Delete my account and data signs
 the person out and disconnects their iPhones, then automatically erases the
 account and records, with retry if interrupted. A private receipt page distinguishes
@@ -187,7 +186,7 @@ statement of all this.
 ### "The permission sheet asked how much data to share"
 
 That is iOS 27's second page. *Past 30 Days and Future Data* works too: the app
-then reads, syncs and exports only from 30 days back, says so on the Sync tab,
+then reads, syncs and exports only from 30 days back, says so on the Connections tab,
 an analysis and an export result, never treats the older history as deleted
 or empty in the database, and reads the rest by itself if access is widened
 later under Settings → Privacy & Security → Health → PulsHealth. *Don't Allow*
@@ -218,7 +217,7 @@ The app does not interpret any of them; it copies them.
 
 Record the six steps above on a device with a little Health data in it, using
 the demo account. Show the sign-in sheet, the Test Connection success row and
-the Sync tab's counter moving, then Delete PulsHealth Account opening the
+the connection's counter moving, then Delete PulsHealth Account opening the
 account page (without deleting), and the Export tab through to the share
 sheet. Do not use a real person's health history.
 
@@ -231,7 +230,7 @@ requests"). If the review instance was stood up, take it down
 
 ### Native App Store review requests (next submission)
 
-Settings → About → Write a Review permanently opens the App Store review
+Settings → Support PulsHealth → Write a Review permanently opens the App Store review
 page. Automatic requests use Apple's native prompt after a complete shared
 export, a return from a populated analysis, or the next foreground visit
 after successful uploads on three distinct days (including background sync),

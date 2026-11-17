@@ -5,13 +5,12 @@ This page documents the one-time **Export a file** delivery option. For hosted
 contributions and ongoing sharing, see [data requests](collection-requests.md). For your own files, use [Export](export.md#on-device-export-no-server).
 For ongoing database sync, use [server setup](setup.md).
 
-Create file requests in **Settings → Data requests → Create & manage data requests →
-Create request**, then choose **One time → Export a file**. Specify the title, requester, purpose, contact, inclusive dates, data
+Create file requests in **Connections → + → Data requests → Create request**, then choose **One time → Export a file**. Specify the title, requester, purpose, contact, inclusive dates, data
 types and CSV, JSON or JSONL. Select individual records or an allowed daily aggregate
 for each type. Delivery defaults to the iOS share sheet. Optionally supply a named
 compatible HTTPS receiver. Create Link & QR Code shares either representation.
 
-The participant opens the link or scans it with Settings → Data requests → Open or scan request,
+The participant opens the link or scans it with Connections → + → Data requests → Open request,
 reviews its scope and recipient, then taps **Generate & Share** or **Generate &
 Send**. The latter generates and uploads in a single action. A partial extraction
 stops for **Send Available Data**; a failed upload allows manual retry of the same

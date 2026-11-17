@@ -6,7 +6,7 @@ quantity or category data. They share the Data requests tools with one-time
 
 ## Flows
 
-- **Organizer:** Connections → + → Data requests → Create request, Settings → Data requests, or
+- **Organizer:** Connections → + → Data requests → Create request, or
   the viewer's Data requests page. Choose General request, Group program or Research
   study. Every type supports one-time or ongoing sharing. The iPhone creator
   also offers Export a file for one-time requests; file delivery uses the share
@@ -17,9 +17,8 @@ quantity or category data. They share the Data requests tools with one-time
   a fixed start/end window for ongoing sharing, history for one-time sharing,
   and retention. File delivery asks for dates, metrics,
   file format and an optional receiver. Share the generated invitation link.
-- **Participant:** use Open or scan request under Settings → Data requests, or
-  Open request under Connections → + → Data requests, for either file-export
-  links or hosted invitations. Hosted requests require sign-in:
+- **Participant:** use Connections → + → Data requests → Open request for either
+  file-export links or hosted invitations. Hosted requests require sign-in:
   review the recipient, data use, period and retention, select optional metrics,
   and affirm consent. File requests need no account: review the data, dates
   and destination, then generate and share or send the file. Both delivery
@@ -43,8 +42,7 @@ quantity or category data. They share the Data requests tools with one-time
 The iPhone has four tabs: Explore, Export, Connections and Settings. Connections
 lists saved personal databases, joined requests and data requests you organize. The plus
 opens Your database, PulsHealth database and Data requests (open or create).
-Creating and managing requests is also
-available under Settings → Data requests. Data requests are
+Data requests are
 invitation-only by default. Definitions cannot be edited after creation: a
 changed scope needs a new request and new consent. The creator is the sole
 organizer with access; organization labels do not create shared administrator
@@ -98,7 +96,7 @@ without explicit dates retain their original history/duration behavior.
 ## Isolation and collection protocol
 
 Hosted delivery uses a separate JSON protocol at the viewer, not a change to Puls Sync v1.
-It requires accounts mode and migrations 032–033, privilege reset 098 and repeatable role grants 102.
+It requires accounts mode and migrations 032–034, privilege reset 098 and repeatable role grants 102.
 The native client uses the existing PulsHealth account service. Custom personal
 sync destinations do not affect it. A separate self-hosted native account/service
 selector is not implemented.

@@ -131,7 +131,7 @@ struct RequestCodeView: View {
                 Text(link.absoluteString).font(.caption2).textSelection(.enabled).lineLimit(4)
             }
             Section {
-                Text("Open this link or scan the code with PulsHealth installed. If it isn’t installed, install PulsHealth, then reopen the same link. Settings → Data requests → Open or scan request also accepts a pasted link.")
+                Text("Open this link or scan the code with PulsHealth installed. If it isn’t installed, install PulsHealth, then reopen the same link. Connections → + → Data requests → Open request also accepts a pasted link.")
                 Link("Get PulsHealth", destination: URL(string: "https://apps.apple.com/app/id6757657354")!)
                 Text("The requester’s identity is not verified by this code. Editing the request creates a different link; an existing link cannot be recalled.")
             }

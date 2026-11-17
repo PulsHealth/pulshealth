@@ -7,46 +7,21 @@ enum SettingsRoute: Hashable {
     case user, benchmark
 }
 
-/// The Settings tab: who the data is stored as, the sync window and backfill
-/// (only once a server is applied), how many types run at once, Health access
-/// and the on-device data under Privacy & Data, diagnostics, and About. The
-/// database is not here — it is the Connections tab's (`ServerSettingsView`).
+/// App-wide preferences. Sync history and recovery belong to each connection.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @AppStorage("settings.developerMode") private var developerMode = false
     private var account: UserAccount { model.sharing.account }
-    @State private var confirmDeveloperMode = false
-    @State private var confirmResetAll = false
-    @State private var confirmBackfill = false
-    @State private var confirmDeleteExport = false
-    @State private var validatingAggregates = false
-    /// Failures in the last Validate Aggregate Functions run; nil before one.
-    @State private var aggregateValidationFailures: Int?
-
-    private var syncStartDate: Binding<Date> {
-        Binding {
-            model.subscriptions.hasPro ? model.config.startDate
-                : max(model.config.startDate, SyncAccessPolicy.free.earliestDate() ?? model.config.startDate)
-        } set: { date in
-            model.setSyncStartDate(date)
-        }
-    }
 
     var body: some View {
-        @Bindable var model = model
         Form {
-            if model.stateFileUnreadable {
-                StateUnreadableNotice()
-            }
-            Section {
+            if model.stateFileUnreadable { StateUnreadableNotice() }
+            Section("Account") {
                 NavigationLink(value: SettingsRoute.user) {
                     UserRow(
                         name: account.hasSession ? account.savedProfile?.name : model.config.userName,
                         email: account.hasSession ? account.savedProfile?.email : model.config.userEmail)
                 }
-            }
-
-            Section {
                 Button { model.showPro() } label: {
                     HStack {
                         Label {
@@ -66,46 +41,107 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
 
-            Section("Data requests") {
-                NavigationLink { ManageCollectionRequestsView() } label: { Label("Create & manage data requests", systemImage: "person.2.badge.gearshape") }
-                NavigationLink { OpenDataRequestView() } label: { Label("Open or scan request", systemImage: "qrcode.viewfinder") }
-            }
-
-            // Keyed on the *applied* server, like the Connections tab's first-time screen:
-            // without one there is nothing for a start date, a backfill or
-            // an anchor to act on.
-            if model.appliedConfig.serverURL != nil {
-                Section("Sync") {
-                    DatePicker(
-                        // "Sync", not "Export": the Export tab has its own time
-                        // range, and this date is not it.
-                        "Sync data from",
-                        selection: syncStartDate,
-                        in: ...Date(),
-                        displayedComponents: .date
-                    )
-                    Button {
-                        confirmBackfill = true
-                    } label: {
-                        HStack {
-                            Text("Start Initial Backfill")
-                            // Progress and ETA are the Connections tab's status card;
-                            // this only says why the button is disabled.
-                            if model.backfillActive {
-                                Spacer()
-                                ProgressView()
-                            }
-                        }
+            Section("Preferences") {
+                NavigationLink { PerformanceSettingsView() } label: {
+                    Label("Performance", systemImage: "speedometer")
+                }
+                if developerMode {
+                    NavigationLink { DeveloperSettingsView() } label: {
+                        Label("Developer tools", systemImage: "hammer")
                     }
-                    // Not under a running export: the two are the same sweep
-                    // over the same HealthKit store (AppModel.exportBlockedByBackfill
-                    // is this rule from the other side).
-                    .disabled(!model.configured || model.backfillActive || model.export.isRunning)
-                    Button("Reset All Anchors", role: .destructive) { confirmResetAll = true }
-                        .disabled(model.anySyncActive)
                 }
             }
 
+            Section {
+                Link(destination: ReviewRequests.writeReviewURL) {
+                    Label("Write a Review", systemImage: "star")
+                }
+                Link(destination: URL(string: "https://github.com/PulsHealth/pulshealth/issues/new/choose")!) {
+                    Label("Report an Issue", systemImage: "bubble.left.and.bubble.right")
+                }
+            } header: {
+                Text("Support PulsHealth")
+            }
+
+            AboutSettingsSection()
+        }
+        .navigationTitle("Settings")
+        .task { await account.restore() }
+        .navigationDestination(for: SettingsRoute.self) { route in
+            switch route {
+            case .user: UserView(account: account)
+            case .benchmark: if developerMode { BenchmarkView() }
+            }
+        }
+    }
+}
+
+private struct DeveloperSettingsView: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("settings.developerMode") private var developerMode = false
+    @State private var validatingAggregates = false
+    @State private var aggregateValidationFailures: Int?
+
+    var body: some View {
+        Form {
+            if developerMode { developerSection }
+        }
+        .navigationTitle("Developer tools")
+    }
+    private var developerSection: some View {
+        Section("Developer") {
+            NavigationLink("Run Throughput Benchmark", value: SettingsRoute.benchmark)
+            Button {
+                runAggregateValidation()
+            } label: {
+                HStack {
+                    Text("Validate Aggregate Functions")
+                    Spacer()
+                    if validatingAggregates {
+                        ProgressView()
+                    } else if let failures = aggregateValidationFailures {
+                        // Each failure is logged under Connections → Activity.
+                        if failures == 0 {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .accessibilityLabel("All passed")
+                        } else {
+                            Text("\(failures) failed").foregroundStyle(.red)
+                        }
+                    }
+                }
+            }
+            .disabled(validatingAggregates)
+            Button("Disable Developer Mode") {
+                developerMode = false
+                dismiss()
+            }
+                .disabled(validatingAggregates)
+        }
+    }
+
+    private func runAggregateValidation() {
+        guard developerMode, !validatingAggregates else { return }
+        validatingAggregates = true
+        aggregateValidationFailures = nil
+        Task {
+            let failures = await model.engine.validateAggregateFunctionMatrix()
+            for failure in failures {
+                await model.engine.eventLog.log(.error, failure)
+            }
+            aggregateValidationFailures = failures.count
+            validatingAggregates = false
+        }
+    }
+}
+
+
+private struct PerformanceSettingsView: View {
+    @Environment(AppModel.self) private var model
+    var body: some View {
+        @Bindable var model = model
+        Form {
             // Not sync-only: the on-device export and the benchmark run the
             // same sweep with these values.
             Section("Performance") {
@@ -145,76 +181,124 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Privacy & Data") {
-                // iOS has no link into the Health permission list itself; the
-                // app's own Settings page carries a Health row that opens it.
-                Link("Health Access", destination: URL(string: UIApplication.openSettingsURLString)!)
-                // The staged export is health data at rest on the device,
-                // and this is the way to remove it without going back to the
-                // Export tab. Only while there is one: a run in flight owns
-                // its files until it ends (`ExportModel.discard`).
-                if case .finished(let finished) = model.export.state, !finished.filesRemoved {
-                    Button("Delete Export", role: .destructive) { confirmDeleteExport = true }
-                }
-                // App Review 5.1.1(v): the account the PulsHealth database
-                // needs can be deleted from the app. Connections → Database has it
-                // too; this is where people look for it. Always shown: an
-                // iPhone paired from the account page's link, rather than by
-                // signing in here, looks like any other database to the app.
-                Link("Delete PulsHealth Account", destination: PulsHealthDatabase.deleteAccountURL)
-                    .tint(.red)
-            }
-
-            if developerMode {
-                developerSection
-            }
-
-            Section("About") {
-                LabeledContent("Version", value: Self.versionString)
-                    .contentShape(Rectangle())
-                    .onTapGesture(count: 7) {
-                        guard !developerMode else { return }
-                        confirmDeveloperMode = true
-                    }
-                Button("Show Onboarding Again") { model.restartOnboarding() }
-                    .disabled(model.isSettingUpInitialSync)
-                Link("Write a Review", destination: ReviewRequests.writeReviewURL)
-                Link("Documentation", destination: URL(string: "https://pulshealth.com/docs/")!)
-                Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy")!)
-                Link("Open Source on GitHub", destination: URL(string: "https://github.com/PulsHealth/pulshealth")!)
-                Link("Report an Issue", destination: URL(string: "https://github.com/PulsHealth/pulshealth/issues/new/choose")!)
-            }
         }
-        .navigationTitle("Settings")
-        .task { await account.restore() }
-        .navigationDestination(for: SettingsRoute.self) { route in
-            switch route {
-            case .user: UserView(account: account)
-            case .benchmark:
-                if developerMode { BenchmarkView() }
-            }
+        .navigationTitle("Performance")
+    }
+}
+
+private struct AboutSettingsSection: View {
+    @Environment(AppModel.self) private var model
+    @AppStorage("settings.developerMode") private var developerMode = false
+    @State private var confirmDeveloperMode = false
+    private static var versionString: String {
+        let info = Bundle.main.infoDictionary
+        return info?["CFBundleShortVersionString"] as? String ?? "?"
+    }
+    var body: some View {
+        Section("Help & About") {
+            LabeledContent("Version", value: Self.versionString)
+                .contentShape(Rectangle())
+                .onTapGesture(count: 7) {
+                    guard !developerMode else { return }
+                    confirmDeveloperMode = true
+                }
+            Button("Show Onboarding Again") { model.restartOnboarding() }
+                .disabled(model.isSettingUpInitialSync)
+            Link("Documentation", destination: URL(string: "https://pulshealth.com/docs/")!)
+            Link("Privacy Policy", destination: URL(string: "https://pulshealth.com/privacy")!)
+            Link("Open Source on GitHub", destination: URL(string: "https://github.com/PulsHealth/pulshealth")!)
         }
         .alert("Enable Developer Mode?", isPresented: $confirmDeveloperMode) {
             Button("Enable") { developerMode = true }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Show throughput benchmarks and aggregate validation tools in Settings.")
+            Text("Show Developer tools in Settings.")
         }
+    }
+}
+
+/// Opened from a specific active database, never from app-wide Settings.
+struct ConnectionSyncSettingsView: View {
+    @Environment(AppModel.self) private var model
+    let destinationID: UUID
+    @State private var confirmResetAll = false
+    @State private var confirmBackfill = false
+    private var syncStartDate: Binding<Date> {
+        Binding {
+            model.subscriptions.hasPro ? model.config.startDate
+                : max(model.config.startDate, SyncAccessPolicy.free.earliestDate() ?? model.config.startDate)
+        } set: { date in
+            guard model.canEditConnectionSyncSettings(destinationID) else { return }
+            model.setSyncStartDate(date)
+        }
+    }
+
+    var body: some View {
+        Form {
+            if model.canEditConnectionSyncSettings(destinationID) {
+                // Keyed on the *applied* server, like the Connections tab's first-time screen:
+                // without one there is nothing for a start date, a backfill or
+                // an anchor to act on.
+                if model.appliedConfig.serverURL != nil {
+                    Section("Sync") {
+                        DatePicker(
+                            // "Sync", not "Export": the Export tab has its own time
+                            // range, and this date is not it.
+                            "Sync data from",
+                            selection: syncStartDate,
+                            in: ...Date(),
+                            displayedComponents: .date
+                        )
+                        Button {
+                            confirmBackfill = true
+                        } label: {
+                            HStack {
+                                Text("Start Initial Backfill")
+                                // Progress and ETA are the Connections tab's status card;
+                                // this only says why the button is disabled.
+                                if model.backfillActive {
+                                    Spacer()
+                                    ProgressView()
+                                }
+                            }
+                        }
+                        // Not under a running export: the two are the same sweep
+                        // over the same HealthKit store (AppModel.exportBlockedByBackfill
+                        // is this rule from the other side).
+                        .disabled(!model.configured || model.backfillActive || model.export.isRunning)
+                        Button("Reset All Anchors", role: .destructive) { confirmResetAll = true }
+                            .disabled(model.anySyncActive)
+                    }
+                }
+
+                if model.hasPendingSettingsChanges {
+                    Section {
+                        Button("Save & Apply") { Task { await model.applyConfiguration(expectedDestinationID: destinationID) } }
+                            .disabled(model.isSettingUpInitialSync || model.anySyncActive)
+                    }
+                }
+                Section {
+                    Link("Health Access", destination: URL(string: UIApplication.openSettingsURLString)!)
+                }
+            } else {
+                Text("Select this connection and finish or discard changes for any other connection before editing its sync settings.")
+            }
+        }
+        .navigationTitle("Sync settings")
         .alert("Reset all anchors?", isPresented: $confirmResetAll) {
             Button("Reset All", role: .destructive) {
-                Task { await model.resetAll() }
+                Task { guard model.canEditConnectionSyncSettings(destinationID) else { return }; await model.resetAll() }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Re-sends everything from the start date for every synced type. Your database skips what it already has.")
         }
-        .deleteExportAlert(isPresented: $confirmDeleteExport, export: model.export)
         .alert("Start initial backfill?", isPresented: $confirmBackfill) {
             Button("Start Backfill") {
                 Task {
                     // A server/user change defers the apply to the fresh-vs-
                     // keep prompt; the backfill is then part of "start fresh".
-                    if await model.applyConfiguration() {
+                    if await model.applyConfiguration(expectedDestinationID: destinationID), model.canEditConnectionSyncSettings(destinationID) {
                         await model.startBackfill()
                     }
                 }
@@ -222,57 +306,6 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Syncs \(model.config.enabledTypes.count) data types from \(model.config.startDate.formatted(date: .abbreviated, time: .omitted)) onward.")
-        }
-    }
-
-    private var developerSection: some View {
-        Section("Developer") {
-            NavigationLink("Run Throughput Benchmark", value: SettingsRoute.benchmark)
-            Button {
-                runAggregateValidation()
-            } label: {
-                HStack {
-                    Text("Validate Aggregate Functions")
-                    Spacer()
-                    if validatingAggregates {
-                        ProgressView()
-                    } else if let failures = aggregateValidationFailures {
-                        // Each failure is logged under Connections → Activity.
-                        if failures == 0 {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                                .accessibilityLabel("All passed")
-                        } else {
-                            Text("\(failures) failed").foregroundStyle(.red)
-                        }
-                    }
-                }
-            }
-            .disabled(validatingAggregates)
-            Button("Disable Developer Mode") { developerMode = false }
-                .disabled(validatingAggregates)
-        }
-    }
-
-    /// "1.6 (17)", from the bundle so it can never disagree with what shipped.
-    private static var versionString: String {
-        let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = info?["CFBundleVersion"] as? String ?? "?"
-        return "\(version) (\(build))"
-    }
-
-    private func runAggregateValidation() {
-        guard developerMode, !validatingAggregates else { return }
-        validatingAggregates = true
-        aggregateValidationFailures = nil
-        Task {
-            let failures = await model.engine.validateAggregateFunctionMatrix()
-            for failure in failures {
-                await model.engine.eventLog.log(.error, failure)
-            }
-            aggregateValidationFailures = failures.count
-            validatingAggregates = false
         }
     }
 }
@@ -566,6 +599,10 @@ struct UserView: View {
                     }
                 }
                 .disabled(model.isSettingUpInitialSync || !userIDValid || account.busy || signingIn || (signedIn && account.profile == nil))
+            }
+            Section {
+                Link("Delete PulsHealth Account", destination: PulsHealthDatabase.deleteAccountURL)
+                    .tint(.red)
             }
         }
         .navigationTitle("User").navigationBarTitleDisplayMode(.inline)

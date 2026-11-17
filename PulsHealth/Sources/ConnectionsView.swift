@@ -294,6 +294,9 @@ struct ConnectionSettingsView: View {
                     }
                     if destinationID == model.activeDestinationID {
                         NavigationLink("Edit connection details", value: SyncRoute.server(scan: false))
+                        NavigationLink("Sync settings") {
+                            ConnectionSyncSettingsView(destinationID: destinationID)
+                        }
                     }
                 }
             }

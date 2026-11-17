@@ -116,7 +116,7 @@ available from the plan row in Settings.
 The app may ask Apple's StoreKit framework to show its standard review prompt
 at a pause after a completed task. Apple decides whether to show it and
 handles any rating or review you choose to submit under Apple's terms.
-Settings → About → Write a Review opens the App Store review page. Neither
+Settings → Support PulsHealth → Write a Review opens the App Store review page. Neither
 path sends health data to Apple. StoreKit does not tell the app whether you
 submitted a rating or review; any review you publish is visible on the App
 Store. The timing counters described below remain in the app's own preferences.
@@ -592,7 +592,7 @@ opens the form), or the developer invites you. What happens to your data:
   OpenTopoMap). Those requests carry no health data, but they do reveal to
   that provider which area the map shows, and the viewer's address.
 - **Leaving.** **Delete my account and data** on the account page (the app's
-  Delete PulsHealth Account, under Settings → Privacy & Data, opens it)
+  Delete PulsHealth Account, under Settings → User, opens it)
   disables your account, signs out browsers, disconnects iPhone uploads and
   revokes connected assistants. The service immediately attempts to remove
   your account, profile and stored health records, including derived database

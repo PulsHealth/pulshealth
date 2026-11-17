@@ -429,7 +429,7 @@ entitlements): set `DEVELOPMENT_TEAM` in `PulsHealth/Config/Local.xcconfig`.
   The screen's decisions live in `DatabaseSetup` (it starts from the
   *applied* configuration). Delete PulsHealth Account (App Review 5.1.1(v),
   `/account#delete-account`, whose `id` lives in `web/app/account/page.tsx`)
-  stays in Settings → Privacy & Data whether or not the iPhone is
+  stays in Settings → User whether or not the iPhone is
   connected: an iPhone paired through the account page's link in Safari is
   not marked. Changing any of this means changing
   `docs/privacy-policy.md` ("Where it goes", "If you use the developer's

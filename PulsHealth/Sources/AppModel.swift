@@ -849,8 +849,12 @@ final class AppModel {
     @discardableResult
     func applyConfiguration(
         syncNewTypes: Bool = false, serverChangeConfirmed: Bool = false, wholeHistory: Bool = false,
-        clearAuthToken: Bool = false
+        clearAuthToken: Bool = false, expectedDestinationID: UUID? = nil
     ) async -> Bool {
+        if let id = expectedDestinationID, !canEditConnectionSyncSettings(id) {
+            lastErrorMessage = "Review or discard changes for a different connection before applying these sync settings."
+            return false
+        }
         // Other screens share this draft. Their plain Save must not silently
         // commit a new database without the Sync screen's first-backfill Apply.
         guard !isSettingUpInitialSync || wholeHistory else {
@@ -867,6 +871,12 @@ final class AppModel {
             }
         }
         guard connectionEditCanStart() else { return false }
+        // The subscription lookup suspends; a switch or draft edit in the
+        // meantime must not let this connection's controls apply another one.
+        if let id = expectedDestinationID, !canEditConnectionSyncSettings(id) {
+            lastErrorMessage = "Review or discard changes for a different connection before applying these sync settings."
+            return false
+        }
         isUpdatingConnection = true
         defer { isUpdatingConnection = false }
         // Nothing applied now would be saved (the store is read-only this
@@ -1036,6 +1046,13 @@ final class AppModel {
             await applyConfiguration(
                 syncNewTypes: true, serverChangeConfirmed: true, wholeHistory: true)
         }
+    }
+
+    func canEditConnectionSyncSettings(_ id: UUID) -> Bool {
+        guard activeDestinationID == id,
+              let destination = savedDestinations.first(where: { $0.id == id }) else { return false }
+        return ServerIdentity(configuration: config) == destination.identity
+            && ServerIdentity(configuration: appliedConfig) == destination.identity
     }
 
     func connectionName(_ destination: SavedSyncDestination) -> String {

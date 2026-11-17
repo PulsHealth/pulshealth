@@ -147,6 +147,32 @@ final class AppModelTests: XCTestCase {
         return Harness(model: model, engine: engine, defaults: defaults, access: access)
     }
 
+    func testConnectionSyncSettingsCannotApplyAnotherSavedUserDraft() async throws {
+        let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine, authToken: "synthetic-connection-token"), progress: true)
+        await h.model.start()
+        let firstID = try XCTUnwrap(h.model.activeDestinationID)
+        let original = h.model.appliedConfig
+        var other = original
+        other.userID = "5ea4d000-0000-4000-8000-0000000000bb"
+        let configured = await h.engine.configure(other, confirmServerIdentity: true)
+        XCTAssertTrue(configured)
+        try await h.engine.switchDestination(id: firstID)
+        await h.model.refresh()
+        XCTAssertTrue(h.model.canEditConnectionSyncSettings(firstID))
+        h.model.config.userID = other.userID
+        XCTAssertFalse(h.model.canEditConnectionSyncSettings(firstID))
+        let applied = await h.model.applyConfiguration(expectedDestinationID: firstID)
+        XCTAssertFalse(applied)
+        XCTAssertEqual(h.model.activeDestinationID, firstID)
+        XCTAssertEqual(h.model.appliedConfig, original)
+        XCTAssertEqual(h.model.config.userID, other.userID, "Refusal preserves the pending draft")
+        let actual = await h.engine.store.configuration
+        XCTAssertEqual(actual.userID, original.userID)
+        XCTAssertEqual(actual.serverURL, original.serverURL)
+        h.model.config = original
+        XCTAssertTrue(h.model.canEditConnectionSyncSettings(firstID))
+    }
+
     func testConnectionNamesAreLocalAndSettingsRenderWithoutLegacySetupChoices() async throws {
         let h = try await makeModel(flags: ["onboardingCompleted": true], stored: SyncConfiguration(enabledTypes: [steps], serverURL: mine))
         await h.model.start()
