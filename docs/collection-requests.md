@@ -36,14 +36,14 @@ quantity or category data. They share the Data requests tools with one-time
 - **Organizer website:** view participant codes and receipt timestamps, download
   contributions in pages of up to 1,000 NDJSON records, rotate invitation links,
   or close a request. Closing prevents further uploads for all participants.
-- **Opportunities:** a secondary entry in Add a connection. Website creators can submit a
+- **Website directory:** website creators can submit a
   listing for administrator review. Only approved, open listings appear publicly.
   Review is not an endorsement, identity verification, or research ethics approval.
 
 The iPhone has four tabs: Explore, Export, Connections and Settings. Connections
 lists saved personal databases, joined requests and data requests you organize. The plus
 opens Your database, PulsHealth database and Data requests (open or create).
-Browsing stays inside Add a connection. Creating and managing requests is also
+Creating and managing requests is also
 available under Settings → Data requests. Data requests are
 invitation-only by default. Definitions cannot be edited after creation: a
 changed scope needs a new request and new consent. The creator is the sole

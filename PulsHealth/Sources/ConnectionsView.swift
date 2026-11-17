@@ -181,7 +181,6 @@ struct AddConnectionView: View {
             NavigationLink(value: SyncRoute.ownDatabase) { ConnectionChoice(title: "Your database", symbol: "externaldrive") }.accessibilityLabel("Your database")
             NavigationLink(value: SyncRoute.managedDatabase) { ConnectionChoice(title: "PulsHealth database", symbol: "cloud") }.accessibilityLabel("PulsHealth database")
             NavigationLink(value: SyncRoute.groupChoice) { ConnectionChoice(title: "Data requests", symbol: "person.2") }.accessibilityLabel("Data requests")
-            NavigationLink("Browse opportunities", value: SyncRoute.opportunities).font(.subheadline).foregroundStyle(Color.accentColor).padding(.top, 12)
         }.buttonStyle(.plain).navigationTitle("Add a connection")
     }
 }
@@ -247,7 +246,6 @@ struct ConnectionRouteView: View {
         case .groupChoice: GroupConnectionChoiceView()
         case .openRequest: OpenDataRequestView()
         case .createRequest: CreateCollectionRequestView()
-        case .opportunities: CollectionDirectoryView()
         case .history: ConnectionsView(path: $path, history: true)
         case .personalDestination(let id):
             if let destination = model.savedDestinations.first(where: { $0.id == id }) { PersonalConnectionView(destination: destination, path: $path) }

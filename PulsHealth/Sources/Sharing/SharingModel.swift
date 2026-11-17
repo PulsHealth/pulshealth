@@ -193,11 +193,11 @@ final class SharingModel {
             problem = account.problem
         } catch { serviceUnavailable = false; problem = error.localizedDescription }
     }
-    func discover(_ invite: CollectionInvitation? = nil) async throws -> [CollectionRequest] {
+    func discover(_ invite: CollectionInvitation) async throws -> [CollectionRequest] {
         var url = URLComponents(url: PulsHealthDatabase.viewerURL.appending(path: "api/sharing"), resolvingAgainstBaseURL: false)!
-        if let invite { url.queryItems = [.init(name: "id", value: invite.id.uuidString)] }
+        url.queryItems = [.init(name: "id", value: invite.id.uuidString)]
         var request = URLRequest(url: url.url!); request.timeoutInterval = 30; request.cachePolicy = .reloadIgnoringLocalCacheData
-        if let code = invite?.code { request.setValue(code, forHTTPHeaderField: "X-Collection-Invite") }
+        if let code = invite.code { request.setValue(code, forHTTPHeaderField: "X-Collection-Invite") }
         // Public metadata carries no account credential, even on redirects.
         let session = URLSession(configuration: .ephemeral, delegate: CollectionNoRedirects(), delegateQueue: nil)
         defer { session.invalidateAndCancel() }

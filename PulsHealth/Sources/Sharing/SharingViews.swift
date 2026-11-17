@@ -138,21 +138,6 @@ struct SharingDetailView: View {
         }.navigationTitle("Connection").navigationBarTitleDisplayMode(.inline)
     }
 }
-struct CollectionDirectoryView: View {
-    @Environment(AppModel.self) private var model
-    @State private var requests: [CollectionRequest] = []
-    @State private var loaded = false
-    @State private var problem: String?
-    var body: some View {
-        List {
-            Section { Text("Optional studies and programs. A directory listing is not an endorsement or ethics approval.").foregroundStyle(.secondary) }
-            ForEach(requests) { r in Button { model.sharing.invitation = CollectionInvitation(id: r.id) } label: { VStack(alignment: .leading, spacing: 6) { Text(r.title).font(.headline); Text(r.organizer).foregroundStyle(.secondary); Text(r.purpose).font(.subheadline).lineLimit(3) } } }
-            if loaded && requests.isEmpty { Text(problem ?? "No opportunities are listed yet. You can still join through an invitation.") }
-            if !loaded { ProgressView() }
-        }.navigationTitle("Opportunities")
-        .task { do { requests = try await model.sharing.discover() } catch { problem = error.localizedDescription }; loaded = true }
-    }
-}
 struct ManageCollectionRequestsView: View {
     @Environment(AppModel.self) private var model
     var body: some View {

@@ -6,7 +6,7 @@ import PulsHealthSync
 /// accepted while another of them is on top.
 enum SyncRoute: Hashable {
     case personal, account
-    case addConnection, ownDatabase, groupChoice, openRequest, createRequest, opportunities, history, managedDatabase
+    case addConnection, ownDatabase, groupChoice, openRequest, createRequest, history, managedDatabase
     case connectionSettings(UUID)
     case personalDestination(UUID), organizer(UUID), contribution(UUID), participants(UUID), deletion(UUID)
     /// The Database screen; `scan` opens the pairing scanner on arrival, and
