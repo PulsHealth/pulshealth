@@ -2,7 +2,7 @@
 
 All three included input CSVs are synthetic. No personal health records are
 included. They follow the PulsHealth product API export headers. Use Python
-3.10+, install requirements.txt, then run `python analyze.py --time-zone UTC`.
+3.11+, install requirements.txt, then run `python analyze.py --time-zone UTC`.
 The default range is 2026-08-03 through 2026-08-30 (end exclusive 2026-08-31).
 Expected: workouts=12; sleep_days=25; resting_hr_days=26; calendar_days=28.
 Outputs: figures/three-charts.webp and figures/daily-summary.csv.
@@ -17,5 +17,5 @@ Zero workout records are not proof of complete data coverage or no exercise.
 Missing sleep/heart-rate values remain missing. The script makes no network
 requests; dependency installation downloads packages.
 
-Tested with Python 3.12 and the dependency versions in requirements.txt.
+Tested with Python 3.13 and the dependency versions in requirements.txt.
 Full walkthrough: https://pulshealth.com/blog/analyze-apple-health-with-python/

@@ -2,7 +2,7 @@ import { SearchItem } from './types';
 import { EXAMPLES } from './examples';
 
 export const STATIC_PAGES: SearchItem[] = [
-  { id: 'page-examples', type: 'page', title: 'Apple Health Data Inspiration', description: 'Interactive year in review, marathon training, activity art and route atlas projects with recorded workouts and local files.', href: '/examples/', icon: 'Activity' },
+  { id: 'page-examples', type: 'page', title: 'Apple Health Data Examples', description: 'Interactive year in review, marathon training, activity art and route atlas projects with recorded workouts and local files.', href: '/examples/', icon: 'Activity' },
   ...EXAMPLES.map(example => ({ id: `example-${example.slug}`, type: 'page' as const, title: example.title, description: example.description, href: `/examples/${example.slug}/`, icon: 'Activity' })),
   { id: 'page-friend-flex', type: 'page', title: 'Friend Flex', description: 'Create fitness challenges with friends, compete on personal improvement, track progress, and share results in iMessage.', href: '/friend-flex/', icon: 'Activity' },
   { id: 'page-friend-flex-support', type: 'page', title: 'Friend Flex Support', description: 'Help with joining challenges, logging results, optional Apple Health, and deleting your data.', href: '/friend-flex/support/', icon: 'HelpCircle' },
@@ -10,7 +10,7 @@ export const STATIC_PAGES: SearchItem[] = [
   { id: 'page-features', type: 'page', title: 'PulsHealth App Features', description: 'Explore Apple Health on iPhone, export CSV and JSON, create custom summaries, and sync your database.', href: '/features/', icon: 'Smartphone' },
   { id: 'page-pro', type: 'page', title: 'PulsHealth Pro', description: 'Optional app subscription for full available Apple Health history and sync of all supported types. Open source, with your own database.', href: '/pro/', icon: 'Heart' },
   { id: 'page-pricing', type: 'page', title: 'PulsHealth App Pricing', description: 'Compare Free and Pro: recent exports and five sync types free, or full history and all sync types with the app subscription. Hosting is separate.', href: '/pricing/', icon: 'Info' },
-  { id: 'page-watch-workout-pro', type: 'page', title: 'Watch Workout Pro', description: 'Create, save, share, and schedule structured workouts on iPhone for Apple Workout on Apple Watch. Optional on-device Apple Intelligence and Pro subscription.', href: '/watch-workout-pro/', icon: 'Activity' },
+  { id: 'page-watch-workout-pro', type: 'page', title: 'Watch Workout Pro', description: 'Create, save, share, and schedule structured workouts on iPhone for Apple Workout on Apple Watch. Available on the App Store, with optional on-device Apple Intelligence and Pro monthly or Lifetime purchases.', href: '/watch-workout-pro/', icon: 'Activity' },
   { id: 'page-watch-workout-pro-support', type: 'page', title: 'Watch Workout Pro Support', description: 'Help with workout creation, Apple Watch scheduling, subscriptions, and sharing. Contact support@pulshealth.com.', href: '/watch-workout-pro/support/', icon: 'HelpCircle' },
   { id: 'page-watch-workout-pro-privacy', type: 'page', title: 'Watch Workout Pro Privacy Policy', description: 'Privacy for on-device creation, iCloud collections, public workout links, and the optional connector.', href: '/watch-workout-pro/privacy/', icon: 'Shield' },
   {

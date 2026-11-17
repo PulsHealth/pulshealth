@@ -52,7 +52,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: 1.27.1
+          go-version: 1.27.3
           cache-dependency-path: |
             server/api/go.sum
             server/ingest/go.sum
@@ -72,10 +72,13 @@ jobs:
           # the one with a third-party dependency tree, and the one CI runs
           # against the fixture corpus; puls-export is stdlib-only, so what it
           # reports is the Go toolchain's own advisories.
+          status=0
           for module in server/ingest server/api server/mcp \
                         tools/puls-export tools/protocol-check; do
-            (cd "$module" && "$(go env GOPATH)/bin/govulncheck" ./...)
+            echo "Scanning $module"
+            (cd "$module" && "$(go env GOPATH)/bin/govulncheck" ./...) || status=1
           done
+          exit "$status"
 
       - name: Set up Node
         if: ${{ !cancelled() }}

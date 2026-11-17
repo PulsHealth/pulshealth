@@ -3,7 +3,7 @@ import { RepoMarkdown, readRepoFile, stripLeadingH1 } from "@/lib/markdown";
 
 const CONTENT_PATH = "site/content/watchworkoutpro/privacy-policy.md";
 const socialImage = { url: "/watch-workout-pro/workout-library.jpg", width: 396, height: 860, alt: "Watch Workout Pro workout library on iPhone" };
-const description = "Privacy practices for Watch Workout Pro: on-device workout creation, optional sharing, iCloud collections, and Pro subscriptions.";
+const description = "Privacy practices for Watch Workout Pro: on-device workout creation, optional sharing, iCloud collections, and Pro purchases.";
 
 export const metadata = {
   title: "Watch Workout Pro Privacy Policy",

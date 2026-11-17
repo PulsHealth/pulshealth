@@ -19,11 +19,11 @@ export async function generateMetadata({
   const e = EXAMPLES.find((e) => e.slug === slug);
   return e
     ? {
-        title: `${e.title} | PulsHealth`,
+        title: `${e.searchTitle} | PulsHealth`,
         description: e.description,
         alternates: { canonical: `/examples/${slug}/` },
-        openGraph: {title:`${e.title} | PulsHealth`,description:e.description,url:`/examples/${slug}/`,images:[{url:`/inspiration-cards/${slug}.png`,width:1200,height:630,alt:e.title}]},
-        twitter: {card:"summary_large_image",title:`${e.title} | PulsHealth`,description:e.description,images:[`/inspiration-cards/${slug}.png`]},
+        openGraph: {title:`${e.searchTitle} | PulsHealth`,description:e.description,url:`/examples/${slug}/`,images:[{url:`/inspiration-cards/${slug}.png`,width:1200,height:630,alt:e.title}]},
+        twitter: {card:"summary_large_image",title:`${e.searchTitle} | PulsHealth`,description:e.description,images:[`/inspiration-cards/${slug}.png`]},
       }
     : {};
 }

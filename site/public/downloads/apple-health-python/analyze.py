@@ -1,5 +1,5 @@
 """Three descriptive charts from PulsHealth product API CSV exports.
-Demo files are synthetic. Requires Python 3.10+; see requirements.txt.
+Demo files are synthetic. Requires Python 3.11+; see requirements.txt.
 """
 import argparse
 import math

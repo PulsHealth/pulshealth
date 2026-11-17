@@ -88,13 +88,21 @@ These pages are included in search and the sitemap; the footer links to the
 product. Both `/watchworkoutpro/` and `/workout-to-watch/` (including their
 support/privacy routes) retain noindex redirect stubs with destination canonicals.
 Product policy content lives in `content/watchworkoutpro/`. Marketing screenshots
-are resized from the app's approved dark source captures. App Store availability
-must be verified before replacing the launch notice with a download action.
+are resized from the app's approved dark source captures. The product and support
+pages link to the live App Store listing (`6822902745`), verified against Apple's
+US lookup API and public listing on November 10, 2026. Product copy reflects the
+36-workout starter library; support covers monthly and Lifetime Pro purchases.
+Download actions use the same official Apple badge component as PulsHealth,
+with the Watch Workout Pro listing and accessible app name.
 
 Example pages show a “Back” link to the gallery above their title. Local file import
 lives below each interactive example; chart labels and units stay with the visuals.
 Example sharing cards use the PulsHealth name without an Inspiration label.
 Regenerate them with `bun scripts/gen-inspiration-cards.tsx` from `site/`.
+
+The workflow guide at `/docs/choose-a-workflow/` compares file exports, database
+sync and AI access. Its source is `docs/choose-a-workflow.md`; the docs registry
+also includes it in search, sitemap and generated Markdown.
 
 ## Sharing preview
 
@@ -198,18 +206,19 @@ Only loopback HTTP origins are accepted, and production ignores this setting.
 The static sample-data links stay local to the site in every environment.
 
 `.env.production` carries public build-time values for the form endpoint and
-optional self-hosted aggregate collector URL/site ID. They are tracked because
+optional self-hosted Umami collector URL/site ID. They are tracked because
 the static export publishes them; never put analytics API keys here.
 `.env.example` documents local configuration. Unset both analytics values
 to disable collection. The tracker runs only on the production marketing
 hostname, respects Do Not Track/Global Privacy Control, excludes URL query
 strings/fragments, referrer paths, titles, form values and identity data,
-and sends only fixed page groups, source categories, action names, App Store button placements and Web Vitals rating buckets. No visitor/session IDs or raw URLs/timing values are sent or stored. Counters are UTC daily sums in Observatory, not Umami event records.
+and sends page paths, referring origins, fixed action names, App Store button
+placements and bounded numeric Web Vitals to Umami. Anonymous visitor/session
+identifiers rotate daily; raw IP addresses are not stored in analytics tables.
 `form-dialog` distinguishes attempts, success and errors without sending
-the contents. App Store clicks indicate intent, not installations. No
-analytics cookies, replay, heatmaps or health-viewer tracking are enabled.
-Optional audience requests abort after five seconds and are never retried:
-an unknown delivery outcome must not create a duplicate counter increment.
+contents. App Store clicks indicate intent, not installations. No analytics
+cookies, replay, heatmaps or health-viewer tracking are enabled. The website
+explanation and browser exclusion control appear at the bottom of `/privacy/`.
 Keep this aligned with the website section of `docs/privacy-policy.md` and
 the `/privacy` summary. The native app's analytics-free claims still apply.
 
@@ -264,7 +273,7 @@ data, spend or keys.
 with a homepage canonical and noindex. No campaign is persisted or carried
 to the App Store.
 
-Homepage statistics count page groups, broad source categories and fixed actions,
+Homepage statistics count page paths, referring origins, visitors, sessions and fixed actions,
 respecting DNT/GPC. Query parameters remain discarded. Overall homepage traffic
 cannot be assigned to individual ads or creative variants. Ad-platform clicks,
 website visits, App Store clicks, Apple downloads and Apple purchases remain
@@ -384,3 +393,7 @@ The sleep-through-parenthood project uses `sleep-recorded.json`, containing rela
 The sleep view compares aggregate duration distributions, recorded awakenings, stage proportions and broad post-arrival periods. Period controls select equal windows before and after; missing recordings never count as zero. A one-minute awake threshold defines interruption episodes. PNG sharing uses the same aggregate model, without individual nights or calendar dates.
 
 The sensor comparison includes four nearby Watch runs matched to the external-monitor route. Normalized shared-frame paths and bidirectional sampled point-to-track metrics are display-only; absolute coordinates, workout IDs and dates remain private. Recordings are separate runs, so the charts compare recorded cadence and density rather than paired accuracy. The optional monitor profile supports verified hardware details; the featured monitor is a contributor-confirmed Polar H10, with chest-strap, ECG and Bluetooth details linked to Polar’s official product reference. The synced writer itself identifies only a Bluetooth device.
+
+Dependency security: `package.json` overrides transitive Zod to `^4.6.6`
+until the lint dependency tree resolves a patched release without it.
+Keep `bun audit --audit-level=high` clean when updating the lockfile.
