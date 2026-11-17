@@ -32,7 +32,9 @@ import Testing
         let dir = directory()
         let tokens = InMemoryTokenStore()
         let store = SyncStateStore(directory: dir, tokenStore: tokens)
-        let alpha = configuration("alpha", token: "alpha-secret")
+        var alpha = configuration("alpha", token: "alpha-secret")
+        // An exact timestamp makes whole-configuration equality stable after JSON encoding.
+        alpha.startDate = Date(timeIntervalSince1970: 10_000)
         try await store.applySavedConfiguration(alpha)
         let id = try #require(await store.activeDestinationID)
         try await store.renameDestination(id: id, name: "  Personal archive  ")
