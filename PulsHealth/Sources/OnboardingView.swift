@@ -1,7 +1,7 @@
 import SwiftUI
 import PulsHealthSync
 
-/// First-run flow: welcome, export, sync, then required Health access.
+/// First-run flow: welcome, export, connections, then required Health access.
 /// Context comes before iOS asks about the starter set. The final Health
 /// page has one neutral Continue button and cannot be skipped on first run.
 /// Nothing reaches the engine until that permission step has been answered.
@@ -113,7 +113,7 @@ struct OnboardingView: View {
         case .welcome: welcomePage
         case .health: healthPage
         case .export: exportPage
-        case .sync: syncPage
+        case .sync: connectionsPage
         }
     }
 
@@ -193,18 +193,19 @@ struct OnboardingView: View {
         }
     }
 
-    private var syncPage: some View {
+    private var connectionsPage: some View {
         pageLayout {
             VStack(spacing: 20) {
-                pageIcon("arrow.triangle.2.circlepath", color: .accentColor)
-                pageTitle("Always in sync")
-                // Words only: signing in to the PulsHealth database happens on
-                // Connections → Database, never in this flow.
-                bodyText("Keep a live copy of your Health data in a database, with a PulsHealth account or one you run yourself.")
+                pageIcon("server.rack", color: .accentColor)
+                pageTitle("Your connections")
+                bodyText("Keep your own copy or share selected Health data with others.")
                 VStack(alignment: .leading, spacing: 18) {
                     feature(
-                        "bolt.heart", "Automatic",
-                        "New data syncs by itself in the background.")
+                        "externaldrive", "Your database",
+                        "Sync automatically to a PulsHealth database or one you run yourself.")
+                    feature(
+                        "person.2", "Data requests",
+                        "Review who’s asking and what they need, then share once or on an ongoing basis.")
                 }
                 // Opens in Safari, outside the app.
                 Link(destination: URL(string: "https://pulshealth.com/#ways")!) {
