@@ -240,6 +240,26 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.5 (35) internal TestFlight (2026-11-16)
+
+Built from clean committed source `341c88064f2ea76bd0ca6f966d3a6312936a7805`
+on `codex/collection-requests`. This candidate streamlines connection setup,
+groups sync review into expandable samples and aggregates with persistent
+actions, moves connection history to Settings, and defaults new exports and
+syncs to 30 days. The account button reads “Sign in”.
+
+The signed archive, matching dSYMs, exported IPA hash, upload log and candidate
+evidence are retained privately. Focused validation passed 20 package tests
+and 12 app tests, with a subsequent full-selection UI check after footer
+refinements. The final label/build-number changes compiled in the Release
+archive; physical-phone acceptance remains unverified.
+
+Apple accepted the upload and completed processing. App Store Connect showed
+**2.5 (35): Testing** in the existing PulsHealth internal group. No external
+beta or App Store review submission was made. The backend and public website
+were not deployed; hosted request testing retains build 34's backend gates.
+
+
 ### 2.5 (34) internal TestFlight (2026-11-16)
 
 Built from committed source `4adf936` on the Connections / Data requests branch.
