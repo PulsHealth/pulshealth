@@ -101,7 +101,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         # Use a new build number for every App Store Connect upload.
         # Preserve the marketing version when replacing a withdrawn build.
-        CURRENT_PROJECT_VERSION: 35
+        CURRENT_PROJECT_VERSION: 36
         MARKETING_VERSION: 2.5
         # The tint every control takes (Assets.xcassets/AccentColor): the blue
         # of the logo's pulse line, a shade lighter in dark mode.
