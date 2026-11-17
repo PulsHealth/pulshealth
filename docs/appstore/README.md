@@ -240,6 +240,27 @@ changes, revisit them in the same pull request:
 
 ## Release record
 
+### 2.5 (36) internal TestFlight (2026-11-16)
+
+Built from clean committed source `14507f1` atop merged `main` revision
+`3489915`. The only code difference from the tested merge candidate is build
+number 36. Xcode 26.5 and 27.0 validation passed in run 44019167045; full CI
+passed in run 44019167001. The Release archive and App Store export succeeded,
+with preferred signing verified for Debug and Release. Matching archive,
+dSYMs, IPA hash, upload log and candidate evidence are retained privately.
+
+Includes all post-build-35 refinements: smaller sign-in layout, spaced camera
+actions, reduced helper copy, scoped connection errors, empty selections for
+new databases while edits preserve selections, and explicit Analyze access
+requests without red Explore row badges.
+
+Apple accepted the upload and completed processing; the PulsHealth internal
+group shows **2.5 (36): Testing**. No external beta or App Store review
+submission was made. No backend or website deployment was performed.
+Physical-phone validation and the hosted-request deployment gates remain
+separate from this internal TestFlight upload.
+
+
 ### 2.5 (35) internal TestFlight (2026-11-16)
 
 Built from clean committed source `341c88064f2ea76bd0ca6f966d3a6312936a7805`
