@@ -98,7 +98,7 @@ class Runner:
         summary = json.loads(subprocess.check_output([
             "xcrun", "xcresulttool", "get", "test-results", "summary", "--path",
             str(self.artifacts / (component + ".xcresult")),
-        ], timeout=60))
+        ], timeout=180))
         write_json(self.artifacts / (component + "-summary.json"), summary)
         require_executed_tests(summary, focused=bool(only))
         return {key: summary.get(key, 0) for key in ("passedTests", "failedTests", "skippedTests", "totalTestCount")}
