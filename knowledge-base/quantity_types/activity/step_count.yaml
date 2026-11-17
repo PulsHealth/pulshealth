@@ -53,6 +53,10 @@ description: '## Overview
   comparisons. They illustrate recording behavior, not population activity targets or clinical reference ranges.
 
 
+  If your Watch, iPhone and export show different totals, start with the [step-count comparison checklist](/blog/apple-health-step-counts-dont-match/).
+  For a defined daily series, the [CSV export guide](/blog/export-apple-health-to-csv-excel/) explains records and aggregates.
+
+
   ## How HealthKit stores steps
 
   Steps are a **cumulative quantity** in units of `count`. One record contains a count over its start-to-end interval;
@@ -208,7 +212,7 @@ references:
 - title: Apple Support — Manage Health data and source priority
   url: https://support.apple.com/en-us/108779
   type: official
-last_updated: '2026-10-14'
+last_updated: '2026-11-16'
 research_notes: Executed snapshot-bound empirical notebook before rewriting this article. Full-year standard facets
   and 92-day interval, source overlap, calendar-boundary, workout, sleep and related-type diagnostics are persisted
   privately under artifact key step-count. Public figures use anonymous sources and relative dates. Unsupported

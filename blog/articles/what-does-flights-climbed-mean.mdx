@@ -1,17 +1,39 @@
 ---
-title: "What Does Flights Climbed Mean on Apple Watch?"
+title: "What Does Flights Climbed Mean on Apple Watch and iPhone?"
 date: "2026-11-07"
+updated: "2026-11-16"
 draft: false
 author: "Sean Wade"
 tags: ["apple-watch", "apple-health", "flights-climbed", "data-quality"]
-excerpt: "Flights Climbed is an estimated stair-flight count, not a count of individual steps. Learn how to compare an indoor stair day with a hike without confusing flights, elevation gain and overlapping devices."
+excerpt: "Flights Climbed counts estimated stair flights, not individual steps. Find the count in Apple Health, check its sources, and understand why it differs from elevation gain."
 ---
 
 **Flights Climbed is the number of stair flights recorded by your devices—not the number of individual stairs you stepped on.** If Apple Health shows five flights, it is reporting five units of that estimated activity. It is not saying you took five steps or visited five different floors.
 
 In everyday language, a flight is a set of stairs between levels. The device records an estimate of climbing activity rather than identifying those architectural boundaries.
 
-That is the short answer. The more interesting question arrives after a hike: why can a long climb and an ordinary day going upstairs produce numbers that don't seem to agree?
+## Where to find Flights Climbed on your iPhone
+
+1. Open **Health**, then search for **Flights Climbed** under Activity.
+2. Choose a completed day to inspect its total.
+3. Open **Show All Data** to inspect individual entries and their times.
+4. Open **Data Sources & Access** to see which devices and apps contribute.
+
+A number shown on your iPhone may have been recorded by your Watch or another source. Apple's [Health data guide](https://support.apple.com/en-us/108779) explains these controls and source priority.
+
+## Is one flight a floor, a step, or an elevation measurement?
+
+| Question | Short answer |
+| --- | --- |
+| Does five flights mean five steps? | No. The unit is a stair flight, not an individual stair or walking step. |
+| Does it prove I visited five floors? | No. The device estimates climbing activity; it does not identify building levels. |
+| Can I convert flights into exact feet or metres? | The stored count alone does not establish an exact ascent height. Use a separately recorded elevation measure for that question. |
+| Why does Health show flights when I remember no stairs? | Inspect the source and interval first. The [unexpected flight-count guide](/blog/apple-watch-flights-climbed-wrong/) separates recording issues from overlapping sources. |
+| What if I want the HealthKit fields and units? | Use the [Flights Climbed data reference](/knowledge-base/types/HKQuantityTypeIdentifierFlightsClimbed/). |
+
+*Updated November 16, 2026: added the Health lookup steps and quick answers; the indoor-stairs and hiking comparison follows below.*
+
+A common follow-up after a hike is why a long climb and an ordinary day going upstairs produce numbers that don't seem to agree.
 
 The temptation is to turn everything into floors: divide a hike's elevation gain by a familiar staircase height, compare the answer with Flights Climbed, and call the difference an error. But those two numbers describe different records. A better comparison starts with **when the flights were recorded, which device recorded them, and what else was happening**.
 
@@ -83,3 +105,7 @@ Avoid deleting a device's entire history to fix one puzzling day. First preserve
 The rewarding part of this comparison is the story hidden by the daily total. Twelve flights spread across ordinary errands and twelve flights around a hike may represent very different days. The records can help you explore that difference—as long as you let “unknown” remain a valid answer.
 
 To investigate your own history, [export selected records](/blog/export-apple-health-to-csv-excel/) and keep their source and timestamps. The [Flights Climbed reference](/knowledge-base/types/HKQuantityTypeIdentifierFlightsClimbed/) explains the stored fields, and the [activity atlas example](/examples/activity-atlas/) shows a complementary way to explore recorded walking and workout routes.
+
+## Inspect your own records
+
+[PulsHealth for iPhone](https://apps.apple.com/us/app/pulshealth/id6757657354) lets you explore your Apple Health data and export selected records without setting up a server. Use the [CSV export guide](/blog/export-apple-health-to-csv-excel/) to keep the source and time boundaries with your comparison. A raw export helps explain a mismatch; it is not an independent measurement of your activity.
