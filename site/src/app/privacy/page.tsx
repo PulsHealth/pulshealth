@@ -17,7 +17,7 @@ const claims = [
   },
   {
     title: "Your database, or ours: your choice",
-    body: "Regular sync uploads to the database you set up. One-time requests can send a ZIP to a separate HTTPS destination you approve. For personal sync to your own server, the developer never sees that data. Separately approved collection requests send selected data to the PulsHealth account server for their organizer; you can pause or withdraw from each request independently and request deletion of its contributions. Confirmation follows server deletion; downloaded copies and backups require separate handling. Group drafts and removed connection IDs stay in protected, backup-excluded storage on your iPhone. Choose the PulsHealth database and we hold it under your account, to show it back to you and to the assistants you connect. It is not sold. Account deletion disconnects access and automatically removes your account and stored records; a private status link confirms completion. A minimal deletion record prevents older backups from restoring deleted data.",
+    body: "Regular sync uploads to the database you set up. One-time requests can send a ZIP to a separate HTTPS destination you approve. For personal sync to your own server, the developer never sees that data. Separately approved data requests send selected data to the PulsHealth account server for their organizer; you can pause or withdraw from each request independently and request deletion of its contributions. Confirmation follows server deletion; downloaded copies and backups require separate handling. Request drafts and removed connection IDs stay in protected, backup-excluded storage on your iPhone. Choose the PulsHealth database and we hold it under your account, to show it back to you and to the assistants you connect. It is not sold. Account deletion disconnects access and automatically removes your account and stored records; a private status link confirms completion. A minimal deletion record prevents older backups from restoring deleted data.",
     check: { label: "Transport/", href: `${GITHUB}/tree/main/PulsHealthSync/Sources/PulsHealthSync/Transport` },
   },
   {
@@ -35,7 +35,7 @@ const claims = [
 export const metadata = {
   title: "Privacy Policy - PulsHealth",
   description:
-    "Where your health data goes and where it does not. Sync goes to your configured database. Exports go where you choose. Collection requests share only the scope you approve with their organizer.",
+    "Where your health data goes and where it does not. Sync goes to your configured database. Exports go where you choose. Data requests share only the scope you approve with their organizer.",
   alternates: {
     canonical: "/privacy/",
   },
@@ -74,7 +74,7 @@ export default function PrivacyPage() {
               <li>HealthKit access is read-only. The app never writes to Apple Health.</li>
               <li>The existing-user Pro gift checks Apple’s verified original app build and stores only fixed gift dates and a welcome acknowledgement in a separate device-only Keychain item. These are not sent to PulsHealth. The gift does not start a subscription or charge automatically.</li>
               <li>No analytics, advertising, tracking or third-party SDKs in the app. Apple processes optional monthly/yearly Pro subscriptions and one-time Lifetime Pro purchases through StoreKit. All include current and future app features; PulsHealth server, hosting and other services are separate. Buying Lifetime does not cancel an existing subscription.</li>
-              <li>Each saved database’s bearer token normally lives in its own iOS Keychain item. Only the active database receives sync uploads. Unpairing removes its local connection and progress; data already uploaded remains on the server. The app does not retain synced health samples: an export you ask for is staged in temporary storage until you share it or confirm request delivery, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
+              <li>Optional connection names stay on this iPhone and are not uploaded. Each saved database’s bearer token normally lives in its own iOS Keychain item. Only the active database receives sync uploads. Unpairing removes its local connection and progress; data already uploaded remains on the server. The app does not retain synced health samples: an export you ask for is staged in temporary storage until you share it or confirm request delivery, then deleted, and the per-type analysis it keeps holds only summary numbers (counts, dates, a histogram, per-source counts), deletable in one tap.</li>
               <li>Medication exports and sync include random aliases that stay consistent within this app installation. A protected, backup-excluded registry stores opaque Apple concept identifiers and their aliases without dose events or names; Apple archives stay on the phone. Removing the app creates new aliases.</li>
               <li>Interactive examples process files you select in browser memory, without uploading or saving the records. They do not automatically send your data to AI or map providers. Share opens your device’s sharing controls with the image you choose.</li>
             </ul>

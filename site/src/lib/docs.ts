@@ -50,6 +50,20 @@ export const DOCS: DocEntry[] = [
     group: "Getting started",
   },
   {
+    slug: "collection-requests",
+    title: "Data requests",
+    repoPath: "docs/collection-requests.md",
+    description: "Create and review invitations to share selected Health data once or over time, with separate consent, controls and retention for each request.",
+    group: "Getting started",
+  },
+  {
+    slug: "requests",
+    title: "One-time file requests",
+    repoPath: "docs/requests.md",
+    description: "Ask someone for a one-time Health data export, review what is requested, and share a file or send it to a compatible receiver.",
+    group: "Reference",
+  },
+  {
     slug: "recording-behavior",
     title: "Understand how health data is recorded",
     repoPath: "docs/recording-behavior.md",
