@@ -133,12 +133,10 @@ struct SyncView: View {
                     : max(model.config.startDate, SyncAccessPolicy.free.earliestDate() ?? model.config.startDate)
             } set: { model.setSyncStartDate($0) }, in: ...Date(), displayedComponents: .date)
                 .accessibilityIdentifier("initialSync.startDate")
-            Text(model.subscriptions.hasPro
-                 ? "A shorter history makes the first sync quicker. You can choose an earlier date later in this connection’s sync settings. Health access may limit available history."
-                 : "Free sync includes 5 types and the most recent 30 days. Pro unlocks more types and earlier history.")
-                .font(.footnote).foregroundStyle(.secondary)
-            Text("Nothing is uploaded to this database until you apply.")
-                .font(.footnote).foregroundStyle(.secondary)
+            if !model.subscriptions.hasPro {
+                Text("Free sync includes 5 types and the most recent 30 days. Pro unlocks more types and earlier history.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
         }
     }
 

@@ -9,29 +9,29 @@ struct PulsHealthConnectionSetupView: View {
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
-                VStack(spacing: 28) {
+                VStack(spacing: 24) {
                     Image(systemName: "person.crop.circle")
-                        .font(.system(size: 56, weight: .light))
+                        .font(.system(size: 36, weight: .light))
                         .foregroundStyle(.tint)
-                        .frame(width: 100, height: 100)
-                        .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 28))
+                        .frame(width: 64, height: 64)
+                        .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 18))
                     Text("Sign in to your\nPulsHealth account")
-                        .font(.largeTitle.bold())
+                        .font(.title2.weight(.semibold))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                     Button { Task { await connect() } } label: {
                         HStack(spacing: 10) {
                             if connecting { ProgressView().tint(.white) }
                             Text(connecting ? "Signing in…" : "Sign in")
-                        }.frame(maxWidth: .infinity).padding(.vertical, 4)
+                        }.frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .disabled(connecting)
                     if let problem { ConnectionNotice(title: "Couldn’t connect", message: problem) }
                 }
-                .frame(maxWidth: 420)
-                .padding(28)
+                .frame(maxWidth: 340)
+                .padding(24)
                 .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
             .background(Color(uiColor: .systemGroupedBackground))
@@ -53,7 +53,15 @@ struct PulsHealthConnectionSetupView: View {
                     throw CollectionError("The returned connection is not a PulsHealth database.")
                 }
                 var setup = DatabaseSetup(applied: model.appliedConfig, preferred: .pulsHealth)
-                guard setup.receiveSignIn(payload), setup.commit(to: &model.config) else {
+                guard setup.receiveSignIn(payload) else {
+                    throw CollectionError("The database connection could not be prepared. Sign in again.")
+                }
+                let isNew = setup.needsInitialSyncReview(
+                    applied: model.appliedConfig, draft: model.config, saved: model.savedDestinations)
+                let committed = isNew
+                    ? setup.commitNewConnection(to: &model.config)
+                    : setup.commit(to: &model.config)
+                guard committed else {
                     throw CollectionError("The database connection could not be prepared. Sign in again.")
                 }
                 model.noteSignInPairing(payload)

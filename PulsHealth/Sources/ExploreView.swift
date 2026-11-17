@@ -399,8 +399,6 @@ private struct ExploreTypeRow: View {
             if let status, status.isPaused {
                 Image(systemName: "pause.circle.fill").foregroundStyle(.orange)
                     .accessibilityLabel(status.pausedUntilText ?? "Paused")
-            } else if let status, status.state.lastError != nil {
-                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red)
             }
         }
         .padding(.vertical, 2)
@@ -417,7 +415,7 @@ private struct ExploreTypeRow: View {
             if let last = profile.latestStart { parts.append("last \(last.relativeString)") }
         } else if let facts, let first = facts.earliestStart {
             parts.append("Data since \(first.formatted(.dateTime.year()))")
-            parts.append("tap to analyze")
+            parts.append("Ready to analyze")
         } else if facts != nil {
             parts.append("No data")
         } else if let status, hasServer {

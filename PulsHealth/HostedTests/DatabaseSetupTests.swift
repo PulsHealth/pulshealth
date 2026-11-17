@@ -29,6 +29,35 @@ final class DatabaseSetupTests: XCTestCase {
         return config
     }
 
+    func testNewConnectionStartsEmptyWhileEditingPreservesSelections() {
+        var existing = ownConfiguration()
+        existing.enabledTypes = ["HKQuantityTypeIdentifierHeartRate"]
+        existing.aggregates = [AggregateConfig(typeIdentifier: "HKQuantityTypeIdentifierHeartRate", function: .average)]
+        existing.startDate = Date(timeIntervalSince1970: 0)
+
+        var edit = DatabaseSetup(applied: existing)
+        edit.own.tokenText = "replacement-token"
+        var updated = existing
+        XCTAssertTrue(edit.commit(to: &updated))
+        XCTAssertEqual(updated.enabledTypes, existing.enabledTypes)
+        XCTAssertEqual(updated.aggregates, existing.aggregates)
+        XCTAssertEqual(updated.startDate, existing.startDate)
+
+        for destination in [DatabaseDestination.own, .pulsHealth] {
+            var setup = DatabaseSetup(applied: SyncConfiguration(), preferred: destination)
+            if destination == .own { setup.receivePairing(signInPayload()) }
+            else { setup.receiveSignIn(signInPayload()) }
+            var fresh = existing
+            XCTAssertTrue(setup.commitNewConnection(to: &fresh))
+            XCTAssertTrue(fresh.enabledTypes.isEmpty)
+            XCTAssertTrue(fresh.aggregates.isEmpty)
+            XCTAssertEqual(fresh.serverURL, hosted)
+            XCTAssertEqual(fresh.userID, user)
+            XCTAssertEqual(fresh.startDate.timeIntervalSince1970,
+                           SyncConfiguration().startDate.timeIntervalSince1970, accuracy: 2)
+        }
+    }
+
     func testStartsFromWhatIsApplied() {
         let none = DatabaseSetup(applied: SyncConfiguration())
         XCTAssertNil(none.destination, "no database: the screen asks")

@@ -143,6 +143,16 @@ struct DatabaseSetup: Equatable {
         return true
     }
 
+    /// A new destination starts with an explicit, empty selection rather than
+    /// inheriting the active connection's health data choices and history.
+    mutating func commitNewConnection(to configuration: inout SyncConfiguration) -> Bool {
+        guard commit(to: &configuration) else { return false }
+        configuration.enabledTypes = []
+        configuration.aggregates = []
+        configuration.startDate = SyncConfiguration().startDate
+        return true
+    }
+
     /// Drops the sign-in's code once the applied configuration is that
     /// database with that token: after this screen's Save & Apply, or after
     /// the server-change prompt it raised was confirmed. Until then the

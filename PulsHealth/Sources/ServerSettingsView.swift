@@ -38,6 +38,9 @@ struct ServerSettingsView: View {
     /// cleared whenever they change.
     @State private var connectionTest = DatabaseConnectionTest()
     @State private var showScanner = false
+    /// Only failures from saving this form belong here; HealthKit and sync
+    /// errors from elsewhere must not appear while adding a database.
+    @State private var saveProblem: String?
 
     private var needsInitialSyncReview: Bool {
         setup.needsInitialSyncReview(applied: model.appliedConfig, draft: model.config, saved: model.savedDestinations)
@@ -48,7 +51,7 @@ struct ServerSettingsView: View {
     var body: some View {
         @Bindable var model = model
         Form {
-            if let message = model.lastErrorMessage {
+            if let message = saveProblem {
                 Section {
                     Label(message, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
@@ -289,29 +292,12 @@ struct ServerSettingsView: View {
                 }
             }
             .disabled(connectionTest.running || !setup.own.isTestable)
-            if let pairedUserID = setup.own.pairedUserID {
-                // The third value of a pairing code has no field on this
-                // screen (it lives under Settings → User → Advanced), so
-                // say that it is staged too rather than changing it out
-                // of sight.
-                Label {
-                    Text("Filled in from a pairing code, with user ID \(pairedUserID). Nothing changes until you apply your selection.")
-                } icon: {
-                    Image(systemName: "qrcode")
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
         } header: {
             Text("Connection details")
-        } footer: {
-            Text("Use the address and token provided by your server.")
         }
 
         applySection(disabled: setup.own.urlIssue != nil) {
-            if needsInitialSyncReview {
-                Text("Choose your data and history next. Nothing is uploaded until you apply.")
-            }
+            EmptyView()
         }
     }
 
@@ -328,7 +314,7 @@ struct ServerSettingsView: View {
             }
             Button {
                 if needsInitialSyncReview {
-                    guard setup.commit(to: &model.config) else { return }
+                    guard setup.commitNewConnection(to: &model.config) else { return }
                     model.isSettingUpInitialSync = true
                     model.initialSyncReviewRequested = UUID()
                 } else {
@@ -461,9 +447,13 @@ struct ServerSettingsView: View {
         // Deferred to the server-change prompt instead: stay, so the fields
         // are still here to adjust if the user cancels it (and if they
         // confirm it, `settle(applied:)` notices).
+        saveProblem = nil
+        model.lastErrorMessage = nil
         if await model.applyDatabaseConfiguration() {
             setup.settle(applied: model.appliedConfig)
             dismiss()
+        } else if model.pendingServerChange == nil {
+            saveProblem = model.lastErrorMessage
         }
     }
 

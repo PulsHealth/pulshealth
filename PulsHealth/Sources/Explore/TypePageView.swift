@@ -71,13 +71,10 @@ struct TypePageView: View {
                 scope: .export)
         }
         .task {
-            // The facts decide whether the profile is current; cheap enough
-            // to refresh on every visit. Opening a type that has never been
-            // analyzed starts its one analysis (which requests Health access
-            // for the type when it has none); a stored profile is kept, and
-            // stale ones are refreshed only by the Refresh button.
+            // Browsing never starts analysis or presents Health permissions.
+            // Analyze requests access when needed; existing profiles stay put
+            // until the user chooses Refresh or Rescan.
             await explore.refreshQuickFacts(for: [identifier])
-            if explore.profiles[identifier] == nil { explore.analyze(identifier) }
         }
     }
 
@@ -149,9 +146,9 @@ struct TypePageView: View {
                     onCancel: { explore.cancel(identifier) })
             }
         } else if profile == nil {
-            // The analysis starts on its own when the page opens, so this is
-            // only what stopped it: no data, a declined read, or a failure.
-            let noData = facts != nil && facts?.latestStart == nil
+            // Missing quick facts can mean permission has not been requested.
+            // Wait for an explicit analysis before reporting an empty result.
+            let noData = explore.errors[identifier] != nil && facts != nil && facts?.latestStart == nil
             CardSection(
                 noData ? "No data" : "Not analyzed",
                 subtitle: noData

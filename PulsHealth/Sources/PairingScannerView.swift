@@ -32,7 +32,7 @@ struct PairingScannerView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Type It Instead") { dismiss() }
+                        Button("Cancel") { dismiss() }
                     }
                 }
         }
@@ -84,19 +84,24 @@ struct PairingScannerView: View {
         } description: {
             Text("PulsHealth needs the camera to read the pairing code. The camera is used for nothing else and no images are saved.")
         } actions: {
-            Button {
-                requesting = true
-                Task {
-                    let granted = await AVCaptureDevice.requestAccess(for: .video)
-                    status = granted ? .authorized : .denied
-                    requesting = false
+            VStack(spacing: 16) {
+                Button {
+                    requesting = true
+                    Task {
+                        let granted = await AVCaptureDevice.requestAccess(for: .video)
+                        status = granted ? .authorized : .denied
+                        requesting = false
+                    }
+                } label: {
+                    Text("Allow Camera Access").frame(minWidth: 180)
                 }
-            } label: {
-                Text("Allow Camera Access").frame(minWidth: 180)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(requesting)
+                Button("Type It Instead") { dismiss() }
+                    .frame(minHeight: 44)
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(requesting)
-            Button("Type It Instead") { dismiss() }
+            .padding(.top, 16)
         }
     }
 
@@ -106,13 +111,18 @@ struct PairingScannerView: View {
         } description: {
             Text("Turn the camera on for PulsHealth in Settings → Privacy & Security → Camera, or enter the database URL, token and user ID by hand.")
         } actions: {
-            Button {
-                if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
-            } label: {
-                Text("Open Settings").frame(minWidth: 180)
+            VStack(spacing: 16) {
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                } label: {
+                    Text("Open Settings").frame(minWidth: 180)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                Button("Type It Instead") { dismiss() }
+                    .frame(minHeight: 44)
             }
-            .buttonStyle(.borderedProminent)
-            Button("Type It Instead") { dismiss() }
+            .padding(.top, 16)
         }
     }
 
