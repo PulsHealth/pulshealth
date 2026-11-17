@@ -11,6 +11,7 @@ and when, is the [Release record](#release-record) at the bottom.
 | Document | What it is |
 |---|---|
 | [`2.1-copy.md`](2.1-copy.md) | Approved 2.1 copy and the five-card advertising campaign; preparation, not a submission record. |
+| [`2.5-copy.md`](2.5-copy.md) | Prepared Connections / Data requests release copy and TestFlight acceptance focus for 2.5 (34); not uploaded or released. |
 | [`2.4-copy.md`](2.4-copy.md) | Release notes and reviewer walkthrough for the replacement 2.4 (33) submission. |
 | [`2.3-copy.md`](2.3-copy.md) | Prepared 2.3 release notes and updated first-sync review instructions; no upload or submission implied. |
 | [`2.2-copy.md`](2.2-copy.md) | Prepared Free/Pro description, What's New and reviewer walkthrough for the 2.2 candidate; acceptance and submission remain separate. |
