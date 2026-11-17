@@ -251,7 +251,7 @@ and candidate evidence are retained privately.
 Apple accepted the upload and completed processing. App Store Connect showed
 **2.5 (34): Testing** in the existing PulsHealth internal group. No external
 beta review or App Store review submission was performed, and nothing was
-released on the App Store. Grey and the public website were not deployed.
+released on the App Store. The hosted backend and public website were not deployed.
 Hosted request testing still requires the compatible backend/schema deployment
 and synthetic end-to-end checks; physical-phone upgrade, QR, HealthKit and
 background-sync acceptance remain unverified for this candidate.
